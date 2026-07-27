@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christian Kerez: Structural Wall and Floor Plan</title>
+    <style>
+        * {
+            font-family: 'Helvetica', Arial, sans-serif !important;
+        }
+
+        body { 
+            background-color: #f4f5f5; 
+            color: #111; 
+            margin: 0; 
+            padding: 40px; 
+        }
+        
+        .header { 
+            text-align: right; 
+            max-width: 1200px; 
+            margin: 0 auto 30px auto; 
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 20px; 
+            font-weight: bold; 
+            letter-spacing: 0.5px; 
+        }
+        .header h2 { 
+            margin: 5px 0 0 0; 
+            font-size: 12px; 
+            font-weight: normal; 
+            color: #666; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .main-view-panel {
+            background: transparent;
+            border: none;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; 
+        }
+
+        .canvases-wrapper {
+            display: flex;
+            gap: 15px; 
+        }
+
+        .canvas-3d-wrapper {
+            flex: 2.5;
+            position: relative;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            overflow: hidden;
+        }
+        canvas#simCanvas { 
+            display: block; 
+            width: 100%; 
+            height: 500px;
+            background: transparent; 
+            cursor: grab;
+        }
+        canvas#simCanvas:active {
+            cursor: grabbing;
+        }
+
+        .canvas-2d-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            min-width: 300px;
+            padding: 15px;
+        }
+        .editor-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .editor-header h3 {
+            margin: 0; 
+            font-size: 11px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            color: #333;
+            letter-spacing: 0.5px;
+        }
+        canvas#editorCanvas {
+            display: block;
+            width: 100%;
+            height: 350px;
+            background: #fff;
+            border: 1px solid #eee;
+            cursor: crosshair;
+            margin-bottom: 10px;
+        }
+
+        .btn-group { display: flex; gap: 5px; margin-top: auto; }
+        select { 
+            width: auto; padding: 4px 6px; font-size: 10px; 
+            background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 0;
+        }
+        select.wide { width: 100%; margin-top: 5px; }
+
+        button.action-btn {
+            flex: 1; padding: 8px; background: transparent; color: #111; border: 1px solid #ccc;
+            font-size: 9px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s;
+        }
+        button.action-btn:hover { background: #f4f4f4; border-color: #999;}
+        button.primary-btn { border-color: #111; margin-top: 5px; width: 100%; }
+        button.primary-btn:hover { background: #111; color: #fff; }
+
+        #status-bar {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            padding: 15px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        hr.dashed {
+            border: 0;
+            border-top: 1px dashed #ccc;
+            margin: 30px 0;
+        }
+
+        .controls-grid { 
+            display: flex; 
+            gap: 40px;
+        }
+        .column { flex: 1; }
+        .column h3 { 
+            margin-top: 0; font-size: 11px; font-weight: bold; 
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; color: #111;
+        }
+        
+        .control-row { margin-bottom: 18px; font-size: 11px; }
+        label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #333; }
+        .val { font-size: 10px; color: #555; }
+        
+        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
+        }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+        
+        .info-box {
+            margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee;
+            color: #666; font-size: 10px; line-height: 1.6;
+        }
+
+        .portfolio-bar {
+            max-width: 1100px;
+            margin: 0 auto 34px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #111;
+        }
+        .portfolio-bar a {
+            color: #111;
+            text-decoration: none;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .portfolio-bar a:hover { color: #d32f2f; }
+        .portfolio-bar .idx {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #999;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="portfolio-bar">
+        <a href="../index.html">&larr; Index</a>
+        <span class="idx">03 / STRUCTURAL STUDIES</span>
+    </div>
+
+    <div class="header">
+        <h1>STRUCTURAL CORE GENERATION</h1>
+        <h2>Axonometric Wireframe & Floor Plan Editor (RC Standard)</h2>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="main-view-panel">
+            <div class="canvases-wrapper">
+                <div class="canvas-3d-wrapper">
+                    <canvas id="simCanvas"></canvas>
+                </div>
+                <div class="canvas-2d-wrapper">
+                    <div class="editor-header">
+                        <h3>2D Geometry Editor</h3>
+                        <select id="floorIndex"></select>
+                    </div>
+                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag nodes to shape Floor Plate & Wall.</p>
+                    <canvas id="editorCanvas"></canvas>
+                    
+                    <div class="btn-group">
+                        <button class="action-btn" onclick="addWallNode()">+ Add Node</button>
+                        <button class="action-btn" onclick="removeWallNode()">- Remove Node</button>
+                    </div>
+                    <button class="action-btn primary-btn" onclick="optimizeWalls()">Auto-Optimize Core</button>
+                </div>
+            </div>
+            <div id="status-bar">CONDITION: SAFE - STRUCTURAL CRITERIA VERIFIED</div>
+        </div>
+
+        <hr class="dashed">
+
+        <div class="controls-grid">
+            <div class="column">
+                <h3>Architecture & Massing</h3>
+                <div class="control-row">
+                    <label>Number of Floors <span id="val-floors" class="val">4</span></label>
+                    <input type="range" id="floors" min="2" max="8" step="1" value="4">
+                </div>
+                <div class="control-row">
+                    <label>Floor-to-Floor Height (H) <span id="val-floorH" class="val">3.20 m</span></label>
+                    <input type="range" id="floorH" min="2.5" max="5.0" step="0.1" value="3.2">
+                </div>
+                <div class="info-box">
+                    <b>2D Editor Legend:</b><br>
+                    <div style="margin-top: 4px;">
+                        <span style="display:inline-block; width:4px; height:4px; border:1px solid #111; border-radius:50%; margin-right:5px; background:#fff; vertical-align:middle;"></span> Floor Edge Node (Black)<br>
+                        <span style="display:inline-block; width:5px; height:5px; background:#007BFF; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Structural Wall Node (Blue)<br>
+                        <span style="display:inline-block; width:10px; height:1px; background:rgba(180, 180, 180, 0.6); margin-right:5px; vertical-align:middle;"></span> Other Floors (Faint Gray Wireframe)
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <h3>RC Structure Parameters</h3>
+                <div class="control-row">
+                    <label>Core Thickness (T_c) <span id="val-coreT" class="val">0.60 m</span></label>
+                    <input type="range" id="coreT" min="0.2" max="1.5" step="0.1" value="0.6">
+                </div>
+                <div class="control-row">
+                    <label style="margin-bottom: 2px;">Usage / Live Load</label>
+                    <select id="liveLoad" class="wide">
+                        <option value="1.5">Residential (1.5 kN/m²)</option>
+                        <option value="3.0" selected>Office / Museum (3.0 kN/m²)</option>
+                        <option value="5.0">Public Assembly (5.0 kN/m²)</option>
+                    </select>
+                </div>
+                <div class="info-box">
+                    <b>Slab Thickness (T_s):</b> <span id="val-slabT" class="val" style="color:#111; font-weight:bold;">0.30 m</span><br>
+                    Auto-calculated based on maximum cantilever span and selected live load.
+                </div>
+            </div>
+            
+            <div class="column">
+                <h3>Safety Criteria</h3>
+                <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
+                    <b>1. Structural Overlap (Punching Shear Risk):</b><br>
+                    Overlapping core areas (solid blue in 3D) are evaluated for load distribution. A minimum of 3 distinct support points or adequate footprint spread is required between floors.<br><br>
+                    <b>2. Cantilever Span Limit:</b><br>
+                    The distance from the central structural wall to the furthest floor plate edge must not exceed the RC bending capacity calculated from the slab thickness.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let numFloors = 4;
+        let floorData = [];
+        for(let i=0; i<8; i++) {
+            let w1 = 4 + (i%3), w2 = 6 - (i%2);
+            let zBase = i * 1.5;
+            floorData.push({
+                vertices: [
+                    {x: -w1, z: zBase},            
+                    {x: w2, z: zBase},             
+                    {x: w2 + 1, z: zBase + 10},    
+                    {x: 4, z: zBase + 20},         
+                    {x: -4, z: zBase + 20},        
+                    {x: -w1 - 1, z: zBase + 10}    
+                ],
+                wallNodes: [
+                    {x: 0, z: zBase + 2},
+                    {x: (i%2===0?2:-2), z: zBase + 10},
+                    {x: 0, z: zBase + 18}
+                ]
+            });
+        }
+
+        const simCanvas = document.getElementById('simCanvas');
+        const simCtx = simCanvas.getContext('2d');
+        const editCanvas = document.getElementById('editorCanvas');
+        const editCtx = editCanvas.getContext('2d');
+
+        function ensureCanvasSize(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const w = Math.floor(rect.width);
+            const h = Math.floor(rect.height);
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+                return true;
+            }
+            return false;
+        }
+
+        window.addEventListener('resize', () => {
+            if(ensureCanvasSize(simCanvas) || ensureCanvasSize(editCanvas)) {
+                drawEditor();
+                updateSim();
+            }
+        });
+
+        const EDIT_SCALE = 11; 
+        function getEditCX() { return editCanvas.width / 2; }
+        function getEditCZ() { return 35; }
+
+        function toPx(x, z) { return { px: getEditCX() + x * EDIT_SCALE, pz: getEditCZ() + z * EDIT_SCALE }; }
+        function fromPx(px, pz) { return { x: (px - getEditCX()) / EDIT_SCALE, z: (pz - getEditCZ()) / EDIT_SCALE }; }
+
+        let dragType = null; 
+        let dragIdx = null;
+
+        editCanvas.addEventListener('mousedown', e => {
+            const rect = editCanvas.getBoundingClientRect();
+            const scaleX = editCanvas.width / rect.width;
+            const scaleY = editCanvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const mz = (e.clientY - rect.top) * scaleY;
+            
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const data = floorData[idx];
+            
+            for(let i=0; i<data.wallNodes.length; i++) {
+                let p = toPx(data.wallNodes[i].x, data.wallNodes[i].z);
+                if(Math.hypot(p.px - mx, p.pz - mz) < 12) {
+                    dragType = 'wall'; dragIdx = i; return;
+                }
+            }
+            for(let i=0; i<data.vertices.length; i++) {
+                let p = toPx(data.vertices[i].x, data.vertices[i].z);
+                if(Math.hypot(p.px - mx, p.pz - mz) < 12) {
+                    dragType = 'vertex'; dragIdx = i; return;
+                }
+            }
+        });
+
+        editCanvas.addEventListener('mousemove', e => {
+            if(dragType === null) return;
+            const rect = editCanvas.getBoundingClientRect();
+            const scaleX = editCanvas.width / rect.width;
+            const scaleY = editCanvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const mz = (e.clientY - rect.top) * scaleY;
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            
+            let newPt = fromPx(mx, mz);
+            
+            if (dragType === 'wall') {
+                floorData[idx].wallNodes[dragIdx].x = newPt.x;
+                floorData[idx].wallNodes[dragIdx].z = newPt.z;
+            } else if (dragType === 'vertex') {
+                floorData[idx].vertices[dragIdx].x = newPt.x;
+                floorData[idx].vertices[dragIdx].z = newPt.z;
+            }
+            
+            drawEditor();
+            updateSim();
+        });
+
+        editCanvas.addEventListener('mouseup', () => { dragType = null; dragIdx = null; });
+        editCanvas.addEventListener('mouseleave', () => { dragType = null; dragIdx = null; });
+
+        function drawEditor() {
+            ensureCanvasSize(editCanvas);
+            editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+            const idx = parseInt(document.getElementById('floorIndex').value) || 0;
+            const data = floorData[idx];
+
+            editCtx.strokeStyle = "#f8f8f8"; editCtx.lineWidth = 1;
+            for(let i=0; i<editCanvas.width; i+=EDIT_SCALE*2) {
+                editCtx.beginPath(); editCtx.moveTo(i, 0); editCtx.lineTo(i, editCanvas.height); editCtx.stroke();
+            }
+            for(let i=0; i<editCanvas.height; i+=EDIT_SCALE*2) {
+                editCtx.beginPath(); editCtx.moveTo(0, i); editCtx.lineTo(editCanvas.width, i); editCtx.stroke();
+            }
+
+            for (let i = 0; i < numFloors; i++) {
+                if (i === idx) continue;
+
+                const d = floorData[i];
+                editCtx.beginPath();
+                let p0 = toPx(d.vertices[0].x, d.vertices[0].z);
+                editCtx.moveTo(p0.px, p0.pz);
+                for(let j=1; j<d.vertices.length; j++) {
+                    let p = toPx(d.vertices[j].x, d.vertices[j].z);
+                    editCtx.lineTo(p.px, p.pz);
+                }
+                editCtx.closePath();
+                editCtx.strokeStyle = "rgba(180, 180, 180, 0.4)"; 
+                editCtx.lineWidth = 1;
+                editCtx.stroke();
+
+                const wn = d.wallNodes;
+                editCtx.beginPath();
+                let wp0 = toPx(wn[0].x, wn[0].z);
+                editCtx.moveTo(wp0.px, wp0.pz);
+                for(let j=1; j<wn.length; j++) {
+                    let p = toPx(wn[j].x, wn[j].z);
+                    editCtx.lineTo(p.px, p.pz);
+                }
+                editCtx.strokeStyle = "rgba(180, 180, 180, 0.6)"; 
+                editCtx.lineWidth = 2;
+                editCtx.stroke();
+                
+                editCtx.fillStyle = "rgba(150, 150, 150, 0.8)";
+                editCtx.font = "9px Helvetica";
+                editCtx.fillText("F" + (i+1), p0.px + 5, p0.pz - 5);
+            }
+
+            const pts = data.vertices;
+            editCtx.beginPath();
+            let p0 = toPx(pts[0].x, pts[0].z);
+            editCtx.moveTo(p0.px, p0.pz);
+            for(let i=1; i<pts.length; i++) {
+                let p = toPx(pts[i].x, pts[i].z);
+                editCtx.lineTo(p.px, p.pz);
+            }
+            editCtx.closePath();
+            editCtx.fillStyle = "rgba(0,0,0,0.02)"; editCtx.fill();
+            editCtx.strokeStyle = "#111"; 
+            editCtx.lineWidth = 1.5; editCtx.stroke();
+
+            editCtx.fillStyle = "#fff"; editCtx.lineWidth = 1.5;
+            for(let i=0; i<pts.length; i++) {
+                let p = toPx(pts[i].x, pts[i].z);
+                editCtx.beginPath(); editCtx.arc(p.px, p.pz, 2, 0, Math.PI*2);
+                editCtx.fill(); editCtx.stroke();
+            }
+
+            const wn = data.wallNodes;
+            editCtx.beginPath();
+            let w0 = toPx(wn[0].x, wn[0].z);
+            editCtx.moveTo(w0.px, w0.pz);
+            for(let i=1; i<wn.length; i++) {
+                let p = toPx(wn[i].x, wn[i].z);
+                editCtx.lineTo(p.px, p.pz);
+            }
+            editCtx.strokeStyle = "#007BFF"; 
+            editCtx.lineWidth = 2.5; editCtx.stroke();
+
+            editCtx.fillStyle = "#007BFF";
+            for(let i=0; i<wn.length; i++) {
+                let p = toPx(wn[i].x, wn[i].z);
+                editCtx.beginPath(); editCtx.arc(p.px, p.pz, 2.5, 0, Math.PI*2); editCtx.fill();
+            }
+        }
+
+        function addWallNode() {
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const nodes = floorData[idx].wallNodes;
+            let maxLen = 0, targetIdx = 0;
+            for(let i=0; i<nodes.length-1; i++) {
+                let l = Math.hypot(nodes[i+1].x - nodes[i].x, nodes[i+1].z - nodes[i].z);
+                if(l > maxLen) { maxLen = l; targetIdx = i; }
+            }
+            let midPt = {
+                x: (nodes[targetIdx].x + nodes[targetIdx+1].x)/2,
+                z: (nodes[targetIdx].z + nodes[targetIdx+1].z)/2
+            };
+            nodes.splice(targetIdx+1, 0, midPt);
+            drawEditor(); updateSim();
+        }
+
+        function removeWallNode() {
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const nodes = floorData[idx].wallNodes;
+            if(nodes.length > 2) {
+                nodes.splice(Math.floor(nodes.length/2), 1);
+                drawEditor(); updateSim();
+            }
+        }
+
+        function optimizeWalls() {
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const pts = floorData[idx].vertices;
+            let cx = 0, cz = 0, minZ = Infinity, maxZ = -Infinity, minX = Infinity, maxX = -Infinity;
+            pts.forEach(p => {
+                cx += p.x; cz += p.z;
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+            });
+            cx /= pts.length; cz /= pts.length; 
+            
+            const len = maxZ - minZ;
+            const w = maxX - minX;
+            
+            floorData[idx].wallNodes = [
+                { x: cx, z: cz - len*0.25 },
+                { x: cx - w*0.25, z: cz + len*0.2 },
+                { x: cx + w*0.25, z: cz + len*0.2 },
+                { x: cx, z: cz - len*0.15 }
+            ];
+
+            drawEditor(); updateSim();
+        }
+
+        document.getElementById('floors').addEventListener('input', e => {
+            numFloors = parseInt(e.target.value);
+            document.getElementById('val-floors').innerText = numFloors;
+            updateFloorDropdown();
+        });
+        document.getElementById('floorH').addEventListener('input', e => {
+            document.getElementById('val-floorH').innerText = parseFloat(e.target.value).toFixed(2) + " m";
+            updateSim();
+        });
+        document.getElementById('coreT').addEventListener('input', e => {
+            document.getElementById('val-coreT').innerText = parseFloat(e.target.value).toFixed(2) + " m";
+            updateSim();
+        });
+        document.getElementById('liveLoad').addEventListener('input', updateSim);
+        document.getElementById('floorIndex').addEventListener('change', drawEditor);
+
+        function updateFloorDropdown() {
+            const sel = document.getElementById('floorIndex');
+            let currentIdx = parseInt(sel.value) || 0;
+            sel.innerHTML = '';
+            for(let i=0; i<numFloors; i++) {
+                const opt = document.createElement('option');
+                opt.value = i; opt.innerText = "Floor " + (i+1);
+                sel.appendChild(opt);
+            }
+            sel.value = Math.min(currentIdx, numFloors - 1);
+            drawEditor(); updateSim();
+        }
+
+        function ensureCCW(poly) {
+            let area = 0;
+            for(let i=0; i<poly.length; i++) {
+                let j = (i+1)%poly.length;
+                area += poly[i].x * poly[j].z - poly[j].x * poly[i].z;
+            }
+            return area < 0 ? poly.slice().reverse() : poly;
+        }
+
+        function polygonArea(poly) {
+            let area = 0;
+            for(let i=0; i<poly.length; i++) {
+                let j = (i+1)%poly.length;
+                area += poly[i].x * poly[j].z - poly[j].x * poly[i].z;
+            }
+            return Math.abs(area / 2);
+        }
+
+        function getCentroid(poly) {
+            let cx=0, cz=0;
+            poly.forEach(p => { cx+=p.x; cz+=p.z; });
+            return {x: cx/poly.length, z: cz/poly.length};
+        }
+
+        function intersectLines(x1, z1, x2, z2, x3, z3, x4, z4) {
+            let den = (x1 - x2) * (z3 - z4) - (z1 - z2) * (x3 - x4);
+            if (den === 0) return {x: x2, z: z2}; 
+            let t = ((x1 - x3) * (z3 - z4) - (z1 - z3) * (x3 - x4)) / den;
+            return { x: x1 + t * (x2 - x1), z: z1 + t * (z2 - z1) };
+        }
+
+        function pointToSegmentDistance(p, v, w) {
+            let l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.z - w.z, 2);
+            if (l2 === 0) return Math.hypot(p.x - v.x, p.z - v.z);
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            let proj = { x: v.x + t * (w.x - v.x), z: v.z + t * (w.z - v.z) };
+            return Math.hypot(p.x - proj.x, p.z - proj.z);
+        }
+
+        function isInside(p, cp1, cp2) { return (cp2.x - cp1.x) * (p.z - cp1.z) - (cp2.z - cp1.z) * (p.x - cp1.x) >= 0; }
+        function computeIntersection(s, e, cp1, cp2) {
+            const dcx = cp1.x - cp2.x, dcz = cp1.z - cp2.z;
+            const dpzx = s.x * e.z - s.z * e.x, dpxz = cp1.x * cp2.z - cp1.z * cp2.x;
+            const den = (s.x - e.x) * dcz - (s.z - e.z) * dcx;
+            if(den === 0) return s;
+            return { x: (dpzx * dcx - (s.x - e.x) * dpxz) / den, z: (dpzx * dcz - (s.z - e.z) * dpxz) / den };
+        }
+        function clipPolygon(subjectPoly, clipPoly) {
+            let outputList = subjectPoly;
+            for (let i = 0; i < clipPoly.length; i++) {
+                const cp1 = clipPoly[i], cp2 = clipPoly[(i + 1) % clipPoly.length];
+                const inputList = outputList; outputList = [];
+                if(inputList.length === 0) break;
+                let S = inputList[inputList.length - 1];
+                for (let j = 0; j < inputList.length; j++) {
+                    const E = inputList[j];
+                    if (isInside(E, cp1, cp2)) {
+                        if (!isInside(S, cp1, cp2)) outputList.push(computeIntersection(S, E, cp1, cp2));
+                        outputList.push(E);
+                    } else if (isInside(S, cp1, cp2)) {
+                        outputList.push(computeIntersection(S, E, cp1, cp2));
+                    }
+                    S = E;
+                }
+            }
+            return outputList;
+        }
+
+        // --- สร้าง Quads ผนังที่มีความหนาสม่ำเสมอตามหลักเรขาคณิต (Miter Joints) ---
+        function generateWallQuads(nodes, thickness) {
+            let w = thickness / 2;
+            let lefts = [], rights = [];
+            
+            for(let i=0; i<nodes.length; i++) {
+                let p = nodes[i];
+                let pPrev = i > 0 ? nodes[i-1] : null;
+                let pNext = i < nodes.length-1 ? nodes[i+1] : null;
+                
+                if(!pPrev) { 
+                    let dx = pNext.x - p.x, dz = pNext.z - p.z;
+                    let l = Math.hypot(dx, dz); dx/=l; dz/=l;
+                    lefts.push({x: p.x - dz*w, z: p.z + dx*w});
+                    rights.push({x: p.x + dz*w, z: p.z - dx*w});
+                } else if (!pNext) {
+                    let dx = p.x - pPrev.x, dz = p.z - pPrev.z;
+                    let l = Math.hypot(dx, dz); dx/=l; dz/=l;
+                    lefts.push({x: p.x - dz*w, z: p.z + dx*w});
+                    rights.push({x: p.x + dz*w, z: p.z - dx*w});
+                } else {
+                    let d1x = p.x - pPrev.x, d1z = p.z - pPrev.z;
+                    let l1 = Math.hypot(d1x, d1z); d1x/=l1; d1z/=l1;
+                    let d2x = pNext.x - p.x, d2z = pNext.z - p.z;
+                    let l2 = Math.hypot(d2x, d2z); d2x/=l2; d2z/=l2;
+                    
+                    let n1x = -d1z, n1z = d1x;
+                    let n2x = -d2z, n2z = d2x;
+                    
+                    let A1 = {x: pPrev.x + n1x*w, z: pPrev.z + n1z*w}, B1 = {x: p.x + n1x*w, z: p.z + n1z*w};
+                    let C1 = {x: p.x + n2x*w, z: p.z + n2z*w}, D1 = {x: pNext.x + n2x*w, z: pNext.z + n2z*w};
+                    let M_left = intersectLines(A1.x, A1.z, B1.x, B1.z, C1.x, C1.z, D1.x, D1.z);
+                    
+                    let A2 = {x: pPrev.x - n1x*w, z: pPrev.z - n1z*w}, B2 = {x: p.x - n1x*w, z: p.z - n1z*w};
+                    let C2 = {x: p.x - n2x*w, z: p.z - n2z*w}, D2 = {x: pNext.x - n2x*w, z: p.z - n2z*w};
+                    let M_right = intersectLines(A2.x, A2.z, B2.x, B2.z, C2.x, C2.z, D2.x, D2.z);
+                    
+                    lefts.push(M_left); rights.push(M_right);
+                }
+            }
+            
+            let quads = [];
+            for(let i=0; i<nodes.length-1; i++) {
+                quads.push(ensureCCW([ lefts[i], rights[i], rights[i+1], lefts[i+1] ]));
+            }
+            return quads;
+        }
+
+        // --- Axonometric Projection (True 30°/30° Axonometric / Isometric standard convention) ---
+        let simScale = 15, simOffsetX = 0, simOffsetY = 0;
+        let faces = [];
+
+        let simUserZoom = 1.0;
+        let simUserPanX = 0;
+        let simUserPanY = 0;
+        let simIsPanning = false;
+        let simLastMouseX = 0;
+        let simLastMouseY = 0;
+
+        simCanvas.addEventListener('mousedown', e => {
+            simIsPanning = true;
+            simLastMouseX = e.clientX;
+            simLastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (!simIsPanning) return;
+            simUserPanX += e.clientX - simLastMouseX;
+            simUserPanY += e.clientY - simLastMouseY;
+            simLastMouseX = e.clientX;
+            simLastMouseY = e.clientY;
+            updateSim();
+        });
+
+        window.addEventListener('mouseup', () => {
+            simIsPanning = false;
+        });
+
+        simCanvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomFactor = 1.1;
+            if (e.deltaY < 0) {
+                simUserZoom *= zoomFactor;
+            } else {
+                simUserZoom /= zoomFactor;
+            }
+            updateSim();
+        });
+
+        simCanvas.addEventListener('dblclick', () => {
+            simUserZoom = 1.0;
+            simUserPanX = 0;
+            simUserPanY = 0;
+            updateSim();
+        });
+
+        function project3D(pt) {
+            const angle = Math.PI / 6; // 30 degrees
+            const cos30 = Math.cos(angle);
+            const sin30 = Math.sin(angle);
+
+            const px = (pt.x - pt.z) * cos30;
+            const py = -pt.y + (pt.x + pt.z) * sin30;
+            
+            const baseX = px * simScale + simOffsetX;
+            const baseY = py * simScale + simOffsetY;
+
+            const cx = simCanvas.width / 2;
+            const cy = simCanvas.height / 2;
+
+            return { 
+                x: (baseX - cx) * simUserZoom + cx + simUserPanX, 
+                y: (baseY - cy) * simUserZoom + cy + simUserPanY 
+            };
+        }
+
+        function addFace(pts, fill, stroke, lineW = 1.0) {
+            if(!pts || pts.length < 3) return;
+            let cx = 0, cy = 0, cz = 0;
+            pts.forEach(p => { cx += p.x; cy += p.y; cz += p.z; });
+            faces.push({ pts: pts, depth: (cx + cy + cz) / pts.length, fill: fill, stroke: stroke, lineWidth: lineW });
+        }
+
+        function updateSim() {
+            ensureCanvasSize(simCanvas);
+
+            const floorH = parseFloat(document.getElementById('floorH').value);
+            const coreT = parseFloat(document.getElementById('coreT').value);
+            const liveLoad = parseFloat(document.getElementById('liveLoad').value);
+
+            let maxActualCantilever = 0;
+            let floorPolys = [];
+            let allWallQuads = [];
+
+            for(let i=0; i<numFloors; i++) {
+                const pts = floorData[i].vertices;
+                floorPolys.push(pts);
+
+                const wn = floorData[i].wallNodes;
+                const quads = generateWallQuads(wn, coreT);
+                allWallQuads.push(quads);
+
+                pts.forEach(pt => {
+                    let minDist = Infinity;
+                    for(let j=0; j<wn.length-1; j++) {
+                        minDist = Math.min(minDist, pointToSegmentDistance(pt, wn[j], wn[j+1]));
+                    }
+                    maxActualCantilever = Math.max(maxActualCantilever, minDist);
+                });
+            }
+
+            let slabT = maxActualCantilever / (28 - liveLoad * 1.5);
+            slabT = Math.max(0.15, Math.min(1.0, slabT)); 
+            document.getElementById('val-slabT').innerText = slabT.toFixed(2) + " m";
+
+            const allowedCantilever = slabT * (28 - liveLoad * 1.5);
+            let cantileverSafe = maxActualCantilever <= allowedCantilever;
+
+            let overlapSafe = true;
+            let overlapsToDraw = [];
+
+            for(let i=1; i<numFloors; i++) {
+                let overlapsThisFloor = [];
+                for(let qA of allWallQuads[i]) {
+                    for(let qB of allWallQuads[i-1]) {
+                        let overPoly = clipPolygon(qA, qB);
+                        if(overPoly.length > 2 && polygonArea(overPoly) > 0.05) {
+                            overlapsThisFloor.push(overPoly);
+                        }
+                    }
+                }
+                
+                let clusters = [];
+                for(let op of overlapsThisFloor) {
+                    let c = getCentroid(op);
+                    let a = polygonArea(op);
+                    let found = false;
+                    for(let cl of clusters) {
+                        if(Math.hypot(cl.c.x - c.x, cl.c.z - c.z) < coreT * 2) {
+                            cl.area += a;
+                            cl.c.x = (cl.c.x + c.x)/2; cl.c.z = (cl.c.z + c.z)/2;
+                            found = true; break;
+                        }
+                    }
+                    if(!found) clusters.push({c: c, area: a});
+                    overlapsToDraw.push({floorIdx: i, poly: op});
+                }
+
+                let isStable = false;
+                let min_x=Infinity, max_x=-Infinity, min_z=Infinity, max_z=-Infinity;
+                overlapsThisFloor.forEach(op => op.forEach(p => {
+                    min_x = Math.min(min_x, p.x); max_x = Math.max(max_x, p.x);
+                    min_z = Math.min(min_z, p.z); max_z = Math.max(max_z, p.z);
+                }));
+                let spread = Math.hypot(max_x - min_x, max_z - min_z);
+                
+                let validSpread = spread >= coreT * 3; 
+                if (clusters.length >= 3 && validSpread) isStable = true;
+
+                if(!isStable) overlapSafe = false;
+            }
+
+            const statusBar = document.getElementById('status-bar');
+            if(!overlapSafe && !cantileverSafe) {
+                statusBar.style.color = "#d32f2f";
+                statusBar.innerText = "CONDITION: DANGER (PUNCHING SHEAR RISK) - OVERLAP AREA INSUFFICIENT OR CANTILEVER EXCEEDS CAPACITY";
+            } else if (!overlapSafe) {
+                statusBar.style.color = "#d32f2f";
+                statusBar.innerText = "CONDITION: DANGER (PUNCHING SHEAR RISK) - MINIMUM 3 SUPPORT POINTS OR ADEQUATE SPREAD REQUIRED";
+            } else if (!cantileverSafe) {
+                statusBar.style.color = "#d32f2f";
+                statusBar.innerText = "CONDITION: DANGER - CANTILEVER SPAN EXCEEDS BENDING CAPACITY";
+            } else {
+                statusBar.style.color = "#007BFF"; 
+                statusBar.innerText = "CONDITION: SAFE - STRUCTURAL CRITERIA VERIFIED";
+            }
+
+            const staticMinX = -10, staticMaxX = 10;
+            const staticMinZ = 0, staticMaxZ = 35;
+            const staticMaxH = 8 * 5.0 + 2; 
+
+            const bounds = [
+                {x: staticMinX, y: 0, z: staticMinZ}, {x: staticMaxX, y: 0, z: staticMinZ},
+                {x: staticMinX, y: staticMaxH, z: staticMinZ}, {x: staticMaxX, y: staticMaxH, z: staticMinZ},
+                {x: staticMinX, y: 0, z: staticMaxZ}, {x: staticMaxX, y: 0, z: staticMaxZ},
+                {x: staticMinX, y: staticMaxH, z: staticMaxZ}, {x: staticMaxX, y: staticMaxH, z: staticMaxZ},
+            ];
+
+            let minPx = Infinity, maxPx = -Infinity, minPy = Infinity, maxPy = -Infinity;
+            bounds.forEach(pt => {
+                const angle = Math.PI / 6;
+                const cos30 = Math.cos(angle);
+                const sin30 = Math.sin(angle);
+                const px = (pt.x - pt.z) * cos30;
+                const py = -pt.y + (pt.x + pt.z) * sin30;
+                if(px < minPx) minPx = px; if(px > maxPx) maxPx = px;
+                if(py < minPy) minPy = py; if(py > maxPy) maxPy = py;
+            });
+
+            simScale = Math.min((simCanvas.width - 60) / (Math.max(maxPx - minPx, 1)), (simCanvas.height - 60) / (Math.max(maxPy - minPy, 1)));
+            simOffsetX = simCanvas.width/2 - ((minPx + maxPx)/2)*simScale;
+            simOffsetY = simCanvas.height/2 - ((minPy + maxPy)/2)*simScale + 20;
+
+            faces = [];
+            simCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+
+            simCtx.strokeStyle = "#e0e0e0"; simCtx.setLineDash([4, 4]); simCtx.beginPath();
+            const p = 2;
+            const gp1 = project3D({x: staticMinX-p, y: 0, z: staticMinZ-p}), gp2 = project3D({x: staticMaxX+p, y: 0, z: staticMinZ-p});
+            const gp3 = project3D({x: staticMaxX+p, y: 0, z: staticMaxZ+p}), gp4 = project3D({x: staticMinX-p, y: 0, z: staticMaxZ+p});
+            simCtx.moveTo(gp1.x, gp1.y); simCtx.lineTo(gp2.x, gp2.y); 
+            simCtx.lineTo(gp3.x, gp3.y); simCtx.lineTo(gp4.x, gp4.y); simCtx.closePath();
+            simCtx.stroke(); simCtx.setLineDash([]);
+
+            function addExtrusion(poly2D, yB, yT, fill, stroke, lineW) {
+                if(!poly2D || poly2D.length < 3) return;
+                const bot = poly2D.map(pt => ({x: pt.x, y: yB, z: pt.z}));
+                const top = poly2D.map(pt => ({x: pt.x, y: yT, z: pt.z}));
+                addFace(bot, fill, stroke, lineW); 
+                addFace(top, fill, stroke, lineW);
+                for(let j=0; j<poly2D.length; j++) {
+                    const nj = (j+1) % poly2D.length;
+                    addFace([bot[j], bot[nj], top[nj], top[j]], fill, stroke, lineW);
+                }
+            }
+
+            for(let i=0; i<numFloors; i++) {
+                const yB = i * floorH, yT = yB + floorH, slabYB = yT - slabT;
+                allWallQuads[i].forEach(quad => {
+                    addExtrusion(quad, yB, slabYB, "rgba(255,255,255,0.85)", "#444", 1.2);
+                });
+                addExtrusion(floorPolys[i], slabYB, yT, "rgba(255,255,255,0.65)", "#999", 0.8);
+            }
+
+            overlapsToDraw.forEach(ov => {
+                const yB = (ov.floorIdx - 1) * floorH + floorH - slabT; 
+                const yT = ov.floorIdx * floorH; 
+                addExtrusion(ov.poly, yB, yT, "rgba(0, 123, 255, 0.75)", "#007BFF", 1.5);
+            });
+
+            faces.sort((a, b) => a.depth - b.depth);
+            faces.forEach(f => {
+                simCtx.beginPath();
+                const p0 = project3D(f.pts[0]); simCtx.moveTo(p0.x, p0.y);
+                for(let i=1; i<f.pts.length; i++) { const pt = project3D(f.pts[i]); simCtx.lineTo(pt.x, pt.y); }
+                simCtx.closePath();
+                simCtx.fillStyle = f.fill; simCtx.fill();
+                simCtx.lineWidth = f.lineWidth || 1.0; simCtx.strokeStyle = f.stroke; simCtx.stroke();
+            });
+        }
+
+        window.addEventListener('load', () => {
+            ensureCanvasSize(simCanvas);
+            ensureCanvasSize(editCanvas);
+            updateFloorDropdown();
+        });
+    </script>
+</body>
+</html>
