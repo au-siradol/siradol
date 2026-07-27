@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structural Studies — Index</title>
+<style>
+    :root {
+        --ink: #111111;
+        --muted: #767676;
+        --hair: #d8d8d8;
+        --hair-strong: #111111;
+        --bg: #f4f4f4;
+        --paper: #fdfdfd;
+        --accent: #d32f2f;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        margin: 0;
+        padding: 40px 40px 100px 40px;
+    }
+
+    /* ===== Header ===== */
+    header.site {
+        max-width: 1100px;
+        margin: 0 auto 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--hair-strong);
+    }
+    header.site .brand {
+        font-size: 15px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    header.site .brand span { color: var(--muted); font-weight: normal; letter-spacing: 1px; }
+    nav.site-nav { display: flex; gap: 22px; }
+    nav.site-nav a, nav.site-nav button {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-decoration: none;
+        background: none;
+        border: none;
+        font-family: inherit;
+        cursor: pointer;
+        padding: 0;
+    }
+    nav.site-nav a.active, nav.site-nav button.active, nav.site-nav button:hover, nav.site-nav a:hover {
+        color: var(--ink);
+    }
+
+    /* ===== Intro ===== */
+    .intro {
+        max-width: 1100px;
+        margin: 34px auto 10px auto;
+        display: flex;
+        justify-content: space-between;
+        gap: 60px;
+        padding-bottom: 34px;
+        border-bottom: 1px dashed #aaa;
+    }
+    .intro h1 {
+        font-size: 34px;
+        line-height: 1.15;
+        margin: 0;
+        max-width: 480px;
+        font-weight: bold;
+        letter-spacing: -0.5px;
+    }
+    .intro p {
+        max-width: 340px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin: 0;
+    }
+    .intro .count {
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 1px;
+        margin-top: 14px;
+    }
+
+    /* ===== View toggle row ===== */
+    .toolbar {
+        max-width: 1100px;
+        margin: 22px auto;
+        display: flex;
+        justify-content: flex-end;
+        gap: 18px;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    .toolbar button {
+        background: none;
+        border: none;
+        font-family: inherit;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 0;
+    }
+    .toolbar button.active { color: var(--ink); font-weight: bold; }
+    .toolbar .sep { color: var(--hair); }
+
+    /* ===== List view ===== */
+    #list-view { max-width: 1100px; margin: 0 auto; }
+    .entry {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border-bottom: 1px solid var(--hair);
+        padding: 34px 0;
+        transition: background 0.15s ease;
+    }
+    .entry:hover { background: rgba(0,0,0,0.02); }
+    .entry:first-child { border-top: none; }
+
+    .entry-inner {
+        display: grid;
+        grid-template-columns: 70px 1fr 1.4fr 1fr 1fr 90px;
+        gap: 24px;
+        align-items: center;
+    }
+    .entry-icon svg { width: 56px; height: 44px; display: block; }
+    .entry:hover .entry-icon svg .stroke { stroke: var(--accent); }
+
+    .field .label {
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        display: block;
+    }
+    .field .value { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+    .field .value.title { font-size: 16px; font-weight: bold; letter-spacing: -0.2px; }
+
+    .entry-open {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: right;
+        color: var(--ink);
+        white-space: nowrap;
+    }
+    .entry-open .arrow { display: inline-block; transition: transform 0.15s ease; }
+    .entry:hover .entry-open .arrow { transform: translateX(4px); }
+
+    /* ===== Image view ===== */
+    #image-view {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: none;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--hair);
+        border-top: 1px solid var(--hair);
+        border-bottom: 1px solid var(--hair);
+    }
+    #image-view.show { display: grid; }
+    .card {
+        background: var(--paper);
+        text-decoration: none;
+        color: inherit;
+        padding: 46px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 320px;
+    }
+    .card .card-icon svg { width: 100%; height: 160px; }
+    .card:hover .card-icon svg .stroke { stroke: var(--accent); }
+    .card .card-idx { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
+    .card .card-title { font-size: 20px; font-weight: bold; margin: 14px 0 4px 0; letter-spacing: -0.3px; }
+    .card .card-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    #list-view.hide, #image-view:not(.show) { display: none; }
+
+    /* ===== Footer ===== */
+    footer.site {
+        max-width: 1100px;
+        margin: 60px auto 0 auto;
+        padding-top: 18px;
+        border-top: 1px solid var(--hair);
+        display: flex;
+        justify-content: space-between;
+        font-size: 10.5px;
+        letter-spacing: 0.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+    }
+
+    @media (max-width: 820px) {
+        body { padding: 24px; }
+        .intro { flex-direction: column; gap: 20px; }
+        .entry-inner { grid-template-columns: 46px 1fr; row-gap: 14px; }
+        .entry-icon svg { width: 40px; height: 32px; }
+        .entry-open { grid-column: 2; text-align: left; }
+        #image-view.show { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+
+    <header class="site">
+        <div class="brand">Structural Studies <span>/ Parametric Axonometrics</span></div>
+        <nav class="site-nav">
+            <a href="index.html" class="active">Index</a>
+            <a href="#info" id="info-link">Info</a>
+        </nav>
+    </header>
+
+    <div class="intro">
+        <h1>A record of parametric structural studies, drawn as axonometric wireframes.</h1>
+        <div>
+            <p>Two interactive computations exploring how geometry, material, and load path govern the behaviour of a frame — built as browser-based tools rather than static drawings.</p>
+            <div class="count">02 WORKS — UPDATED 2026</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button id="btn-list" class="active">List view</button>
+        <span class="sep">/</span>
+        <button id="btn-image">Image view</button>
+    </div>
+
+    <div id="list-view">
+
+        <a class="entry" href="works/portal-frame-array.html">
+            <div class="entry-inner">
+                <div class="entry-icon">
+                    <svg viewBox="0 0 120 90" fill="none">
+                        <polyline class="stroke" points="18,80 18,30 46,10 78,18 96,42 96,80" stroke="#111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        <polyline points="18,80 96,80" stroke="#ccc" stroke-width="1.5"/>
+                        <polyline points="30,80 30,36 52,20" stroke="#bbb" stroke-width="1"/>
+                    </svg>
+                </div>
+                <div class="field">
+                    <span class="label">Index</span>
+                    <span class="value">01</span>
+                </div>
+                <div class="field">
+                    <span class="label">Title</span>
+                    <span class="value title">Alvar Aalto: Asymmetric Portal Frame</span>
+                </div>
+                <div class="field">
+                    <span class="label">Study</span>
+                    <span class="value">Axonometric wireframe computation, TIS standard sections</span>
+                </div>
+                <div class="field">
+                    <span class="label">Method</span>
+                    <span class="value">Parametric geometry — RC / steel I-beam, live section detail</span>
+                </div>
+                <div class="entry-open">Open study <span class="arrow">&rarr;</span></div>
+            </div>
+        </a>
+
+        <a class="entry" href="works/structural-system-x.html">
+            <div class="entry-inner">
+                <div class="entry-icon">
+                    <svg viewBox="0 0 120 90" fill="none">
+                        <polyline class="stroke" points="20,80 20,20 100,20 100,80" stroke="#111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        <polyline points="20,80 100,80" stroke="#ccc" stroke-width="1.5"/>
+                        <polyline points="20,80 40,20 60,80 80,20 100,80" stroke="#bbb" stroke-width="1"/>
+                    </svg>
+                </div>
+                <div class="field">
+                    <span class="label">Index</span>
+                    <span class="value">02</span>
+                </div>
+                <div class="field">
+                    <span class="label">Title</span>
+                    <span class="value title">Pascal Flammer: Interlaced Tension &amp; Compression</span>
+                </div>
+                <div class="field">
+                    <span class="label">Study</span>
+                    <span class="value">Mixed load paths — interlaced tension &amp; compression</span>
+                </div>
+                <div class="field">
+                    <span class="label">Method</span>
+                    <span class="value">Multi-floor parametric frame, auto-calculated load checks</span>
+                </div>
+                <div class="entry-open">Open study <span class="arrow">&rarr;</span></div>
+            </div>
+        </a>
+
+    </div>
+
+    <div id="image-view">
+
+        <a class="card" href="works/portal-frame-array.html">
+            <div>
+                <div class="card-idx">01 / STUDY</div>
+                <div class="card-icon">
+                    <svg viewBox="0 0 300 160" fill="none">
+                        <polyline class="stroke" points="50,140 50,60 110,20 190,36 230,80 230,140" stroke="#111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        <polyline points="50,140 230,140" stroke="#ccc" stroke-width="1.5"/>
+                        <polyline points="70,140 70,68 118,38" stroke="#bbb" stroke-width="1"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div class="card-title">Alvar Aalto: Asymmetric Portal Frame</div>
+                <div class="card-sub">Axonometric wireframe computation — TIS standard sections</div>
+            </div>
+        </a>
+
+        <a class="card" href="works/structural-system-x.html">
+            <div>
+                <div class="card-idx">02 / STUDY</div>
+                <div class="card-icon">
+                    <svg viewBox="0 0 300 160" fill="none">
+                        <polyline class="stroke" points="55,140 55,40 245,40 245,140" stroke="#111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        <polyline points="55,140 245,140" stroke="#ccc" stroke-width="1.5"/>
+                        <polyline points="55,140 102.5,40 150,140 197.5,40 245,140" stroke="#bbb" stroke-width="1"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div class="card-title">Pascal Flammer: Interlaced Tension &amp; Compression</div>
+                <div class="card-sub">Mixed load paths — interlaced tension &amp; compression</div>
+            </div>
+        </a>
+
+    </div>
+
+    <footer class="site" id="info">
+        <span>Structural Studies — Interactive Axonometric Computations</span>
+        <span>Built with HTML Canvas</span>
+    </footer>
+
+<script>
+    const btnList = document.getElementById('btn-list');
+    const btnImage = document.getElementById('btn-image');
+    const listView = document.getElementById('list-view');
+    const imageView = document.getElementById('image-view');
+
+    btnList.addEventListener('click', () => {
+        btnList.classList.add('active');
+        btnImage.classList.remove('active');
+        listView.classList.remove('hide');
+        imageView.classList.remove('show');
+    });
+    btnImage.addEventListener('click', () => {
+        btnImage.classList.add('active');
+        btnList.classList.remove('active');
+        listView.classList.add('hide');
+        imageView.classList.add('show');
+    });
+</script>
+
+</body>
+</html>

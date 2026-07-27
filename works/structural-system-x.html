@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axonometric Structural System (Mixed Load Paths)</title>
+    <style>
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            background-color: #f4f4f4; 
+            color: #111; 
+            margin: 0; 
+            padding: 40px; 
+        }
+        .header { 
+            text-align: right; 
+            max-width: 1100px; 
+            margin: 0 auto 20px auto; 
+        }
+        .header h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+        .header h2 { margin: 5px 0 0 0; font-size: 14px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
+        
+        .canvas-container { 
+            max-width: 1100px; 
+            margin: 0 auto; 
+            border-bottom: 1px dashed #aaa; 
+            padding-bottom: 15px;
+            position: relative;
+        }
+        canvas { 
+            display: block; 
+            width: 100%; 
+            background: #ffffff; 
+            border: 1px solid #eaeaea;
+        }
+
+        #status-text {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .info-text { color: #1976d2; }
+        .danger-text { color: #d32f2f; }
+
+        .controls-container { 
+            display: flex; 
+            justify-content: space-between; 
+            max-width: 1100px; 
+            margin: 25px auto 0 auto; 
+            font-size: 11px; 
+            line-height: 1.5;
+        }
+        .column { 
+            flex: 1; 
+            padding: 0 20px; 
+            border-left: 1px solid #ccc; 
+        }
+        .column:first-child { border-left: none; padding-left: 0; }
+        .column h3 { 
+            margin-top: 0; font-size: 11px; font-weight: bold; 
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; color: #333;
+        }
+        
+        .control-row { margin-bottom: 12px; }
+        label { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .val { font-family: monospace; color: #555; font-weight: bold;}
+        
+        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+        input[type="range"]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
+        }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+        select { width: 100%; padding: 4px; font-family: inherit; font-size: 11px; background: transparent; border: 1px solid #999; border-radius: 0; }
+        
+        .hidden { display: none !important; }
+        
+        .auto-calc-box {
+            background: #fdfdfd;
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+        .auto-calc-box label {
+            margin-bottom: 0;
+            color: #333;
+            font-weight: bold;
+        }
+        .auto-calc-box .val {
+            color: #111;
+            font-size: 12px;
+        }
+        .warning-box {
+            background: #ffebee;
+            border-color: #ef9a9a;
+        }
+        .warning-box label {
+            color: #c62828;
+        }
+        
+        .floor-control-group {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .portfolio-bar {
+            max-width: 1100px;
+            margin: 0 auto 34px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #111;
+        }
+        .portfolio-bar a {
+            color: #111;
+            text-decoration: none;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .portfolio-bar a:hover { color: #1976d2; }
+        .portfolio-bar .idx {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #999;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="portfolio-bar">
+        <a href="../index.html">&larr; Index</a>
+        <span class="idx">02 / STRUCTURAL STUDIES</span>
+    </div>
+
+    <div class="header">
+        <h1>Axonometric Structural System</h1>
+        <h2>Mixed Load Paths: Interlaced Tension & Compression</h2>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="simCanvas" width="1100" height="750"></canvas>
+        <div id="status-text" class="info-text">Rendering Structural System...</div>
+    </div>
+
+    <div class="controls-container">
+        <!-- Section 1: Floor Plate & Floors -->
+        <div class="column">
+            <h3>1. Floor Plate & Spacing</h3>
+            <div class="control-row">
+                <label>Number of Floors <span id="val-numFloors" class="val">3</span></label>
+                <input type="range" id="numFloors" min="1" max="6" step="1" value="3">
+            </div>
+            <div class="control-row">
+                <label>Floor Height (m) <span id="val-floorHeight" class="val">4.5 m</span></label>
+                <input type="range" id="floorHeight" min="3.0" max="6.0" step="0.5" value="4.5">
+            </div>
+            <div class="control-row">
+                <label>Plate Width (X) <span id="val-plateWidth" class="val">25.0 m</span></label>
+                <input type="range" id="plateWidth" min="10" max="50" step="1" value="25">
+            </div>
+            <div class="control-row">
+                <label>Plate Depth (Z) <span id="val-plateDepth" class="val">15.0 m</span></label>
+                <input type="range" id="plateDepth" min="10" max="50" step="1" value="15">
+            </div>
+            <div class="control-row">
+                <label>Max Column Span <span id="val-maxSpan" class="val">8.0 m</span></label>
+                <input type="range" id="maxSpan" min="4" max="15" step="1" value="8">
+            </div>
+            
+            <div class="auto-calc-box" id="slabThickBox">
+                <label>Max Slab Thickness (Center) <span id="val-slabThick" class="val">0.83 m</span></label>
+                <label style="margin-top:5px; font-weight:normal; color:#555;">Edge Slab Thickness <span id="val-edgeThick" class="val">0.20 m</span></label>
+            </div>
+            
+            <div id="clearanceWarning" class="auto-calc-box warning-box hidden">
+                <label>LOW CLEARANCE WARNING</label>
+                <p style="color:#c62828; font-size:10px; margin-top:4px; margin-bottom:0;">
+                    Usable floor clearance (<span id="val-clearance" class="val" style="color:#c62828"></span>) is below 2.5 m due to slab thickness.
+                </p>
+            </div>
+        </div>
+
+        <!-- Section 2: Concrete Core -->
+        <div class="column">
+            <h3>2. Hollow Concrete Core</h3>
+            <div class="control-row">
+                <label>Core Width (%) <span id="val-coreWidthPct" class="val">20%</span></label>
+                <input type="range" id="coreWidthPct" min="5" max="50" step="5" value="20">
+            </div>
+            <div class="control-row">
+                <label>Core Depth (%) <span id="val-coreDepthPct" class="val">20%</span></label>
+                <input type="range" id="coreDepthPct" min="5" max="50" step="5" value="20">
+            </div>
+            <br>
+            <div class="auto-calc-box" style="background: #fafafa;">
+                <label style="color:#333;">Core Wall Thickness <span class="val">0.30 m</span></label>
+                <p style="color:#777; font-size:10px; margin-top:4px; margin-bottom:0; font-weight:normal;">* Core structure is a hollow concrete tube spanning all floors.</p>
+            </div>
+        </div>
+
+        <!-- Section 3: Structural Supports (Per Floor) -->
+        <div class="column">
+            <h3>3. Perimeter Supports (Per Floor)</h3>
+            <div class="control-row">
+                <label>Corner Support Type</label>
+                <select id="cornerSupport" onchange="updateSimulation()">
+                    <option value="compression">Compression at Corners</option>
+                    <option value="tension">Tension at Corners</option>
+                </select>
+            </div>
+            <br>
+            <p style="color:#666; font-size:10px; margin-top:0;">Assign support strategies per level. Top floor tension ties directly to core.</p>
+            
+            <div id="floorSupportControls" class="floor-control-group">
+                <!-- Dynamically populated via JS -->
+            </div>
+            
+            <div id="colSizeContainer" class="auto-calc-box hidden">
+                <label>Column Section Size <span id="val-colSize" class="val">0.60 x 0.60 m</span></label>
+                <label style="margin-top:5px; font-weight:normal; color:#555;">Active Compression Columns <span id="val-colCount" class="val">0</span></label>
+            </div>
+            
+            <div id="tensionInfoContainer" class="auto-calc-box hidden" style="border-color: #666;">
+                <label style="color: #333;">Tension Mode Active</label>
+                <p style="color:#555; font-size:10px; margin-top:4px; margin-bottom:0;">Cables support floors and tie back directly to core at top level.</p>
+                <label style="margin-top:5px; font-weight:normal; color:#333;">Active Suspension Cables <span id="val-tensionCount" class="val">0</span></label>
+            </div>
+
+            <div id="failureInfoContainer" class="auto-calc-box warning-box hidden">
+                <label>STRUCTURAL FAILURE</label>
+                <p style="color:#c62828; font-size:10px; margin-top:4px; margin-bottom:0;">One or more floors lack perimeter support. The cantilever distance exceeds limits, causing severe deflection.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusText = document.getElementById('status-text');
+
+        const numFloorsSlider = document.getElementById('numFloors');
+        
+        function renderFloorControls() {
+            const numFloors = parseInt(numFloorsSlider.value);
+            const container = document.getElementById('floorSupportControls');
+            
+            let oldVals = [];
+            const existingSelects = container.querySelectorAll('select');
+            existingSelects.forEach(s => oldVals.push(s.value));
+
+            let html = '';
+            for(let i = numFloors; i >= 1; i--) {
+                let defaultVal = (i === numFloors) ? 'tension' : 'compression';
+                let val = oldVals[numFloors - i] || defaultVal; 
+                
+                html += `
+                    <div class="control-row">
+                        <label style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                            <span>Floor ${i}</span>
+                            <select id="support_f${i}" style="width:65%;" onchange="updateSimulation()">
+                                <option value="compression" ${val==='compression'?'selected':''}>Compression (Column)</option>
+                                <option value="tension" ${val==='tension'?'selected':''}>Tension (Cable)</option>
+                                <option value="none" ${val==='none'?'selected':''}>None (Cantilever)</option>
+                            </select>
+                        </label>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        numFloorsSlider.addEventListener('input', (e) => {
+            renderFloorControls();
+            updateSimulation();
+        });
+
+        const basicInputs = ['floorHeight', 'plateWidth', 'plateDepth', 'maxSpan', 'coreWidthPct', 'coreDepthPct'];
+        basicInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.addEventListener('input', updateSimulation);
+                el.addEventListener('change', updateSimulation);
+            }
+        });
+
+        renderFloorControls();
+
+        function updateSimulation() {
+            const numFloors = parseInt(document.getElementById('numFloors').value);
+            const floorHeight = parseFloat(document.getElementById('floorHeight').value);
+            const plateWidth = parseFloat(document.getElementById('plateWidth').value);
+            const plateDepth = parseFloat(document.getElementById('plateDepth').value);
+            const maxSpan = parseFloat(document.getElementById('maxSpan').value);
+            const coreWidthPct = parseFloat(document.getElementById('coreWidthPct').value);
+            const coreDepthPct = parseFloat(document.getElementById('coreDepthPct').value);
+            const cornerSupport = document.getElementById('cornerSupport').value;
+
+            let floorSupports = [];
+            for(let i=1; i<=numFloors; i++) {
+                floorSupports.push(document.getElementById(`support_f${i}`).value);
+            }
+            
+            const hasCompression = floorSupports.includes('compression');
+            const hasTension = floorSupports.includes('tension');
+            const hasNone = floorSupports.includes('none');
+
+            document.getElementById('val-numFloors').innerText = numFloors;
+            document.getElementById('val-floorHeight').innerText = floorHeight.toFixed(1) + " m";
+            document.getElementById('val-plateWidth').innerText = plateWidth.toFixed(1) + " m";
+            document.getElementById('val-plateDepth').innerText = plateDepth.toFixed(1) + " m";
+            document.getElementById('val-maxSpan').innerText = maxSpan.toFixed(1) + " m";
+            document.getElementById('val-coreWidthPct').innerText = coreWidthPct + "%";
+            document.getElementById('val-coreDepthPct').innerText = coreDepthPct + "%";
+
+            const spanCountX = Math.ceil(plateWidth / maxSpan);
+            const spanCountZ = Math.ceil(plateDepth / maxSpan);
+            
+            const compColsCount = (spanCountX + 1) * 2 + (spanCountZ - 1) * 2;
+            const tensColsCount = spanCountX * 2 + spanCountZ * 2;
+
+            const spanX = (plateWidth - (plateWidth * coreWidthPct / 100)) / 2;
+            const spanZ = (plateDepth - (plateDepth * coreDepthPct / 100)) / 2;
+            const absoluteMaxSpan = Math.max(spanX, spanZ);
+            let slabThick = Math.max(0.3, absoluteMaxSpan / 10); 
+            
+            document.getElementById('val-slabThick').innerText = slabThick.toFixed(2) + " m";
+            document.getElementById('val-edgeThick').innerText = "0.20 m";
+
+            let clearance = floorHeight - slabThick;
+            let isClearanceLow = clearance < 2.5;
+
+            if (isClearanceLow) {
+                document.getElementById('clearanceWarning').classList.remove('hidden');
+                document.getElementById('val-clearance').innerText = clearance.toFixed(2) + " m";
+                document.getElementById('slabThickBox').classList.add('warning-box');
+            } else {
+                document.getElementById('clearanceWarning').classList.add('hidden');
+                document.getElementById('slabThickBox').classList.remove('warning-box');
+            }
+
+            let isFailedGlobal = false;
+            let colDim = 0.2;
+
+            if (hasCompression) {
+                document.getElementById('colSizeContainer').classList.remove('hidden');
+                const tribAreaPerCol = (plateWidth * plateDepth) / compColsCount;
+
+                // Efficient preliminary RC column sizing:
+                // axial load = assumed floor load x tributary area x number of
+                // floors actually carried in compression (not just total floors,
+                // since tension/cantilever levels don't load this column stack).
+                const numCompFloors = floorSupports.filter(s => s === 'compression').length;
+                const floorLoadKPa = 12;        // kN/m^2, typical factored slab load (dead + live + finishes)
+                const allowStressKPa = 7000;    // kN/m^2, preliminary allowable stress for a reinforced concrete column
+                const axialLoadKN = floorLoadKPa * tribAreaPerCol * numCompFloors;
+                const requiredAreaM2 = axialLoadKN / allowStressKPa;
+
+                colDim = Math.sqrt(requiredAreaM2);
+                colDim = Math.min(1.5, Math.max(0.25, colDim));
+                colDim = Math.round(colDim / 0.05) * 0.05; // round to a buildable 50mm increment
+
+                document.getElementById('val-colSize').innerText = colDim.toFixed(2) + " x " + colDim.toFixed(2) + " m";
+                document.getElementById('val-colCount').innerText = compColsCount;
+            } else {
+                document.getElementById('colSizeContainer').classList.add('hidden');
+            }
+
+            if (hasTension) {
+                document.getElementById('tensionInfoContainer').classList.remove('hidden');
+                document.getElementById('val-tensionCount').innerText = tensColsCount;
+            } else {
+                document.getElementById('tensionInfoContainer').classList.add('hidden');
+            }
+
+            if (hasNone && absoluteMaxSpan > 5) {
+                isFailedGlobal = true;
+                document.getElementById('failureInfoContainer').classList.remove('hidden');
+                document.getElementById('slabThickBox').classList.add('warning-box');
+                statusText.innerText = "Status: STRUCTURAL FAILURE on unsupported levels.";
+                statusText.className = "danger-text";
+            } else {
+                document.getElementById('failureInfoContainer').classList.add('hidden');
+                statusText.innerText = "Status: Safe. Structural load paths successfully mapped.";
+                statusText.className = "info-text";
+            }
+
+            drawBuilding({
+                numFloors, floorHeight, plateWidth, plateDepth, coreWidthPct, coreDepthPct, 
+                floorSupports, hasCompression, hasTension, cornerSupport,
+                slabThick, colDim, spanCountX, spanCountZ, absoluteMaxSpan
+            });
+        }
+
+        const angleX = Math.PI / 6;
+        const angleZ = Math.PI / 6;
+        const edgeThick = 0.2; 
+
+        function drawBuilding(p) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let renderQueue = []; 
+
+            const coreH = p.numFloors * p.floorHeight;
+
+            // Camera fit is computed AFTER all geometry is queued (see below),
+            // from the actual rendered points, so the whole building always
+            // fits the canvas no matter how its dimensions are adjusted.
+            function rawXY(pt) {
+                const px = (pt.x - pt.z) * Math.cos(angleX);
+                const py = -pt.y + (pt.x + pt.z) * Math.sin(angleZ);
+                return { px, py };
+            }
+
+            let scale = 1, offsetX = 0, offsetY = 0;
+
+            function project(pt) {
+                const { px, py } = rawXY(pt);
+                return { x: px * scale + offsetX, y: py * scale + offsetY };
+            }
+
+            const wfFill = "rgba(255, 255, 255, 0.4)"; 
+            const wfStroke = "#222222"; 
+            const wfLineWidth = 1.2;
+
+            function addQuad(p1, p2, p3, p4, fill, stroke, lineWidth=wfLineWidth) {
+                let cx = (p1.x + p2.x + p3.x + p4.x)/4;
+                let cy = (p1.y + p2.y + p3.y + p4.y)/4;
+                let cz = (p1.z + p2.z + p3.z + p4.z)/4;
+                let depth = cx + cz + (cy * 2.5); 
+                renderQueue.push({ pts: [p1, p2, p3, p4], fill, stroke, lineWidth, depth });
+            }
+
+            function addLine(p1, p2, color, width, isArrow, isDashed=false) {
+                let cx = (p1.x + p2.x)/2, cy = (p1.y + p2.y)/2, cz = (p1.z + p2.z)/2;
+                let depth = cx + cz + (cy * 2.5) + 0.1; 
+                renderQueue.push({ p1, p2, color, width, isArrow, isDashed, depth });
+            }
+
+            function addBoxFaces(cx, cy, cz, w, h, d, fill = wfFill, stroke = wfStroke) {
+                const p1 = {x:cx-w/2, y:cy, z:cz-d/2}; const p2 = {x:cx+w/2, y:cy, z:cz-d/2};
+                const p3 = {x:cx+w/2, y:cy, z:cz+d/2}; const p4 = {x:cx-w/2, y:cy, z:cz+d/2};
+                const p5 = {x:cx-w/2, y:cy+h, z:cz-d/2}; const p6 = {x:cx+w/2, y:cy+h, z:cz-d/2};
+                const p7 = {x:cx+w/2, y:cy+h, z:cz+d/2}; const p8 = {x:cx-w/2, y:cy+h, z:cz+d/2};
+                
+                addQuad(p1, p4, p8, p5, fill, stroke); // Left
+                addQuad(p2, p3, p7, p6, fill, stroke); // Right
+                addQuad(p1, p2, p6, p5, fill, stroke); // Back
+                addQuad(p4, p3, p7, p8, fill, stroke); // Front
+                addQuad(p5, p6, p7, p8, fill, stroke); // Top
+                addQuad(p1, p2, p3, p4, fill, stroke); // Bot
+            }
+
+            // 1. Grid (Site)
+            const pw = p.plateWidth, pd = p.plateDepth;
+            const g1 = {x:-pw*0.6, y:0, z:-pd*0.6}, g2 = {x:pw*0.6, y:0, z:-pd*0.6};
+            const g3 = {x:pw*0.6, y:0, z:pd*0.6}, g4 = {x:-pw*0.6, y:0, z:pd*0.6};
+            addLine(g1, g2, "#bbb", 1, false, true); addLine(g2, g3, "#bbb", 1, false, true);
+            addLine(g3, g4, "#bbb", 1, false, true); addLine(g4, g1, "#bbb", 1, false, true);
+
+            // 2. Concrete Core Walls (Hollow)
+            const cw = p.plateWidth * (p.coreWidthPct/100);
+            const cd = p.plateDepth * (p.coreDepthPct/100);
+            const wallThick = 0.3;
+            
+            const coreFill = "rgba(255, 255, 255, 0.22)";
+            const coreStroke = "rgba(34, 34, 34, 0.55)";
+            addBoxFaces(0, 0, -cd/2 + wallThick/2, cw, coreH, wallThick, coreFill, coreStroke); // Back
+            addBoxFaces(0, 0, cd/2 - wallThick/2, cw, coreH, wallThick, coreFill, coreStroke); // Front
+            addBoxFaces(-cw/2 + wallThick/2, 0, 0, wallThick, coreH, cd - 2*wallThick, coreFill, coreStroke); // Left
+            addBoxFaces(cw/2 - wallThick/2, 0, 0, wallThick, coreH, cd - 2*wallThick, coreFill, coreStroke); // Right
+
+            // 2b. Roof hung in tension: the walls rise past the roof plate and
+            // the plate is suspended from that extra height (pulled UP against
+            // sag) rather than sitting on a horizontal tie at its own level.
+            const hasRoofTension = p.floorSupports[p.numFloors - 1] === 'tension';
+            const roofExtension = hasRoofTension ? p.floorHeight * 0.6 : 0;
+            const hangH = coreH + roofExtension;
+            if (hasRoofTension) {
+                const parapetThick = wallThick * 0.6;
+                addBoxFaces(0, coreH, -cd/2 + parapetThick/2, cw, roofExtension, parapetThick, coreFill, coreStroke);
+                addBoxFaces(0, coreH, cd/2 - parapetThick/2, cw, roofExtension, parapetThick, coreFill, coreStroke);
+                addBoxFaces(-cw/2 + parapetThick/2, coreH, 0, parapetThick, roofExtension, cd - 2*parapetThick, coreFill, coreStroke);
+                addBoxFaces(cw/2 - parapetThick/2, coreH, 0, parapetThick, roofExtension, cd - 2*parapetThick, coreFill, coreStroke);
+            }
+
+            function deflect(pt, isFailedFloor) {
+                if (!isFailedFloor) return pt;
+                let dist = 0;
+                if (pt.x > cw/2) dist = pt.x - cw/2;
+                else if (pt.x < -cw/2) dist = -cw/2 - pt.x;
+                if (pt.z > cd/2) dist = Math.max(dist, pt.z - cd/2);
+                else if (pt.z < -cd/2) dist = Math.max(dist, -cd/2 - pt.z);
+                
+                let drop = (dist * dist) * 1.5 * 0.05;
+                return {x: pt.x, y: pt.y - drop, z: pt.z};
+            }
+
+            function addTaperedFloor(y, isFailedFloor) {
+                let yo = y - edgeThick;
+                let yi = y - p.slabThick;
+                let fill = isFailedFloor ? "rgba(255, 235, 238, 0.7)" : "rgba(255, 255, 255, 0.55)"; 
+                let str = isFailedFloor ? "rgba(198,40,40,0.55)" : "rgba(17,17,17,0.25)";
+                let strW = 0.7;
+
+                let ofl = deflect({x:-pw/2, y, z:pd/2}, isFailedFloor),  ofr = deflect({x:pw/2, y, z:pd/2}, isFailedFloor);
+                let obl = deflect({x:-pw/2, y, z:-pd/2}, isFailedFloor), obr = deflect({x:pw/2, y, z:-pd/2}, isFailedFloor);
+                let ifl = {x:-cw/2, y, z:cd/2},  ifr = {x:cw/2, y, z:cd/2}, ibl = {x:-cw/2, y, z:-cd/2}, ibr = {x:cw/2, y, z:-cd/2};
+                
+                let oflb = deflect({x:-pw/2, y:yo, z:pd/2}, isFailedFloor),  ofrb = deflect({x:pw/2, y:yo, z:pd/2}, isFailedFloor);
+                let oblb = deflect({x:-pw/2, y:yo, z:-pd/2}, isFailedFloor), obrb = deflect({x:pw/2, y:yo, z:-pd/2}, isFailedFloor);
+                let iflb = {x:-cw/2, y:yi, z:cd/2},  ifrb = {x:cw/2, y:yi, z:cd/2}, iblb = {x:-cw/2, y:yi, z:-cd/2}, ibrb = {x:cw/2, y:yi, z:-cd/2};
+
+                // Front Segment
+                addQuad(ofl, ofr, ifr, ifl, fill, str, strW); addQuad(oflb, iflb, ifrb, ofrb, fill, str, strW);
+                addQuad(ofl, oflb, ofrb, ofr, fill, str, strW); addQuad(ifl, ifr, ifrb, iflb, fill, str, strW); 
+                addQuad(ofl, ifl, iflb, oflb, fill, str, strW); addQuad(ofr, ofrb, ifrb, ifr, fill, str, strW); 
+
+                // Back Segment
+                addQuad(obl, ibl, ibr, obr, fill, str, strW); addQuad(oblb, obrb, ibrb, iblb, fill, str, strW);
+                addQuad(obl, obr, obrb, oblb, fill, str, strW); addQuad(ibl, iblb, ibrb, ibr, fill, str, strW);
+                addQuad(obl, oblb, iblb, ibl, fill, str, strW); addQuad(obr, ibr, ibrb, obrb, fill, str, strW);
+
+                // Left Segment
+                addQuad(ofl, ifl, ibl, obl, fill, str, strW); addQuad(oflb, oblb, iblb, iflb, fill, str, strW);
+                addQuad(ofl, obl, oblb, oflb, fill, str, strW); addQuad(ifl, iflb, iblb, ibl, fill, str, strW);
+                
+                // Right Segment
+                addQuad(ofr, obr, ibr, ifr, fill, str, strW); addQuad(ofrb, ifrb, ibrb, obrb, fill, str, strW);
+                addQuad(ofr, ofrb, obrb, obr, fill, str, strW); addQuad(ifr, ibr, ibrb, ifrb, fill, str, strW);
+            }
+
+            // 3. Draw Floors
+            for(let i=1; i<=p.numFloors; i++) {
+                let isFailed = (p.floorSupports[i-1] === 'none' && p.absoluteMaxSpan > 5);
+                addTaperedFloor(i * p.floorHeight, isFailed);
+            }
+
+            // 4. Position Setups based on Corner Support Selection
+            let compPositions = [];
+            let tensPositions = [];
+            const stepZ = pd / p.spanCountZ;
+            const stepX = pw / p.spanCountX;
+            
+            const isCornerComp = (p.cornerSupport === 'compression');
+
+            // Collect Z edges
+            for(let i=0; i<=p.spanCountZ; i++) {
+                let z = -pd/2 + i*stepZ;
+                let pt1 = {x: -pw/2 + p.colDim/2, z};
+                let pt2 = {x: pw/2 - p.colDim/2, z};
+                
+                if(isCornerComp) {
+                    compPositions.push(pt1); compPositions.push(pt2);
+                } else {
+                    tensPositions.push(pt1); tensPositions.push(pt2);
+                }
+
+                if (i < p.spanCountZ) {
+                    let tz = z + stepZ/2;
+                    let tpt1 = {x: -pw/2, z: tz};
+                    let tpt2 = {x: pw/2, z: tz};
+                    if(isCornerComp) {
+                        tensPositions.push(tpt1); tensPositions.push(tpt2);
+                    } else {
+                        compPositions.push(tpt1); compPositions.push(tpt2);
+                    }
+                }
+            }
+
+            // Collect X edges
+            for(let i=1; i<p.spanCountX; i++) {
+                let x = -pw/2 + i*stepX;
+                let pt1 = {x, z: -pd/2 + p.colDim/2};
+                let pt2 = {x, z: pd/2 - p.colDim/2};
+                if(isCornerComp) {
+                    compPositions.push(pt1); compPositions.push(pt2);
+                } else {
+                    tensPositions.push(pt1); tensPositions.push(pt2);
+                }
+            }
+            for(let i=0; i<p.spanCountX; i++) {
+                let x = -pw/2 + i*stepX + stepX/2;
+                let tpt1 = {x, z: -pd/2};
+                let tpt2 = {x, z: pd/2};
+                if(isCornerComp) {
+                    tensPositions.push(tpt1); tensPositions.push(tpt2);
+                } else {
+                    compPositions.push(tpt1); compPositions.push(tpt2);
+                }
+            }
+
+            // 5. Render Columns (Compression)
+            if(p.hasCompression) {
+                let maxCompFloor = p.floorSupports.lastIndexOf('compression') + 1;
+                let colTopY = maxCompFloor * p.floorHeight;
+
+                compPositions.forEach(pos => {
+                    addBoxFaces(pos.x, 0, pos.z, p.colDim, colTopY, p.colDim, "rgba(255,255,255,0.7)", "#333");
+                    for(let i=1; i<=p.numFloors; i++) {
+                        if(p.floorSupports[i-1] === 'compression') {
+                            addLine({x:pos.x, y: i*p.floorHeight, z:pos.z}, {x:pos.x, y: i*p.floorHeight - p.floorHeight*0.7, z:pos.z}, "rgba(211,47,47,0.8)", 2, true);
+                        }
+                    }
+                });
+            } 
+
+            // 5b. Hidden Center Compression Pillar (Roof Tension)
+            // The long-span roof plate is mostly hung in tension, but its
+            // middle still needs a real compression prop — deliberately
+            // understated so it reads as part of the hanging system.
+            if (hasRoofTension && p.numFloors > 0) {
+                const propDim = Math.max(0.3, (p.colDim || 0.35) * 0.75);
+                const propTopY = p.numFloors * p.floorHeight;
+                const propBotY = (p.numFloors - 1) * p.floorHeight;
+                // Sit right at the plate's rim (matching the perimeter grid),
+                // not buried mid-span in the interior of the plan.
+                const spanX = (pw - cw) / 2, spanZ = (pd - cd) / 2;
+                let propPositions = [];
+                if (spanX >= spanZ) {
+                    propPositions = [{x: pw/2 - propDim/2, z: 0}, {x: -(pw/2 - propDim/2), z: 0}];
+                } else {
+                    propPositions = [{x: 0, z: pd/2 - propDim/2}, {x: 0, z: -(pd/2 - propDim/2)}];
+                }
+                propPositions.forEach(pos => {
+                    addBoxFaces(pos.x, propBotY, pos.z, propDim, propTopY - propBotY, propDim, "rgba(255,255,255,0.7)", "#333");
+                    addLine({x:pos.x, y: propTopY, z:pos.z}, {x:pos.x, y: propTopY - p.floorHeight*0.7, z:pos.z}, "rgba(211,47,47,0.8)", 2, true);
+                });
+            }
+
+            // 6. Render Cables (Tension) - TOP FLOOR HANDLED DIRECTLY TO CORE
+            if (p.hasTension) {
+                let minTensFloor = p.floorSupports.indexOf('tension') + 1;
+                let topFloorIdx = p.numFloors - 1;
+                let isTopFloorTension = (p.floorSupports[topFloorIdx] === 'tension');
+
+                tensPositions.forEach(pos => {
+                    let cableBotY = minTensFloor * p.floorHeight;
+                    let cableTopY = isTopFloorTension ? (p.numFloors - 1) * p.floorHeight : coreH;
+
+                    const cableColor = "rgba(13, 71, 161, 0.75)";
+                    if (!isTopFloorTension) {
+                        addLine({x:pos.x, y:cableBotY, z:pos.z}, {x:pos.x, y:coreH, z:pos.z}, cableColor, 1.8, false, true);
+                    } else {
+                        if (p.numFloors > 1) {
+                            addLine({x:pos.x, y:cableBotY, z:pos.z}, {x:pos.x, y: (p.numFloors-1)*p.floorHeight, z:pos.z}, cableColor, 1.8, false, true);
+                        }
+                    }
+
+                    for(let i=1; i<=p.numFloors; i++) {
+                        if(p.floorSupports[i-1] === 'tension') {
+                            if (i === p.numFloors) {
+                                let topFloorY = p.numFloors * p.floorHeight;
+                                let coreAttachX = pos.x < 0 ? -cw/2 : (pos.x > 0 ? cw/2 : 0);
+                                let coreAttachZ = pos.z < 0 ? -cd/2 : (pos.z > 0 ? cd/2 : 0);
+
+                                addLine({x:pos.x, y:topFloorY, z:pos.z}, {x:coreAttachX, y:hangH, z:coreAttachZ}, "rgba(230,81,0,0.9)", 2.5, true);
+                            } else {
+                                addLine({x:pos.x, y: (i-1)*p.floorHeight, z:pos.z}, {x:pos.x, y: i*p.floorHeight, z:pos.z}, "rgba(25,118,210,0.8)", 2, true);
+                            }
+                        }
+                    }
+
+                    // When the top floor uses tension, also show a suspension
+                    // arrow standing on the floor directly below it, since the
+                    // load path continues down through that level too.
+                    if (isTopFloorTension && p.numFloors > 1) {
+                        let belowIdx = p.numFloors - 1;
+                        if (p.floorSupports[belowIdx - 1] !== 'tension') {
+                            addLine({x:pos.x, y:(belowIdx-1)*p.floorHeight, z:pos.z}, {x:pos.x, y: belowIdx*p.floorHeight, z:pos.z}, "rgba(25,118,210,0.8)", 2, true);
+                        }
+                    }
+
+                    if (!isTopFloorTension) {
+                        let cx = pos.x < 0 ? -cw/2 : (pos.x > 0 ? cw/2 : 0);
+                        let cz = pos.z < 0 ? -cd/2 : (pos.z > 0 ? cd/2 : 0);
+                        addLine({x:pos.x, y:coreH, z:pos.z}, {x:cx, y:coreH, z:cz}, "rgba(230,81,0, 0.9)", 2.5, true);
+                    }
+                });
+            }
+
+            // Fit Camera to Actual Geometry (always shows the whole building)
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            renderQueue.forEach(item => {
+                const pts = item.pts ? item.pts : [item.p1, item.p2];
+                pts.forEach(pt => {
+                    const { px, py } = rawXY(pt);
+                    if (px < minX) minX = px; if (px > maxX) maxX = px;
+                    if (py < minY) minY = py; if (py > maxY) maxY = py;
+                });
+            });
+
+            const marginPx = 80;
+            const spanX = maxX - minX, spanY = maxY - minY;
+            // A single uniform scale (never separate X/Y factors) is what keeps
+            // the axonometric angles and proportions correct while fitting.
+            scale = (isFinite(spanX) && isFinite(spanY) && spanX > 0 && spanY > 0)
+                ? Math.min(
+                    (canvas.width - marginPx * 2) / spanX,
+                    (canvas.height - marginPx * 2) / spanY
+                  )
+                : 1;
+            offsetX = canvas.width / 2 - ((minX + maxX) / 2) * scale;
+            offsetY = canvas.height / 2 - ((minY + maxY) / 2) * scale;
+
+            // Execute Render Queue (Sort & Draw)
+            renderQueue.sort((a, b) => a.depth - b.depth);
+
+            renderQueue.forEach(item => {
+                if(item.pts) {
+                    ctx.beginPath();
+                    let start = project(item.pts[0]);
+                    ctx.moveTo(start.x, start.y);
+                    for(let i=1; i<item.pts.length; i++) {
+                        let pt = project(item.pts[i]);
+                        ctx.lineTo(pt.x, pt.y);
+                    }
+                    ctx.closePath();
+                    ctx.fillStyle = item.fill; ctx.fill();
+                    if(item.stroke) {
+                        ctx.strokeStyle = item.stroke; ctx.lineWidth = item.lineWidth; ctx.stroke();
+                    }
+                } else if(item.p1 && item.p2) {
+                    let pt1 = project(item.p1); let pt2 = project(item.p2);
+                    ctx.beginPath(); ctx.moveTo(pt1.x, pt1.y); ctx.lineTo(pt2.x, pt2.y);
+                    ctx.strokeStyle = item.color; ctx.lineWidth = item.width;
+                    if(item.isDashed) ctx.setLineDash([4,4]);
+                    ctx.stroke(); ctx.setLineDash([]);
+                    
+                    if(item.isArrow) {
+                        const dx = pt2.x - pt1.x; const dy = pt2.y - pt1.y;
+                        const angle = Math.atan2(dy, dx);
+                        const headlen = 10;
+                        ctx.beginPath();
+                        ctx.moveTo(pt2.x, pt2.y);
+                        ctx.lineTo(pt2.x - headlen * Math.cos(angle - Math.PI / 6), pt2.y - headlen * Math.sin(angle - Math.PI / 6));
+                        ctx.moveTo(pt2.x, pt2.y);
+                        ctx.lineTo(pt2.x - headlen * Math.cos(angle + Math.PI / 6), pt2.y - headlen * Math.sin(angle + Math.PI / 6));
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
