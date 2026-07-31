@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christian Kerez: Structural Wall and Floor Plan</title>
+    <style>
+        * {
+            font-family: Helvetica, Arial, sans-serif !important;
+        }
+
+        body { 
+            background-color: #f4f5f5; 
+            color: #111; 
+            margin: 0; 
+            padding: 40px; 
+        }
+        
+        .header { 
+            text-align: right; 
+            max-width: 1200px; 
+            margin: 0 auto 30px auto; 
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 20px; 
+            font-weight: bold; 
+            letter-spacing: 0.5px; 
+        }
+        .header h2 { 
+            margin: 5px 0 0 0; 
+            font-size: 12px; 
+            font-weight: normal; 
+            color: #666; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .main-view-panel {
+            background: transparent;
+            border: none;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; 
+        }
+
+        .canvases-wrapper {
+            display: flex;
+            gap: 15px; 
+        }
+
+        .canvas-3d-wrapper {
+            flex: 2.5;
+            position: relative;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            overflow: hidden;
+        }
+        #simContainer {
+            display: block;
+            width: 100%;
+            height: 500px;
+            background: transparent;
+            cursor: grab;
+            position: relative;
+            overflow: hidden;
+        }
+        #simContainer:active {
+            cursor: grabbing;
+        }
+        #sim-hint {
+            position: absolute;
+            bottom: 8px;
+            right: 10px;
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #aaa;
+            pointer-events: none;
+        }
+
+        .canvas-2d-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            min-width: 300px;
+            padding: 15px;
+        }
+        .editor-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .editor-header h3 {
+            margin: 0; 
+            font-size: 11px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            color: #333;
+            letter-spacing: 0.5px;
+        }
+        canvas#editorCanvas {
+            display: block;
+            width: 100%;
+            height: 350px;
+            background: #fff;
+            border: 1px solid #eee;
+            cursor: crosshair;
+            margin-bottom: 10px;
+        }
+
+        .btn-group { display: flex; gap: 5px; margin-top: auto; }
+        select { 
+            width: auto; padding: 4px 6px; font-size: 10px; 
+            background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 0;
+        }
+        select.wide { width: 100%; margin-top: 5px; }
+
+        button.action-btn {
+            flex: 1; padding: 8px; background: transparent; color: #111; border: 1px solid #ccc;
+            font-size: 9px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s;
+        }
+        button.action-btn:hover { background: #f4f4f4; border-color: #999;}
+        button.primary-btn { border-color: #111; margin-top: 5px; width: 100%; }
+        button.primary-btn:hover { background: #111; color: #fff; }
+
+        #status-bar {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            padding: 15px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        hr.dashed {
+            border: 0;
+            border-top: 1px dashed #ccc;
+            margin: 30px 0;
+        }
+
+        .controls-grid { 
+            display: flex; 
+            gap: 40px;
+        }
+        .column { flex: 1; }
+        .column h3 { 
+            margin-top: 0; font-size: 11px; font-weight: bold; 
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; color: #111;
+        }
+        
+        .control-row { margin-bottom: 18px; font-size: 11px; }
+        label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #333; }
+        .val { font-size: 10px; color: #555; }
+        
+        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
+        }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+        
+        .info-box {
+            margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee;
+            color: #666; font-size: 10px; line-height: 1.6;
+        }
+
+        .portfolio-bar {
+            max-width: 1100px;
+            margin: 0 auto 34px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #111;
+        }
+        .portfolio-bar a {
+            color: #111;
+            text-decoration: none;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .portfolio-bar a:hover { color: #d32f2f; }
+        .portfolio-bar .idx {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            color: #999;
+            letter-spacing: 1px;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="portfolio-bar">
+        <a href="../index.html">&larr; Index</a>
+        <span class="idx">03 / STRUCTURAL STUDIES</span>
+    </div>
+
+    <div class="header">
+        <h1>STRUCTURAL WALL GENERATION</h1>
+        <h2>Axonometric Wireframe & Floor Plan Editor (RC Standard)</h2>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="main-view-panel">
+            <div class="canvases-wrapper">
+                <div class="canvas-3d-wrapper">
+                    <div id="simContainer"></div>
+                    <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
+                </div>
+                <div class="canvas-2d-wrapper">
+                    <div class="editor-header">
+                        <h3>2D Geometry Editor</h3>
+                        <select id="floorIndex"></select>
+                    </div>
+                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag nodes to shape Floor Plate & Wall.</p>
+                    <canvas id="editorCanvas"></canvas>
+                    
+                    <div class="btn-group">
+                        <button class="action-btn" onclick="addWallNode()">+ Add Node</button>
+                        <button class="action-btn" onclick="removeWallNode()">- Remove Node</button>
+                    </div>
+                    <button class="action-btn primary-btn" onclick="optimizeWalls()">Auto-Optimize Wall</button>
+                </div>
+            </div>
+            <div id="status-bar">CONDITION: SAFE - STRUCTURAL CRITERIA VERIFIED</div>
+        </div>
+
+        <hr class="dashed">
+
+        <div class="controls-grid">
+            <div class="column">
+                <h3>Architecture & Massing</h3>
+                <div class="control-row">
+                    <label>Number of Floors <span id="val-floors" class="val">3</span></label>
+                    <input type="range" id="floors" min="2" max="8" step="1" value="3">
+                </div>
+                <div class="control-row">
+                    <label>Floor-to-Floor Height (H) <span id="val-floorH" class="val">3.00 m</span></label>
+                    <input type="range" id="floorH" min="2.5" max="5.0" step="0.1" value="3.0">
+                </div>
+                <div class="info-box">
+                    <b>2D Editor Legend:</b><br>
+                    <div style="margin-top: 4px;">
+                        <span style="display:inline-block; width:4px; height:4px; border:1px solid #111; border-radius:50%; margin-right:5px; background:#fff; vertical-align:middle;"></span> Floor Edge Node (Black)<br>
+                        <span style="display:inline-block; width:5px; height:5px; background:#007BFF; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Current Floor Wall Node (Blue)<br>
+                        <span style="display:inline-block; width:4px; height:4px; background:#888; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Other Floors Wall Nodes (Faint Gray)<br>
+                        <span style="display:inline-block; width:10px; height:1px; background:rgba(180, 180, 180, 0.6); margin-right:5px; vertical-align:middle;"></span> Other Floors Wireframe<br>
+                        <span style="display:inline-block; width:8px; height:8px; border:1px dashed #007BFF; border-radius:50%; margin-right:5px; vertical-align:middle; background:rgba(0, 123, 255, 0.08);"></span> Safe Cantilever Radius (Clear Span Limit)
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <h3>RC Structure Parameters</h3>
+                <div class="control-row">
+                    <label>Wall Thickness (T_c) <span id="val-coreT" class="val">0.20 m</span></label>
+                    <input type="range" id="coreT" min="0.2" max="1.5" step="0.1" value="0.2">
+                </div>
+                <div class="control-row">
+                    <label style="margin-bottom: 2px;">Usage / Live Load</label>
+                    <select id="liveLoad" class="wide">
+                        <option value="1.5">Residential (1.5 kN/m²)</option>
+                        <option value="3.0" selected>Office / Museum (3.0 kN/m²)</option>
+                        <option value="5.0">Public Assembly (5.0 kN/m²)</option>
+                    </select>
+                </div>
+                <div class="info-box">
+                    <b>Auto Target Wall Span:</b> <span id="val-autoSpan" class="val" style="color:#007BFF; font-weight:bold;">3.00 m</span><br>
+                    Auto-mapped from Live Load & slenderness ratio (H/T_c). Shorter spans increase fold stiffness for taller or heavier buildings.<br><br>
+                    <b>Slab Thickness (T_s):</b> <span id="val-slabT" class="val" style="color:#007BFF; font-weight:bold;">0.30 m</span><br>
+                    Auto-calculated based on maximum cantilever span and selected live load.
+                </div>
+            </div>
+            
+            <div class="column">
+                <h3>Safety Criteria</h3>
+                <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
+                    <b>1. Structural Overlap (Punching Shear Risk):</b><br>
+                    Overlapping core areas (solid blue in 3D) are evaluated for load distribution. A minimum of 3 distinct support points or adequate footprint spread is required between floors.<br><br>
+                    <b>2. Cantilever Span Limit:</b><br>
+                    The distance from the central structural wall to the furthest floor plate edge must not exceed the RC bending capacity calculated from the slab thickness.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let numFloors = 3;
+        let floorData = [];
+
+        const editCanvas = document.getElementById('editorCanvas');
+        const editCtx = editCanvas.getContext('2d');
+
+        // --- Helper: Auto-map Target Wall Segment Span based on Live Load AND Slenderness Ratio (H / T_c) ---
+        function getAutoTargetSpan(liveLoadVal, floorH = 3.0, coreT = 0.20) {
+            let baseSpan = 3.0;
+            if (liveLoadVal <= 1.5) baseSpan = 3.8;
+            else if (liveLoadVal <= 3.0) baseSpan = 3.0;
+            else baseSpan = 2.2;
+            
+            const slendernessRatio = Math.max(floorH / Math.max(coreT, 0.05), 1.0);
+            const slendernessFactor = Math.pow(15.0 / slendernessRatio, 0.35);
+            
+            const autoSpan = baseSpan * slendernessFactor;
+            return Math.max(1.50, Math.min(5.50, autoSpan));
+        }
+
+        function ensureCanvasSize(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const w = Math.floor(rect.width);
+            const h = Math.floor(rect.height);
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+                return true;
+            }
+            return false;
+        }
+
+        window.addEventListener('resize', () => {
+            if(ensureCanvasSize(editCanvas)) {
+                drawEditor();
+            }
+        });
+
+        const EDIT_SCALE = 11; 
+
+        // --- DYNAMIC 2D CENTERING: Automatically keep floor centered without feedback loops during dragging ---
+        let cachedCenterOffset = null;
+        function updateEditCenterOffset(idx) {
+            if (dragType !== null && cachedCenterOffset !== null) return;
+            const data = floorData[idx];
+            if (!data || !data.vertices) return;
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            data.vertices.forEach(v => {
+                minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x);
+                minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z);
+            });
+            const midX = (minX + maxX) / 2;
+            const midZ = (minZ + maxZ) / 2;
+            cachedCenterOffset = {
+                cx: editCanvas.width / 2 - midX * EDIT_SCALE,
+                cz: editCanvas.height / 2 - midZ * EDIT_SCALE
+            };
+        }
+
+        function getEditCX() { return cachedCenterOffset ? cachedCenterOffset.cx : editCanvas.width / 2; }
+        function getEditCZ() { return cachedCenterOffset ? cachedCenterOffset.cz : 35; }
+
+        function toPx(x, z) { return { px: getEditCX() + x * EDIT_SCALE, pz: getEditCZ() + z * EDIT_SCALE }; }
+        function fromPx(px, pz) { return { x: (px - getEditCX()) / EDIT_SCALE, z: (pz - getEditCZ()) / EDIT_SCALE }; }
+
+        let dragType = null; 
+        let dragIdx = null;
+
+        // --- Structural rules for the blue Wall Node (core) polyline ---
+        const WALL_MIN_SEG_FACTOR = 3;      
+        const WALL_MIN_ANGLE_DEG = 45;
+        const WALL_MIN_LENGTH_RATIO = 0.5;
+        const WALL_MIN_AMP_RATIO = 0.15;
+        const WALL_MAX_AMP_RATIO = 0.6;
+        const WALL_TARGET_ANGLE_DEG = 80;
+
+        function distXZ(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
+
+        function angleAtNode(prev, node, next) {
+            const v1x = prev.x - node.x, v1z = prev.z - node.z;
+            const v2x = next.x - node.x, v2z = next.z - node.z;
+            const l1 = Math.hypot(v1x, v1z), l2 = Math.hypot(v2x, v2z);
+            if (l1 < 1e-6 || l2 < 1e-6) return 180;
+            const cos = (v1x * v2x + v1z * v2z) / (l1 * l2);
+            return Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI;
+        }
+
+        function isWallNodeMoveValid(nodes, idx, candidate, coreT) {
+            const minSeg = WALL_MIN_SEG_FACTOR * coreT;
+            const testNodes = nodes.map((n, i) => i === idx ? candidate : n);
+            if (idx > 0 && distXZ(testNodes[idx - 1], testNodes[idx]) < minSeg) return false;
+            if (idx < testNodes.length - 1 && distXZ(testNodes[idx], testNodes[idx + 1]) < minSeg) return false;
+            for (let i = Math.max(1, idx - 1); i <= Math.min(testNodes.length - 2, idx + 1); i++) {
+                if (angleAtNode(testNodes[i - 1], testNodes[i], testNodes[i + 1]) < WALL_MIN_ANGLE_DEG) return false;
+            }
+            return true;
+        }
+
+        function getFloorBoundsXZ(vertices) {
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, cx = 0, cz = 0;
+            vertices.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+                cx += p.x; cz += p.z;
+            });
+            cx /= vertices.length; cz /= vertices.length;
+            return { minX, maxX, minZ, maxZ, cx, cz, width: maxX - minX, length: maxZ - minZ };
+        }
+
+        function computeZigzagNodeCount(pathLength, targetSpan) {
+            const segments = Math.round(pathLength / Math.max(targetSpan, 0.1));
+            return Math.min(10, Math.max(3, segments + 1));
+        }
+
+        function buildZigzagCandidate(bounds, baselineX, sign, nodeCount, spanRatio, ampRatio) {
+            const halfWidth = bounds.width / 2;
+            const halfSpan = bounds.length * spanRatio / 2;
+            const amp = Math.max(WALL_MIN_AMP_RATIO, Math.min(ampRatio, WALL_MAX_AMP_RATIO)) * halfWidth;
+            const nodes = [];
+            for (let i = 0; i < nodeCount; i++) {
+                const t = i / (nodeCount - 1);
+                const z = bounds.cz - halfSpan + t * (2 * halfSpan);
+                let x = baselineX;
+                if (i > 0 && i < nodeCount - 1) {
+                    const nodeSign = (i % 2 === 1) ? sign : -sign;
+                    x = baselineX + nodeSign * amp;
+                }
+                nodes.push({ x, z });
+            }
+            return nodes;
+        }
+
+        function isZigzagValid(nodes, coreT) {
+            for (let i = 0; i < nodes.length - 1; i++) {
+                if (distXZ(nodes[i], nodes[i + 1]) < WALL_MIN_SEG_FACTOR * coreT) return false;
+            }
+            for (let i = 1; i < nodes.length - 1; i++) {
+                if (angleAtNode(nodes[i - 1], nodes[i], nodes[i + 1]) < WALL_MIN_ANGLE_DEG) return false;
+            }
+            return true;
+        }
+
+        function zigzagAngleScore(nodes) {
+            if (nodes.length < 3) return 0;
+            let sumDiff = 0, count = 0;
+            for (let i = 1; i < nodes.length - 1; i++) {
+                sumDiff += Math.abs(angleAtNode(nodes[i - 1], nodes[i], nodes[i + 1]) - WALL_TARGET_ANGLE_DEG);
+                count++;
+            }
+            return sumDiff / count;
+        }
+
+        function evaluateCandidateScore(candidate, idx, coreT, floorPts, belowWallNodes, targetSpan, nodeCount) {
+            const angleScore = zigzagAngleScore(candidate);
+            const normAngleTerm = (angleScore / 80.0) * 10.0;
+
+            let maxCantilever = 0;
+            floorPts.forEach(pt => {
+                let minDist = Infinity;
+                for (let j = 0; j < candidate.length - 1; j++) {
+                    minDist = Math.min(minDist, pointToSegmentDistance(pt, candidate[j], candidate[j + 1]));
+                }
+                const clearSpan = Math.max(0, minDist - coreT / 2);
+                maxCantilever = Math.max(maxCantilever, clearSpan);
+            });
+            const cantileverTerm = maxCantilever * 5.0;
+
+            let maxSegLen = 0;
+            for (let j = 0; j < candidate.length - 1; j++) {
+                maxSegLen = Math.max(maxSegLen, distXZ(candidate[j], candidate[j + 1]));
+            }
+            const spanPenalty = Math.max(0, maxSegLen - targetSpan) * 15.0;
+            const nodePenalty = Math.max(0, nodeCount - 3) * 6.0;
+
+            let overlapPenalty = 0;
+            if (idx > 0 && belowWallNodes && belowWallNodes.length > 1) {
+                const qA = generateWallQuads(candidate, coreT);
+                const qB = generateWallQuads(belowWallNodes, coreT);
+                let overlaps = [];
+                for (let a of qA) {
+                    for (let b of qB) {
+                        let overPoly = clipPolygon(a, b);
+                        if (overPoly.length > 2 && polygonArea(overPoly) > 0.05) {
+                            overlaps.push(overPoly);
+                        }
+                    }
+                }
+                
+                let clusters = [];
+                for (let op of overlaps) {
+                    let c = getCentroid(op);
+                    let area = polygonArea(op);
+                    let found = false;
+                    for (let cl of clusters) {
+                        if (Math.hypot(cl.c.x - c.x, cl.c.z - c.z) < coreT * 2) {
+                            cl.area += area;
+                            cl.c.x = (cl.c.x + c.x) / 2; cl.c.z = (cl.c.z + c.z) / 2;
+                            found = true; break;
+                        }
+                    }
+                    if (!found) clusters.push({ c: c, area: area });
+                }
+
+                let isStable = false;
+                if (clusters.length >= 3) {
+                    let min_x = Infinity, max_x = -Infinity, min_z = Infinity, max_z = -Infinity;
+                    overlaps.forEach(op => op.forEach(p => {
+                        min_x = Math.min(min_x, p.x); max_x = Math.max(max_x, p.x);
+                        min_z = Math.min(min_z, p.z); max_z = Math.max(max_z, p.z);
+                    }));
+                    let spread = Math.hypot(max_x - min_x, max_z - min_z);
+                    if (spread >= coreT * 3) isStable = true;
+                }
+
+                if (!isStable) {
+                    overlapPenalty = 50.0;
+                }
+            }
+
+            return normAngleTerm + cantileverTerm + spanPenalty + nodePenalty + overlapPenalty;
+        }
+
+        const DEFAULT_TARGET_SPAN = 3.0;
+        for (let i = 0; i < 8; i++) {
+            let w1 = 3.0 + (i % 3) * 0.3, w2 = 3.6 - (i % 2) * 0.3;
+            let zBase = i * 0.8;
+            const vertices = [
+                {x: -w1, z: zBase},
+                {x: w2, z: zBase},
+                {x: w2 + 0.6, z: zBase + 7},
+                {x: 2.5, z: zBase + 14},
+                {x: -2.5, z: zBase + 14},
+                {x: -w1 - 0.6, z: zBase + 7}
+            ];
+            const bounds = getFloorBoundsXZ(vertices);
+            const sign = (i % 2 === 0) ? 1 : -1;
+            const wallNodes = buildZigzagCandidate(bounds, bounds.cx, sign, 3, 0.7, 0.3);
+            floorData.push({ vertices, wallNodes });
+        }
+
+        editCanvas.addEventListener('mousedown', e => {
+            const rect = editCanvas.getBoundingClientRect();
+            const scaleX = editCanvas.width / rect.width;
+            const scaleY = editCanvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const mz = (e.clientY - rect.top) * scaleY;
+            
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const data = floorData[idx];
+            
+            for(let i=0; i<data.wallNodes.length; i++) {
+                let p = toPx(data.wallNodes[i].x, data.wallNodes[i].z);
+                if(Math.hypot(p.px - mx, p.pz - mz) < 12) {
+                    dragType = 'wall'; dragIdx = i; return;
+                }
+            }
+            for(let i=0; i<data.vertices.length; i++) {
+                let p = toPx(data.vertices[i].x, data.vertices[i].z);
+                if(Math.hypot(p.px - mx, p.pz - mz) < 12) {
+                    dragType = 'vertex'; dragIdx = i; return;
+                }
+            }
+        });
+
+        editCanvas.addEventListener('mousemove', e => {
+            if(dragType === null) return;
+            const rect = editCanvas.getBoundingClientRect();
+            const scaleX = editCanvas.width / rect.width;
+            const scaleY = editCanvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const mz = (e.clientY - rect.top) * scaleY;
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            
+            let newPt = fromPx(mx, mz);
+            
+            if (dragType === 'wall') {
+                const nodes = floorData[idx].wallNodes;
+                const bounds = getFloorBoundsXZ(floorData[idx].vertices);
+                const coreT = parseFloat(document.getElementById('coreT').value);
+
+                const halfWidth = bounds.width / 2;
+                let offsetX = newPt.x - bounds.cx;
+                const maxAmp = WALL_MAX_AMP_RATIO * halfWidth;
+                offsetX = Math.max(-maxAmp, Math.min(maxAmp, offsetX));
+                const candidate = { x: bounds.cx + offsetX, z: newPt.z };
+
+                if (isWallNodeMoveValid(nodes, dragIdx, candidate, coreT)) {
+                    nodes[dragIdx].x = candidate.x;
+                    nodes[dragIdx].z = candidate.z;
+                }
+            } else if (dragType === 'vertex') {
+                floorData[idx].vertices[dragIdx].x = newPt.x;
+                floorData[idx].vertices[dragIdx].z = newPt.z;
+            }
+            
+            drawEditor();
+            updateSim();
+        });
+
+        editCanvas.addEventListener('mouseup', () => { dragType = null; dragIdx = null; });
+        editCanvas.addEventListener('mouseleave', () => { dragType = null; dragIdx = null; });
+
+        function drawEditor() {
+            ensureCanvasSize(editCanvas);
+            editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+            const idx = parseInt(document.getElementById('floorIndex').value) || 0;
+            
+            updateEditCenterOffset(idx);
+            const data = floorData[idx];
+
+            editCtx.strokeStyle = "#f8f8f8"; editCtx.lineWidth = 1;
+            for(let i=0; i<editCanvas.width; i+=EDIT_SCALE*2) {
+                editCtx.beginPath(); editCtx.moveTo(i, 0); editCtx.lineTo(i, editCanvas.height); editCtx.stroke();
+            }
+            for(let i=0; i<editCanvas.height; i+=EDIT_SCALE*2) {
+                editCtx.beginPath(); editCtx.moveTo(0, i); editCtx.lineTo(editCanvas.width, i); editCtx.stroke();
+            }
+
+            for (let i = 0; i < numFloors; i++) {
+                if (i === idx) continue;
+
+                const d = floorData[i];
+                editCtx.beginPath();
+                let p0 = toPx(d.vertices[0].x, d.vertices[0].z);
+                editCtx.moveTo(p0.px, p0.pz);
+                for(let j=1; j<d.vertices.length; j++) {
+                    let p = toPx(d.vertices[j].x, d.vertices[j].z);
+                    editCtx.lineTo(p.px, p.pz);
+                }
+                editCtx.closePath();
+                editCtx.strokeStyle = "rgba(180, 180, 180, 0.35)"; 
+                editCtx.lineWidth = 1;
+                editCtx.stroke();
+
+                const wn = d.wallNodes;
+                editCtx.beginPath();
+                let wp0 = toPx(wn[0].x, wn[0].z);
+                editCtx.moveTo(wp0.px, wp0.pz);
+                for(let j=1; j<wn.length; j++) {
+                    let p = toPx(wn[j].x, wn[j].z);
+                    editCtx.lineTo(p.px, p.pz);
+                }
+                editCtx.strokeStyle = "rgba(160, 160, 160, 0.5)"; 
+                editCtx.lineWidth = 1.8;
+                editCtx.stroke();
+                
+                editCtx.fillStyle = "rgba(130, 130, 130, 0.7)";
+                for(let j=0; j<wn.length; j++) {
+                    let p = toPx(wn[j].x, wn[j].z);
+                    editCtx.beginPath();
+                    editCtx.arc(p.px, p.pz, 2, 0, Math.PI * 2);
+                    editCtx.fill();
+                }
+
+                editCtx.fillStyle = "rgba(150, 150, 150, 0.8)";
+                editCtx.font = "9px Helvetica";
+                editCtx.fillText("F" + (i+1), p0.px + 5, p0.pz - 5);
+            }
+
+            const pts = data.vertices;
+
+            const floorHForGuide = parseFloat(document.getElementById('floorH').value);
+            const coreTForGuide = parseFloat(document.getElementById('coreT').value);
+            const liveLoadForGuide = parseFloat(document.getElementById('liveLoad').value);
+            
+            const slendernessRatio = Math.max(floorHForGuide / Math.max(coreTForGuide, 0.05), 1.0);
+            const slendernessFactor = Math.pow(15.0 / slendernessRatio, 0.25);
+            const cantileverLdRatioForGuide = 12 - liveLoadForGuide * 1.0;
+            const maxEfficientCantilever = ((1.0 * cantileverLdRatioForGuide) + coreTForGuide / 2) * slendernessFactor;
+            const guideRadiusPx = maxEfficientCantilever * EDIT_SCALE;
+
+            editCtx.fillStyle = "rgba(0, 123, 255, 0.04)";
+            editCtx.strokeStyle = "rgba(0, 123, 255, 0.18)";
+            editCtx.lineWidth = 1;
+            data.wallNodes.forEach(n => {
+                const p = toPx(n.x, n.z);
+                editCtx.beginPath(); editCtx.arc(p.px, p.pz, guideRadiusPx, 0, Math.PI * 2);
+                editCtx.fill(); editCtx.stroke();
+            });
+
+            editCtx.beginPath();
+            let p0 = toPx(pts[0].x, pts[0].z);
+            editCtx.moveTo(p0.px, p0.pz);
+            for(let i=1; i<pts.length; i++) {
+                let p = toPx(pts[i].x, pts[i].z);
+                editCtx.lineTo(p.px, p.pz);
+            }
+            editCtx.closePath();
+            editCtx.fillStyle = "rgba(0,0,0,0.02)"; editCtx.fill();
+            editCtx.strokeStyle = "#111"; 
+            editCtx.lineWidth = 1.5; editCtx.stroke();
+
+            editCtx.fillStyle = "#fff"; editCtx.lineWidth = 1.5;
+            for(let i=0; i<pts.length; i++) {
+                let p = toPx(pts[i].x, pts[i].z);
+                editCtx.beginPath(); editCtx.arc(p.px, p.pz, 2, 0, Math.PI*2);
+                editCtx.fill(); editCtx.stroke();
+            }
+
+            const wn = data.wallNodes;
+            editCtx.beginPath();
+            let w0 = toPx(wn[0].x, wn[0].z);
+            editCtx.moveTo(w0.px, w0.pz);
+            for(let i=1; i<wn.length; i++) {
+                let p = toPx(wn[i].x, wn[i].z);
+                editCtx.lineTo(p.px, p.pz);
+            }
+            editCtx.strokeStyle = "#007BFF"; 
+            editCtx.lineWidth = 2.5; editCtx.stroke();
+
+            editCtx.fillStyle = "#007BFF";
+            for(let i=0; i<wn.length; i++) {
+                let p = toPx(wn[i].x, wn[i].z);
+                editCtx.beginPath(); editCtx.arc(p.px, p.pz, 2.5, 0, Math.PI*2); editCtx.fill();
+            }
+        }
+
+        function addWallNode() {
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const nodes = floorData[idx].wallNodes;
+            let maxLen = 0, targetIdx = 0;
+            for(let i=0; i<nodes.length-1; i++) {
+                let l = Math.hypot(nodes[i+1].x - nodes[i].x, nodes[i+1].z - nodes[i].z);
+                if(l > maxLen) { maxLen = l; targetIdx = i; }
+            }
+            let midPt = {
+                x: (nodes[targetIdx].x + nodes[targetIdx+1].x)/2,
+                z: (nodes[targetIdx].z + nodes[targetIdx+1].z)/2
+            };
+            nodes.splice(targetIdx+1, 0, midPt);
+            cachedCenterOffset = null;
+            drawEditor(); updateSim();
+        }
+
+        function removeWallNode() {
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const nodes = floorData[idx].wallNodes;
+            if(nodes.length > 2) {
+                nodes.splice(Math.floor(nodes.length/2), 1);
+                cachedCenterOffset = null;
+                drawEditor(); updateSim();
+            }
+        }
+
+        function optimizeWalls() {
+            const idx = parseInt(document.getElementById('floorIndex').value);
+            const floorH = parseFloat(document.getElementById('floorH').value);
+            const coreT = parseFloat(document.getElementById('coreT').value);
+            const liveLoad = parseFloat(document.getElementById('liveLoad').value);
+            
+            const targetSpan = getAutoTargetSpan(liveLoad, floorH, coreT);
+            const bounds = getFloorBoundsXZ(floorData[idx].vertices);
+            const floorPts = floorData[idx].vertices;
+
+            const floorCentroid = getCentroid(floorPts);
+            const baselineX = floorCentroid.x;
+            const sign = (idx % 2 === 0) ? 1 : -1;
+
+            const belowWallNodes = (idx > 0) ? floorData[idx - 1].wallNodes : null;
+
+            const spanRatios = [0.80, 0.70, 0.60, 0.50];
+            const ampRatios = [0.40, 0.35, 0.30, 0.25, 0.20, 0.15];
+
+            function searchBestFoldForNodeCount(targetNodeCount, requireStrictSafety) {
+                let bestCand = null;
+                let bestScore = Infinity;
+                const cantileverLimit = (12 - liveLoad * 1.0) * 1.0;
+
+                for (const spanRatio of spanRatios) {
+                    for (const ampRatio of ampRatios) {
+                        const candidate = buildZigzagCandidate(bounds, baselineX, sign, targetNodeCount, spanRatio, ampRatio);
+                        if (!isZigzagValid(candidate, coreT)) continue;
+
+                        let isStrictlySafe = true;
+
+                        let maxCantilever = 0;
+                        floorPts.forEach(pt => {
+                            let minDist = Infinity;
+                            for (let j = 0; j < candidate.length - 1; j++) {
+                                minDist = Math.min(minDist, pointToSegmentDistance(pt, candidate[j], candidate[j + 1]));
+                            }
+                            const clearSpan = Math.max(0, minDist - coreT / 2);
+                            maxCantilever = Math.max(maxCantilever, clearSpan);
+                        });
+                        if (maxCantilever > cantileverLimit) isStrictlySafe = false;
+
+                        if (idx > 0 && belowWallNodes && belowWallNodes.length > 1) {
+                            const qA = generateWallQuads(candidate, coreT);
+                            const qB = generateWallQuads(belowWallNodes, coreT);
+                            let overlaps = [];
+                            for (let a of qA) {
+                                for (let b of qB) {
+                                    let overPoly = clipPolygon(a, b);
+                                    if (overPoly.length > 2 && polygonArea(overPoly) > 0.05) {
+                                        overlaps.push(overPoly);
+                                    }
+                                }
+                            }
+                            let clusters = [];
+                            for (let op of overlaps) {
+                                let c = getCentroid(op);
+                                let area = polygonArea(op);
+                                let found = false;
+                                for (let cl of clusters) {
+                                    if (Math.hypot(cl.c.x - c.x, cl.c.z - c.z) < coreT * 2) {
+                                        cl.area += area;
+                                        cl.c.x = (cl.c.x + c.x) / 2; cl.c.z = (cl.c.z + c.z) / 2;
+                                        found = true; break;
+                                    }
+                                }
+                                if (!found) clusters.push({ c: c, area: area });
+                            }
+                            let isStable = false;
+                            if (clusters.length >= 3) {
+                                let min_x = Infinity, max_x = -Infinity, min_z = Infinity, max_z = -Infinity;
+                                overlaps.forEach(op => op.forEach(p => {
+                                    min_x = Math.min(min_x, p.x); max_x = Math.max(max_x, p.x);
+                                    min_z = Math.min(min_z, p.z); max_z = Math.max(max_z, p.z);
+                                }));
+                                let spread = Math.hypot(max_x - min_x, max_z - min_z);
+                                if (spread >= coreT * 3) isStable = true;
+                            }
+                            if (!isStable) isStrictlySafe = false;
+                        }
+
+                        if (requireStrictSafety && !isStrictlySafe) continue;
+
+                        const score = evaluateCandidateScore(candidate, idx, coreT, floorPts, belowWallNodes, targetSpan, targetNodeCount);
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestCand = candidate;
+                        }
+                    }
+                }
+                return bestCand;
+            }
+
+            const currentNodes = floorData[idx].wallNodes.length;
+            let best = null;
+
+            const targetReduced = Math.max(3, currentNodes - 1);
+            best = searchBestFoldForNodeCount(targetReduced, true);
+            if (!best && targetReduced > 3) {
+                best = searchBestFoldForNodeCount(3, true);
+            }
+
+            if (!best && currentNodes >= 3) {
+                best = searchBestFoldForNodeCount(currentNodes, true);
+            }
+
+            if (!best) {
+                for (let n = Math.max(3, currentNodes + 1); n <= 10; n++) {
+                    best = searchBestFoldForNodeCount(n, true);
+                    if (best) break;
+                }
+            }
+
+            if (!best) {
+                let bestFallbackScore = Infinity;
+                for (let n = 3; n <= 10; n++) {
+                    const cand = searchBestFoldForNodeCount(n, false);
+                    if (cand) {
+                        const score = evaluateCandidateScore(cand, idx, coreT, floorPts, belowWallNodes, targetSpan, n);
+                        if (score < bestFallbackScore) {
+                            bestFallbackScore = score;
+                            best = cand;
+                        }
+                    }
+                }
+            }
+
+            if (!best) {
+                const halfSpan = Math.max(bounds.length * WALL_MIN_LENGTH_RATIO / 2, WALL_MIN_SEG_FACTOR * coreT);
+                best = [
+                    { x: baselineX, z: bounds.cz - halfSpan },
+                    { x: baselineX, z: bounds.cz + halfSpan }
+                ];
+            }
+
+            floorData[idx].wallNodes = best;
+            cachedCenterOffset = null;
+            drawEditor(); updateSim();
+        }
+
+        function updateLiveLoadDisplay() {
+            const liveLoad = parseFloat(document.getElementById('liveLoad').value);
+            const floorH = parseFloat(document.getElementById('floorH').value);
+            const coreT = parseFloat(document.getElementById('coreT').value);
+            const autoSpan = getAutoTargetSpan(liveLoad, floorH, coreT);
+            const autoSpanEl = document.getElementById('val-autoSpan');
+            if (autoSpanEl) autoSpanEl.innerText = autoSpan.toFixed(2) + " m";
+        }
+
+        document.getElementById('floors').addEventListener('input', e => {
+            numFloors = parseInt(e.target.value);
+            document.getElementById('val-floors').innerText = numFloors;
+            updateFloorDropdown();
+            fitCameraToDynamicBounds();
+        });
+        
+        document.getElementById('floorH').addEventListener('input', e => {
+            document.getElementById('val-floorH').innerText = parseFloat(e.target.value).toFixed(2) + " m";
+            updateLiveLoadDisplay();
+            updateSim();
+            drawEditor();
+            fitCameraToDynamicBounds();
+        });
+        document.getElementById('coreT').addEventListener('input', e => {
+            document.getElementById('val-coreT').innerText = parseFloat(e.target.value).toFixed(2) + " m";
+            updateLiveLoadDisplay();
+            updateSim();
+            drawEditor();
+        });
+        document.getElementById('liveLoad').addEventListener('input', () => {
+            updateLiveLoadDisplay();
+            updateSim();
+            drawEditor();
+        });
+        document.getElementById('floorIndex').addEventListener('change', () => {
+            cachedCenterOffset = null;
+            drawEditor();
+        });
+
+        function updateFloorDropdown() {
+            const sel = document.getElementById('floorIndex');
+            let currentIdx = parseInt(sel.value) || 0;
+            sel.innerHTML = '';
+            for(let i=0; i<numFloors; i++) {
+                const opt = document.createElement('option');
+                opt.value = i; opt.innerText = "Floor " + (i+1);
+                sel.appendChild(opt);
+            }
+            sel.value = Math.min(currentIdx, numFloors - 1);
+            drawEditor(); updateSim();
+        }
+
+        function ensureCCW(poly) {
+            let area = 0;
+            for(let i=0; i<poly.length; i++) {
+                let j = (i+1)%poly.length;
+                area += poly[i].x * poly[j].z - poly[j].x * poly[i].z;
+            }
+            return area < 0 ? poly.slice().reverse() : poly;
+        }
+
+        function polygonArea(poly) {
+            let area = 0;
+            for(let i=0; i<poly.length; i++) {
+                let j = (i+1)%poly.length;
+                area += poly[i].x * poly[j].z - poly[j].x * poly[i].z;
+            }
+            return Math.abs(area / 2);
+        }
+
+        function getCentroid(poly) {
+            let cx=0, cz=0;
+            poly.forEach(p => { cx+=p.x; cz+=p.z; });
+            return {x: cx/poly.length, z: cz/poly.length};
+        }
+
+        function intersectLines(x1, z1, x2, z2, x3, z3, x4, z4) {
+            let den = (x1 - x2) * (z3 - z4) - (z1 - z2) * (x3 - x4);
+            if (den === 0) return {x: x2, z: z2}; 
+            let t = ((x1 - x3) * (z3 - z4) - (z1 - z3) * (x3 - x4)) / den;
+            return { x: x1 + t * (x2 - x1), z: z1 + t * (z2 - z1) };
+        }
+
+        function pointToSegmentDistance(p, v, w) {
+            let l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.z - w.z, 2);
+            if (l2 === 0) return Math.hypot(p.x - v.x, p.z - v.z);
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            let proj = { x: v.x + t * (w.x - v.x), z: v.z + t * (w.z - v.z) };
+            return Math.hypot(p.x - proj.x, p.z - proj.z);
+        }
+
+        function isInside(p, cp1, cp2) { return (cp2.x - cp1.x) * (p.z - cp1.z) - (cp2.z - cp1.z) * (p.x - cp1.x) >= 0; }
+        function computeIntersection(s, e, cp1, cp2) {
+            const dcx = cp1.x - cp2.x, dcz = cp1.z - cp2.z;
+            const dpzx = s.x * e.z - s.z * e.x, dpxz = cp1.x * cp2.z - cp1.z * cp2.x;
+            const den = (s.x - e.x) * dcz - (s.z - e.z) * dcx;
+            if(den === 0) return s;
+            return { x: (dpzx * dcx - (s.x - e.x) * dpxz) / den, z: (dpzx * dcz - (s.z - e.z) * dpxz) / den };
+        }
+        function clipPolygon(subjectPoly, clipPoly) {
+            let outputList = subjectPoly;
+            for (let i = 0; i < clipPoly.length; i++) {
+                const cp1 = clipPoly[i], cp2 = clipPoly[(i + 1) % clipPoly.length];
+                const inputList = outputList; outputList = [];
+                if(inputList.length === 0) break;
+                let S = inputList[inputList.length - 1];
+                for (let j = 0; j < inputList.length; j++) {
+                    const E = inputList[j];
+                    if (isInside(E, cp1, cp2)) {
+                        if (!isInside(S, cp1, cp2)) outputList.push(computeIntersection(S, E, cp1, cp2));
+                        outputList.push(E);
+                    } else if (isInside(S, cp1, cp2)) {
+                        outputList.push(computeIntersection(S, E, cp1, cp2));
+                    }
+                    S = E;
+                }
+            }
+            return outputList;
+        }
+
+        function generateWallQuads(nodes, thickness) {
+            let w = thickness / 2;
+            let lefts = [], rights = [];
+            
+            for(let i=0; i<nodes.length; i++) {
+                let p = nodes[i];
+                let pPrev = i > 0 ? nodes[i-1] : null;
+                let pNext = i < nodes.length-1 ? nodes[i+1] : null;
+                
+                if(!pPrev) { 
+                    let dx = pNext.x - p.x, dz = pNext.z - p.z;
+                    let l = Math.hypot(dx, dz); dx/=l; dz/=l;
+                    lefts.push({x: p.x - dz*w, z: p.z + dx*w});
+                    rights.push({x: p.x + dz*w, z: p.z - dx*w});
+                } else if (!pNext) {
+                    let dx = p.x - pPrev.x, dz = p.z - pPrev.z;
+                    let l = Math.hypot(dx, dz); dx/=l; dz/=l;
+                    lefts.push({x: p.x - dz*w, z: p.z + dx*w});
+                    rights.push({x: p.x + dz*w, z: p.z - dx*w});
+                } else {
+                    let d1x = p.x - pPrev.x, d1z = p.z - pPrev.z;
+                    let l1 = Math.hypot(d1x, d1z); d1x/=l1; d1z/=l1;
+                    let d2x = pNext.x - p.x, d2z = pNext.z - p.z;
+                    let l2 = Math.hypot(d2x, d2z); d2x/=l2; d2z/=l2;
+                    
+                    let n1x = -d1z, n1z = d1x;
+                    let n2x = -d2z, n2z = d2x;
+                    
+                    let A1 = {x: pPrev.x + n1x*w, z: pPrev.z + n1z*w}, B1 = {x: p.x + n1x*w, z: p.z + n1z*w};
+                    let C1 = {x: p.x + n2x*w, z: p.z + n2z*w}, D1 = {x: pNext.x + n2x*w, z: pNext.z + n2z*w};
+                    let M_left = intersectLines(A1.x, A1.z, B1.x, B1.z, C1.x, C1.z, D1.x, D1.z);
+                    
+                    let A2 = {x: pPrev.x - n1x*w, z: pPrev.z - n1z*w}, B2 = {x: p.x - n1x*w, z: p.z - n1z*w};
+                    let C2 = {x: p.x - n2x*w, z: p.z - n2z*w}, D2 = {x: pNext.x - n2x*w, z: pNext.z - n2z*w};
+                    let M_right = intersectLines(A2.x, A2.z, B2.x, B2.z, C2.x, C2.z, D2.x, D2.z);
+                    
+                    lefts.push(M_left); rights.push(M_right);
+                }
+            }
+            
+            let quads = [];
+            for(let i=0; i<nodes.length-1; i++) {
+                quads.push(ensureCCW([ lefts[i], rights[i], rights[i+1], lefts[i+1] ]));
+            }
+            return quads;
+        }
+
+        const simContainer = document.getElementById('simContainer');
+
+        const scene = new THREE.Scene();
+
+        const D_HALF = 24;
+        let simAspect = simContainer.clientWidth / Math.max(simContainer.clientHeight, 1);
+        const camera = new THREE.OrthographicCamera(-D_HALF * simAspect, D_HALF * simAspect, D_HALF, -D_HALF, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(simContainer.clientWidth, simContainer.clientHeight);
+        simContainer.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        const modelGroup = new THREE.Group();
+        scene.add(modelGroup);
+
+        const wallMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+        const wallEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x444444 });
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65, side: THREE.DoubleSide });
+        const floorEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x999999 });
+        const overlapMaterial = new THREE.MeshBasicMaterial({ color: 0x007BFF, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+        const overlapEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x007BFF });
+
+        function createExtrusionGroup(poly2D, yB, yT, material, edgeMaterial) {
+            if (!poly2D || poly2D.length < 3) return null;
+            const shape = new THREE.Shape();
+            shape.moveTo(poly2D[0].x, -poly2D[0].z);
+            for (let i = 1; i < poly2D.length; i++) shape.lineTo(poly2D[i].x, -poly2D[i].z);
+            shape.closePath();
+
+            const depth = Math.max(yT - yB, 0.001);
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: depth, bevelEnabled: false, curveSegments: 1 });
+            geo.rotateX(-Math.PI / 2);
+            geo.translate(0, yB, 0);
+
+            const group = new THREE.Group();
+            group.add(new THREE.Mesh(geo, material));
+            group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 1), edgeMaterial));
+            return group;
+        }
+
+        function clearGroup(group) {
+            while (group.children.length > 0) {
+                const child = group.children[0];
+                group.remove(child);
+                child.traverse(obj => { if (obj.geometry) obj.geometry.dispose(); });
+            }
+        }
+
+        function fitCameraToDynamicBounds() {
+            const minX = -10, maxX = 10, minZ = 0, maxZ = 35, minY = 0;
+            const currentFloorH = parseFloat(document.getElementById('floorH').value) || 3.0;
+            const maxY = numFloors * currentFloorH + 2;
+            const center = new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+            const size = new THREE.Vector3(maxX - minX, maxY - minY, maxZ - minZ);
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const d = maxDim * 0.62;
+            const aspect = simContainer.clientWidth / Math.max(simContainer.clientHeight, 1);
+            camera.left = -d * aspect; camera.right = d * aspect;
+            camera.top = d; camera.bottom = -d;
+            camera.position.set(center.x + 50, center.y + 50, center.z + 50);
+            camera.updateProjectionMatrix();
+            controls.target.copy(center);
+            camera.lookAt(center);
+            controls.update();
+        }
+        fitCameraToDynamicBounds();
+
+        (function addGroundBoundary() {
+            const staticMinX = -10, staticMaxX = 10, staticMinZ = 0, staticMaxZ = 35, p = 2;
+            const pts = [
+                new THREE.Vector3(staticMinX - p, 0, staticMinZ - p),
+                new THREE.Vector3(staticMaxX + p, 0, staticMinZ - p),
+                new THREE.Vector3(staticMaxX + p, 0, staticMaxZ + p),
+                new THREE.Vector3(staticMinX - p, 0, staticMaxZ + p),
+                new THREE.Vector3(staticMinX - p, 0, staticMinZ - p)
+            ];
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            const mat = new THREE.LineDashedMaterial({ color: 0xe0e0e0, dashSize: 0.4, gapSize: 0.4 });
+            const line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            scene.add(line);
+        })();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const w = simContainer.clientWidth, h = Math.max(simContainer.clientHeight, 1);
+            renderer.setSize(w, h);
+            const aspect = w / h;
+            const d = camera.top;
+            camera.left = -d * aspect; camera.right = d * aspect;
+            camera.updateProjectionMatrix();
+        });
+
+        function updateSim() {
+            const floorH = parseFloat(document.getElementById('floorH').value);
+            const coreT = parseFloat(document.getElementById('coreT').value);
+            const liveLoad = parseFloat(document.getElementById('liveLoad').value);
+
+            let maxActualCantilever = 0;
+            let floorPolys = [];
+            let allWallQuads = [];
+
+            for(let i=0; i<numFloors; i++) {
+                const pts = floorData[i].vertices;
+                floorPolys.push(pts);
+
+                const wn = floorData[i].wallNodes;
+                const quads = generateWallQuads(wn, coreT);
+                allWallQuads.push(quads);
+
+                pts.forEach(pt => {
+                    let minDist = Infinity;
+                    for(let j=0; j<wn.length-1; j++) {
+                        minDist = Math.min(minDist, pointToSegmentDistance(pt, wn[j], wn[j+1]));
+                    }
+                    const clearSpan = Math.max(0, minDist - coreT / 2);
+                    maxActualCantilever = Math.max(maxActualCantilever, clearSpan);
+                });
+            }
+
+            const cantileverLdRatio = 12 - liveLoad * 1.0;
+            const requiredSlabT = maxActualCantilever / cantileverLdRatio;
+            let slabT = Math.max(0.15, Math.min(1.0, requiredSlabT));
+            document.getElementById('val-slabT').innerText = slabT.toFixed(2) + " m";
+
+            let cantileverSafe = slabT >= requiredSlabT - 1e-6;
+            let overlapSafe = true;
+            let overlapsToDraw = [];
+
+            for(let i=1; i<numFloors; i++) {
+                let overlapsThisFloor = [];
+                for(let qA of allWallQuads[i]) {
+                    for(let qB of allWallQuads[i-1]) {
+                        let overPoly = clipPolygon(qA, qB);
+                        if(overPoly.length > 2 && polygonArea(overPoly) > 0.05) {
+                            overlapsThisFloor.push(overPoly);
+                        }
+                    }
+                }
+                
+                let clusters = [];
+                for(let op of overlapsThisFloor) {
+                    let c = getCentroid(op);
+                    let a = polygonArea(op);
+                    let found = false;
+                    for(let cl of clusters) {
+                        if(Math.hypot(cl.c.x - c.x, cl.c.z - c.z) < coreT * 2) {
+                            cl.area += a;
+                            cl.c.x = (cl.c.x + c.x)/2; cl.c.z = (cl.c.z + c.z)/2;
+                            found = true; break;
+                        }
+                    }
+                    if(!found) clusters.push({c: c, area: a});
+                    overlapsToDraw.push({floorIdx: i, poly: op});
+                }
+
+                let isStable = false;
+                let min_x=Infinity, max_x=-Infinity, min_z=Infinity, max_z=-Infinity;
+                overlapsThisFloor.forEach(op => op.forEach(p => {
+                    min_x = Math.min(min_x, p.x); max_x = Math.max(max_x, p.x);
+                    min_z = Math.min(min_z, p.z); max_z = Math.max(max_z, p.z);
+                }));
+                let spread = Math.hypot(max_x - min_x, max_z - min_z);
+                
+                let validSpread = spread >= coreT * 3; 
+                if (clusters.length >= 3 && validSpread) isStable = true;
+
+                if(!isStable) overlapSafe = false;
+            }
+
+            const statusBar = document.getElementById('status-bar');
+            if(!overlapSafe && !cantileverSafe) {
+                statusBar.style.color = "#d32f2f";
+                statusBar.innerText = "CONDITION: DANGER (PUNCHING SHEAR RISK) - OVERLAP AREA INSUFFICIENT OR CANTILEVER EXCEEDS CAPACITY";
+            } else if (!overlapSafe) {
+                statusBar.style.color = "#d32f2f";
+                statusBar.innerText = "CONDITION: DANGER (PUNCHING SHEAR RISK) - MINIMUM 3 SUPPORT POINTS OR ADEQUATE SPREAD REQUIRED";
+            } else if (!cantileverSafe) {
+                statusBar.style.color = "#d32f2f";
+                statusBar.innerText = "CONDITION: DANGER - CANTILEVER SPAN EXCEEDS BENDING CAPACITY";
+            } else {
+                statusBar.style.color = "#007BFF"; 
+                statusBar.innerText = "CONDITION: SAFE - STRUCTURAL CRITERIA VERIFIED";
+            }
+
+            clearGroup(modelGroup);
+
+            for(let i=0; i<numFloors; i++) {
+                const yB = i * floorH, yT = yB + floorH, slabYB = yT - slabT;
+                allWallQuads[i].forEach(quad => {
+                    const g = createExtrusionGroup(quad, yB, slabYB, wallMaterial, wallEdgeMaterial);
+                    if(g) modelGroup.add(g);
+                });
+                const fg = createExtrusionGroup(floorPolys[i], slabYB, yT, floorMaterial, floorEdgeMaterial);
+                if(fg) modelGroup.add(fg);
+            }
+
+            overlapsToDraw.forEach(ov => {
+                const yB = (ov.floorIdx - 1) * floorH + floorH - slabT; 
+                const yT = ov.floorIdx * floorH; 
+                const og = createExtrusionGroup(ov.poly, yB, yT, overlapMaterial, overlapEdgeMaterial);
+                if(og) modelGroup.add(og);
+            });
+        }
+
+        window.addWallNode = addWallNode;
+        window.removeWallNode = removeWallNode;
+        window.optimizeWalls = optimizeWalls;
+
+        window.addEventListener('load', () => {
+            ensureCanvasSize(editCanvas);
+            updateFloorDropdown();
+            updateLiveLoadDisplay();
+        });
+    </script>
+</body>
+</html>
