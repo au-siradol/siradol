@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timber Gridshell Form-Finder — Hanging Net to Inverted Dome</title>
+    <style>
+        * { font-family: Helvetica, Arial, sans-serif !important; box-sizing: border-box; }
+
+        body {
+            background-color: #f4f5f5;
+            color: #111;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: right;
+            max-width: 1300px;
+            margin: 0 auto 30px auto;
+        }
+        .header h1 { margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 0.5px; }
+        .header h2 { margin: 5px 0 0 0; font-size: 12px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
+
+        .main-container { max-width: 1300px; margin: 0 auto; }
+
+        .main-view-panel {
+            background: transparent;
+            border: none;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .canvases-wrapper { display: flex; gap: 15px; }
+
+        /* LEFT: 2D boundary editor */
+        .canvas-2d-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            min-width: 300px;
+            padding: 15px;
+        }
+        .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .editor-header h3 {
+            margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #333; letter-spacing: 0.5px;
+        }
+        canvas#editorCanvas {
+            display: block; width: 100%; height: 380px; background: #fff;
+            border: 1px solid #eee; cursor: crosshair; margin-bottom: 10px;
+        }
+
+        /* RIGHT: 3D interactive net / dome */
+        .canvas-3d-wrapper {
+            flex: 1.7;
+            position: relative;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            overflow: hidden;
+        }
+        #simContainer {
+            display: block; width: 100%; height: 500px; background: transparent;
+            cursor: grab; position: relative; overflow: hidden;
+        }
+        #simContainer:active { cursor: grabbing; }
+        #sim-hint {
+            position: absolute; bottom: 8px; right: 10px; font-size: 9px; letter-spacing: 0.5px;
+            text-transform: uppercase; color: #aaa; pointer-events: none;
+        }
+        #sim-title {
+            position: absolute; top: 10px; left: 12px; font-size: 9px; letter-spacing: 0.5px;
+            text-transform: uppercase; color: #999; pointer-events: none;
+        }
+
+        .btn-group { display: flex; gap: 5px; margin-top: auto; }
+        select {
+            width: auto; padding: 4px 6px; font-size: 10px;
+            background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 0;
+        }
+        select.wide { width: 100%; margin-top: 5px; }
+
+        button.action-btn {
+            flex: 1; padding: 8px; background: transparent; color: #111; border: 1px solid #ccc;
+            font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
+            cursor: pointer; transition: 0.2s;
+        }
+        button.action-btn:hover { background: #f4f4f4; border-color: #999; }
+        button.primary-btn { border-color: #111; margin-top: 5px; width: 100%; }
+        button.primary-btn:hover { background: #111; color: #fff; }
+        button.mode-btn.active { background: #111; color: #fff; border-color: #111; }
+        button.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        button.action-btn:disabled:hover { background: transparent; border-color: #ccc; }
+
+        #status-bar {
+            background: #fff; border: 1px solid #e5e5e5; padding: 15px; text-align: center;
+            font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
+            transition: color 0.3s;
+        }
+
+        hr.dashed { border: 0; border-top: 1px dashed #ccc; margin: 30px 0; }
+
+        .controls-grid { display: flex; gap: 40px; flex-wrap: wrap; }
+        .column { flex: 1; min-width: 260px; }
+        .column h3 {
+            margin-top: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 20px; color: #111;
+        }
+
+        .control-row { margin-bottom: 18px; font-size: 11px; }
+        label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #333; }
+        .checkbox-row { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; font-size: 11px; color: #333; }
+        .checkbox-row input { cursor: pointer; }
+        .val { font-size: 10px; color: #555; }
+
+        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px;
+        }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+
+        .info-box {
+            margin-top: 18px; padding-top: 15px; border-top: 1px solid #eee;
+            color: #666; font-size: 10px; line-height: 1.65;
+        }
+        .info-box b { color: #333; }
+        .info-box.stats { margin-top: 0; padding-top: 0; border-top: none; }
+        .info-box .stat-line { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .info-box .stat-line .lbl { color: #666; }
+        .info-box .stat-line .num { color: #111; font-weight: bold; }
+
+        .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+        .legend-line { display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; }
+
+        .recommend-box {
+            margin-top: 12px; padding: 10px; font-size: 10px; line-height: 1.5; border-left: 3px solid #111; background: #fafafa;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="header">
+        <h1>TIMBER GRIDSHELL FORM-FINDER</h1>
+        <h2>2D Boundary &rarr; Hanging Net &rarr; Inverted Compression Dome, after Otto / Happold &amp; Liddell, Mannheim 1975</h2>
+    </div>
+
+    <div class="main-container">
+
+        <div class="main-view-panel">
+            <div class="canvases-wrapper">
+
+                <div class="canvas-3d-wrapper">
+                    <div id="simContainer"></div>
+                    <div id="sim-title">Interactive Net</div>
+                    <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
+                </div>
+
+                <div class="canvas-2d-wrapper">
+                    <div class="editor-header">
+                        <h3>2D Boundary Editor</h3>
+                        <select id="presetSelect" class="wide" style="width:auto;">
+                            <option value="blob" selected>Mannheim-like Blob</option>
+                            <option value="essen">Essen-like Rounded Square</option>
+                            <option value="rect">Rectangle</option>
+                        </select>
+                    </div>
+                    <div class="btn-group" style="margin-bottom: 8px;">
+                        <button class="action-btn mode-btn" id="modeSketchBtn">Sketch Freeform</button>
+                        <button class="action-btn mode-btn" id="modeEditBtn">Edit Nodes</button>
+                    </div>
+                    <div class="control-row" style="margin-bottom: 4px;">
+                        <label>Sketch Smoothness <span id="val-sketchSmooth" class="val">3</span></label>
+                        <input type="range" id="sketchSmooth" min="1" max="10" step="1" value="3">
+                    </div>
+                    <p style="font-size: 8px; color: #bbb; margin: 0 0 10px 0; text-transform: uppercase;">
+                        1 = sharp corners kept as drawn &middot; 10 = corners rounded off heavily (edges stay straight lines throughout)
+                    </p>
+                    <p id="editorHint" style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">
+                        Drag a node to move it, drag empty space to pan, scroll to zoom.
+                    </p>
+                    <canvas id="editorCanvas"></canvas>
+                    <div class="btn-group">
+                        <button class="action-btn" id="btnAddNode">+ Add Node</button>
+                        <button class="action-btn" id="btnRemoveNode">- Remove Node</button>
+                    </div>
+                </div>
+
+            </div>
+            <div id="status-bar">GENERATING NET...</div>
+        </div>
+
+        <hr class="dashed">
+
+        <div class="controls-grid">
+
+            <div class="column">
+                <h3>1. Net Generation</h3>
+                <div class="control-row">
+                    <label>Mesh Spacing (lath grid) <span id="val-spacing" class="val">1.80 m</span></label>
+                    <input type="range" id="meshSpacing" min="0.5" max="3.5" step="0.1" value="1.8">
+                </div>
+                <div class="info-box">
+                    A square grid is generated over the boundary and trimmed at every edge crossing, exactly
+                    as Atelier Warmbronn's chain-net grid was fixed only at its boundary connections. Interior
+                    nodes remain free &mdash; the lattice is a one-degree-of-freedom mechanism until curved
+                    (Fig. 8, Happold &amp; Liddell 1975).
+                </div>
+                <div class="info-box">
+                    <b>Note:</b> this is a pedagogical approximation, not an engineering calculation. The
+                    real Mannheim analysis used non-linear Newton&ndash;Raphson buckling runs (Happold &amp;
+                    Liddell 1975) and Linkwitz's force-density method for the exact geometry &mdash; both far
+                    beyond what a browser demo can reproduce.
+                </div>
+            </div>
+
+            <div class="column">
+                <h3>2. Gravity Relaxation</h3>
+                <div class="control-row">
+                    <label>Sag Strength (self-weight) <span id="val-sag" class="val">1.60</span></label>
+                    <input type="range" id="sagStrength" min="0.2" max="3.0" step="0.1" value="1.6">
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="invertToggle" checked>
+                    <label style="margin:0;" for="invertToggle">Show as Inverted Dome (compression form)</label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="freeBoundaryToggle">
+                    <label style="margin:0;" for="freeBoundaryToggle">Free-Hanging Boundary</label>
+                </div>
+                <div class="control-row" id="supportSpacingRow" style="display:none;">
+                    <label>Support Spacing <span id="val-supportSpacing" class="val">5 nodes</span></label>
+                    <input type="range" id="supportSpacing" min="2" max="10" step="1" value="5">
+                </div>
+                <div class="btn-group" style="margin-top: 8px;">
+                    <button class="action-btn" id="btnReRelax">Re-Relax from Flat</button>
+                </div>
+                <div class="info-box">
+                    By default the boundary is a fixed ring (matches a flat support system). With
+                    <b>Free-Hanging Boundary</b> on, only every Nth boundary node stays a hard support
+                    &mdash; the rest sag under gravity too, closer to how Otto adjusted boundary heights
+                    point-by-point against a support system to find the optimum shape (Fig 13&ndash;14,
+                    Happold &amp; Liddell 1975) instead of holding the whole edge in one flat plane.
+                </div>
+            </div>
+
+            <div class="column">
+                <h3>3. Structural Feasibility (indicative)</h3>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="showShear" checked>
+                    <label style="margin:0;" for="showShear">Shear distortion at nodes</label>
+                </div>
+                <p style="font-size: 8px; color: #999; margin: 0 0 10px 0;">
+                    <span class="legend-dot" style="background:#4caf50;"></span>Fine &nbsp;
+                    <span class="legend-dot" style="background:#f2c40f;"></span>Marginal &nbsp;
+                    <span class="legend-dot" style="background:#d32f2f;"></span>Needs diagonal tie
+                </p>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="showCurvature" checked>
+                    <label style="margin:0;" for="showCurvature">Lath bend radius</label>
+                </div>
+                <p style="font-size: 8px; color: #999; margin: 0 0 10px 0;">
+                    <span class="legend-line" style="background:#4caf50;"></span>Fine &nbsp;
+                    <span class="legend-line" style="background:#f2c40f;"></span>Marginal &nbsp;
+                    <span class="legend-line" style="background:#d32f2f;"></span>Needs lamination
+                </p>
+                <div class="control-row" style="margin-bottom: 6px;">
+                    <label style="margin-bottom: 2px;">Lath Thickness in Use</label>
+                    <div class="val" id="val-lathThickness" style="font-size: 11px; color: #111; font-weight: bold;">— mm (auto)</div>
+                </div>
+                <p style="font-size: 8px; color: #bbb; margin: 0 0 8px 0; text-transform: uppercase;">
+                    Auto: thickest standard size that still clears this shape's tightest curve (calibrated from Liddell 2015, §3.3).
+                </p>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="lathOverrideToggle">
+                    <label style="margin:0;" for="lathOverrideToggle">Override manually</label>
+                </div>
+                <div class="control-row" id="lathOverrideRow" style="display:none;">
+                    <label>Manual Thickness <span id="val-lathManual" class="val">50 mm</span></label>
+                    <input type="range" id="lathManual" min="25" max="80" step="5" value="50">
+                </div>
+                <div class="info-box stats" id="statsBox">
+                    <div class="stat-line"><span class="lbl">Nodes / Laths</span><span class="num" id="stat-count">—</span></div>
+                    <div class="stat-line"><span class="lbl">Rise / Span</span><span class="num" id="stat-ratio">—</span></div>
+                    <div class="stat-line"><span class="lbl">Max shear deviation</span><span class="num" id="stat-shear">—</span></div>
+                    <div class="stat-line"><span class="lbl">Min bend radius</span><span class="num" id="stat-radius">—</span></div>
+                </div>
+                <div class="recommend-box" id="recommendBox">—</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+        import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+        import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+
+        /* ============================================================
+           STATE
+        ============================================================ */
+        let boundaryPts = [];
+        let selectedIdx = -1;
+        let dragIdx = null;
+
+        let editorMode = 'edit';   // 'edit' | 'sketch'
+        let sketching = false;
+        let sketchRawPts = [];
+        let sketchLastRawPts = [];   // cached raw stroke, reused when smoothness slider changes
+        let sketchSmoothness = 3;   // 1-5, see filletFractionForLevel()
+        let lastSketchPx = null;
+        let sketchSmoothDebounce = null;
+        let supportSpacingDebounce = null;
+        const SKETCH_MIN_PX_STEP = 4;
+        const SKETCH_CLOSE_PX = 20;
+        const SKETCH_RESAMPLE_STEP = 0.5;  // meters, uniform arc-length pre-resample
+        const SKETCH_BASE_SMOOTH_PASSES = 1; // fixed light Chaikin pass before corner search
+        const SKETCH_EPSILON_MIN = 0.25;   // meters, floor for scale-adaptive RDP
+        const SKETCH_EPSILON_FACTOR = 0.008; // fraction of boundary diagonal
+        const SKETCH_MAX_NODES = 90;
+        const SKETCH_SMOOTHNESS_MAX = 10;  // full range — was capped at 5, now exposed in full for finer per-click control
+
+        let meshSpacing = 1.8;
+        let sagStrength = 1.6;
+        let curvatureThreshold = 10.0;  // derived each analysis pass, see Lath Thickness section
+        let inverted = true;
+        let showShear = true;
+        let showCurvature = true;
+
+        // --- Lath thickness -> minimum bend radius (item 1) ---
+        // Calibrated from Happold & Liddell / Liddell 2015: a 50mm lath bends
+        // to about 10-12m radius before it must be split into two 25mm layers.
+        // Using the midpoint (11m) as the calibration point for allowable strain.
+        const LATH_STRAIN_ALLOW = 0.05 / (2 * 11);
+        const STANDARD_LATH_THICKNESSES_MM = [25, 30, 40, 50, 60, 80];
+        let manualLathOverride = false;
+        let lathThicknessMM = 50;
+
+        // --- Boundary support pattern (item 2) ---
+        let freeHangingBoundary = false;
+        let supportSpacing = 5; // every Nth boundary node (by perimeter order) stays a hard support
+        const BOUNDARY_FREE_INV_MASS = 0.35; // free-hanging boundary moves less readily than interior net (stiffer beam/arch, not a bare chain)
+
+        let netNodes = [];      // {x,y,z, x0,y0,z0, px,py,pz, invMass, gi, gj}
+        let netMembers = [];    // {a,b,rest}
+        let gridMap = new Map();       // "gi_gj" -> nodeIdx
+        let memberKeyMap = new Map();  // "a_b" (a<b) -> memberIdx
+        let nodeColors = [];
+        let memberColors = [];
+
+        let simRunning = false;
+        let simStep = 0;
+        const MAX_SIM_STEPS = 900;
+        const STEPS_PER_FRAME = 3;
+        const CONSTRAINT_ITERS = 11;
+        const GRAVITY_BASE = 0.0022;
+        const GRAVITY_REFERENCE_SPAN = 18; // meters — the span the base gravity constant was tuned at
+        const DAMPING = 0.985;
+        const SETTLE_EPS = 0.00004; // average per-node movement below which the net is considered converged
+
+        /* ============================================================
+           COLORS
+        ============================================================ */
+        const COLOR_GREEN  = { r: 0.30, g: 0.69, b: 0.31 };
+        const COLOR_YELLOW = { r: 0.95, g: 0.77, b: 0.06 };
+        const COLOR_RED    = { r: 0.83, g: 0.18, b: 0.18 };
+        const COLOR_GRAY   = { r: 0.38, g: 0.38, b: 0.38 };
+        const COLOR_FIXED  = { r: 0.07, g: 0.07, b: 0.07 };
+        const COLOR_FREE   = { r: 0.00, g: 0.48, b: 1.00 };
+        const COLOR_BOUNDARY_FREE = { r: 0.62, g: 0.47, b: 0.24 };
+
+        function lerpColor(a, b, t) {
+            t = Math.max(0, Math.min(1, t));
+            return { r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t };
+        }
+        function devToColor(dev) {
+            if (dev < 8) return COLOR_GREEN;
+            if (dev < 25) return lerpColor(COLOR_GREEN, COLOR_YELLOW, (dev - 8) / 17);
+            return lerpColor(COLOR_YELLOW, COLOR_RED, (dev - 25) / 25);
+        }
+        function radiusToColor(R, threshold) {
+            if (!isFinite(R) || R > threshold * 1.6) return COLOR_GREEN;
+            if (R > threshold) return lerpColor(COLOR_GREEN, COLOR_YELLOW, (threshold * 1.6 - R) / (threshold * 0.6));
+            return lerpColor(COLOR_YELLOW, COLOR_RED, Math.min(1, (threshold - R) / threshold));
+        }
+
+        /* ============================================================
+           GEOMETRY HELPERS
+        ============================================================ */
+        function pointInPolygon(pt, poly) {
+            let inside = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z;
+                const intersect = ((zi > pt.z) !== (zj > pt.z)) &&
+                    (pt.x < (xj - xi) * (pt.z - zi) / (zj - zi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function segIntersect(p1, p2, p3, p4) {
+            const d1x = p2.x - p1.x, d1z = p2.z - p1.z;
+            const d2x = p4.x - p3.x, d2z = p4.z - p3.z;
+            const denom = d1x * d2z - d1z * d2x;
+            if (Math.abs(denom) < 1e-9) return null;
+            const t = ((p3.x - p1.x) * d2z - (p3.z - p1.z) * d2x) / denom;
+            const u = ((p3.x - p1.x) * d1z - (p3.z - p1.z) * d1x) / denom;
+            if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+            return { x: p1.x + t * d1x, z: p1.z + t * d1z };
+        }
+
+        function dist3(a, b) { return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z); }
+
+        function circumRadius(P0, P1, P2) {
+            const a = dist3(P1, P2), b = dist3(P0, P2), c = dist3(P0, P1);
+            const v1 = { x: P1.x - P0.x, y: P1.y - P0.y, z: P1.z - P0.z };
+            const v2 = { x: P2.x - P0.x, y: P2.y - P0.y, z: P2.z - P0.z };
+            const cross = {
+                x: v1.y * v2.z - v1.z * v2.y,
+                y: v1.z * v2.x - v1.x * v2.z,
+                z: v1.x * v2.y - v1.y * v2.x
+            };
+            const area = 0.5 * Math.hypot(cross.x, cross.y, cross.z);
+            if (area < 1e-9) return Infinity;
+            return (a * b * c) / (4 * area);
+        }
+
+        /* ============================================================
+           PRESET BOUNDARY SHAPES
+        ============================================================ */
+        function presetRectangle() {
+            return [{ x: -10, z: -7 }, { x: 10, z: -7 }, { x: 10, z: 7 }, { x: -10, z: 7 }];
+        }
+        function presetEssen() {
+            const pts = [], n = 16, p = 4, R = 7.5; // real Essen 1962 trial dome: 15 x 15m
+            for (let i = 0; i < n; i++) {
+                const t = i / n * Math.PI * 2;
+                const c = Math.cos(t), s = Math.sin(t);
+                pts.push({
+                    x: R * Math.sign(c) * Math.pow(Math.abs(c), 2 / p),
+                    z: R * Math.sign(s) * Math.pow(Math.abs(s), 2 / p)
+                });
+            }
+            return pts;
+        }
+        function presetBlob() {
+            // Approximation of the Multihalle dome's plan silhouette from
+            // Fig 18 "Plan plot of 1.5m net" (Happold & Liddell 1975) — an
+            // organic, asymmetric outline with a distinct taper on one side
+            // toward where the real building narrows into the Biergarten /
+            // Link connection to the restaurant. Scaled to ~60m overall,
+            // matching the synopsis's "four times' greater span" than the
+            // 15m Essen dome.
+            // Honesty note: this is NOT a pixel-traced digitization. The
+            // image-viewing tool hit a hard per-session limit partway
+            // through a fine-grained trace of the figure, so this is a
+            // shape-inspired approximation built from what was clearly
+            // read off the page (overall proportions, the rounded main
+            // bulge, the asymmetric taper) rather than exact coordinates.
+            return [
+                { x: 30, z: 5 }, { x: 32, z: 15 }, { x: 28, z: 26 }, { x: 18, z: 34 },
+                { x: 4, z: 37 }, { x: -10, z: 33 }, { x: -20, z: 25 }, { x: -26, z: 15 },
+                { x: -27, z: 4 }, { x: -24, z: -6 }, { x: -18, z: -13 }, { x: -9, z: -17 },
+                { x: 2, z: -18 }, { x: 13, z: -16 }, { x: 22, z: -11 }, { x: 28, z: -3 }
+            ];
+        }
+
+        /* ============================================================
+           FREEFORM SKETCH -> STRUCTURE-AWARE DISCRETIZED BOUNDARY
+           Pipeline: raw stroke -> close loop -> smooth -> RDP simplify
+           -> curvature-adaptive resample (denser nodes on tight turns,
+           sparser on straights), using the same Min Timber Bend Radius
+           control that drives the lath-curvature warning layer.
+        ============================================================ */
+        function closeLoopIfNear(pts, thresholdMeters) {
+            if (pts.length < 3) return pts;
+            const first = pts[0], last = pts[pts.length - 1];
+            const d = Math.hypot(first.x - last.x, first.z - last.z);
+            if (d < thresholdMeters) return pts.slice(0, pts.length - 1);
+            return pts;
+        }
+
+        function resampleUniform(pts, step) {
+            // Re-space a closed loop at equal arc-length intervals, removing
+            // artifacts from uneven mouse speed during the freehand stroke.
+            const n = pts.length;
+            if (n < 3) return pts;
+            const closed = pts.concat([pts[0]]);
+            const segLens = [];
+            let total = 0;
+            for (let i = 0; i < closed.length - 1; i++) {
+                const d = Math.hypot(closed[i + 1].x - closed[i].x, closed[i + 1].z - closed[i].z);
+                segLens.push(d);
+                total += d;
+            }
+            if (total < 1e-6) return pts;
+            const steps = Math.max(12, Math.round(total / step));
+            const actualStep = total / steps;
+            const result = [];
+            let segIdx = 0, accumulated = 0;
+            for (let s = 0; s < steps; s++) {
+                const targetDist = s * actualStep;
+                while (segIdx < segLens.length - 1 && accumulated + segLens[segIdx] < targetDist) {
+                    accumulated += segLens[segIdx];
+                    segIdx++;
+                }
+                const segLen = segLens[segIdx] || 1e-6;
+                const t = Math.min(1, Math.max(0, (targetDist - accumulated) / segLen));
+                const a = closed[segIdx], b = closed[segIdx + 1];
+                result.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+            }
+            return result;
+        }
+
+        function chaikinSmooth(pts, iterations) {
+            // Chaikin's corner-cutting: standard freehand-to-curve smoothing,
+            // gives a naturally rounded result rather than just blurred noise.
+            let arr = pts.slice();
+            for (let it = 0; it < iterations; it++) {
+                const n = arr.length;
+                if (n < 4) break;
+                const out = [];
+                for (let i = 0; i < n; i++) {
+                    const p0 = arr[i], p1 = arr[(i + 1) % n];
+                    out.push({ x: p0.x * 0.75 + p1.x * 0.25, z: p0.z * 0.75 + p1.z * 0.25 });
+                    out.push({ x: p0.x * 0.25 + p1.x * 0.75, z: p0.z * 0.25 + p1.z * 0.75 });
+                }
+                arr = out;
+            }
+            return arr;
+        }
+
+        function perpendicularDistance(pt, a, b) {
+            const dx = b.x - a.x, dz = b.z - a.z;
+            const len = Math.hypot(dx, dz);
+            if (len < 1e-9) return Math.hypot(pt.x - a.x, pt.z - a.z);
+            const t = ((pt.x - a.x) * dx + (pt.z - a.z) * dz) / (len * len);
+            const projX = a.x + t * dx, projZ = a.z + t * dz;
+            return Math.hypot(pt.x - projX, pt.z - projZ);
+        }
+
+        // RDP corner detection — returns INDICES (not points), used purely to
+        // find where the genuine corners of the sketch are. This is
+        // independent of the Sketch Smoothness level: which points count as
+        // corners never changes, only how heavily those corners get filleted.
+        function rdpIndicesRecurse(points, startIdx, endIdx, epsilon, keep) {
+            if (endIdx <= startIdx + 1) return;
+            let maxD = -1, idx = -1;
+            const start = points[startIdx], end = points[endIdx];
+            for (let i = startIdx + 1; i < endIdx; i++) {
+                const d = perpendicularDistance(points[i], start, end);
+                if (d > maxD) { maxD = d; idx = i; }
+            }
+            if (maxD > epsilon) {
+                keep.add(idx);
+                rdpIndicesRecurse(points, startIdx, idx, epsilon, keep);
+                rdpIndicesRecurse(points, idx, endIdx, epsilon, keep);
+            }
+        }
+        function rdpIndices(points, epsilon) {
+            const keep = new Set([0, points.length - 1]);
+            rdpIndicesRecurse(points, 0, points.length - 1, epsilon, keep);
+            return Array.from(keep).sort((a, b) => a - b);
+        }
+
+        function capNodeCount(pts, maxCount) {
+            if (pts.length <= maxCount) return pts;
+            const stride = pts.length / maxCount;
+            const out = [];
+            for (let i = 0; i < maxCount; i++) out.push(pts[Math.floor(i * stride)]);
+            return out;
+        }
+
+        function normalizeAngleDelta(from, to) {
+            let d = to - from;
+            while (d <= -Math.PI) d += Math.PI * 2;
+            while (d > Math.PI) d -= Math.PI * 2;
+            return d;
+        }
+
+        // Sketch Smoothness level (1-5) -> how far along each adjacent edge
+        // the fillet cuts, as a fraction of the shorter of the two edges.
+        // 1 = corners stay essentially sharp; 5 = heavily rounded. Capped at
+        // 0.45 downstream so two fillets sharing an edge never overlap.
+        function filletFractionForLevel(level) {
+            const t = (level - 1) / (SKETCH_SMOOTHNESS_MAX - 1);
+            return 0.05 + t * 0.85;
+        }
+
+        // Sketch Smoothness level (1-5) -> multiplier on corner-detection
+        // sensitivity (cornerEpsilon). Corner detection previously ran
+        // independent of this slider, so even at low smoothness a gently
+        // curved stroke still got chopped into many small corners (each one
+        // barely filleted). Higher levels widen the tolerance so nearby
+        // points merge into fewer, longer straight runs before filleting —
+        // still a polygon with rounded corners, not a true continuous
+        // curve, but far less faceted-looking than before.
+        function cornerEpsilonMultiplierForLevel(level) {
+            const t = (level - 1) / (SKETCH_SMOOTHNESS_MAX - 1);
+            return 1 + t * 4; // level 1: unchanged (x1) — level 5: x5
+        }
+
+        // Closed-form fillet at corner C, between neighbours P and N — no
+        // data fitting involved: given the two straight edges meeting at C,
+        // the tangent circle and its tangent points are exact geometry.
+        // Returns the arc's sample points from the tangent point on edge C-P
+        // through to the tangent point on edge C-N (both endpoints included),
+        // or just [C] if the corner is too shallow/degenerate to fillet.
+        function filletCorner(P, C, N, fraction) {
+            const v1 = { x: P.x - C.x, z: P.z - C.z };
+            const v2 = { x: N.x - C.x, z: N.z - C.z };
+            const len1 = Math.hypot(v1.x, v1.z), len2 = Math.hypot(v2.x, v2.z);
+            if (len1 < 1e-6 || len2 < 1e-6) return [C];
+            const u1 = { x: v1.x / len1, z: v1.z / len1 };
+            const u2 = { x: v2.x / len2, z: v2.z / len2 };
+
+            let cosPhi = u1.x * u2.x + u1.z * u2.z;
+            cosPhi = Math.max(-1, Math.min(1, cosPhi));
+            const phi = Math.acos(cosPhi); // angle between the two edges at C
+            if (phi < 1e-3 || phi > Math.PI - 1e-3) return [C]; // straight-through or fully doubled-back — nothing sensible to fillet
+
+            const maxTangent = Math.min(len1, len2) * 0.45; // CAD-standard cap: never consume more than 45% of either edge, so a fillet on one side of an edge can't collide with the fillet on the other side of the same edge
+            const tangentLen = Math.min(maxTangent, Math.min(len1, len2) * fraction);
+            if (tangentLen < 1e-3) return [C]; // fraction too small at this level — keep the sharp corner
+
+            const T1 = { x: C.x + u1.x * tangentLen, z: C.z + u1.z * tangentLen };
+            const T2 = { x: C.x + u2.x * tangentLen, z: C.z + u2.z * tangentLen };
+
+            const R = tangentLen * Math.tan(phi / 2);
+            const bisector = { x: u1.x + u2.x, z: u1.z + u2.z };
+            const bisLen = Math.hypot(bisector.x, bisector.z);
+            if (bisLen < 1e-6 || R < 1e-4) return [C];
+            const bisUnit = { x: bisector.x / bisLen, z: bisector.z / bisLen };
+            const d = tangentLen / Math.cos(phi / 2); // distance from C to the fillet circle's centre, along the bisector
+            const O = { x: C.x + bisUnit.x * d, z: C.z + bisUnit.z * d };
+
+            // The fillet arc's own subtended angle is always (pi - phi), which
+            // is always the SHORT way around from T1 to T2 as seen from O —
+            // so, unlike an arbitrary data-fitted arc, there is no direction
+            // ambiguity to resolve here.
+            const a0 = Math.atan2(T1.z - O.z, T1.x - O.x);
+            const a1 = Math.atan2(T2.z - O.z, T2.x - O.x);
+            const sweep = normalizeAngleDelta(a0, a1);
+            const arcLen = Math.abs(sweep) * R;
+            const steps = Math.max(1, Math.min(16, Math.round(arcLen / Math.max(meshSpacing * 0.6, 0.25))));
+            const pts = [];
+            for (let s = 0; s <= steps; s++) {
+                const ang = a0 + sweep * (s / steps);
+                pts.push({ x: O.x + R * Math.cos(ang), z: O.z + R * Math.sin(ang) });
+            }
+            return pts;
+        }
+
+        function runSketchPipeline() {
+            // Re-derives boundaryPts from the cached raw stroke every time,
+            // so the Sketch Smoothness slider can be re-applied without re-drawing.
+            let raw = sketchLastRawPts.slice();
+            if (raw.length < 3) return false;
+            const editScaleAtCapture = (cachedCenterOffset && cachedCenterOffset.scale) || EDIT_SCALE_MIN;
+            raw = closeLoopIfNear(raw, SKETCH_CLOSE_PX / editScaleAtCapture);
+            if (raw.length < 3) return false;
+
+            let pts = resampleUniform(raw, SKETCH_RESAMPLE_STEP);   // remove hand-speed artifacts
+            pts = chaikinSmooth(pts, SKETCH_BASE_SMOOTH_PASSES);     // light fixed pre-smoothing
+            pts = capNodeCount(pts, 400);                            // safety bound before corner search
+
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            pts.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+            });
+            const diagonal = Math.hypot(maxX - minX, maxZ - minZ);
+            const cornerEpsilon = Math.max(SKETCH_EPSILON_MIN, diagonal * SKETCH_EPSILON_FACTOR) * cornerEpsilonMultiplierForLevel(sketchSmoothness);
+
+            const wrapped = pts.concat([pts[0]]);
+            const cornerIdx = rdpIndices(wrapped, cornerEpsilon);
+
+            let finalPts;
+            if (cornerIdx.length < 3) {
+                finalPts = pts; // degenerate corner search, fall through with the smoothed raw points
+            } else {
+                // Between corners: always a straight edge (buildNet already
+                // treats consecutive boundaryPts as straight, so no extra
+                // sampling is needed there). At each corner: fillet by the
+                // amount the Sketch Smoothness level calls for.
+                const corners = cornerIdx.slice(0, -1).map(i => wrapped[i]); // drop the duplicated wrap-around point
+                const n = corners.length;
+                const fraction = filletFractionForLevel(sketchSmoothness);
+                finalPts = [];
+                for (let k = 0; k < n; k++) {
+                    const P = corners[(k - 1 + n) % n], C = corners[k], N = corners[(k + 1) % n];
+                    finalPts.push(...filletCorner(P, C, N, fraction));
+                }
+            }
+
+            finalPts = capNodeCount(finalPts, SKETCH_MAX_NODES);
+            if (finalPts.length < 4) return false; // degenerate sketch, keep previous boundary
+            boundaryPts = finalPts;
+            return true;
+        }
+
+        function finalizeSketch() {
+            if (sketchRawPts.length < 3) return; // too short a stroke, keep previous boundary
+            sketchLastRawPts = sketchRawPts.slice();
+            sketchSmoothness = 1;
+            const slider = document.getElementById('sketchSmooth');
+            const label = document.getElementById('val-sketchSmooth');
+            if (slider) slider.value = '1';
+            if (label) label.textContent = '1';
+            runSketchPipeline();
+        }
+
+        /* ============================================================
+           NET GENERATION (clipped square grid, boundary-fixed)
+        ============================================================ */
+        function buildNet(poly, spacing) {
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            poly.forEach(pt => {
+                minX = Math.min(minX, pt.x); maxX = Math.max(maxX, pt.x);
+                minZ = Math.min(minZ, pt.z); maxZ = Math.max(maxZ, pt.z);
+            });
+            const width = Math.max(maxX - minX, 1e-3), height = Math.max(maxZ - minZ, 1e-3);
+
+            // Effective spacing: if the requested spacing would need more
+            // cells than the budget allows, coarsen it just enough to fit —
+            // the grid always covers the FULL boundary extent; only the
+            // resolution backs off. (Previously nx/nz were capped outright,
+            // which truncated the covered AREA instead — on a large preset
+            // with small Mesh Spacing the net ended up visibly smaller than
+            // the boundary shown in the 2D editor.)
+            const MAX_GRID_CELLS = 1800;
+            let effSpacing = spacing;
+            const rawNx = width / effSpacing, rawNz = height / effSpacing;
+            if (rawNx * rawNz > MAX_GRID_CELLS) {
+                effSpacing = spacing * Math.sqrt((rawNx * rawNz) / MAX_GRID_CELLS);
+            }
+
+            const nx = Math.max(2, Math.ceil(width / effSpacing) + 3);
+            const nz = Math.max(2, Math.ceil(height / effSpacing) + 3);
+            const originX = minX - effSpacing;
+            const originZ = minZ - effSpacing;
+
+            const grid = [];
+            for (let j = 0; j <= nz; j++) {
+                const row = [];
+                for (let i = 0; i <= nx; i++) {
+                    const x = originX + i * effSpacing;
+                    const z = originZ + j * effSpacing;
+                    row.push({ x, z, inside: pointInPolygon({ x, z }, poly), nodeIndex: -1 });
+                }
+                grid.push(row);
+            }
+
+            const nodes = [];
+            const members = [];
+
+            function getOrCreateGridNode(i, j) {
+                const cell = grid[j][i];
+                if (!cell.inside) return -1;
+                if (cell.nodeIndex === -1) {
+                    cell.nodeIndex = nodes.length;
+                    nodes.push({
+                        x: cell.x, y: 0, z: cell.z,
+                        x0: cell.x, y0: 0, z0: cell.z,
+                        px: cell.x, py: 0, pz: cell.z,
+                        invMass: 1, gi: i, gj: j
+                    });
+                }
+                return cell.nodeIndex;
+            }
+
+            function addBoundaryNode(pt) {
+                const idx = nodes.length;
+                nodes.push({
+                    x: pt.x, y: 0, z: pt.z,
+                    x0: pt.x, y0: 0, z0: pt.z,
+                    px: pt.x, py: 0, pz: pt.z,
+                    invMass: 0, gi: null, gj: null // support by default; applyBoundarySupportPattern() may relax this
+                });
+                return idx;
+            }
+
+            function findBoundaryCrossing(a, b) {
+                let best = null, bestDist = Infinity;
+                for (let k = 0; k < poly.length; k++) {
+                    const p3 = poly[k], p4 = poly[(k + 1) % poly.length];
+                    const hit = segIntersect(a, b, p3, p4);
+                    if (hit) {
+                        const d = Math.hypot(hit.x - a.x, hit.z - a.z);
+                        if (d < bestDist) { bestDist = d; best = hit; }
+                    }
+                }
+                return best;
+            }
+
+            function addMember(a, b) {
+                if (a < 0 || b < 0 || a === b) return;
+                const na = nodes[a], nb = nodes[b];
+                const rest = Math.hypot(na.x - nb.x, na.z - nb.z);
+                if (rest < 1e-6) return;
+                members.push({ a, b, rest });
+            }
+
+            const rows = grid.length, cols = grid[0].length;
+
+            // horizontal edges
+            for (let j = 0; j < rows; j++) {
+                for (let i = 0; i < cols - 1; i++) {
+                    const A = grid[j][i], B = grid[j][i + 1];
+                    if (A.inside && B.inside) {
+                        addMember(getOrCreateGridNode(i, j), getOrCreateGridNode(i + 1, j));
+                    } else if (A.inside !== B.inside) {
+                        const inPt = A.inside ? A : B, outPt = A.inside ? B : A;
+                        const hit = findBoundaryCrossing(inPt, outPt);
+                        if (hit) addMember(getOrCreateGridNode(A.inside ? i : i + 1, j), addBoundaryNode(hit));
+                    }
+                }
+            }
+            // vertical edges
+            for (let j = 0; j < rows - 1; j++) {
+                for (let i = 0; i < cols; i++) {
+                    const A = grid[j][i], B = grid[j + 1][i];
+                    if (A.inside && B.inside) {
+                        addMember(getOrCreateGridNode(i, j), getOrCreateGridNode(i, j + 1));
+                    } else if (A.inside !== B.inside) {
+                        const inPt = A.inside ? A : B, outPt = A.inside ? B : A;
+                        const hit = findBoundaryCrossing(inPt, outPt);
+                        if (hit) addMember(getOrCreateGridNode(i, A.inside ? j : j + 1), addBoundaryNode(hit));
+                    }
+                }
+            }
+
+            // drop isolated nodes, remap indices
+            const degree = new Array(nodes.length).fill(0);
+            members.forEach(m => { degree[m.a]++; degree[m.b]++; });
+            const remap = new Array(nodes.length).fill(-1);
+            const finalNodes = [];
+            nodes.forEach((n, idx) => {
+                if (degree[idx] > 0) { remap[idx] = finalNodes.length; finalNodes.push(n); }
+            });
+            const finalMembers = members
+                .filter(m => remap[m.a] >= 0 && remap[m.b] >= 0)
+                .map(m => ({ a: remap[m.a], b: remap[m.b], rest: m.rest }));
+
+            return { nodes: finalNodes, members: finalMembers };
+        }
+
+        function buildLookups() {
+            gridMap = new Map();
+            netNodes.forEach((n, idx) => {
+                if (n.gi !== null && n.gi !== undefined) gridMap.set(n.gi + '_' + n.gj, idx);
+            });
+            memberKeyMap = new Map();
+            netMembers.forEach((m, idx) => {
+                const key = m.a < m.b ? m.a + '_' + m.b : m.b + '_' + m.a;
+                memberKeyMap.set(key, idx);
+            });
+        }
+
+        // Nearest arc-length position of pt along the closed boundary polygon
+        // — used to order boundary nodes around the perimeter regardless of
+        // the order they happened to be created in during grid clipping.
+        function boundaryArcLengthParam(pt, poly) {
+            const n = poly.length;
+            let cum = 0, bestDist = Infinity, bestArcPos = 0;
+            for (let i = 0; i < n; i++) {
+                const a = poly[i], b = poly[(i + 1) % n];
+                const dx = b.x - a.x, dz = b.z - a.z;
+                const len = Math.hypot(dx, dz);
+                if (len > 1e-9) {
+                    const t = Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.z - a.z) * dz) / (len * len)));
+                    const projX = a.x + t * dx, projZ = a.z + t * dz;
+                    const dist = Math.hypot(pt.x - projX, pt.z - projZ);
+                    if (dist < bestDist) { bestDist = dist; bestArcPos = cum + t * len; }
+                }
+                cum += len;
+            }
+            return bestArcPos;
+        }
+
+        // Item 2: by default every boundary node is a hard support (matches
+        // the previous flat-fixed-edge behaviour). With Free-Hanging Boundary
+        // enabled, only every Nth node (by position around the perimeter,
+        // spacing set by supportSpacing) stays a hard support — the rest sag
+        // under gravity like the interior net, but with reduced inverse mass
+        // so they behave like a stiffer beam/arch rather than a bare chain.
+        // This mirrors Otto's actual process of adjusting boundary heights
+        // point-by-point against a support system (Fig 13-14) rather than
+        // holding the whole edge in one flat plane.
+        function applyBoundarySupportPattern() {
+            const boundaryNodeIdx = [];
+            netNodes.forEach((n, idx) => { if (n.gi === null) boundaryNodeIdx.push(idx); });
+
+            if (!freeHangingBoundary || boundaryPts.length < 3) {
+                boundaryNodeIdx.forEach(idx => { netNodes[idx].invMass = 0; });
+                return;
+            }
+
+            boundaryNodeIdx.sort((ia, ib) => {
+                const pa = boundaryArcLengthParam(netNodes[ia], boundaryPts);
+                const pb = boundaryArcLengthParam(netNodes[ib], boundaryPts);
+                return pa - pb;
+            });
+            boundaryNodeIdx.forEach((idx, orderPos) => {
+                netNodes[idx].invMass = (orderPos % Math.max(2, supportSpacing) === 0) ? 0 : BOUNDARY_FREE_INV_MASS;
+            });
+        }
+
+        /* ============================================================
+           PHYSICS: verlet + distance-constraint relaxation
+        ============================================================ */
+        let gravityScale = 1; // set per-net in regenerateNetAndRelax so gravity scales with sketch size, not just a fixed constant
+
+        function stepSimulation() {
+            const g = GRAVITY_BASE * sagStrength * gravityScale;
+            for (const n of netNodes) {
+                if (n.invMass === 0) continue;
+                const vx = (n.x - n.px) * DAMPING;
+                const vy = (n.y - n.py) * DAMPING;
+                const vz = (n.z - n.pz) * DAMPING;
+                const nx = n.x + vx;
+                const ny = n.y + vy - g * n.invMass;
+                const nz = n.z + vz;
+                n.px = n.x; n.py = n.y; n.pz = n.z;
+                n.x = nx; n.y = ny; n.z = nz;
+            }
+            for (let iter = 0; iter < CONSTRAINT_ITERS; iter++) {
+                for (const m of netMembers) {
+                    const A = netNodes[m.a], B = netNodes[m.b];
+                    const dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z;
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    if (dist < 1e-9) continue;
+                    const diff = (dist - m.rest) / dist;
+                    const wa = A.invMass, wb = B.invMass;
+                    const wsum = wa + wb;
+                    if (wsum === 0) continue;
+                    const cx = dx * diff / wsum, cy = dy * diff / wsum, cz = dz * diff / wsum;
+                    if (wa > 0) { A.x += cx * wa; A.y += cy * wa; A.z += cz * wa; }
+                    if (wb > 0) { B.x -= cx * wb; B.y -= cy * wb; B.z -= cz * wb; }
+                }
+            }
+            // report how far the fastest-moving node travelled this step, so
+            // the caller can stop early once the net has genuinely settled
+            // instead of always spending the full step budget.
+            let maxMove = 0;
+            for (const n of netNodes) {
+                if (n.invMass === 0) continue;
+                const move = Math.hypot(n.x - n.px, n.y - n.py, n.z - n.pz);
+                if (move > maxMove) maxMove = move;
+            }
+            return maxMove;
+        }
+
+        /* ============================================================
+           STRUCTURAL ANALYSIS (indicative only)
+        ============================================================ */
+        // --- Lath thickness <-> minimum bend radius (item 1) ---
+        function radiusForThickness(tMM) {
+            const tM = tMM / 1000;
+            return tM / (2 * LATH_STRAIN_ALLOW);
+        }
+        function computeRecommendedThicknessMM(minRadiusM) {
+            if (!isFinite(minRadiusM) || minRadiusM <= 0) return STANDARD_LATH_THICKNESSES_MM[0];
+            const tMaxMM = 2 * LATH_STRAIN_ALLOW * minRadiusM * 1000;
+            let chosen = STANDARD_LATH_THICKNESSES_MM[0];
+            for (const t of STANDARD_LATH_THICKNESSES_MM) {
+                if (t <= tMaxMM) chosen = t; else break; // largest standard size that still clears the tightest curve, snapped DOWN for a safety margin
+            }
+            return chosen;
+        }
+
+        function collectCurvatureSample(samples, a, b, R) {
+            if (!isFinite(R)) return;
+            const key = a < b ? a + '_' + b : b + '_' + a;
+            const mi = memberKeyMap.get(key);
+            if (mi === undefined) return;
+            const prev = samples.get(mi);
+            if (prev === undefined || R < prev) samples.set(mi, R); // keep the tighter (worse) estimate
+        }
+
+        function analyzeStructure() {
+            nodeColors = new Array(netNodes.length).fill(null);
+            memberColors = new Array(netMembers.length).fill(null);
+            let maxShearDev = 0;
+            let minRadius = Infinity;
+
+            // Always computed, regardless of showShear — the checkbox only
+            // controls whether the deviation gets drawn as node colour, not
+            // whether the shear distortion itself gets evaluated. Otherwise
+            // hiding the overlay would silently stop checking it at all,
+            // and the status bar would wrongly report "safe".
+            for (const [key, idx] of gridMap.entries()) {
+                const parts = key.split('_');
+                const gi = parseInt(parts[0], 10), gj = parseInt(parts[1], 10);
+                const rightIdx = gridMap.get((gi + 1) + '_' + gj);
+                const upIdx = gridMap.get(gi + '_' + (gj + 1));
+                if (rightIdx === undefined || upIdx === undefined) continue;
+                const n = netNodes[idx], r = netNodes[rightIdx], u = netNodes[upIdx];
+                const v1 = { x: r.x - n.x, y: r.y - n.y, z: r.z - n.z };
+                const v2 = { x: u.x - n.x, y: u.y - n.y, z: u.z - n.z };
+                const l1 = Math.hypot(v1.x, v1.y, v1.z), l2 = Math.hypot(v2.x, v2.y, v2.z);
+                if (l1 < 1e-6 || l2 < 1e-6) continue;
+                let cosA = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (l1 * l2);
+                cosA = Math.max(-1, Math.min(1, cosA));
+                const angle = Math.acos(cosA) * 180 / Math.PI;
+                const dev = Math.abs(angle - 90);
+                maxShearDev = Math.max(maxShearDev, dev);
+                if (showShear) nodeColors[idx] = devToColor(dev);
+            }
+
+            // PASS 1 — collect raw radius estimates and the shape's own
+            // tightest curve. This runs regardless of showCurvature so the
+            // auto-recommended lath thickness stays current even while the
+            // curvature overlay itself is hidden.
+            const curvatureSamples = new Map(); // memberIndex -> tightest R seen
+            for (const [key, idx] of gridMap.entries()) {
+                const parts = key.split('_');
+                const gi = parseInt(parts[0], 10), gj = parseInt(parts[1], 10);
+                const leftIdx = gridMap.get((gi - 1) + '_' + gj);
+                const rightIdx = gridMap.get((gi + 1) + '_' + gj);
+                if (leftIdx !== undefined && rightIdx !== undefined) {
+                    const R = circumRadius(netNodes[leftIdx], netNodes[idx], netNodes[rightIdx]);
+                    collectCurvatureSample(curvatureSamples, leftIdx, idx, R);
+                    collectCurvatureSample(curvatureSamples, idx, rightIdx, R);
+                    if (isFinite(R)) minRadius = Math.min(minRadius, R);
+                }
+                const downIdx = gridMap.get(gi + '_' + (gj - 1));
+                const upIdx2 = gridMap.get(gi + '_' + (gj + 1));
+                if (downIdx !== undefined && upIdx2 !== undefined) {
+                    const R = circumRadius(netNodes[downIdx], netNodes[idx], netNodes[upIdx2]);
+                    collectCurvatureSample(curvatureSamples, downIdx, idx, R);
+                    collectCurvatureSample(curvatureSamples, idx, upIdx2, R);
+                    if (isFinite(R)) minRadius = Math.min(minRadius, R);
+                }
+            }
+
+            // Derive the lath thickness in use (auto from this shape's
+            // tightest curve, or the manual override) and the bend-radius
+            // threshold that follows from it, THEN colour with it.
+            if (manualLathOverride) {
+                curvatureThreshold = radiusForThickness(lathThicknessMM);
+            } else {
+                lathThicknessMM = computeRecommendedThicknessMM(minRadius);
+                curvatureThreshold = radiusForThickness(lathThicknessMM);
+            }
+            const lathLabel = document.getElementById('val-lathThickness');
+            if (lathLabel) {
+                lathLabel.textContent = lathThicknessMM.toFixed(0) + ' mm (' + (manualLathOverride ? 'manual' : 'auto') +
+                    ') \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m';
+            }
+
+            if (showCurvature) {
+                curvatureSamples.forEach((R, mi) => { memberColors[mi] = radiusToColor(R, curvatureThreshold); });
+            }
+
+            let minY = Infinity, maxY = -Infinity;
+            netNodes.forEach(n => { minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y); });
+            const rise = maxY - minY;
+
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            netNodes.forEach(n => {
+                minX = Math.min(minX, n.x0); maxX = Math.max(maxX, n.x0);
+                minZ = Math.min(minZ, n.z0); maxZ = Math.max(maxZ, n.z0);
+            });
+            const span = Math.hypot(maxX - minX, maxZ - minZ);
+            const ratio = span > 0 ? rise / span : 0;
+
+            updateInfoPanel({
+                maxShearDev, minRadius, rise, span, ratio,
+                nodeCount: netNodes.length, memberCount: netMembers.length
+            });
+            updateNetGeometryPositions();
+        }
+
+        function updateInfoPanel(s) {
+            document.getElementById('stat-count').textContent = s.nodeCount + ' / ' + s.memberCount;
+            document.getElementById('stat-ratio').textContent = s.ratio.toFixed(2) +
+                '  (' + s.rise.toFixed(1) + ' m / ' + s.span.toFixed(1) + ' m)';
+            document.getElementById('stat-shear').textContent = s.maxShearDev.toFixed(0) + '\u00B0';
+            document.getElementById('stat-radius').textContent = isFinite(s.minRadius) ? s.minRadius.toFixed(1) + ' m' : '—';
+
+            const statusBar = document.getElementById('status-bar');
+            let severity = 0; // 0 ok, 1 marginal, 2 bad
+
+            if (s.maxShearDev > 25) severity = Math.max(severity, 2);
+            else if (s.maxShearDev > 8) severity = Math.max(severity, 1);
+
+            // Curvature component: Auto mode compares against FIXED lath-size
+            // benchmarks rather than curvatureThreshold itself, because in
+            // Auto mode curvatureThreshold is DERIVED FROM minRadius — a
+            // direct comparison there is nearly always "Marginal" regardless
+            // of the actual shape. Manual override mode is unaffected (its
+            // threshold comes from an independently-chosen thickness).
+            if (isFinite(s.minRadius)) {
+                if (manualLathOverride) {
+                    if (s.minRadius < curvatureThreshold) severity = Math.max(severity, 2);
+                    else if (s.minRadius < curvatureThreshold * 1.6) severity = Math.max(severity, 1);
+                } else {
+                    const thinnestRadius = radiusForThickness(STANDARD_LATH_THICKNESSES_MM[0]);
+                    const thickestRadius = radiusForThickness(STANDARD_LATH_THICKNESSES_MM[STANDARD_LATH_THICKNESSES_MM.length - 1]);
+                    if (s.minRadius < thinnestRadius) severity = Math.max(severity, 2);
+                    else if (s.minRadius < thickestRadius) severity = Math.max(severity, 1);
+                }
+            }
+
+            // A monochrome light-to-dark blue scale instead of a red/amber/
+            // green traffic-light palette — this reports a construction-tier
+            // recommendation, not a pass/fail verdict, and green/red reads
+            // as "stop/go" regardless of the accompanying text. Darker +
+            // bolder = more reinforcement called for; nothing here should
+            // read as "broken".
+            const colors = ['#7fa8c9', '#3d6f9e', '#0b2d4d'];
+            const tints = ['rgba(127,168,201,0.08)', 'rgba(61,111,158,0.08)', 'rgba(11,45,77,0.08)'];
+            const weights = ['400', '600', '800'];
+            const labels = [
+                'NET SETTLED — WITHIN INDICATIVE LIMITS',
+                'NET SETTLED — LOCAL DIAGONAL STIFFENING SUGGESTED',
+                'NET SETTLED — DOUBLE LAYER + TIES LIKELY REQUIRED'
+            ];
+
+            // A very flat net (rise/span < 0.1) is a separate concern from
+            // shear/curvature severity — it's flagged with its own colour
+            // (orange, deliberately outside the blue scale above so it reads
+            // as a distinct signal) rather than folded into the tier system.
+            // The status label text and recommendBox wording stay exactly
+            // as the tier already produced; only the flatness explanation is
+            // appended to the SAME recommendBox rather than a second box.
+            const isFlat = s.ratio < 0.1;
+            const FLAT_COLOR = '#e07b1f';
+            const FLAT_TINT = 'rgba(224,123,31,0.08)';
+            const barColor = isFlat ? FLAT_COLOR : colors[severity];
+            const barTint = isFlat ? FLAT_TINT : tints[severity];
+
+            statusBar.style.color = barColor;
+            statusBar.style.fontWeight = weights[severity];
+            statusBar.textContent = labels[severity] +
+                '  ·  ' + s.nodeCount + ' NODES / ' + s.memberCount + ' LATHS  ·  RISE/SPAN ' + s.ratio.toFixed(2);
+
+            const rec = document.getElementById('recommendBox');
+            rec.style.borderLeftColor = barColor;
+            rec.style.backgroundColor = barTint;
+            rec.style.fontWeight = weights[severity];
+            const spanTxt = s.span.toFixed(1);
+            if (s.span < 16 && severity === 0) {
+                rec.innerHTML = '<b>Single layer may be feasible</b> — span ' + spanTxt + ' m is close to the ' +
+                    'Essen 1962 trial gridshell (15 &times; 15 m, single layer, collapse load ≈150 kgf/m² rigid ' +
+                    'joints; Happold &amp; Liddell 1975, Table 3).';
+            } else if (severity < 2) {
+                rec.innerHTML = '<b>Double-layer lattice recommended.</b> At this span the Multihalle single-layer ' +
+                    'shell would collapse at only ≈3.8 kgf/m² (barely above self-weight) versus ≈100 kgf/m² ' +
+                    'doubled — Table 3, Happold &amp; Liddell 1975.';
+            } else {
+                rec.innerHTML = '<b>Double layer + diagonal ties strongly recommended.</b> Shear distortion or ' +
+                    'lath curvature exceeds the indicative limit — at Mannheim, ties raised the doubled shell\'s ' +
+                    'collapse load from ≈100 to ≈160&ndash;240 kgf/m² (Table 3). Where bend radius < ' +
+                    curvatureThreshold.toFixed(1) + ' m, laths were split into two 25 mm layers on site (Liddell 2015, §3.3).';
+            }
+            if (isFlat) {
+                rec.innerHTML += ' <b>Also, this net is very flat</b> (rise/span ' + s.ratio.toFixed(2) +
+                    ') — well below the ~0.15&ndash;0.3 range typical of a working gridshell (cf. Essen 1962, ' +
+                    '&approx;0.24). Try raising Sag Strength or enabling Free-Hanging Boundary.';
+            }
+        }
+
+        /* ============================================================
+           THREE.JS SCENE
+        ============================================================ */
+        const simContainer = document.getElementById('simContainer');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+
+        const camera = new THREE.PerspectiveCamera(
+            42, simContainer.clientWidth / Math.max(simContainer.clientHeight, 1), 0.1, 2000
+        );
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(simContainer.clientWidth, simContainer.clientHeight);
+        simContainer.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+
+        const gridHelper = new THREE.GridHelper(80, 80, 0xe6e6e6, 0xf2f2f2); // 80/80 = 1m per cell, matching the 2D editor's background grid
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.7;
+        scene.add(gridHelper);
+
+        let pointsGeom = null, pointsMesh = null;
+        let linesGeom = null, linesMesh = null;
+        let boundaryLine = null;
+
+        function rebuildNetMeshes() {
+            if (pointsMesh) { scene.remove(pointsMesh); pointsGeom.dispose(); pointsMesh.material.dispose(); }
+            if (linesMesh) { scene.remove(linesMesh); linesGeom.dispose(); linesMesh.material.dispose(); }
+
+            const n = netNodes.length;
+            pointsGeom = new THREE.BufferGeometry();
+            pointsGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+            pointsGeom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+            const pointsMat = new THREE.PointsMaterial({ size: 0.16, vertexColors: true, sizeAttenuation: true });
+            pointsMesh = new THREE.Points(pointsGeom, pointsMat);
+            scene.add(pointsMesh);
+
+            // LineSegments2 + LineMaterial: THREE.LineBasicMaterial's `linewidth`
+            // is silently ignored by almost every WebGL driver (a long-standing
+            // three.js/WebGL limitation), so laths always rendered at a fixed
+            // 1px regardless of what was set. LineMaterial instead draws
+            // screen-space quads per segment, giving a genuine pixel width.
+            linesGeom = new LineSegmentsGeometry();
+            linesGeom.setPositions(new Float32Array(Math.max(netMembers.length, 1) * 6));
+            linesGeom.setColors(new Float32Array(Math.max(netMembers.length, 1) * 6));
+            const linesMat = new LineMaterial({
+                linewidth: 2.2, // pixels
+                vertexColors: true,
+                resolution: new THREE.Vector2(simContainer.clientWidth, simContainer.clientHeight)
+            });
+            linesMesh = new LineSegments2(linesGeom, linesMat);
+            scene.add(linesMesh);
+
+            updateNetGeometryPositions();
+        }
+
+        function updateNetGeometryPositions() {
+            if (!pointsGeom) return;
+            const posA = pointsGeom.attributes.position.array;
+            const colA = pointsGeom.attributes.color.array;
+            for (let i = 0; i < netNodes.length; i++) {
+                const n = netNodes[i];
+                const dy = inverted ? -n.y : n.y;
+                posA[i * 3] = n.x; posA[i * 3 + 1] = dy; posA[i * 3 + 2] = n.z;
+                const c = nodeColors[i] || (n.invMass === 0 ? COLOR_FIXED : (n.gi === null ? COLOR_BOUNDARY_FREE : COLOR_FREE));
+                colA[i * 3] = c.r; colA[i * 3 + 1] = c.g; colA[i * 3 + 2] = c.b;
+            }
+            pointsGeom.attributes.position.needsUpdate = true;
+            pointsGeom.attributes.color.needsUpdate = true;
+
+            const m = netMembers.length;
+            const lp = new Float32Array(Math.max(m, 1) * 6);
+            const lc = new Float32Array(Math.max(m, 1) * 6);
+            for (let i = 0; i < m; i++) {
+                const mem = netMembers[i];
+                const A = netNodes[mem.a], B = netNodes[mem.b];
+                const ay = inverted ? -A.y : A.y, by = inverted ? -B.y : B.y;
+                lp[i * 6] = A.x; lp[i * 6 + 1] = ay; lp[i * 6 + 2] = A.z;
+                lp[i * 6 + 3] = B.x; lp[i * 6 + 4] = by; lp[i * 6 + 5] = B.z;
+                const c = memberColors[i] || COLOR_GRAY;
+                lc[i * 6] = c.r; lc[i * 6 + 1] = c.g; lc[i * 6 + 2] = c.b;
+                lc[i * 6 + 3] = c.r; lc[i * 6 + 4] = c.g; lc[i * 6 + 5] = c.b;
+            }
+            linesGeom.setPositions(lp);
+            linesGeom.setColors(lc);
+        }
+
+        function updateBoundaryLine3D() {
+            if (boundaryLine) { scene.remove(boundaryLine); boundaryLine.geometry.dispose(); boundaryLine.material.dispose(); }
+            const pts = boundaryPts.map(p => new THREE.Vector3(p.x, 0, p.z));
+            if (pts.length) pts.push(pts[0].clone());
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            const mat = new THREE.LineDashedMaterial({ color: 0xbbbbbb, dashSize: 0.35, gapSize: 0.25 });
+            boundaryLine = new THREE.Line(geo, mat);
+            boundaryLine.computeLineDistances();
+            scene.add(boundaryLine);
+        }
+
+        // A 1.67m vertical line at the plan's centroid, for a human-scale
+        // sense of size — always visible, positioned at the boundary's fixed
+        // y=0 level (invariant whether the net is shown inverted or not).
+        const HUMAN_HEIGHT_M = 1.67;
+        let scaleRefLine = null;
+        function updateScaleReferenceLine() {
+            if (scaleRefLine) { scene.remove(scaleRefLine); scaleRefLine.geometry.dispose(); scaleRefLine.material.dispose(); }
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            boundaryPts.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+            });
+            const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+            const geo = new LineSegmentsGeometry();
+            geo.setPositions([cx, 0, cz, cx, HUMAN_HEIGHT_M, cz]);
+            const mat = new LineMaterial({
+                color: 0x1565c0,
+                linewidth: 3,
+                resolution: new THREE.Vector2(simContainer.clientWidth, simContainer.clientHeight)
+            });
+            scaleRefLine = new LineSegments2(geo, mat);
+            scene.add(scaleRefLine);
+        }
+
+        function fitCameraToBounds() {
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            boundaryPts.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+            });
+            const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+            const size = Math.max(maxX - minX, maxZ - minZ, 6);
+            camera.position.set(cx + size * 0.95, size * 0.9, cz + size * 1.15);
+            controls.target.set(cx, size * 0.12, cz);
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+
+        // Re-frames the camera using the net's actual current 3D extent
+        // (including rise), so the model stays centred and fully in view
+        // once it settles — fitCameraToBounds() only ever sees the flat 2D
+        // footprint, so a dome that rises a lot could end up poking outside
+        // a view that was framed before any of that height existed.
+        function fitCameraToNet() {
+            if (!netNodes.length) return;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            netNodes.forEach(n => {
+                const y = inverted ? -n.y : n.y;
+                minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                minZ = Math.min(minZ, n.z); maxZ = Math.max(maxZ, n.z);
+            });
+            const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
+            const footprint = Math.max(maxX - minX, maxZ - minZ, 6);
+            const size = Math.max(footprint, (maxY - minY) * 1.6, 6);
+            camera.position.set(cx + size * 0.95, cy + size * 0.9, cz + size * 1.15);
+            controls.target.set(cx, cy, cz);
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+
+        window.addEventListener('resize', () => {
+            const w = simContainer.clientWidth, h = simContainer.clientHeight;
+            if (w === 0 || h === 0) return;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            if (linesMesh) linesMesh.material.resolution.set(w, h);
+            if (scaleRefLine) scaleRefLine.material.resolution.set(w, h);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (simRunning) {
+                let lastMaxMove = 0;
+                for (let k = 0; k < STEPS_PER_FRAME; k++) { lastMaxMove = stepSimulation(); simStep++; }
+                updateNetGeometryPositions();
+                const settled = simStep > 60 && lastMaxMove < SETTLE_EPS;
+                if (simStep >= MAX_SIM_STEPS || settled) {
+                    simRunning = false;
+                    analyzeStructure();
+                    fitCameraToNet();
+                }
+            }
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        /* ============================================================
+           REGENERATE PIPELINE
+        ============================================================ */
+        function regenerateNetAndRelax() {
+            const built = buildNet(boundaryPts, meshSpacing);
+            netNodes = built.nodes;
+            netMembers = built.members;
+            buildLookups();
+            applyBoundarySupportPattern();
+
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            boundaryPts.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+            });
+            const boundaryDiagonal = Math.hypot(maxX - minX, maxZ - minZ);
+            gravityScale = Math.max(0.6, Math.min(2.5, boundaryDiagonal / GRAVITY_REFERENCE_SPAN));
+
+            nodeColors = new Array(netNodes.length).fill(null);
+            memberColors = new Array(netMembers.length).fill(null);
+            rebuildNetMeshes();
+            updateBoundaryLine3D();
+            updateScaleReferenceLine();
+            fitCameraToBounds();
+            simStep = 0;
+            simRunning = true;
+            document.getElementById('status-bar').style.color = '#111';
+            document.getElementById('status-bar').textContent = 'RELAXING NET UNDER GRAVITY \u2026';
+        }
+
+        function reRelaxFromFlat() {
+            netNodes.forEach(n => {
+                n.x = n.x0; n.y = n.y0; n.z = n.z0;
+                n.px = n.x0; n.py = n.y0; n.pz = n.z0;
+            });
+            simStep = 0;
+            simRunning = true;
+            document.getElementById('status-bar').style.color = '#111';
+            document.getElementById('status-bar').textContent = 'RELAXING NET UNDER GRAVITY \u2026';
+        }
+
+        /* ============================================================
+           2D BOUNDARY EDITOR
+        ============================================================ */
+        const editCanvas = document.getElementById('editorCanvas');
+        const editCtx = editCanvas.getContext('2d');
+        const EDIT_SCALE_MIN = 2;   // px/m — floor, so a huge sketch never shrinks to an unreadable dot
+        const EDIT_SCALE_MAX = 40;  // px/m — ceiling, so a tiny sketch never blows up to fill the canvas at a useless zoom
+        const EDIT_FIT_MARGIN = 0.85; // leave a little breathing room around the shape
+        const MANUAL_ZOOM_MIN = 0.2, MANUAL_ZOOM_MAX = 6;
+        let manualZoom = 1; // scroll-wheel multiplier layered on top of the auto-fit scale; persists until a new preset is picked
+        let manualPanX = 0, manualPanZ = 0; // world-space (meters) offset from the shape's own centroid, from click-dragging empty canvas
+        let panning = false;
+        let lastPanPx = null;
+        let cachedCenterOffset = null; // { cx, cz, scale } — recomputed whenever invalidated (set to null) and not mid-drag
+
+        function ensureCanvasSize(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const w = Math.floor(rect.width), h = Math.floor(rect.height);
+            if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; return true; }
+            return false;
+        }
+
+        function updateEditCenterOffset() {
+            if (dragIdx !== null && cachedCenterOffset !== null) return;
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            boundaryPts.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+            });
+            const midX = (minX + maxX) / 2 + manualPanX, midZ = (minZ + maxZ) / 2 + manualPanZ;
+            const shapeW = Math.max(maxX - minX, 1e-3), shapeH = Math.max(maxZ - minZ, 1e-3);
+            let autoScale = Math.min(editCanvas.width / shapeW, editCanvas.height / shapeH) * EDIT_FIT_MARGIN;
+            autoScale = Math.max(EDIT_SCALE_MIN, Math.min(EDIT_SCALE_MAX, autoScale));
+            const scale = autoScale * manualZoom;
+            cachedCenterOffset = {
+                cx: editCanvas.width / 2 - midX * scale,
+                cz: editCanvas.height / 2 - midZ * scale,
+                scale
+            };
+        }
+        function toPx(x, z) {
+            return { px: cachedCenterOffset.cx + x * cachedCenterOffset.scale, pz: cachedCenterOffset.cz + z * cachedCenterOffset.scale };
+        }
+        function fromPx(px, pz) {
+            return { x: (px - cachedCenterOffset.cx) / cachedCenterOffset.scale, z: (pz - cachedCenterOffset.cz) / cachedCenterOffset.scale };
+        }
+
+        function drawEditor() {
+            ensureCanvasSize(editCanvas);
+            updateEditCenterOffset();
+            editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+
+            // faint background grid, 1m spacing
+            editCtx.strokeStyle = '#f2f2f2';
+            editCtx.lineWidth = 1;
+            for (let gx = -40; gx <= 40; gx++) {
+                const { px } = toPx(gx, 0);
+                if (px < 0 || px > editCanvas.width) continue;
+                editCtx.beginPath(); editCtx.moveTo(px, 0); editCtx.lineTo(px, editCanvas.height); editCtx.stroke();
+            }
+            for (let gz = -40; gz <= 40; gz++) {
+                const { pz } = toPx(0, gz);
+                if (pz < 0 || pz > editCanvas.height) continue;
+                editCtx.beginPath(); editCtx.moveTo(0, pz); editCtx.lineTo(editCanvas.width, pz); editCtx.stroke();
+            }
+
+            if (editorMode === 'sketch') {
+                // faint ghost of the last committed boundary, for reference only
+                if (boundaryPts.length >= 2) {
+                    editCtx.beginPath();
+                    boundaryPts.forEach((p, i) => {
+                        const { px, pz } = toPx(p.x, p.z);
+                        if (i === 0) editCtx.moveTo(px, pz); else editCtx.lineTo(px, pz);
+                    });
+                    editCtx.closePath();
+                    editCtx.strokeStyle = '#dcdcdc';
+                    editCtx.lineWidth = 1;
+                    editCtx.stroke();
+                }
+                // live raw stroke being drawn
+                if (sketchRawPts.length >= 2) {
+                    editCtx.beginPath();
+                    sketchRawPts.forEach((p, i) => {
+                        const { px, pz } = toPx(p.x, p.z);
+                        if (i === 0) editCtx.moveTo(px, pz); else editCtx.lineTo(px, pz);
+                    });
+                    editCtx.strokeStyle = '#007BFF';
+                    editCtx.lineWidth = 2;
+                    editCtx.stroke();
+                }
+                return;
+            }
+
+            if (boundaryPts.length >= 2) {
+                editCtx.beginPath();
+                boundaryPts.forEach((p, i) => {
+                    const { px, pz } = toPx(p.x, p.z);
+                    if (i === 0) editCtx.moveTo(px, pz); else editCtx.lineTo(px, pz);
+                });
+                editCtx.closePath();
+                editCtx.fillStyle = 'rgba(0,123,255,0.06)';
+                editCtx.fill();
+                editCtx.strokeStyle = '#111';
+                editCtx.lineWidth = 1.5;
+                editCtx.stroke();
+            }
+
+            boundaryPts.forEach((p, i) => {
+                const { px, pz } = toPx(p.x, p.z);
+                editCtx.beginPath();
+                editCtx.arc(px, pz, i === selectedIdx ? 3 : 2.5, 0, Math.PI * 2);
+                editCtx.fillStyle = i === selectedIdx ? '#007BFF' : '#111';
+                editCtx.fill();
+                editCtx.strokeStyle = '#fff';
+                editCtx.lineWidth = 1;
+                editCtx.stroke();
+            });
+        }
+
+        window.addEventListener('resize', () => { if (ensureCanvasSize(editCanvas)) { cachedCenterOffset = null; drawEditor(); } });
+
+        editCanvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+            manualZoom = Math.max(MANUAL_ZOOM_MIN, Math.min(MANUAL_ZOOM_MAX, manualZoom * factor));
+            cachedCenterOffset = null; // force a recompute using the new zoom
+            drawEditor();
+        }, { passive: false });
+
+        editCanvas.addEventListener('mousedown', e => {
+            const rect = editCanvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+
+            if (editorMode === 'sketch') {
+                sketching = true;
+                sketchRawPts = [fromPx(mx, my)];
+                lastSketchPx = { mx, my };
+                drawEditor();
+                return;
+            }
+
+            let found = -1, bestD = 12;
+            boundaryPts.forEach((p, i) => {
+                const { px, pz } = toPx(p.x, p.z);
+                const d = Math.hypot(mx - px, my - pz);
+                if (d < bestD) { bestD = d; found = i; }
+            });
+            if (found >= 0) {
+                dragIdx = found; selectedIdx = found; drawEditor();
+            } else {
+                panning = true;
+                lastPanPx = { mx, my };
+                editCanvas.style.cursor = 'grabbing';
+            }
+        });
+        window.addEventListener('mousemove', e => {
+            const rect = editCanvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+
+            if (editorMode === 'sketch') {
+                if (!sketching) return;
+                const dpx = Math.hypot(mx - lastSketchPx.mx, my - lastSketchPx.my);
+                if (dpx < SKETCH_MIN_PX_STEP) return;
+                sketchRawPts.push(fromPx(mx, my));
+                lastSketchPx = { mx, my };
+                drawEditor();
+                return;
+            }
+
+            if (panning) {
+                const s = cachedCenterOffset ? cachedCenterOffset.scale : 10;
+                manualPanX -= (mx - lastPanPx.mx) / s;
+                manualPanZ -= (my - lastPanPx.my) / s;
+                lastPanPx = { mx, my };
+                cachedCenterOffset = null;
+                drawEditor();
+                return;
+            }
+
+            if (dragIdx === null) return;
+            const p = fromPx(mx, my);
+            boundaryPts[dragIdx] = p;
+            drawEditor();
+        });
+        window.addEventListener('mouseup', () => {
+            if (panning) {
+                panning = false;
+                lastPanPx = null;
+                editCanvas.style.cursor = 'crosshair';
+            }
+            if (editorMode === 'sketch') {
+                if (sketching) {
+                    sketching = false;
+                    finalizeSketch();
+                    setEditorMode('edit');
+                    selectedIdx = -1;
+                    cachedCenterOffset = null;
+                    drawEditor();
+                    regenerateNetAndRelax();
+                }
+                return;
+            }
+            if (dragIdx !== null) {
+                dragIdx = null;
+                cachedCenterOffset = null;
+                regenerateNetAndRelax();
+                drawEditor();
+            }
+        });
+
+        document.getElementById('btnAddNode').addEventListener('click', () => {
+            let bestI = 0, bestD = -1;
+            for (let i = 0; i < boundaryPts.length; i++) {
+                const a = boundaryPts[i], b = boundaryPts[(i + 1) % boundaryPts.length];
+                const d = Math.hypot(a.x - b.x, a.z - b.z);
+                if (d > bestD) { bestD = d; bestI = i; }
+            }
+            const a = boundaryPts[bestI], b = boundaryPts[(bestI + 1) % boundaryPts.length];
+            boundaryPts.splice(bestI + 1, 0, { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 });
+            selectedIdx = bestI + 1;
+            cachedCenterOffset = null;
+            drawEditor();
+            regenerateNetAndRelax();
+        });
+        document.getElementById('btnRemoveNode').addEventListener('click', () => {
+            if (boundaryPts.length <= 4) return;
+            const idx = selectedIdx >= 0 ? selectedIdx : boundaryPts.length - 1;
+            boundaryPts.splice(idx, 1);
+            selectedIdx = -1;
+            cachedCenterOffset = null;
+            drawEditor();
+            regenerateNetAndRelax();
+        });
+
+        document.getElementById('presetSelect').addEventListener('change', e => {
+            if (e.target.value === 'essen') boundaryPts = presetEssen();
+            else if (e.target.value === 'rect') boundaryPts = presetRectangle();
+            else boundaryPts = presetBlob();
+            selectedIdx = -1;
+            manualZoom = 1;
+            manualPanX = 0;
+            manualPanZ = 0;
+            cachedCenterOffset = null;
+            setEditorMode('edit');
+            drawEditor();
+            regenerateNetAndRelax();
+        });
+
+        /* ---- Sketch / Edit mode toggle ---- */
+        const modeSketchBtn = document.getElementById('modeSketchBtn');
+        const modeEditBtn = document.getElementById('modeEditBtn');
+        const editorHintEl = document.getElementById('editorHint');
+        const btnAddNodeEl = document.getElementById('btnAddNode');
+        const btnRemoveNodeEl = document.getElementById('btnRemoveNode');
+
+        function setEditorMode(mode) {
+            editorMode = mode;
+            sketching = false;
+            sketchRawPts = [];
+            modeSketchBtn.classList.toggle('active', mode === 'sketch');
+            modeEditBtn.classList.toggle('active', mode === 'edit');
+            btnAddNodeEl.disabled = (mode === 'sketch');
+            btnRemoveNodeEl.disabled = (mode === 'sketch');
+            editorHintEl.textContent = mode === 'sketch'
+                ? 'Draw a closed outline freehand — release to auto-place structural nodes. Scroll to zoom.'
+                : 'Drag a node to move it, drag empty space to pan, scroll to zoom.';
+            drawEditor();
+        }
+        modeSketchBtn.addEventListener('click', () => setEditorMode('sketch'));
+        modeEditBtn.addEventListener('click', () => setEditorMode('edit'));
+
+        const sketchSmoothSlider = document.getElementById('sketchSmooth');
+        const valSketchSmooth = document.getElementById('val-sketchSmooth');
+        sketchSmoothSlider.addEventListener('input', () => {
+            sketchSmoothness = parseInt(sketchSmoothSlider.value, 10);
+            valSketchSmooth.textContent = String(sketchSmoothness);
+            if (sketchLastRawPts.length < 3) return; // no sketch drawn yet, nothing to re-run
+            if (runSketchPipeline()) {
+                selectedIdx = -1;
+                cachedCenterOffset = null;
+                drawEditor();
+                clearTimeout(sketchSmoothDebounce);
+                sketchSmoothDebounce = setTimeout(regenerateNetAndRelax, 250);
+            }
+        });
+
+        /* ============================================================
+           CONTROL PANEL BINDINGS
+        ============================================================ */
+        let meshDebounce = null;
+        const meshSpacingSlider = document.getElementById('meshSpacing');
+        meshSpacingSlider.addEventListener('input', () => {
+            meshSpacing = parseFloat(meshSpacingSlider.value);
+            document.getElementById('val-spacing').textContent = meshSpacing.toFixed(2) + ' m';
+            clearTimeout(meshDebounce);
+            meshDebounce = setTimeout(regenerateNetAndRelax, 300);
+        });
+
+        const sagSlider = document.getElementById('sagStrength');
+        sagSlider.addEventListener('input', () => {
+            sagStrength = parseFloat(sagSlider.value);
+            document.getElementById('val-sag').textContent = sagStrength.toFixed(2);
+            simStep = 0;
+            simRunning = true;
+        });
+
+        const lathOverrideToggle = document.getElementById('lathOverrideToggle');
+        const lathOverrideRow = document.getElementById('lathOverrideRow');
+        const lathManualSlider = document.getElementById('lathManual');
+        const valLathManual = document.getElementById('val-lathManual');
+
+        lathOverrideToggle.addEventListener('change', () => {
+            manualLathOverride = lathOverrideToggle.checked;
+            lathOverrideRow.style.display = manualLathOverride ? 'block' : 'none';
+            if (manualLathOverride) lathThicknessMM = parseFloat(lathManualSlider.value);
+            if (!simRunning) analyzeStructure();
+        });
+        lathManualSlider.addEventListener('input', () => {
+            lathThicknessMM = parseFloat(lathManualSlider.value);
+            valLathManual.textContent = lathThicknessMM.toFixed(0) + ' mm';
+            if (!simRunning) analyzeStructure();
+        });
+
+        document.getElementById('invertToggle').addEventListener('change', e => {
+            inverted = e.target.checked;
+            updateNetGeometryPositions();
+            if (!simRunning) fitCameraToNet();
+        });
+
+        const freeBoundaryToggle = document.getElementById('freeBoundaryToggle');
+        const supportSpacingRow = document.getElementById('supportSpacingRow');
+        const supportSpacingSlider = document.getElementById('supportSpacing');
+        freeBoundaryToggle.addEventListener('change', () => {
+            freeHangingBoundary = freeBoundaryToggle.checked;
+            supportSpacingRow.style.display = freeHangingBoundary ? 'block' : 'none';
+            regenerateNetAndRelax();
+        });
+        supportSpacingSlider.addEventListener('input', () => {
+            supportSpacing = parseInt(supportSpacingSlider.value, 10);
+            document.getElementById('val-supportSpacing').textContent = supportSpacing + ' nodes';
+            clearTimeout(supportSpacingDebounce);
+            supportSpacingDebounce = setTimeout(regenerateNetAndRelax, 250);
+        });
+
+        document.getElementById('showShear').addEventListener('change', e => {
+            showShear = e.target.checked;
+            if (!simRunning) analyzeStructure();
+        });
+        document.getElementById('showCurvature').addEventListener('change', e => {
+            showCurvature = e.target.checked;
+            if (!simRunning) analyzeStructure();
+        });
+        document.getElementById('btnReRelax').addEventListener('click', reRelaxFromFlat);
+
+        /* ============================================================
+           INIT
+        ============================================================ */
+        boundaryPts = presetBlob();
+        setEditorMode('edit');
+        regenerateNetAndRelax();
+    </script>
+</body>
+</html>
