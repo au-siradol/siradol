@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junya Ishigami: Earth Formwork & Cave Excavation</title>
+<style>
+    /* The whole tool is laid out as a single viewport-height column */
+    html, body { height: 100%; }
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: #111;
+        margin: 0;
+        padding: 14px 24px 16px 24px;
+        box-sizing: border-box;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        transition: background-color 0.3s ease;
+    }
+    body.ishigami-mode { background-color: #ffffff; }
+
+    .header {
+        text-align: right;
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto 8px auto;
+        flex-shrink: 0;
+    }
+    .header h1 { margin: 0; font-size: 17px; font-weight: bold; letter-spacing: 1px; }
+    .header h2 { margin: 2px 0 0 0; font-size: 11.5px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
+
+    .canvas-container {
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto;
+        border-bottom: 1px dashed #aaa;
+        padding-bottom: 8px;
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 220px;
+        flex: 1 1 auto;
+        background: #ffffff;
+        border: 1px solid #eaeaea;
+        cursor: crosshair;
+        object-fit: contain;
+    }
+
+    #status-text {
+        font-size: 10.5px;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        flex-shrink: 0;
+    }
+    .info-text { color: #1976d2; }
+    .warn-text { color: #e65100; }
+    .danger-text { color: #d32f2f; }
+
+    .controls-container {
+        display: flex;
+        justify-content: space-between;
+        max-width: 1100px;
+        width: 100%;
+        margin: 10px auto 0 auto;
+        font-size: 10.5px;
+        line-height: 1.35;
+        flex-shrink: 0;
+        gap: 16px;
+    }
+    .column {
+        flex: 1;
+        padding: 0 20px;
+        border-left: 1px solid #ccc;
+    }
+    .column:first-child { border-left: none; padding-left: 0; }
+    .column h3 {
+        margin-top: 0; font-size: 10.5px; font-weight: bold;
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: #333;
+    }
+
+    .control-row { margin-bottom: 8px; }
+    .column p { margin: 4px 0 10px 0; color: #666; font-size: 10px; }
+    label { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .val { font-family: monospace; color: #555; font-weight: bold; }
+
+    input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px;
+    }
+    input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 2px; }
+    button {
+        border: 1px solid #111;
+        background: #fff;
+        color: #111;
+        padding: 6px 8px;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-radius: 0;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        flex: 1 1 auto;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.25;
+    }
+    button:hover { background: #111; color: #fff; }
+    button:active { transform: translateY(1px); }
+    button.active { background: #1976d2; border-color: #1976d2; color: #fff; }
+    button.btn-danger { border-color: #d32f2f; color: #d32f2f; }
+    button.btn-danger:hover { background: #d32f2f; color: #fff; }
+    button.btn-warn { border-color: #e65100; color: #e65100; }
+    button.btn-warn:hover { background: #e65100; color: #fff; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    button.btn-full { flex: 1 1 100%; }
+    
+    .btn-ishigami { background: #e0e0e0; border-color: #888; color: #111; }
+    .btn-ishigami.active { background: #fff; border-color: #111; color: #111; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
+
+    .portfolio-bar {
+        max-width: 1100px;
+        width: 100%;
+        margin: 0 auto 8px auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-bottom: 7px;
+        border-bottom: 1px solid #111;
+        flex-shrink: 0;
+    }
+    .portfolio-bar a { color: #111; text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+    .portfolio-bar a:hover { color: #1976d2; }
+    .portfolio-bar .idx { font-family: 'Courier New', monospace; font-size: 11px; color: #999; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+    <div class="portfolio-bar">
+        <a href="../index.html">&larr; Index</a>
+        <span class="idx">06 / GROUND CASTING STUDIES</span>
+    </div>
+
+    <div class="header">
+        <h1>Ground Excavation &amp; Cast Simulation</h1>
+        <h2>Junya Ishigami: Earth Formwork & Cave Excavation</h2>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="canvas" width="1100" height="750"></canvas>
+        <div id="status-text" class="info-text">Ready. Excavate the soil to shape the void, then cast concrete.</div>
+    </div>
+
+    <div class="controls-container">
+        <!-- Column 1 -->
+        <div class="column">
+            <h3>Excavate &amp; Pour</h3>
+            <div class="control-row">
+                <label>1. Dig Brush Radius <span id="val-brush" class="val">8</span></label>
+                <input type="range" id="brushSlider" min="3" max="20" value="8">
+            </div>
+            
+            <div class="btn-row" style="margin-bottom: 8px;">
+                <button id="btnToggleSlide" class="btn-full btn-ishigami active">Toggle Soil Slide: ON</button>
+            </div>
+            
+            <p style="margin-top: 0;">Left-click and hold to excavate. Soil features <b>angle of repose physics</b>; steep slopes will naturally avalanche (unless toggled off).</p>
+
+            <div class="btn-row">
+                <button id="btnPour" class="btn-full">2. Pour Concrete</button>
+            </div>
+            <p>While active, hold left-click to release a concrete stream into the excavated void. The camera locks during pouring.</p>
+        </div>
+
+        <!-- Column 2 -->
+        <div class="column">
+            <h3>Cast &amp; Reveal</h3>
+            <div class="btn-row">
+                <button id="btnSolidify" class="btn-full">3. Solidify Concrete</button>
+            </div>
+            <p>Converts liquid concrete to cured solid. Unsupported liquid above the fill line is discarded.</p>
+
+            <div class="btn-row">
+                <button id="btnClearSoil" class="btn-full btn-danger">4. Clear Remaining Soil</button>
+            </div>
+            <p>Removes the soil mass so the cast concrete geometry stands exposed on its own — the soil acted as the formwork.</p>
+            
+            <div class="btn-row">
+                <button id="btnStyle" class="btn-full btn-ishigami">7. View: Wireframe Mode</button>
+            </div>
+            <p>Switch between a solid plaster-like render and an analytical structural wireframe view.</p>
+        </div>
+
+        <!-- Column 3 -->
+        <div class="column">
+            <h3>Test &amp; Inhabit</h3>
+            <div class="btn-row">
+                <button id="btnPhysics" class="btn-full btn-warn">5. Test Spans &amp; Overhangs</button>
+            </div>
+            <p>Analyzes load paths and span-to-depth ratios. Thin overhangs or unsupported spans will crack and collapse.</p>
+
+            <div class="btn-row">
+                <button id="btnHuman" class="btn-full">6. Place Human Figure (168 cm)</button>
+            </div>
+            <p>Standing figures snap to the nearest void floor. Clearance under 168 cm reads as a collision.</p>
+
+            <div class="btn-row">
+                <button id="btnReset" class="btn-full">Reset Simulation</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statusText = document.getElementById('status-text');
+
+const NX = 128;
+const NY = 128;
+const NZ = 44;           
+const FILL_HEIGHT = 38;  
+
+const TYPE_EMPTY = 0;
+const TYPE_SOIL = 1;
+const TYPE_LIQUID = 2;
+const TYPE_SOLID = 3;
+const TYPE_FALLING_DEBRIS = 4;
+
+const grid = new Uint8Array(NX * NY * NZ);
+const unbondedMask = new Uint8Array(NX * NY * NZ);
+const humanFigures = [];
+const splashParticles = []; 
+
+const aoCache = new Uint8Array(NX * NY * NZ);
+
+let surfaceList = [];
+let surfaceDirty = true;
+let lastQuadX = null, lastQuadY = null, lastQuadZ = null;
+
+let isPourMode = false;
+let isHoldingPour = false;
+let isPlacingHuman = false;
+let isIshigamiMode = false;
+let enableSoilSlide = true; // State for toggling avalanche physics
+
+function idx(x, y, z) {
+    return x + y * NX + z * NX * NY;
+}
+
+let camYaw = Math.PI / 4.2;
+let camPitch = Math.PI / 6.2;
+let scale = 2.55;
+let targetYaw = camYaw;
+let targetPitch = camPitch;
+let targetScale = scale;
+const CAMERA_EASE = 0.18;
+
+let ORIGIN_X = canvas.width / 2;
+let ORIGIN_Y = canvas.height * 0.62;
+
+const VERTICAL_BIAS = 1.8; 
+
+function resizeCanvas() {
+    const w = Math.max(320, canvas.clientWidth | 0);
+    const h = Math.max(240, canvas.clientHeight | 0);
+    if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+    }
+    ORIGIN_X = w / 2;
+    ORIGIN_Y = h * 0.62;
+}
+window.addEventListener('resize', resizeCanvas);
+
+function project(x, y, z) {
+    const cx = x - NX / 2;
+    const cy = y - NY / 2;
+    const cz = z - NZ / 2;
+    const cosY = Math.cos(camYaw), sinY = Math.sin(camYaw);
+    const rx = cx * cosY - cy * sinY;
+    const ry = cx * sinY + cy * cosY;
+    const cosP = Math.cos(camPitch), sinP = Math.sin(camPitch);
+    const rz = cz * cosP - ry * sinP;
+    return { px: ORIGIN_X + rx * scale, py: ORIGIN_Y - rz * scale };
+}
+
+function resetSimulation() {
+    grid.fill(TYPE_EMPTY);
+    unbondedMask.fill(0);
+    humanFigures.length = 0;
+    splashParticles.length = 0;
+    for (let z = 0; z < FILL_HEIGHT; z++) {
+        for (let y = 0; y < NY; y++) {
+            for (let x = 0; x < NX; x++) {
+                grid[idx(x, y, z)] = TYPE_SOIL;
+            }
+        }
+    }
+    markAOFullyDirty();
+}
+resetSimulation();
+
+let pourX = Math.floor(NX / 2);
+let pourY = Math.floor(NY / 2);
+let brushRadius = 8;
+let streamHitZ = 0;
+let hoverGX = NX / 2, hoverGY = NY / 2, hoverGZ = FILL_HEIGHT; 
+let hoverValid = false;
+
+let blinkCount = 0;
+let blinkVisible = false;
+let isBlinking = false;
+const canvasBorder = parseFloat(getComputedStyle(canvas).borderLeftWidth) || 0;
+
+function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const contentWidth = canvas.clientWidth || canvas.width;
+    const contentHeight = canvas.clientHeight || canvas.height;
+    const scaleX = canvas.width / contentWidth;
+    const scaleY = canvas.height / contentHeight;
+    return {
+        x: (e.clientX - rect.left - canvasBorder) * scaleX,
+        y: (e.clientY - rect.top - canvasBorder) * scaleY
+    };
+}
+
+function getRayOriginAndDir(screenX, screenY) {
+    const cosY = Math.cos(camYaw), sinY = Math.sin(camYaw);
+    const cosP = Math.cos(camPitch), sinP = Math.sin(camPitch);
+    const rx = (screenX - ORIGIN_X) / scale;
+    const rz = (ORIGIN_Y - screenY) / scale;
+    const ox = rx * cosY + NX / 2;
+    const oy = -rx * sinY + NY / 2;
+    const oz = rz / cosP + NZ / 2;
+    const vx = sinY, vy = cosY, vz = sinP / cosP;
+    const len = Math.sqrt(vx * vx + vy * vy + vz * vz);
+    return {
+        ox: ox - (vx / len) * 200, oy: oy - (vy / len) * 200, oz: oz - (vz / len) * 200,
+        dx: vx / len, dy: vy / len, dz: vz / len
+    };
+}
+
+function raycastDDA(screenX, screenY) {
+    const { ox: r_ox, oy: r_oy, oz: r_oz, dx, dy, dz } = getRayOriginAndDir(screenX, screenY);
+    
+    const ox = r_ox + 0.5;
+    const oy = r_oy + 0.5;
+    const oz = r_oz + 0.5;
+
+    let x = Math.floor(ox), y = Math.floor(oy), z = Math.floor(oz);
+    const stepX = Math.sign(dx), stepY = Math.sign(dy), stepZ = Math.sign(dz);
+    const tDeltaX = stepX !== 0 ? Math.abs(1 / dx) : Infinity;
+    const tDeltaY = stepY !== 0 ? Math.abs(1 / dy) : Infinity;
+    const tDeltaZ = stepZ !== 0 ? Math.abs(1 / dz) : Infinity;
+    let tMaxX = stepX > 0 ? (Math.floor(ox) + 1 - ox) * tDeltaX : (ox - Math.floor(ox)) * tDeltaX;
+    let tMaxY = stepY > 0 ? (Math.floor(oy) + 1 - oy) * tDeltaY : (oy - Math.floor(oy)) * tDeltaY;
+    let tMaxZ = stepZ > 0 ? (Math.floor(oz) + 1 - oz) * tDeltaZ : (oz - Math.floor(oz)) * tDeltaZ;
+
+    for (let i = 0; i < 600; i++) {
+        if (x >= 0 && x < NX && y >= 0 && y < NY && z >= 0 && z < NZ) {
+            if (grid[idx(x, y, z)] !== TYPE_EMPTY) return { x, y, z, hit: true };
+        }
+        if (tMaxX < tMaxY) {
+            if (tMaxX < tMaxZ) { tMaxX += tDeltaX; x += stepX; } else { tMaxZ += tDeltaZ; z += stepZ; }
+        } else {
+            if (tMaxY < tMaxZ) { tMaxY += tDeltaY; y += stepY; } else { tMaxZ += tDeltaZ; z += stepZ; }
+        }
+    }
+    const { ox: ox2, oy: oy2, oz: oz2, dx: dx2, dy: dy2, dz: dz2 } = getRayOriginAndDir(screenX, screenY);
+    if (dz2 !== 0) {
+        const t = (FILL_HEIGHT - (oz2 + 0.5)) / dz2;
+        return {
+            x: Math.max(0, Math.min(NX - 1, Math.floor(ox2 + 0.5 + dx2 * t))),
+            y: Math.max(0, Math.min(NY - 1, Math.floor(oy2 + 0.5 + dy2 * t))),
+            z: FILL_HEIGHT, hit: false
+        };
+    }
+    return { x: Math.floor(NX / 2), y: Math.floor(NY / 2), z: FILL_HEIGHT, hit: false };
+}
+
+// ฟังก์ชันจำกัดให้ Raycast ชนที่ระนาบผิวดินชั้นบนเสมอ (Top Plane)
+function raycastTopPlane(screenX, screenY) {
+    const { ox, oy, oz, dx, dy, dz } = getRayOriginAndDir(screenX, screenY);
+    if (dz === 0) return { hit: false };
+    
+    const planeZ = FILL_HEIGHT - 1; // ล็อกแกน Z ให้อยู่ที่ระนาบดินบนสุด
+    const t = (planeZ - oz) / dz;
+    let hitX = Math.floor(ox + dx * t);
+    let hitY = Math.floor(oy + dy * t);
+    
+    // ป้องกันเมาส์หลุดขอบแผนที่
+    hitX = Math.max(0, Math.min(NX - 1, hitX));
+    hitY = Math.max(0, Math.min(NY - 1, hitY));
+    
+    return { x: hitX, y: hitY, z: planeZ, hit: true };
+}
+
+function startStructuralBlinkSequence() {
+    unbondedMask.fill(0);
+    
+    const thicknessMap = new Uint8Array(NX * NY);
+    for (let x = 0; x < NX; x++) {
+        for (let y = 0; y < NY; y++) {
+            let count = 0;
+            for (let z = 0; z < NZ; z++) {
+                if (grid[idx(x, y, z)] === TYPE_SOLID) count++;
+            }
+            thicknessMap[x + y * NX] = count;
+        }
+    }
+
+    const support = new Int32Array(NX * NY * NZ);
+    support.fill(-1);
+    
+    const queue = [];
+    let head = 0;
+    
+    for (let x = 0; x < NX; x++) {
+        for (let y = 0; y < NY; y++) {
+            const i = idx(x, y, 0);
+            if (grid[i] === TYPE_SOLID) {
+                support[i] = 10000; 
+                queue.push(i);
+            }
+        }
+    }
+    
+    while (head < queue.length) {
+        const currIdx = queue[head++];
+        const s = support[currIdx];
+        if (s <= 0) continue; 
+        
+        const cz = Math.floor(currIdx / (NX * NY));
+        const rem = currIdx % (NX * NY);
+        const cy = Math.floor(rem / NX);
+        const cx = rem % NX;
+        
+        const locThick = Math.max(1, thicknessMap[cx + cy * NX]);
+        const costHoriz = Math.floor(1800 / locThick); 
+        const costUp = 80;   
+        const costDown = 10; 
+        
+        const offsets = [
+            [1, 0, 0, costHoriz], [-1, 0, 0, costHoriz], 
+            [0, 1, 0, costHoriz], [0, -1, 0, costHoriz],
+            [0, 0, 1, costUp], [0, 0, -1, costDown]
+        ];
+        
+        for (const [dx, dy, dz, cost] of offsets) {
+            const nx = cx + dx, ny = cy + dy, nz = cz + dz;
+            if (nx >= 0 && nx < NX && ny >= 0 && ny < NY && nz >= 0 && nz < NZ) {
+                const nIdx = idx(nx, ny, nz);
+                if (grid[nIdx] === TYPE_SOLID) {
+                    const newSupport = s - cost;
+                    if (newSupport > support[nIdx]) {
+                        support[nIdx] = newSupport;
+                        queue.push(nIdx);
+                    }
+                }
+            }
+        }
+    }
+    
+    let unbondedCount = 0;
+    for (let i = 0; i < grid.length; i++) {
+        if (grid[i] === TYPE_SOLID && support[i] <= 0) {
+            unbondedMask[i] = 1;
+            unbondedCount++;
+        }
+    }
+
+    if (unbondedCount === 0) {
+        statusText.innerText = "Status: Structure is stable. Spans and overhangs are within limits.";
+        statusText.className = "info-text";
+        return;
+    }
+
+    statusText.innerText = "Status: STRUCTURAL FAILURE DETECTED — Overhangs or spans exceeded capacity.";
+    statusText.className = "warn-text";
+
+    isBlinking = true; blinkCount = 0; blinkVisible = true;
+    const interval = setInterval(() => {
+        blinkVisible = !blinkVisible; blinkCount++;
+        if (blinkCount >= 6) {
+            clearInterval(interval); isBlinking = false; blinkVisible = false;
+            for (let i = 0; i < grid.length; i++) {
+                if (unbondedMask[i] === 1) { grid[i] = TYPE_FALLING_DEBRIS; unbondedMask[i] = 0; }
+            }
+            physicsActive = true; surfaceDirty = true;
+            statusText.innerText = "Status: STRUCTURAL FAILURE. The unstable mass has collapsed.";
+            statusText.className = "danger-text";
+        }
+    }, 220);
+}
+
+let physicsActive = false;
+
+function updatePhysics() {
+    let gridChanged = false;
+    let movedCount = 0;
+
+    // --- 1. SOIL AVALANCHE (Angle of Repose Physics) ---
+    // ตรวจสอบสถานะว่าเปิดโหมดดินสไลด์อยู่หรือไม่
+    let soilMoved = false;
+    let sMinX = NX, sMaxX = 0, sMinY = NY, sMaxY = 0, sMinZ = NZ, sMaxZ = 0;
+    
+    if (enableSoilSlide) {
+        for(let k=0; k<2500; k++) {
+            let x = Math.floor(Math.random() * (NX-2)) + 1;
+            let y = Math.floor(Math.random() * (NY-2)) + 1;
+            
+            let z = NZ - 1;
+            while(z >= 0 && grid[idx(x,y,z)] === TYPE_EMPTY) z--;
+            if (z <= 0 || grid[idx(x,y,z)] !== TYPE_SOIL) continue; 
+            
+            let dir = [[-1,0],[1,0],[0,-1],[0,1]][Math.floor(Math.random()*4)];
+            let nx = x + dir[0], ny = y + dir[1];
+            
+            let nz = z; 
+            while(nz >= 0 && grid[idx(nx,ny,nz)] === TYPE_EMPTY) nz--;
+            
+            if (z - nz > 1) {
+                grid[idx(x,y,z)] = TYPE_EMPTY;
+                grid[idx(nx,ny,nz+1)] = TYPE_SOIL;
+                
+                sMinX = Math.min(sMinX, x, nx); sMaxX = Math.max(sMaxX, x, nx);
+                sMinY = Math.min(sMinY, y, ny); sMaxY = Math.max(sMaxY, y, ny);
+                sMinZ = Math.min(sMinZ, z, nz+1); sMaxZ = Math.max(sMaxZ, z, nz+1);
+                soilMoved = true;
+                gridChanged = true;
+            }
+        }
+    }
+
+    if (soilMoved) {
+        let cx = (sMinX+sMaxX)>>1;
+        let cy = (sMinY+sMaxY)>>1;
+        let cz = (sMinZ+sMaxZ)>>1;
+        let r = Math.max(sMaxX-sMinX, sMaxY-sMinY, sMaxZ-sMinZ);
+        markAODirty(cx, cy, cz, (r>>1)+2);
+    }
+
+    // --- 2. CONCRETE / FLUID PHYSICS ---
+    if (physicsActive || (isPourMode && isHoldingPour)) {
+        const pouring = isPourMode && isHoldingPour;
+
+        if (pouring) {
+            gridChanged = true; physicsActive = true; streamHitZ = 0;
+            for (let z = NZ - 1; z >= 0; z--) {
+                if (grid[idx(pourX, pourY, z)] !== TYPE_EMPTY) { streamHitZ = z; break; }
+            }
+            const pourRadius = 8.5;
+            let minX = Math.max(0, pourX - 16); let maxX = Math.min(NX - 1, pourX + 16);
+            let minY = Math.max(0, pourY - 16); let maxY = Math.min(NY - 1, pourY + 16);
+
+            for (let dx = -9; dx <= 9; dx++) {
+                for (let dy = -9; dy <= 9; dy++) {
+                    if (dx * dx + dy * dy <= pourRadius * pourRadius) {
+                        const tx = pourX + dx, ty = pourY + dy;
+                        if (tx >= 0 && tx < NX && ty >= 0 && ty < NY) {
+                            let filled = 0;
+                            for (let z = 0; z < NZ; z++) {
+                                const cellIdx = idx(tx, ty, z);
+                                if (grid[cellIdx] === TYPE_EMPTY) {
+                                    grid[cellIdx] = TYPE_LIQUID; filled++;
+                                    if (filled >= 8) break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const substeps = pouring ? 12 : 45;
+        for (let step = 0; step < substeps; step++) {
+            for (let z = 1; z < NZ; z++) {
+                for (let y = 0; y < NY; y++) {
+                    for (let x = 0; x < NX; x++) {
+                        const i = idx(x, y, z);
+                        const type = grid[i];
+                        if (type === TYPE_LIQUID) {
+                            if (z >= FILL_HEIGHT && grid[idx(x, y, z - 1)] === TYPE_SOIL) {
+                                if (Math.random() < 0.65) { grid[i] = TYPE_EMPTY; movedCount++; continue; }
+                            }
+                            if (grid[idx(x, y, z - 1)] === TYPE_EMPTY) {
+                                grid[idx(x, y, z - 1)] = TYPE_LIQUID; grid[i] = TYPE_EMPTY;
+                                gridChanged = true; movedCount++; continue;
+                            }
+                            const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]].sort(() => Math.random() - 0.5);
+                            let moved = false;
+                            for (const [dx, dy] of dirs) {
+                                const nx = x + dx, ny = y + dy;
+                                if (nx >= 0 && nx < NX && ny >= 0 && ny < NY) {
+                                    if (grid[idx(nx, ny, z - 1)] === TYPE_EMPTY && grid[idx(nx, ny, z)] === TYPE_EMPTY) {
+                                        grid[idx(nx, ny, z - 1)] = TYPE_LIQUID; grid[i] = TYPE_EMPTY;
+                                        moved = true; gridChanged = true; movedCount++; break;
+                                    }
+                                }
+                            }
+                            if (moved) continue;
+                            const pressurised = (z + 1 < NZ) && (grid[idx(x, y, z + 1)] === TYPE_LIQUID);
+                            if (pressurised) {
+                                for (const [dx, dy] of dirs) {
+                                    const nx = x + dx, ny = y + dy;
+                                    if (nx >= 0 && nx < NX && ny >= 0 && ny < NY) {
+                                        if (grid[idx(nx, ny, z)] === TYPE_EMPTY && Math.random() < 0.9) {
+                                            grid[idx(nx, ny, z)] = TYPE_LIQUID; grid[i] = TYPE_EMPTY;
+                                            gridChanged = true; movedCount++; break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (type === TYPE_FALLING_DEBRIS) {
+                            if (grid[idx(x, y, z - 1)] === TYPE_EMPTY) {
+                                grid[idx(x, y, z - 1)] = TYPE_FALLING_DEBRIS; grid[i] = TYPE_EMPTY;
+                            } else { grid[i] = TYPE_SOLID; }
+                            gridChanged = true; movedCount++;
+                        }
+                    }
+                }
+            }
+        }
+        if (movedCount > 0) markAOFullyDirty();
+        if (movedCount === 0 && !pouring) physicsActive = false;
+    }
+
+    if (gridChanged) surfaceDirty = true;
+}
+
+function updateParticles() {
+    if (isPourMode && isHoldingPour) {
+        const count = Math.floor(Math.random() * 3) + 3;
+        for (let i = 0; i < count; i++) {
+            splashParticles.push({
+                x: pourX + (Math.random() - 0.5) * 3.5, y: pourY + (Math.random() - 0.5) * 3.5, z: streamHitZ,
+                vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5, vz: Math.random() * 1.5 + 0.8, 
+                life: 1.0, decay: 0.02 + Math.random() * 0.03,
+                type: 'concrete'
+            });
+        }
+    }
+    for (let i = splashParticles.length - 1; i >= 0; i--) {
+        const p = splashParticles[i];
+        p.x += p.vx; p.y += p.vy; p.z += p.vz; p.vz -= 0.18; p.life -= p.decay; 
+        if (p.life <= 0) splashParticles.splice(i, 1);
+    }
+}
+
+function computeAO(x, y, z) {
+    let occ = 0;
+    const offsets = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1], [1, 1, 1], [-1, -1, 1], [1, -1, 1], [-1, 1, 1]];
+    for (const [dx, dy, dz] of offsets) {
+        const nx = x + dx, ny = y + dy, nz = z + dz;
+        if (nx >= 0 && nx < NX && ny >= 0 && ny < NY && nz >= 0 && nz < NZ) {
+            if (grid[idx(nx, ny, nz)] !== TYPE_EMPTY) occ++;
+        }
+    }
+    return occ;
+}
+
+function markAODirty(cx, cy, cz, radius) {
+    surfaceDirty = true;
+    const r = radius + 1;
+    const x0 = Math.max(0, cx - r), x1 = Math.min(NX - 1, cx + r);
+    const y0 = Math.max(0, cy - r), y1 = Math.min(NY - 1, cy + r);
+    const z0 = Math.max(0, cz - r), z1 = Math.min(NZ - 1, cz + r);
+    for (let z = z0; z <= z1; z++) {
+        for (let y = y0; y <= y1; y++) {
+            for (let x = x0; x <= x1; x++) { aoCache[idx(x, y, z)] = computeAO(x, y, z); }
+        }
+    }
+}
+
+function markAOFullyDirty() {
+    surfaceDirty = true;
+    for (let z = 0; z < NZ; z++) {
+        for (let y = 0; y < NY; y++) {
+            for (let x = 0; x < NX; x++) { aoCache[idx(x, y, z)] = computeAO(x, y, z); }
+        }
+    }
+}
+
+function rebuildSurfaceList(xAsc, yAsc, zAsc) {
+    surfaceList = [];
+    const xStart = xAsc ? 0 : NX - 1, xEnd = xAsc ? NX : -1, xStep = xAsc ? 1 : -1;
+    const yStart = yAsc ? 0 : NY - 1, yEnd = yAsc ? NY : -1, yStep = yAsc ? 1 : -1;
+    const zStart = zAsc ? 0 : NZ - 1, zEnd = zAsc ? NZ : -1, zStep = zAsc ? 1 : -1;
+    const xFace = xAsc ? 1 : -1, yFace = yAsc ? 1 : -1, zFace = zAsc ? 1 : -1;
+
+    for (let z = zStart; z !== zEnd; z += zStep) {
+        for (let x = xStart; x !== xEnd; x += xStep) {
+            for (let y = yStart; y !== yEnd; y += yStep) {
+                const i = idx(x, y, z);
+                if (grid[i] === TYPE_EMPTY) continue;
+                const zn = z + zFace;
+                if (zn < 0 || zn >= NZ || grid[idx(x, y, zn)] === TYPE_EMPTY) { surfaceList.push(x, y, z, i); continue; }
+                const xn = x + xFace;
+                if (xn < 0 || xn >= NX || grid[idx(xn, y, z)] === TYPE_EMPTY) { surfaceList.push(x, y, z, i); continue; }
+                const yn = y + yFace;
+                if (yn < 0 || yn >= NY || grid[idx(x, yn, z)] === TYPE_EMPTY) { surfaceList.push(x, y, z, i); }
+            }
+        }
+    }
+    surfaceDirty = false;
+}
+
+function drawArchitecturalHuman(fig) {
+    const { x, y, z, headCollision, ceilingDist } = fig;
+    const pBase = project(x, y, z);
+    const pShoulder = project(x, y, z + 12.8);
+    const pHead = project(x, y, z + 16.8);
+
+    const color = headCollision ? '#e65100' : (isIshigamiMode ? '#111111' : '#333333');
+    const shadowColor = 'rgba(0, 0, 0, 0.2)';
+
+    ctx.fillStyle = shadowColor;
+    ctx.beginPath();
+    ctx.ellipse(pBase.px, pBase.py, 3.8 * (scale / 2.5), 1.9 * (scale / 2.5), 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1.8, 2.3 * (scale / 2.5));
+    ctx.beginPath();
+    ctx.moveTo(pBase.px, pBase.py);
+    ctx.lineTo(pShoulder.px, pShoulder.py);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(pHead.px, pHead.py, Math.max(2.1, 3.0 * (scale / 2.5)), 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = headCollision ? '#e65100' : '#444';
+    ctx.font = '10px "Helvetica Neue", Helvetica, Arial, sans-serif';
+    const label = headCollision ? `Col. ${(ceilingDist * 10).toFixed(0)}cm` : `${(ceilingDist * 10).toFixed(0)}cm Clr`;
+    ctx.fillText(label, pHead.px + 8, pHead.py - 2);
+}
+
+function drawParticlesAndStream() {
+    if (isPourMode && isHoldingPour) {
+        const pTop = project(pourX, pourY, NZ + 22);
+        const pHit = project(pourX, pourY, streamHitZ);
+        const time = Date.now();
+        const pulse = 1.0 + Math.sin(time / 50) * 0.12; 
+        const baseWidth = Math.max(12, 18 * (scale / 2.5));
+        const streamWidth = baseWidth * pulse;
+
+        if (isIshigamiMode) {
+            ctx.strokeStyle = 'rgba(84, 110, 122, 0.8)';
+            ctx.lineWidth = 1.0;
+            ctx.setLineDash([8, 4]);
+            ctx.lineDashOffset = -(time / 15);
+            ctx.beginPath();
+            ctx.moveTo(pTop.px, pTop.py);
+            ctx.lineTo(pHit.px, pHit.py);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < 3; i++) {
+                const phase = ((time / 700) + (i / 3)) % 1.0; 
+                const radius = streamWidth * (0.8 + phase * 1.8);
+                ctx.strokeStyle = `rgba(84, 110, 122, ${(1.0 - phase) * 0.6})`;
+                ctx.beginPath();
+                ctx.ellipse(pHit.px, pHit.py, radius * 1.6, radius * 0.8, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        } else {
+            const grad = ctx.createLinearGradient(pTop.px, pTop.py, pHit.px, pHit.py);
+            grad.addColorStop(0, 'rgba(176, 182, 178, 0.95)');
+            grad.addColorStop(0.5, 'rgba(138, 146, 142, 0.9)');
+            grad.addColorStop(1, 'rgba(168, 175, 171, 0.95)');
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = streamWidth;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pTop.px, pTop.py); ctx.lineTo(pHit.px, pHit.py);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(215, 220, 218, 0.5)';
+            ctx.lineWidth = streamWidth * 0.6;
+            ctx.setLineDash([streamWidth * 1.5, streamWidth * 1.2]); 
+            ctx.lineDashOffset = -(time / 12) % (streamWidth * 2.7); 
+            ctx.stroke();
+            ctx.setLineDash([]); 
+
+            ctx.strokeStyle = '#6f7975';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(pTop.px, pTop.py, baseWidth * 0.9, 0, Math.PI * 2); ctx.stroke();
+
+            ctx.lineWidth = 2.0;
+            for (let i = 0; i < 3; i++) {
+                const phase = ((time / 700) + (i / 3)) % 1.0; 
+                const radius = streamWidth * (0.8 + phase * 1.8);
+                ctx.strokeStyle = `rgba(176, 182, 178, ${(1.0 - phase) * 0.85})`;
+                ctx.beginPath();
+                ctx.ellipse(pHit.px, pHit.py, radius * 1.6, radius * 0.8, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
+
+    for (const p of splashParticles) {
+        const proj = project(p.x, p.y, p.z);
+        if (p.type === 'dirt') {
+            ctx.fillStyle = `rgba(140, 115, 85, ${p.life})`; 
+        } else {
+            ctx.fillStyle = `rgba(168, 175, 171, ${p.life})`; 
+        }
+        ctx.beginPath();
+        ctx.arc(proj.px, proj.py, Math.max(1.2, 2.5 * (scale / 2.5)), 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawDigPreview() {
+    if (!hoverValid || isPourMode || isPlacingHuman) return;
+
+    const segments = 32;
+    const topPts = [];
+    const botPts = [];
+
+    let maxRimZ = 0;
+    for(let dx = -brushRadius; dx <= brushRadius; dx++) {
+        for(let dy = -brushRadius; dy <= brushRadius; dy++) {
+            if (dx*dx + dy*dy <= brushRadius*brushRadius) {
+                const tx = hoverGX + dx, ty = hoverGY + dy;
+                if (tx >= 0 && tx < NX && ty >= 0 && ty < NY) {
+                    for(let z = NZ - 1; z >= 0; z--) {
+                        if (grid[idx(tx, ty, z)] !== TYPE_EMPTY) {
+                            if (z > maxRimZ) maxRimZ = z;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const topZ = maxRimZ + 0.5; 
+    const botZ = Math.max(0, hoverGZ - (brushRadius * VERTICAL_BIAS)); 
+
+    for (let i = 0; i < segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        const cx = hoverGX + Math.cos(angle) * brushRadius;
+        const cy = hoverGY + Math.sin(angle) * brushRadius;
+        topPts.push(project(cx, cy, topZ));
+        botPts.push(project(cx, cy, botZ));
+    }
+
+    ctx.strokeStyle = isIshigamiMode ? 'rgba(216, 67, 21, 0.7)' : 'rgba(25, 118, 210, 0.8)';
+    ctx.lineWidth = 1.2;
+
+    ctx.beginPath();
+    for (let i = 0; i < segments; i++) {
+        if (i === 0) ctx.moveTo(topPts[i].px, topPts[i].py);
+        else ctx.lineTo(topPts[i].px, topPts[i].py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (let i = 0; i < segments; i++) {
+        if (i === 0) ctx.moveTo(botPts[i].px, botPts[i].py);
+        else ctx.lineTo(botPts[i].px, botPts[i].py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.setLineDash([2, 2]); 
+    for (let i = 0; i < segments; i += Math.floor(segments / 8)) {
+        ctx.moveTo(topPts[i].px, topPts[i].py);
+        ctx.lineTo(botPts[i].px, botPts[i].py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]); 
+
+    const centerTop = project(hoverGX, hoverGY, topZ);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.arc(centerTop.px, centerTop.py, 2, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function render() {
+    ctx.fillStyle = isIshigamiMode ? '#ffffff' : '#fcfcfc';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = isIshigamiMode ? 'rgba(216, 67, 21, 0.15)' : 'rgba(17, 17, 17, 0.12)';
+    ctx.lineWidth = 1;
+    const corners = [
+        project(0, 0, 0), project(NX, 0, 0), project(NX, NY, 0), project(0, NY, 0),
+        project(0, 0, NZ), project(NX, 0, NZ), project(NX, NY, NZ), project(0, NY, NZ)
+    ];
+    const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+    ctx.beginPath();
+    for (const [s, e] of edges) { ctx.moveTo(corners[s].px, corners[s].py); ctx.lineTo(corners[e].px, corners[e].py); }
+    ctx.stroke();
+
+    const cosY = Math.cos(camYaw), sinY = Math.sin(camYaw);
+    const xAsc = sinY > 0, yAsc = cosY > 0, zAsc = camPitch >= 0;
+
+    if (surfaceDirty || xAsc !== lastQuadX || yAsc !== lastQuadY || zAsc !== lastQuadZ) {
+        rebuildSurfaceList(xAsc, yAsc, zAsc);
+        lastQuadX = xAsc; lastQuadY = yAsc; lastQuadZ = zAsc;
+    }
+
+    const voxelSize = Math.max(1.8, scale * 0.96);
+    const half = voxelSize / 2;
+
+    if (isIshigamiMode) {
+        ctx.font = '6px "Courier New", Courier, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+    }
+
+    for (let n = 0; n < surfaceList.length; n += 4) {
+        const x = surfaceList[n], y = surfaceList[n + 1], z = surfaceList[n + 2], i = surfaceList[n + 3];
+        const type = grid[i];
+        if (type === TYPE_EMPTY) continue;
+
+        const p = project(x, y, z);
+        
+        if (isIshigamiMode) {
+            const isConcrete = (type === TYPE_SOLID || type === TYPE_LIQUID || type === TYPE_FALLING_DEBRIS);
+            
+            ctx.strokeStyle = isConcrete ? 'rgba(84, 110, 122, 0.45)' : 'rgba(216, 67, 21, 0.25)';
+            ctx.lineWidth = 0.5;
+
+            ctx.beginPath();
+            ctx.moveTo(p.px - half, p.py); ctx.lineTo(p.px + half, p.py);
+            ctx.moveTo(p.px, p.py - half); ctx.lineTo(p.px, p.py + half);
+            ctx.stroke();
+
+            if (z < NZ - 1 && grid[idx(x, y, z + 1)] === TYPE_EMPTY) {
+                if ((x * 7 + y * 3) % 5 === 0) { 
+                    const val = (z * 0.1).toFixed(1); 
+                    ctx.fillStyle = isConcrete ? 'rgba(38, 50, 56, 0.9)' : 'rgba(191, 54, 12, 0.7)';
+                    ctx.fillText(val, p.px, p.py - half - 2);
+                }
+            }
+
+            if (isBlinking && unbondedMask[i] === 1 && blinkVisible) {
+                ctx.fillStyle = 'rgba(211, 47, 47, 0.5)';
+                ctx.fillRect(p.px - half, p.py - half, voxelSize, voxelSize);
+            }
+
+        } else {
+            const ao = aoCache[i] / 10;
+            let fill;
+            if (isBlinking && unbondedMask[i] === 1 && blinkVisible) {
+                fill = '#d32f2f';
+            } else if (type === TYPE_SOIL) {
+                const f = Math.max(0.35, 1.0 - ao * 0.55);
+                fill = `rgb(${(200 * f) | 0}, ${(170 * f) | 0}, ${(130 * f) | 0})`;
+            } else if (type === TYPE_LIQUID) {
+                const f = Math.max(0.45, 1.0 - ao * 0.45);
+                fill = `rgb(${(158 * f) | 0}, ${(166 * f) | 0}, ${(162 * f) | 0})`;
+            } else {
+                const f = Math.max(0.35, 1.0 - ao * 0.6); 
+                const v = (235 * f) | 0; 
+                fill = `rgb(${v}, ${v}, ${v})`;
+            }
+            ctx.fillStyle = fill;
+            ctx.fillRect(p.px - half, p.py - half, voxelSize, voxelSize);
+        }
+    }
+
+    for (const fig of humanFigures) { drawArchitecturalHuman(fig); }
+    drawParticlesAndStream();
+    drawDigPreview();
+}
+
+function placeHumanRaycast(screenX, screenY) {
+    const hitData = raycastDDA(screenX, screenY);
+    const gx = hitData.x, gy = hitData.y;
+    let standingZ = NZ;
+    for (let z = 0; z < NZ; z++) { if (grid[idx(gx, gy, z)] === TYPE_EMPTY) { standingZ = z; break; } }
+    let ceilingZ = NZ;
+    if (standingZ < NZ) {
+        for (let z = standingZ + 1; z < NZ; z++) { if (grid[idx(gx, gy, z)] !== TYPE_EMPTY) { ceilingZ = z; break; } }
+    }
+    const clearance = ceilingZ - standingZ;
+    if (standingZ < NZ) {
+        humanFigures.push({ x: gx, y: gy, z: standingZ, headCollision: (clearance < 16.8), ceilingDist: clearance });
+    }
+}
+
+let isDigging = false, isRotating = false;
+let lastMouseScreenX = 0, lastMouseScreenY = 0;
+let lastMouseX = 0, lastMouseY = 0;
+let digCooldown = 0;
+
+function digDirectRaycast(screenX, screenY) {
+    // ใช้ raycast บน Top Plane แทน
+    const hitData = raycastTopPlane(screenX, screenY);
+    if (!hitData.hit) return; 
+
+    const gx = hitData.x;
+    const gy = hitData.y;
+    
+    let gz = -1;
+    for (let z = NZ - 1; z >= 0; z--) {
+        if (grid[idx(gx, gy, z)] === TYPE_SOIL || grid[idx(gx, gy, z)] === TYPE_LIQUID) {
+            gz = z; break;
+        }
+    }
+    if (gz === -1) gz = FILL_HEIGHT - 1;
+
+    const rSq = brushRadius * brushRadius;
+    const maxDepth = brushRadius * VERTICAL_BIAS; 
+    const DIG_SPEED = 1; 
+
+    let carved = false;
+    let minZ = NZ, maxZ = 0; 
+
+    for (let dx = -brushRadius; dx <= brushRadius; dx++) {
+        for (let dy = -brushRadius; dy <= brushRadius; dy++) {
+            const distSq = dx * dx + dy * dy;
+            
+            if (distSq <= rSq) {
+                const tx = gx + dx;
+                const ty = gy + dy;
+                
+                if (tx >= 0 && tx < NX && ty >= 0 && ty < NY) {
+                    
+                    let topZ = -1;
+                    for (let z = NZ - 1; z >= 0; z--) {
+                        const type = grid[idx(tx, ty, z)];
+                        if (type === TYPE_SOIL || type === TYPE_LIQUID) {
+                            topZ = z; break;
+                        }
+                    }
+
+                    if (topZ >= 0) {
+                        const shapeDepth = maxDepth * Math.sqrt(1.0 - (distSq / rSq));
+                        const targetZ = Math.floor(gz - shapeDepth);
+
+                        if (topZ > targetZ) {
+                            const digDownTo = Math.max(targetZ, topZ - DIG_SPEED);
+
+                            for (let z = topZ; z > digDownTo && z >= 0; z--) {
+                                const cellIdx = idx(tx, ty, z);
+                                if (grid[cellIdx] === TYPE_LIQUID) physicsActive = true;
+                                
+                                grid[cellIdx] = TYPE_EMPTY;
+                                carved = true;
+                                
+                                if (z < minZ) minZ = z;
+                                if (z > maxZ) maxZ = z;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (carved) {
+        for (let p=0; p<4; p++) {
+            splashParticles.push({
+                x: gx + (Math.random()-0.5)*brushRadius*0.8,
+                y: gy + (Math.random()-0.5)*brushRadius*0.8,
+                z: gz + 1,
+                vx: (Math.random()-0.5)*1.5,
+                vy: (Math.random()-0.5)*1.5,
+                vz: Math.random()*2 + 1.5,
+                life: 1.0, decay: 0.05 + Math.random()*0.05,
+                type: 'dirt'
+            });
+        }
+
+        const zCenter = Math.floor((minZ + maxZ) / 2);
+        const zRad = Math.ceil((maxZ - minZ) / 2) + 1;
+        markAODirty(gx, gy, zCenter, Math.max(brushRadius, zRad)); 
+        surfaceDirty = true;
+        physicsActive = true; 
+    }
+}
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    targetScale = Math.max(1.2, Math.min(8.0, targetScale * (e.deltaY < 0 ? 1.1 : 0.9)));
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+    const { x: mx, y: my } = getCanvasCoords(e);
+    if (e.button === 0) {
+        if (isPourMode) { isHoldingPour = true; const hit = raycastTopPlane(mx, my); pourX = hit.x; pourY = hit.y; }
+        else if (isPlacingHuman) { placeHumanRaycast(mx, my); }
+        else { isDigging = true; lastMouseScreenX = mx; lastMouseScreenY = my; digCooldown = 0; digDirectRaycast(mx, my); }
+    } else if (e.button === 2 && !isPourMode) { isRotating = true; lastMouseX = e.clientX; lastMouseY = e.clientY; }
+});
+
+window.addEventListener('mouseup', () => { isDigging = false; isRotating = false; isHoldingPour = false; });
+
+canvas.addEventListener('mousemove', (e) => {
+    const { x: mx, y: my } = getCanvasCoords(e);
+    lastMouseScreenX = mx; lastMouseScreenY = my;
+    
+    if (isPourMode) { 
+        const hit = raycastTopPlane(mx, my); 
+        pourX = hit.x; pourY = hit.y; hoverValid = false; return; 
+    }
+    if (isRotating) {
+        targetYaw += (e.clientX - lastMouseX) * 0.008;
+        targetPitch = Math.max(-1.2, Math.min(1.4, targetPitch + (e.clientY - lastMouseY) * 0.008));
+        lastMouseX = e.clientX; lastMouseY = e.clientY; return;
+    }
+    
+    // ใช้ Top Plane Raycast ถ้าขุดดิน เพื่อให้พิกัดติดหนึบกับด้านบนเสมอ
+    let hit;
+    if (isPlacingHuman) {
+        hit = raycastDDA(mx, my);
+    } else {
+        hit = raycastTopPlane(mx, my);
+    }
+
+    if (hit && hit.hit) {
+        hoverGX = hit.x; 
+        hoverGY = hit.y; 
+        hoverGZ = hit.z; 
+        hoverValid = true;
+    } else {
+        hoverValid = false; 
+    }
+});
+
+canvas.addEventListener('mouseleave', () => { hoverValid = false; });
+
+const brushSlider = document.getElementById('brushSlider');
+const brushVal = document.getElementById('val-brush');
+brushSlider.addEventListener('input', (e) => { brushRadius = parseInt(e.target.value, 10); brushVal.textContent = brushRadius; });
+
+// ปุ่มเปิด/ปิด ดินสไลด์ (Avalanche Toggle)
+const btnToggleSlide = document.getElementById('btnToggleSlide');
+btnToggleSlide.addEventListener('click', () => {
+    enableSoilSlide = !enableSoilSlide;
+    btnToggleSlide.classList.toggle('active', enableSoilSlide);
+    btnToggleSlide.textContent = enableSoilSlide ? 'Toggle Soil Slide: ON' : 'Toggle Soil Slide: OFF';
+});
+
+const btnHuman = document.getElementById('btnHuman');
+const btnPour = document.getElementById('btnPour');
+const btnSolidify = document.getElementById('btnSolidify');
+const btnClearSoil = document.getElementById('btnClearSoil');
+const btnPhysics = document.getElementById('btnPhysics');
+const btnStyle = document.getElementById('btnStyle'); 
+
+btnStyle.addEventListener('click', () => {
+    isIshigamiMode = !isIshigamiMode;
+    btnStyle.classList.toggle('active', isIshigamiMode);
+    document.body.classList.toggle('ishigami-mode', isIshigamiMode);
+    btnStyle.textContent = isIshigamiMode ? '7. View: Solid Render' : '7. View: Wireframe Mode';
+});
+
+btnHuman.addEventListener('click', () => {
+    isPlacingHuman = !isPlacingHuman;
+    if (isPlacingHuman && isPourMode) { isPourMode = false; btnPour.classList.remove('active'); btnPour.textContent = '2. Pour Concrete'; }
+    btnHuman.classList.toggle('active', isPlacingHuman);
+    btnHuman.textContent = isPlacingHuman ? 'Click Void to Test Clearance' : '6. Place Human Figure (168 cm)';
+});
+
+btnPour.addEventListener('click', () => {
+    isPourMode = !isPourMode;
+    if (isPourMode && isPlacingHuman) { isPlacingHuman = false; btnHuman.classList.remove('active'); btnHuman.textContent = '6. Place Human Figure (168 cm)'; }
+    btnPour.classList.toggle('active', isPourMode);
+    btnPour.textContent = isPourMode ? 'Stop Pour Mode' : '2. Pour Concrete';
+    statusText.innerText = isPourMode ? "Status: Pour mode active. Hold left-click to release concrete." : "Status: Ready. Excavate the soil to shape the void, then cast concrete.";
+    statusText.className = "info-text";
+});
+
+btnSolidify.addEventListener('click', () => {
+    isPourMode = false; isHoldingPour = false; btnPour.classList.remove('active'); btnPour.textContent = '2. Pour Concrete';
+    for (let x = 0; x < NX; x++) {
+        for (let y = 0; y < NY; y++) {
+            for (let z = NZ - 1; z >= 0; z--) {
+                const i = idx(x, y, z);
+                if (grid[i] === TYPE_LIQUID) {
+                    let support = 0;
+                    for (let dz = -1; dz <= 1; dz++) {
+                        const nz = z + dz;
+                        if (nz >= 0 && nz < NZ && (grid[idx(x, y, nz)] === TYPE_SOIL || grid[idx(x, y, nz)] === TYPE_SOLID)) support++;
+                    }
+                    grid[i] = (support === 0 && z >= FILL_HEIGHT) ? TYPE_EMPTY : TYPE_SOLID;
+                }
+            }
+        }
+    }
+    for (let i = 0; i < grid.length; i++) { if (grid[i] === TYPE_LIQUID) grid[i] = TYPE_SOLID; }
+    markAOFullyDirty();
+    statusText.innerText = "Status: Concrete cured. Clear the remaining soil, then run the structural test.";
+    statusText.className = "info-text";
+});
+
+btnClearSoil.addEventListener('click', () => {
+    for (let i = 0; i < grid.length; i++) { if (grid[i] === TYPE_SOIL) grid[i] = TYPE_EMPTY; }
+    markAOFullyDirty();
+    statusText.innerText = "Status: Soil cleared. Cast concrete geometry is now fully exposed. Run the structural test next.";
+    statusText.className = "info-text";
+});
+
+btnPhysics.addEventListener('click', () => { if (!isBlinking) startStructuralBlinkSequence(); });
+
+document.getElementById('btnReset').addEventListener('click', () => {
+    isPourMode = false; isHoldingPour = false; isPlacingHuman = false;
+    btnPour.classList.remove('active'); btnHuman.classList.remove('active');
+    btnPour.textContent = '2. Pour Concrete'; btnHuman.textContent = '6. Place Human Figure (168 cm)';
+    statusText.innerText = "Status: Ready. Excavate the soil to shape the void, then cast concrete.";
+    statusText.className = "info-text";
+    resetSimulation();
+});
+
+function loop() {
+    resizeCanvas();
+    camYaw += (targetYaw - camYaw) * CAMERA_EASE;
+    camPitch += (targetPitch - camPitch) * CAMERA_EASE;
+    scale += (targetScale - scale) * CAMERA_EASE;
+
+    if (isDigging && !isPlacingHuman && hoverValid) {
+        digCooldown++;
+        const delay = Math.max(2, Math.floor(brushRadius * 0.4)); 
+        if (digCooldown > delay) {
+            digDirectRaycast(lastMouseScreenX, lastMouseScreenY); 
+            digCooldown = 0;
+        }
+    } else {
+        digCooldown = 0;
+    }
+    
+    updatePhysics(); updateParticles(); render(); requestAnimationFrame(loop);
+}
+resizeCanvas(); loop();
+</script>
+</body>
+</html>
