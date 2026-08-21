@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bruder Klaus Chapel: Construction Simulation</title>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/DragControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+<style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: #111;
+        padding: 10px 20px 10px 20px;
+        box-sizing: border-box;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    .header { text-align: right; max-width: 1100px; width: 100%; margin: 0 auto 6px auto; flex-shrink: 0; }
+    .header h1 { margin: 0; font-size: 15px; font-weight: bold; letter-spacing: 1px; }
+    .header h2 { margin: 1px 0 0 0; font-size: 10.5px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
+    .canvas-container {
+        max-width: 1100px; width: 100%; margin: 0 auto; border-bottom: 1px dashed #aaa;
+        padding-bottom: 6px; position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+    }
+    #canvas-inner {
+        width: 100%; height: 100%; min-height: 0; background: #ffffff;
+        border: 1px solid #eaeaea; position: relative; touch-action: none;
+        cursor: crosshair; flex: 1 1 auto; outline: none;
+        overflow: hidden;
+    }
+    #labels-container {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 10;
+    }
+    .node-label {
+        position: absolute;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        background: transparent;
+        padding: 0;
+        transform: translate(-50%, -100%);
+        margin-top: -6px;
+        text-shadow: 1px 1px 1px rgba(255,255,255,0.9), -1px -1px 1px rgba(255,255,255,0.9), 1px -1px 1px rgba(255,255,255,0.9), -1px 1px 1px rgba(255,255,255,0.9);
+        pointer-events: none;
+        white-space: nowrap;
+    }
+    .label-h { color: #1976d2; }
+    .label-w { color: #d32f2f; }
+    .label-p { color: #2e7d32; }
+
+    #status-text {
+        font-size: 10px; font-weight: bold; text-align: center; margin-top: 5px;
+        text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0;
+        height: 24px; line-height: 12px;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; padding: 0 8px; box-sizing: border-box;
+    }
+    .info-text { color: #1976d2; }
+    .warn-text { color: #e65100; }
+    .controls-container {
+        display: flex; justify-content: space-between; max-width: 1100px; width: 100%;
+        margin: 8px auto 0 auto; font-size: 10px; line-height: 1.3; flex-shrink: 0; gap: 14px;
+    }
+    .column { flex: 1; padding: 0 18px; border-left: 1px solid #ccc; }
+    .column:first-child { border-left: none; padding-left: 0; }
+    .column h3 { margin-top: 0; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: #333; }
+    .column p { margin: 3px 0 8px 0; color: #666; font-size: 9.5px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 2px; }
+    button {
+        border: 1px solid #111; background: #fff; color: #111; padding: 5px 7px;
+        font-size: 9.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px;
+        border-radius: 0; cursor: pointer; transition: all 0.12s ease; flex: 1 1 auto;
+        white-space: normal; text-align: center; line-height: 1.2;
+    }
+    button:hover:not(:disabled) { background: #111; color: #fff; }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button.active { background: #1976d2; border-color: #1976d2; color: #fff; }
+    button.btn-danger { border-color: #d32f2f; color: #d32f2f; }
+    button.btn-danger:hover:not(:disabled) { background: #d32f2f; color: #fff; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; border-style: dashed; }
+    button.btn-full { flex: 1 1 100%; }
+    .portfolio-bar {
+        max-width: 1100px; width: 100%; margin: 0 auto 6px auto; display: flex;
+        justify-content: space-between; align-items: baseline; padding-bottom: 5px;
+        border-bottom: 1px solid #111; flex-shrink: 0;
+    }
+    .portfolio-bar a { color: #111; text-decoration: none; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; }
+    .portfolio-bar a:hover { color: #1976d2; }
+    .portfolio-bar .idx { font-family: 'Courier New', monospace; font-size: 10.5px; color: #999; letter-spacing: 1px; }
+    .slider-box { padding: 7px 8px; background: #eee; border: 1px solid #ccc; margin-bottom: 7px; }
+    .slider-box div { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px; }
+    input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin-top: 3px; margin-bottom: 6px; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #1976d2; cursor: pointer; margin-top: -5px; }
+    input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #ccc; border-radius: 2px; }
+    input[type=range]:disabled::-webkit-slider-thumb { background: #999; }
+</style>
+</head>
+<body>
+
+<div class="portfolio-bar">
+    <a href="#">&larr; Index</a>
+    <span class="idx">07 / MATERIAL PROCESS & FORM</span>
+</div>
+<div class="header">
+    <h1>Rammed Concrete Sequence</h1>
+    <h2>Peter Zumthor, Bruder Klaus Field Chapel</h2>
+</div>
+<div class="canvas-container">
+    <div id="canvas-inner">
+        <div id="labels-container"></div>
+    </div>
+    <div id="status-text" class="info-text">STEP 1 &mdash; CLICK &amp; DRAG on the ground to draw the centerline. Start at the entrance.</div>
+</div>
+<div class="controls-container">
+    <div class="column">
+        <h3>1. Internal Formwork</h3>
+        <div class="btn-row"><button id="btn-1" class="btn-full active">1. Draw Centerline Path</button></div>
+        <p><strong>Click and drag</strong> to define walkway. <strong>Narrow entrance</strong> leads to wide main hall. <strong>BLUE</strong> = height, <strong>RED</strong> = width.</p>
+        <div class="btn-row"><button id="btn-2" class="btn-full" disabled>2. Place Timber Logs</button></div>
+        <p>Convert volume into tightly packed timber logs.</p>
+    </div>
+    <div class="column">
+        <h3>2. Exterior & Casting</h3>
+        <div class="btn-row"><button id="btn-3" class="btn-full" disabled>3. Setup Outer Formwork</button></div>
+        <p>Drag blue nodes to refine formwork. Entrance timber pierces through automatically.</p>
+        <div class="btn-row"><button id="btn-lock-fw" class="btn-full" disabled>Lock Formwork</button></div>
+        <div class="btn-row" style="margin-top:10px;"><button id="btn-4" class="btn-full" disabled>4. Rammed Concrete Pour</button></div>
+        <div id="slider-container" class="slider-box" style="display:none;">
+            <div><span>Concrete Layer</span><span id="layer-count">0/0</span></div>
+            <input type="range" id="concrete-slider" min="0" max="10" value="0">
+            <p style="margin:0; font-size:9px; color:#555;">Concrete forms perfectly around the inner timber structure.</p>
+        </div>
+    </div>
+    <div class="column">
+        <h3>3. Subtraction & Finish</h3>
+        <div class="btn-row"><button id="btn-5" class="btn-full btn-danger" disabled>5. Burn Internal Logs</button></div>
+        <p>Fire removes timber — forming true entrance tunnel and roof Oculus.</p>
+        <div class="btn-row" style="margin-top: 12px; border-top: 1px dashed #ccc; padding-top: 10px;">
+            <button id="btn-void" class="btn-full" disabled>Show Negative Space</button>
+        </div>
+        <p style="margin-top:2px;">The void the timber left behind — the actual architecture.</p>
+        <div class="btn-row" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+            <button id="btn-reset" class="btn-full">Reset Simulation</button>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('load', initApp);
+
+function initApp() {
+    try {
+        const container = document.getElementById('canvas-inner');
+        const statusText = document.getElementById('status-text');
+        const labelsContainer = document.getElementById('labels-container');
+
+        let w = container.clientWidth || window.innerWidth;
+        let h = container.clientHeight || 440;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfcfcfc);
+
+        const aspect = w / h;
+        const viewSize = 20; 
+        const camera = new THREE.OrthographicCamera(-viewSize * aspect, viewSize * aspect, viewSize, -viewSize, 1, 1000);
+
+        const AXO_R = 25;
+        const AXO_POS = new THREE.Vector3(AXO_R, AXO_R * Math.SQRT2, AXO_R);
+        camera.position.copy(AXO_POS);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(w, h);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.07;
+        controls.enableRotate = false; 
+        controls.enablePan = true; 
+        controls.maxPolarAngle = Math.PI * 0.49;
+        
+        function enableOrbit() {
+            controls.enableRotate = true; 
+        }
+
+        function _recenterTarget(pos) {
+            new TWEEN.Tween(controls.target)
+                .to({ x: pos.x, y: pos.y, z: pos.z }, 700)
+                .easing(TWEEN.Easing.Cubic.InOut).start();
+        }
+
+        const MAX_TARGET_DRIFT = 20;
+        controls.addEventListener('change', () => {
+            const anchor = fwCenter.lengthSq() > 0 ? fwCenter : new THREE.Vector3(0, 0, 0);
+            const offset = controls.target.clone().sub(anchor);
+            const dist = offset.length();
+            if (dist > MAX_TARGET_DRIFT) {
+                offset.multiplyScalar(MAX_TARGET_DRIFT / dist);
+                controls.target.copy(anchor.clone().add(offset));
+            }
+        });
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(20, 50, 20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+        const fireLight = new THREE.PointLight(0xff7700, 0, 40);
+        fireLight.position.set(0, 5, 0);
+        scene.add(fireLight);
+
+        const groundMat = new THREE.MeshLambertMaterial({
+            color: 0x999999, 
+            side: THREE.DoubleSide,
+            polygonOffset: true,
+            polygonOffsetFactor: 4,
+            polygonOffsetUnits: 4
+        });
+        const ground = new THREE.Mesh(new THREE.CircleGeometry(25, 64), groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        const dotGeo = new THREE.BufferGeometry();
+        const dotVerts = [];
+        for (let x = -25; x <= 25; x++) {
+            for (let z = -25; z <= 25; z++) {
+                if (x*x + z*z < 600) { 
+                    dotVerts.push(x, 0.02, z);
+                }
+            }
+        }
+        dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(dotVerts, 3));
+        const dotMat = new THREE.PointsMaterial({ color: 0x555555, size: 0.12 });
+        const dotGrid = new THREE.Points(dotGeo, dotMat);
+        scene.add(dotGrid);
+
+        const grassMaterial = new THREE.LineBasicMaterial({ 
+            color: 0x6b826b, 
+            transparent: true, 
+            opacity: 0 
+        });
+        const grassVerts = [];
+        for (let i = 0; i < 6000; i++) {
+            let r = Math.sqrt(Math.random()) * 25; 
+            let theta = Math.random() * Math.PI * 2;
+            let gx = r * Math.cos(theta);
+            let gz = r * Math.sin(theta);
+            
+            if (r > 6) {
+                let h = Math.random() * 0.3 + 0.1; 
+                grassVerts.push(gx, 0, gz);
+                grassVerts.push(gx, h, gz);
+            }
+        }
+        const grassGeo = new THREE.BufferGeometry();
+        grassGeo.setAttribute('position', new THREE.Float32BufferAttribute(grassVerts, 3));
+        const grassLines = new THREE.LineSegments(grassGeo, grassMaterial);
+        scene.add(grassLines);
+
+        let currentStep = 1;
+        let isDrawing = false;
+        let hasDrawnBase = false;
+        let drawPoints = [];
+
+        let nodeData = []; 
+        let hHandles = []; 
+        let wHandles = []; 
+        let allDraggables = [];
+        let apexDragControls = null;
+
+        let pathControlPoints = [];   
+        let pathHandles = [];         
+        let pathDragControls = null;
+        let pathLine = null;          
+
+        let baseCurve = null; 
+        let dynamicTentMesh = null;
+        let drawLineMesh = null;
+
+        const logsGroup = new THREE.Group(); scene.add(logsGroup);
+        const concreteGroup = new THREE.Group(); scene.add(concreteGroup);
+
+        let formworkNodes = [];
+        let formworkLine = null;
+        let fwDragControls = null;
+        let stackedFormworkGroup = null; 
+        let fireParticles = [];
+        let burnData = {}; 
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const drawPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+        const LOG_RADIUS = 0.14;              
+        const DIAMETER = LOG_RADIUS * 2;
+        const LOG_STEP = DIAMETER * 0.8; 
+        
+        const ENTRANCE_DOOR_FRAC = 0.45;      
+        const CAP_DEPTH_FRAC = 0.85;          
+        let fwCenter = new THREE.Vector3();   
+        let fwLockedPoly = null;
+        let totalLayers = 0;             
+
+        function intersectSegments(p1, p2, p3, p4) {
+            const denom = (p4.y - p3.y)*(p2.x - p1.x) - (p4.x - p3.x)*(p2.y - p1.y);
+            if (Math.abs(denom) < 1e-10) return null;
+            const ua = ((p4.x - p3.x)*(p1.y - p3.y) - (p4.y - p3.y)*(p1.x - p3.x)) / denom;
+            const ub = ((p2.x - p1.x)*(p1.y - p3.y) - (p2.y - p1.y)*(p1.x - p3.x)) / denom;
+            if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) { 
+                return { pt: new THREE.Vector2(p1.x + ua*(p2.x - p1.x), p1.y + ua*(p2.y - p1.y)), t: ua };
+            }
+            return null;
+        }
+
+        function _pointInPoly(px, pz, poly) {
+            let inside = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const xi = poly[i].x, zi = poly[i].z;
+                const xj = poly[j].x, zj = poly[j].z;
+                if (((zi > pz) !== (zj > pz)) &&
+                    (px < (xj - xi) * (pz - zi) / (zj - zi) + xi)) inside = !inside;
+            }
+            return inside;
+        }
+
+        function clipLineToPoly(p1, p2, poly) {
+            let p1In = _pointInPoly(p1.x, p1.z, poly);
+            let p2In = _pointInPoly(p2.x, p2.z, poly);
+            if (p1In && p2In) return { p1: p1.clone(), p2: p2.clone() };
+            if (!p1In && !p2In) return null;
+            
+            let p1_2d = new THREE.Vector2(p1.x, p1.z);
+            let p2_2d = new THREE.Vector2(p2.x, p2.z);
+            let hitPt = null;
+            for(let i=0; i<poly.length; i++) {
+                let A = new THREE.Vector2(poly[i].x, poly[i].z);
+                let B = new THREE.Vector2(poly[(i+1)%poly.length].x, poly[(i+1)%poly.length].z);
+                let hit = intersectSegments(p1_2d, p2_2d, A, B);
+                if (hit) {
+                    hitPt = new THREE.Vector3(
+                        p1.x + (p2.x - p1.x) * hit.t,
+                        p1.y + (p2.y - p1.y) * hit.t,
+                        p1.z + (p2.z - p1.z) * hit.t
+                    );
+                    break;
+                }
+            }
+            if (!hitPt) return null;
+            if (!p1In) return { p1: hitPt, p2: p2.clone() };
+            return { p1: p1.clone(), p2: hitPt };
+        }
+
+        function getSafeTangent(curve, t) {
+            let tang = curve.getTangent(t);
+            if (!tang || isNaN(tang.x) || isNaN(tang.y) || isNaN(tang.z) || tang.lengthSq() < 1e-6) {
+                return new THREE.Vector3(1, 0, 0);
+            }
+            return tang.normalize();
+        }
+
+        function getSafePoints(points) {
+            if (!points || points.length === 0) return [new THREE.Vector3(), new THREE.Vector3(0,0,0.1), new THREE.Vector3(0,0,0.2), new THREE.Vector3(0,0,0.3)];
+            let res = points.slice();
+            while (res.length < 4) {
+                let next = [];
+                for (let i = 0; i < res.length - 1; i++) {
+                    next.push(res[i]);
+                    next.push(res[i].clone().lerp(res[i+1], 0.5));
+                }
+                next.push(res[res.length - 1]);
+                res = next;
+            }
+            return res;
+        }
+
+        function _capArc(t, halfWidth, capDepth, steps) {
+            const pt = baseCurve.getPoint(t);
+            let tang = getSafeTangent(baseCurve, t);
+            const norm = new THREE.Vector3(-tang.z, 0, tang.x).normalize();
+            const outward = (t >= 0.5) ? tang.clone() : tang.clone().negate();
+            const out = [];
+            for (let k = 0; k <= steps; k++) {
+                const phi = (k / steps) * Math.PI;
+                const p = pt.clone()
+                    .add(norm.clone().multiplyScalar(Math.cos(phi) * halfWidth))
+                    .add(outward.clone().multiplyScalar(Math.sin(phi) * capDepth));
+                out.push({ p: p, phi: phi });
+            }
+            return out;
+        }
+
+        function _isDoorway(phi) {
+            const halfSpan = ENTRANCE_DOOR_FRAC * (Math.PI / 2);
+            return Math.abs(phi - Math.PI / 2) < halfSpan;
+        }
+
+        function getH(t) {
+            if (nodeData.length === 0) return 10;
+            if (nodeData.length === 1) return nodeData[0].height;
+            return sampleNodes(t, 'height');
+        }
+        function getW(t) {
+            if (nodeData.length === 0) return 5;
+            if (nodeData.length === 1) return nodeData[0].width;
+            return sampleNodes(t, 'width');
+        }
+
+        function sampleNodes(t, key) {
+            const nd = nodeData;
+            if (nd.length === 1) return nd[0][key];
+            for (let i = 0; i < nd.length - 1; i++) {
+                let t0 = nd[i].t, t1 = nd[i + 1].t;
+                if (t >= t0 && t <= t1) {
+                    let local = (t - t0) / (t1 - t0);
+                    local = local * local * (3 - 2 * local);
+                    return nd[i][key] * (1 - local) + nd[i + 1][key] * local;
+                }
+            }
+            if (t < nd[0].t) return nd[0][key];
+            return nd[nd.length - 1][key];
+        }
+
+        // =====================================================
+        // STEP 1: Draw Centerline
+        // =====================================================
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            if (currentStep !== 1 || e.button !== 0 || hasDrawnBase) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const pt = new THREE.Vector3();
+            raycaster.ray.intersectPlane(drawPlane, pt);
+            if (pt && Math.abs(pt.x) < 20 && Math.abs(pt.z) < 20) {
+                isDrawing = true;
+                drawPoints = [pt.clone()];
+                if (dynamicTentMesh) { scene.remove(dynamicTentMesh); dynamicTentMesh = null; }
+                if (drawLineMesh) { scene.remove(drawLineMesh); drawLineMesh = null; }
+                logsGroup.clear();
+            }
+        });
+
+        renderer.domElement.addEventListener('pointermove', (e) => {
+            if (!isDrawing || currentStep !== 1 || hasDrawnBase) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const pt = new THREE.Vector3();
+            raycaster.ray.intersectPlane(drawPlane, pt);
+            if (pt && (drawPoints.length === 0 || pt.distanceTo(drawPoints[drawPoints.length - 1]) > 0.5)) {
+                drawPoints.push(pt.clone());
+                _drawCenterlineVisual();
+            }
+        });
+
+        function _perpDist(p, a, b) {
+            const abx = b.x - a.x, abz = b.z - a.z;
+            const len2 = abx * abx + abz * abz;
+            if (len2 < 1e-9) return Math.hypot(p.x - a.x, p.z - a.z);
+            let t = ((p.x - a.x) * abx + (p.z - a.z) * abz) / len2;
+            t = Math.max(0, Math.min(1, t));
+            const projX = a.x + t * abx, projZ = a.z + t * abz;
+            return Math.hypot(p.x - projX, p.z - projZ);
+        }
+
+        function _douglasPeucker(points, epsilon) {
+            if (points.length < 3) return points.slice();
+            let maxDist = 0, idx = 0;
+            const first = points[0], last = points[points.length - 1];
+            for (let i = 1; i < points.length - 1; i++) {
+                const d = _perpDist(points[i], first, last);
+                if (d > maxDist) { maxDist = d; idx = i; }
+            }
+            if (maxDist > epsilon) {
+                const left = _douglasPeucker(points.slice(0, idx + 1), epsilon);
+                const right = _douglasPeucker(points.slice(idx), epsilon);
+                return left.slice(0, -1).concat(right);
+            }
+            return [first, last];
+        }
+
+        function _resampleEven(points, spacing) {
+            if (points.length < 2) return points.slice();
+            const safePts = getSafePoints(points);
+            const helper = new THREE.CatmullRomCurve3(safePts); 
+            const total = helper.getLength();
+            const n = Math.max(4, Math.round(total / spacing));
+            return helper.getSpacedPoints(n);
+        }
+
+        function _smoothPath(rawPoints) {
+            const simplified = _douglasPeucker(rawPoints, 0.4);
+            const dense = _resampleEven(simplified, 1.2);
+            const safeDense = getSafePoints(dense);
+            const helper = new THREE.CatmullRomCurve3(safeDense);
+            const total = helper.getLength();
+            const interiorCount = Math.max(1, Math.min(5, Math.round(total / 6)));
+            const control = [safeDense[0].clone()];
+            for (let i = 1; i <= interiorCount; i++) {
+                control.push(helper.getPoint(i / (interiorCount + 1)));
+            }
+            control.push(safeDense[safeDense.length - 1].clone());
+            return { dense: safeDense, control };
+        }
+        
+        renderer.domElement.addEventListener('pointerup', () => {
+            if (!isDrawing || currentStep !== 1 || hasDrawnBase) return;
+            isDrawing = false;
+            try {
+                if (drawPoints.length > 5) {
+                    hasDrawnBase = true;
+                    const smoothed = _smoothPath(drawPoints);
+                    drawPoints = smoothed.dense;
+                    pathControlPoints = smoothed.control;
+                    _drawCenterlineVisual();
+                    const safeDrawPts = getSafePoints(drawPoints);
+                    baseCurve = new THREE.CatmullRomCurve3(safeDrawPts);
+                    
+                    nodeData = [
+                        { t: 0.0, height: 3.5, width: 2.0 }, 
+                        { t: 0.4, height: 7.0, width: 5.0 },
+                        { t: 1.0, height: 12.0, width: 4.0 } 
+                    ];
+                    
+                    _rebuildHandles();
+                    _rebuildPathHandles();
+                    updateDynamicVolume();
+                    enableOrbit(); 
+                    _recenterTarget(baseCurve.getPoint(0.5)); 
+                    
+                    document.getElementById('btn-2').disabled = false;
+                    document.getElementById('btn-2').classList.add('active'); 
+                    document.getElementById('btn-1').classList.remove('active'); 
+
+                    statusText.innerText = 'Drag nodes to adjust space. Double-click to add/remove nodes.';
+                    statusText.className = 'info-text';
+                } else {
+                    if (dynamicTentMesh) { scene.remove(dynamicTentMesh); dynamicTentMesh = null; }
+                    if (drawLineMesh) { scene.remove(drawLineMesh); drawLineMesh = null; }
+                    drawPoints = [];
+                    statusText.innerText = 'Path too short &mdash; draw a longer centerline.';
+                    statusText.className = 'warn-text';
+                }
+            } catch (err) {
+                console.error("PointerUp Error:", err);
+                if (drawLineMesh) { scene.remove(drawLineMesh); drawLineMesh = null; }
+                statusText.innerText = "Error drawing line: Please try again.";
+                statusText.className = 'warn-text';
+                hasDrawnBase = false;
+                drawPoints = [];
+            }
+        });
+
+        function _drawCenterlineVisual() {
+            if (drawLineMesh) scene.remove(drawLineMesh);
+            if (drawPoints.length < 2) return;
+            const geom = new THREE.BufferGeometry().setFromPoints(drawPoints.map(p => new THREE.Vector3(p.x, 0.1, p.z)));
+            drawLineMesh = new THREE.Line(geom, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
+            scene.add(drawLineMesh);
+        }
+
+        renderer.domElement.addEventListener('dblclick', (e) => {
+            if (currentStep !== 1 || !hasDrawnBase) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(allDraggables);
+            const pathIntersects = raycaster.intersectObjects(pathHandles);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                const hIdx = hHandles.indexOf(obj);
+                const wIdx = wHandles.indexOf(obj);
+                const nodeIdx = hIdx !== -1 ? hIdx : wIdx;
+                
+                controls.enabled = true;
+                renderer.domElement.style.cursor = 'crosshair';
+
+                if (nodeIdx !== -1) {
+                    if (nodeIdx === 0 || nodeIdx === nodeData.length - 1) {
+                        statusText.innerText = 'The first and last nodes cannot be removed.';
+                        return;
+                    }
+                    nodeData.splice(nodeIdx, 1);
+                    _rebuildHandles();
+                    updateDynamicVolume();
+                    return;
+                }
+            } else if (pathIntersects.length > 0) {
+                const obj = pathIntersects[0].object;
+                const idx = obj.userData.pathIdx;
+                
+                controls.enabled = true;
+                renderer.domElement.style.cursor = 'crosshair';
+
+                if (idx === 0 || idx === pathControlPoints.length - 1) {
+                    statusText.innerText = 'Cannot remove the first or last path node.';
+                    return;
+                }
+                if (pathControlPoints.length <= 3) {
+                    statusText.innerText = 'Minimum path nodes reached.';
+                    return;
+                }
+                
+                pathControlPoints.splice(idx, 1);
+                
+                const savedT = nodeData.map(nd => nd.t);
+                const safeControl = getSafePoints(pathControlPoints);
+                const helper = new THREE.CatmullRomCurve3(safeControl);
+                drawPoints = helper.getSpacedPoints(Math.max(20, Math.round(helper.getLength() / 1.0)));
+                const safeDrawPts = getSafePoints(drawPoints);
+                baseCurve = new THREE.CatmullRomCurve3(safeDrawPts);
+                nodeData.forEach((nd, j) => { nd.t = savedT[j]; });
+                
+                _drawCenterlineVisual();
+                _rebuildPathHandles();
+                _rebuildHandles();
+                updateDynamicVolume();
+                return;
+            }
+
+            const groundPt = new THREE.Vector3();
+            raycaster.ray.intersectPlane(drawPlane, groundPt);
+            if (!groundPt) return;
+
+            const testPts = baseCurve.getSpacedPoints(200);
+            let minDist = Infinity, bestT = 0.5;
+            testPts.forEach((p, i) => {
+                const d = new THREE.Vector2(groundPt.x - p.x, groundPt.z - p.z).length();
+                if (d < minDist) { minDist = d; bestT = i / 200; }
+            });
+
+            if (minDist < 8) { 
+                const exists = nodeData.some(nd => Math.abs(nd.t - bestT) < 0.05);
+                if (!exists) {
+                    const newH = getH(bestT);
+                    const newW = getW(bestT);
+                    nodeData.push({ t: bestT, height: newH, width: newW });
+                    nodeData.sort((a, b) => a.t - b.t);
+                    _rebuildHandles();
+                    updateDynamicVolume();
+                }
+            }
+        });
+
+        function _rebuildPathHandles() {
+            if (pathDragControls) { pathDragControls.dispose(); pathDragControls = null; }
+            pathHandles.forEach(p => { 
+                if(p.userData.labelEl) p.userData.labelEl.remove();
+                scene.remove(p); 
+            });
+            pathHandles = [];
+
+            pathControlPoints.forEach((pt, i) => {
+                let mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.15, 12, 10), 
+                    new THREE.MeshLambertMaterial({ color: 0x2e7d32 })
+                );
+                mesh.position.set(pt.x, 0.3, pt.z);
+                scene.add(mesh);
+                pathHandles.push(mesh);
+
+                const el = document.createElement('div');
+                el.className = 'node-label label-p';
+                labelsContainer.appendChild(el);
+                
+                mesh.userData = { 
+                    pathIdx: i, 
+                    type: 'path',
+                    labelEl: el,
+                    updateLabel: () => {
+                        let dist = 0;
+                        for(let j=1; j<=i; j++) dist += Math.hypot(pathControlPoints[j].x - pathControlPoints[j-1].x, pathControlPoints[j].z - pathControlPoints[j-1].z);
+                        return `L: ${dist.toFixed(1)}m`;
+                    }
+                };
+            });
+
+            _drawPathSkeletonLine();
+
+            pathDragControls = new THREE.DragControls(pathHandles, camera, renderer.domElement);
+            pathDragControls.addEventListener('hoveron', () => { controls.enabled = false; renderer.domElement.style.cursor = 'move'; });
+            pathDragControls.addEventListener('hoveroff', () => { controls.enabled = true; renderer.domElement.style.cursor = 'crosshair'; });
+            pathDragControls.addEventListener('drag', (e) => {
+                const idx = e.object.userData.pathIdx;
+                e.object.position.y = 0.3; 
+                pathControlPoints[idx].set(e.object.position.x, 0, e.object.position.z);
+
+                const savedT = nodeData.map(nd => nd.t);
+                const safeControl = getSafePoints(pathControlPoints);
+                const helper = new THREE.CatmullRomCurve3(safeControl);
+                drawPoints = helper.getSpacedPoints(Math.max(20, Math.round(helper.getLength() / 1.0)));
+                const safeDrawPts = getSafePoints(drawPoints);
+                baseCurve = new THREE.CatmullRomCurve3(safeDrawPts);
+                nodeData.forEach((nd, j) => { nd.t = savedT[j]; });
+
+                _drawCenterlineVisual();
+                _drawPathSkeletonLine();
+                _rebuildHandles();       
+                updateDynamicVolume();   
+            });
+        }
+
+        function _drawPathSkeletonLine() {
+            if (pathLine) { scene.remove(pathLine); pathLine = null; }
+            if (pathControlPoints.length < 2) return;
+            const pts = pathControlPoints.map(p => new THREE.Vector3(p.x, 0.12, p.z));
+            pathLine = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(pts),
+                new THREE.LineDashedMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.6, linewidth: 2 })
+            );
+            scene.add(pathLine);
+        }
+        
+        function _rebuildHandles() {
+            if (apexDragControls) { apexDragControls.dispose(); apexDragControls = null; }
+            hHandles.forEach(h => { if(h.userData.labelEl) h.userData.labelEl.remove(); scene.remove(h); });
+            wHandles.forEach(w => { if(w.userData.labelEl) w.userData.labelEl.remove(); scene.remove(w); });
+            hHandles = []; wHandles = []; allDraggables = [];
+
+            nodeData.forEach((nd, i) => {
+                const pt = baseCurve.getPoint(nd.t);
+                let tang = getSafeTangent(baseCurve, nd.t);
+                const norm = new THREE.Vector3(-tang.z, 0, tang.x).normalize();
+
+                const hH = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(0.2), 
+                    new THREE.MeshLambertMaterial({ color: 0x1976d2 })
+                );
+                hH.position.set(pt.x, nd.height, pt.z);
+                scene.add(hH); hHandles.push(hH); allDraggables.push(hH);
+
+                const hEl = document.createElement('div');
+                hEl.className = 'node-label label-h';
+                labelsContainer.appendChild(hEl);
+                
+                hH.userData = { 
+                    nodeIdx: i, type: 'height', basePt: pt.clone(), norm: norm.clone(),
+                    labelEl: hEl, updateLabel: () => `H: ${nd.height.toFixed(1)}m` 
+                };
+
+                const wH = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.18, 0.18, 0.18), 
+                    new THREE.MeshLambertMaterial({ color: 0xd32f2f })
+                );
+                wH.position.set(pt.x + norm.x * (nd.width / 2), 0.35, pt.z + norm.z * (nd.width / 2));
+                scene.add(wH); wHandles.push(wH); allDraggables.push(wH);
+
+                const wEl = document.createElement('div');
+                wEl.className = 'node-label label-w';
+                labelsContainer.appendChild(wEl);
+                
+                wH.userData = { 
+                    nodeIdx: i, type: 'width', basePt: pt.clone(), norm: norm.clone(),
+                    labelEl: wEl, updateLabel: () => `W: ${nd.width.toFixed(1)}m` 
+                };
+            });
+
+            apexDragControls = new THREE.DragControls(allDraggables, camera, renderer.domElement);
+            apexDragControls.addEventListener('hoveron', () => { controls.enabled = false; renderer.domElement.style.cursor = 'move'; });
+            apexDragControls.addEventListener('hoveroff', () => { controls.enabled = true; renderer.domElement.style.cursor = 'crosshair'; });
+
+            const _curveSamples = baseCurve.getSpacedPoints(300);
+            function _findNearestT(px, pz) {
+                let minD = Infinity, bestT = 0;
+                _curveSamples.forEach((p, j) => {
+                    const d = (p.x - px) * (p.x - px) + (p.z - pz) * (p.z - pz);
+                    if (d < minD) { minD = d; bestT = j / (_curveSamples.length - 1); }
+                });
+                return bestT;
+            }
+
+            apexDragControls.addEventListener('drag', (e) => {
+                const ud = e.object.userData;
+                let nd = nodeData[ud.nodeIdx];
+                const isFirst = ud.nodeIdx === 0;
+                const isLast  = ud.nodeIdx === nodeData.length - 1;
+
+                if (ud.type === 'height') {
+                    e.object.position.y = Math.max(3, Math.min(12, e.object.position.y));
+                    nd.height = e.object.position.y;
+
+                    if (!isFirst && !isLast) {
+                        const newT = _findNearestT(e.object.position.x, e.object.position.z);
+                        const prevT = nodeData[ud.nodeIdx - 1].t + 0.02;
+                        const nextT = nodeData[ud.nodeIdx + 1].t - 0.02;
+                        nd.t = Math.max(prevT, Math.min(nextT, newT));
+                    }
+                    const snapPt = baseCurve.getPoint(nd.t);
+                    e.object.position.x = snapPt.x; e.object.position.z = snapPt.z;
+
+                    ud.basePt.set(snapPt.x, 0, snapPt.z);
+                    let tang = getSafeTangent(baseCurve, nd.t);
+                    ud.norm.set(-tang.z, 0, tang.x).normalize();
+
+                    const wH = wHandles[ud.nodeIdx];
+                    if (wH) {
+                        wH.userData.basePt.copy(ud.basePt);
+                        wH.userData.norm.copy(ud.norm);
+                        wH.position.set(snapPt.x + ud.norm.x * (nd.width / 2), 0.35, snapPt.z + ud.norm.z * (nd.width / 2));
+                    }
+
+                } else if (ud.type === 'width') {
+                    e.object.position.y = 0.35;
+                    if (!isFirst && !isLast) {
+                        const newT = _findNearestT(e.object.position.x, e.object.position.z);
+                        const prevT = nodeData[ud.nodeIdx - 1].t + 0.02;
+                        const nextT = nodeData[ud.nodeIdx + 1].t - 0.02;
+                        nd.t = Math.max(prevT, Math.min(nextT, newT));
+                        const snapPt = baseCurve.getPoint(nd.t);
+                        let tang = getSafeTangent(baseCurve, nd.t);
+                        
+                        ud.basePt.set(snapPt.x, 0, snapPt.z);
+                        ud.norm.set(-tang.z, 0, tang.x).normalize();
+                        
+                        const hH = hHandles[ud.nodeIdx];
+                        if (hH) {
+                            hH.userData.basePt.copy(ud.basePt);
+                            hH.userData.norm.copy(ud.norm);
+                            hH.position.set(snapPt.x, nd.height, snapPt.z);
+                        }
+                    }
+
+                    const dist = new THREE.Vector2(e.object.position.x - ud.basePt.x, e.object.position.z - ud.basePt.z).length();
+                    nd.width = Math.max(0.6, Math.min(18, dist * 2));
+                    e.object.position.set(ud.basePt.x + ud.norm.x * (nd.width / 2), 0.35, ud.basePt.z + ud.norm.z * (nd.width / 2));
+                }
+
+                updateDynamicVolume();
+            });
+        }
+
+        // =====================================================
+        // DYNAMIC VOLUME (Tent mesh)
+        // =====================================================
+        function updateDynamicVolume() {
+            if (!baseCurve || drawPoints.length < 2) return;
+            const pts = baseCurve.getSpacedPoints(60);
+            const verts = [];
+
+            for (let i = 0; i < pts.length - 1; i++) {
+                const t1 = i / (pts.length - 1);
+                const t2 = (i + 1) / (pts.length - 1);
+                const p1 = pts[i], p2 = pts[i + 1];
+                const w1 = getW(t1), w2 = getW(t2);
+                const h1 = getH(t1), h2 = getH(t2);
+                
+                let tang1 = getSafeTangent(baseCurve, t1);
+                let tang2 = getSafeTangent(baseCurve, t2);
+                
+                const n1 = new THREE.Vector3(-tang1.z, 0, tang1.x).normalize();
+                const n2 = new THREE.Vector3(-tang2.z, 0, tang2.x).normalize();
+                
+                const p1L = p1.clone().add(n1.clone().multiplyScalar(w1 / 2));
+                const p1R = p1.clone().add(n1.clone().multiplyScalar(-w1 / 2));
+                const p2L = p2.clone().add(n2.clone().multiplyScalar(w2 / 2));
+                const p2R = p2.clone().add(n2.clone().multiplyScalar(-w2 / 2));
+                const ridge1 = p1.clone(); ridge1.y = h1;
+                const ridge2 = p2.clone(); ridge2.y = h2;
+                
+                addQuad(verts, p1L, p2L, ridge1, ridge2);
+                addQuad(verts, p2R, p1R, ridge2, ridge1);
+            }
+
+            function _capSurface(t, isEntrance) {
+                const halfW = getW(t) / 2;
+                const capDepth = halfW * CAP_DEPTH_FRAC;
+                const apex = baseCurve.getPoint(t).clone(); apex.y = getH(t);
+                const arc = _capArc(t, halfW, capDepth, 24);
+                for (let k = 0; k < arc.length - 1; k++) {
+                    const A = arc[k], B = arc[k + 1];
+                    if (isEntrance && (_isDoorway(A.phi) || _isDoorway(B.phi))) continue;
+                    if (isEntrance) {
+                        verts.push(B.p.x, B.p.y, B.p.z, A.p.x, A.p.y, A.p.z, apex.x, apex.y, apex.z);
+                    } else {
+                        verts.push(A.p.x, A.p.y, A.p.z, B.p.x, B.p.y, B.p.z, apex.x, apex.y, apex.z);
+                    }
+                }
+            }
+            _capSurface(1.0, false); 
+            _capSurface(0.0, true);  
+
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            geom.computeVertexNormals();
+
+            if (!dynamicTentMesh) {
+                dynamicTentMesh = new THREE.Mesh(geom, new THREE.MeshLambertMaterial({ color: 0xaa8866, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+                scene.add(dynamicTentMesh);
+            } else {
+                dynamicTentMesh.geometry.dispose();
+                dynamicTentMesh.geometry = geom;
+            }
+        }
+
+        function addQuad(verts, b1, b2, t1, t2) {
+            verts.push(b1.x, b1.y, b1.z, b2.x, b2.y, b2.z, t1.x, t1.y, t1.z);
+            verts.push(t1.x, t1.y, t1.z, b2.x, b2.y, b2.z, t2.x, t2.y, t2.z);
+        }
+
+        // =====================================================
+        // STEP 2: Place Timber Logs
+        // =====================================================
+        let logFootprintData = []; 
+
+        document.getElementById('btn-2').addEventListener('click', () => {
+            if (currentStep !== 1) return; 
+
+            document.getElementById('btn-2').disabled = true;
+            document.getElementById('btn-2').classList.remove('active');
+
+            if (apexDragControls) { apexDragControls.dispose(); apexDragControls = null; }
+            hHandles.forEach(h => { if(h.userData.labelEl) h.userData.labelEl.remove(); scene.remove(h); });
+            wHandles.forEach(w => { if(w.userData.labelEl) w.userData.labelEl.remove(); scene.remove(w); });
+            hHandles = []; wHandles = []; allDraggables = [];
+            if (dynamicTentMesh) { scene.remove(dynamicTentMesh); dynamicTentMesh = null; }
+            if (drawLineMesh) { scene.remove(drawLineMesh); drawLineMesh = null; }
+
+            if (pathDragControls) { pathDragControls.dispose(); pathDragControls = null; }
+            pathHandles.forEach(p => { if(p.userData.labelEl) p.userData.labelEl.remove(); scene.remove(p); });
+            pathHandles = [];
+            if (pathLine) { scene.remove(pathLine); pathLine = null; }
+
+            logsGroup.clear();
+            logFootprintData = [];
+
+            const curveLength = baseCurve.getLength();
+            const numLogsPerSide = Math.round(curveLength / LOG_STEP);
+
+            for (let side = 0; side < 2; side++) {
+                let arcPos = 0;
+                const sideSign = side === 0 ? 1 : -1;
+
+                for (let i = 0; i <= numLogsPerSide; i++) {
+                    const t = baseCurve.getUtoTmapping(arcPos / curveLength);
+                    arcPos += LOG_STEP;
+                    if (arcPos > curveLength) break;
+
+                    const pt = baseCurve.getPoint(t);
+                    let tangent = getSafeTangent(baseCurve, t);
+                    
+                    const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize().multiplyScalar(sideSign);
+
+                    const halfW = getW(t) / 2;
+                    const h = getH(t);
+                    const basePt = pt.clone().add(normal.clone().multiplyScalar(halfW));
+                    const ridgePt = pt.clone();
+                    ridgePt.y = h;
+
+                    const logLen = basePt.distanceTo(ridgePt);
+                    const tiltAngle = (Math.random() - 0.5) * 0.06;
+
+                    const geo = new THREE.CylinderGeometry(LOG_RADIUS * 0.95, LOG_RADIUS, logLen, 8);
+                    geo.translate(0, logLen / 2, 0);
+
+                    const logMat = new THREE.MeshStandardMaterial({ color: 0xC9A675, roughness: 0.85, metalness: 0.0 });
+                    const log = new THREE.Mesh(geo, logMat);
+                    log.position.copy(basePt);
+                    log.castShadow = true; log.receiveShadow = true;
+                    log.userData.basePt = basePt.clone(); 
+
+                    const dir = ridgePt.clone().sub(basePt).normalize();
+                    const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+                    const tiltQ = new THREE.Quaternion().setFromAxisAngle(tangent.normalize(), tiltAngle);
+                    log.quaternion.copy(tiltQ.multiply(quat));
+
+                    log.scale.set(0.01, 0.01, 0.01);
+                    logsGroup.add(log);
+
+                    new TWEEN.Tween(log.scale).to({ x: 1, y: 1, z: 1 }, 350)
+                        .delay(i * 8 + side * 200)
+                        .easing(TWEEN.Easing.Back.Out).start();
+
+                    logFootprintData.push({ basePt: basePt.clone(), ridgePt: ridgePt.clone(), radius: LOG_RADIUS, t: t });
+                }
+            }
+
+            function _placeEndCapLogs(t, isEntrance, delayBase) {
+                const halfW = getW(t) / 2;
+                const capDepth = halfW * CAP_DEPTH_FRAC;
+                const pt = baseCurve.getPoint(t);
+                const ridgePt = pt.clone(); ridgePt.y = getH(t);
+
+                const a = halfW, b = capDepth;
+                const hh = Math.pow(a - b, 2) / Math.pow(a + b, 2);
+                const perim = Math.PI * (a + b) * (1 + (3 * hh) / (10 + Math.sqrt(4 - 3 * hh)));
+                const steps = Math.max(6, Math.round((perim / 2) / LOG_STEP));
+
+                const arc = _capArc(t, halfW, capDepth, steps);
+                arc.forEach((entry, k) => {
+                    if (isEntrance && _isDoorway(entry.phi)) return; 
+
+                    const basePt = entry.p;
+                    const logLen = basePt.distanceTo(ridgePt);
+                    if (logLen < 0.5) return;
+
+                    const geo = new THREE.CylinderGeometry(LOG_RADIUS * 0.95, LOG_RADIUS, logLen, 8);
+                    geo.translate(0, logLen / 2, 0);
+                    const log = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xC9A675, roughness: 0.85, metalness: 0.0 }));
+                    log.position.copy(basePt);
+                    log.castShadow = true; log.receiveShadow = true;
+                    log.userData.basePt = basePt.clone(); 
+
+                    const dir = ridgePt.clone().sub(basePt).normalize();
+                    log.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+
+                    log.scale.set(0.01, 0.01, 0.01);
+                    logsGroup.add(log);
+                    new TWEEN.Tween(log.scale).to({ x: 1, y: 1, z: 1 }, 350)
+                        .delay(delayBase + k * 12).easing(TWEEN.Easing.Back.Out).start();
+
+                    logFootprintData.push({ basePt: basePt.clone(), ridgePt: ridgePt.clone(), radius: LOG_RADIUS, t: t });
+                });
+            }
+
+            _placeEndCapLogs(1.0, false, 400);  
+            _placeEndCapLogs(0.0, true, 600);   
+
+            completeStep(2);
+        });
+
+        // =====================================================
+        // STEP 3: Setup Outer Formwork 
+        // =====================================================
+        document.getElementById('btn-3').addEventListener('click', () => {
+            if (currentStep !== 3) return;
+
+            let maxDistSq = 0;
+            const entrancePt = baseCurve.getPoint(0);
+            
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            logFootprintData.forEach(ld => {
+                minX = Math.min(minX, ld.basePt.x); maxX = Math.max(maxX, ld.basePt.x);
+                minZ = Math.min(minZ, ld.basePt.z); maxZ = Math.max(maxZ, ld.basePt.z);
+            });
+            const cx = (minX + maxX) / 2;
+            const cz = (minZ + maxZ) / 2;
+            fwCenter.set(cx, 0, cz);
+            
+            logFootprintData.forEach(ld => {
+                const distSq = (ld.basePt.x - cx)**2 + (ld.basePt.z - cz)**2;
+                if (distSq > maxDistSq) maxDistSq = distSq;
+            });
+            const rBase = Math.sqrt(maxDistSq) + 2.0; 
+
+            const dx = cx - entrancePt.x;
+            const dz = cz - entrancePt.z;
+            const entranceAngle = (Math.abs(dx) < 1e-6 && Math.abs(dz) < 1e-6) ? 0 : Math.atan2(dx, dz);
+
+            _recenterTarget(fwCenter); 
+
+            for (let i = 0; i < 5; i++) {
+                const angle = entranceAngle + (i / 5) * Math.PI * 2 - Math.PI;
+                const node = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.3, 0.3, 0.3), 
+                    new THREE.MeshLambertMaterial({ color: 0x1976d2 })
+                );
+                node.position.set(cx + Math.sin(angle) * rBase, 0.5, cz + Math.cos(angle) * rBase);
+                formworkNodes.push(node);
+                scene.add(node);
+            }
+
+            drawFormworkLine();
+
+            fwDragControls = new THREE.DragControls(formworkNodes, camera, renderer.domElement);
+            fwDragControls.addEventListener('hoveron', () => { controls.enabled = false; renderer.domElement.style.cursor = 'move'; });
+            fwDragControls.addEventListener('hoveroff', () => { controls.enabled = true; renderer.domElement.style.cursor = 'default'; });
+            fwDragControls.addEventListener('drag', (e) => { e.object.position.y = 0.5; drawFormworkLine(); });
+
+            document.getElementById('btn-3').disabled = true;
+            document.getElementById('btn-3').classList.remove('active');
+            document.getElementById('btn-lock-fw').disabled = false;
+            statusText.innerText = 'Formwork strictly covers timber. Adjust gently, then Lock Formwork.';
+        });
+
+        function drawFormworkLine() {
+            if (formworkLine) scene.remove(formworkLine);
+            if (formworkNodes.length === 0) return;
+            const pts = formworkNodes.map(n => n.position.clone());
+            formworkLine = new THREE.LineLoop(
+                new THREE.BufferGeometry().setFromPoints(pts),
+                new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+            );
+            scene.add(formworkLine);
+        }
+
+        function _buildStackedFormwork() {
+            if (stackedFormworkGroup) scene.remove(stackedFormworkGroup);
+            stackedFormworkGroup = new THREE.Group();
+            
+            const maxH = Math.max(...nodeData.map(nd => nd.height));
+            const pourMaxH = maxH - 1.5;
+            const layers = Math.ceil(pourMaxH / 0.5); 
+            
+            const mat = new THREE.LineBasicMaterial({ color: 0x1976d2, transparent: true, opacity: 0.8, linewidth: 2 });
+            
+            for (let i = 0; i <= layers; i++) {
+                const y = i * 0.5;
+                const pts = fwLockedPoly.map(p => new THREE.Vector3(p.x, y, p.z));
+                pts.push(pts[0].clone());
+                stackedFormworkGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+            }
+            
+            fwLockedPoly.forEach(p => {
+                const pts = [new THREE.Vector3(p.x, 0, p.z), new THREE.Vector3(p.x, layers * 0.5, p.z)];
+                stackedFormworkGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+            });
+            
+            scene.add(stackedFormworkGroup);
+        }
+
+        let formworkLocked = false;
+
+        document.getElementById('btn-lock-fw').addEventListener('click', () => {
+            if (currentStep !== 3) return; 
+            
+            formworkLocked = !formworkLocked;
+            const lockBtn = document.getElementById('btn-lock-fw');
+
+            if (formworkLocked) {
+                fwLockedPoly = formworkNodes.map(n => ({ x: n.position.x, z: n.position.z }));
+
+                if (fwDragControls) { fwDragControls.dispose(); fwDragControls = null; }
+                formworkNodes.forEach(n => scene.remove(n));
+                if (formworkLine) { scene.remove(formworkLine); formworkLine = null; }
+                
+                _buildStackedFormwork(); 
+
+                lockBtn.textContent = 'Unlock Formwork';
+                lockBtn.classList.add('active');
+                document.getElementById('btn-4').disabled = false;
+                statusText.innerText = 'Formwork locked. Next: pour the concrete.';
+                statusText.className = 'info-text';
+                completeStep(3);
+            } else {
+                if (stackedFormworkGroup) { scene.remove(stackedFormworkGroup); stackedFormworkGroup = null; }
+                
+                formworkNodes.forEach(n => scene.add(n));
+                drawFormworkLine();
+                fwDragControls = new THREE.DragControls(formworkNodes, camera, renderer.domElement);
+                fwDragControls.addEventListener('hoveron', () => { controls.enabled = false; renderer.domElement.style.cursor = 'move'; });
+                fwDragControls.addEventListener('hoveroff', () => { controls.enabled = true; renderer.domElement.style.cursor = 'default'; });
+                fwDragControls.addEventListener('drag', (e) => { e.object.position.y = 0.5; drawFormworkLine(); });
+
+                lockBtn.textContent = 'Lock Formwork';
+                lockBtn.classList.remove('active');
+                document.getElementById('btn-4').disabled = true;
+                currentStep = 3;
+                statusText.innerText = 'Formwork unlocked — drag the nodes, then lock again.';
+                statusText.className = 'info-text';
+            }
+        });
+
+        // =====================================================
+        // STEP 4: Rammed Concrete Pour 
+        // =====================================================
+
+        function _sutherlandHodgman(subject, clip, margin = 0) {
+            if (subject.length === 0 || clip.length === 0) return [];
+            let output = subject.slice();
+            for (let i = 0; i < clip.length; i++) {
+                if (output.length === 0) return [];
+                const input = output.slice();
+                output = [];
+                const A = clip[i];
+                const B = clip[(i + 1) % clip.length];
+                const dx = B.x - A.x, dy = B.y - A.y;
+                const len = Math.hypot(dx, dy);
+                
+                const nx = (-dy / len) * margin;
+                const ny = (dx / len) * margin;
+                const edgeA = new THREE.Vector2(A.x + nx, A.y + ny);
+                const edgeB = new THREE.Vector2(B.x + nx, B.y + ny);
+
+                const inside = (p) => {
+                    return (edgeB.x - edgeA.x) * (p.y - edgeA.y) - (edgeB.y - edgeA.y) * (p.x - edgeA.x) >= 0;
+                };
+                const intersect = (a, b) => {
+                    const dx1 = b.x - a.x, dy1 = b.y - a.y;
+                    const dx2 = edgeB.x - edgeA.x, dy2 = edgeB.y - edgeA.y;
+                    const denom = dx1 * dy2 - dy1 * dx2;
+                    if (Math.abs(denom) < 1e-10) return a.clone();
+                    const t = ((edgeA.x - a.x) * dy2 - (edgeA.y - a.y) * dx2) / denom;
+                    return new THREE.Vector2(a.x + t * dx1, a.y + t * dy1);
+                };
+                for (let j = 0; j < input.length; j++) {
+                    const curr = input[j];
+                    const prev = input[(j + input.length - 1) % input.length];
+                    if (inside(curr)) {
+                        if (!inside(prev)) output.push(intersect(prev, curr));
+                        output.push(curr);
+                    } else if (inside(prev)) {
+                        output.push(intersect(prev, curr));
+                    }
+                }
+            }
+            return output;
+        }
+
+        function findIntersectionWithPoly(p1, p2, poly) {
+            let bestHit = null, minDist = Infinity;
+            for (let i = 0; i < poly.length; i++) {
+                let a = poly[i], b = poly[(i+1)%poly.length];
+                let hit = intersectSegments(p1, p2, a, b);
+                if (hit && hit.t < minDist) { minDist = hit.t; bestHit = { pt: hit.pt, edge: i }; }
+            }
+            return bestHit;
+        }
+
+        let generatedLayers = [];
+
+        document.getElementById('btn-4').addEventListener('click', () => {
+            if (currentStep !== 4) return;
+            document.getElementById('btn-4').disabled = true;
+            document.getElementById('btn-4').classList.remove('active');
+            document.getElementById('btn-lock-fw').disabled = true;
+            document.getElementById('slider-container').style.display = 'block';
+
+            const fwRaw = formworkNodes.map(n => new THREE.Vector2(n.position.x, n.position.z));
+            let area = 0;
+            for (let i = 0; i < fwRaw.length; i++) {
+                const a = fwRaw[i], b = fwRaw[(i + 1) % fwRaw.length];
+                area += (a.x * b.y - b.x * a.y);
+            }
+            const clipPoly = area < 0 ? fwRaw.slice().reverse() : fwRaw;
+
+            const maxH = Math.max(...nodeData.map(nd => nd.height));
+            const pourMaxH = maxH - 1.5;
+            const layerThick = 0.5; 
+            totalLayers = Math.ceil(pourMaxH / layerThick);
+
+            const slider = document.getElementById('concrete-slider');
+            slider.max = totalLayers;
+            slider.value = 0;
+            document.getElementById('layer-count').innerText = `0/${totalLayers}`;
+
+            const numPts = Math.max(30, drawPoints.length * 2);
+            const pts = baseCurve.getSpacedPoints(numPts);
+
+            function _capPtsAtHeight(t, reverse, y) {
+                const hEnd = getH(t);
+                const ratio = y / hEnd;
+                if (ratio >= 0.99) return [];
+                const halfWY = (getW(t) / 2) * (1 - ratio);
+                const capDepthY = halfWY * CAP_DEPTH_FRAC;
+                let arc = _capArc(t, halfWY, Math.max(0.1, capDepthY), 24).map(e => new THREE.Vector2(e.p.x, e.p.z));
+                arc = arc.slice(1, arc.length - 1);
+                return reverse ? arc.reverse() : arc;
+            }
+
+            for (let i = 0; i < totalLayers; i++) {
+                const curY = i * layerThick;
+                const yMid = curY + layerThick * 0.5;
+
+                const shape = new THREE.Shape();
+                let isStandardHole = true;
+
+                let segments = [];
+                let currentSeg = [];
+                pts.forEach((p, j) => {
+                    const t = j / (pts.length - 1);
+                    const h = getH(t);
+                    if (yMid < h) {
+                        currentSeg.push({ p: p, t: t, h: h, w: getW(t) });
+                    } else {
+                        if (currentSeg.length > 0) {
+                            segments.push(currentSeg);
+                            currentSeg = [];
+                        }
+                    }
+                });
+                if (currentSeg.length > 0) segments.push(currentSeg);
+
+                segments.forEach(seg => {
+                    let leftPts = [], rightPts = [];
+                    seg.forEach(pt => {
+                        let ratio = yMid / pt.h;
+                        let currentW = Math.max(0.3, pt.w * (1 - ratio)); 
+                        let tangent = getSafeTangent(baseCurve, pt.t);
+                        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                        leftPts.push(new THREE.Vector2(pt.p.x + normal.x * currentW / 2, pt.p.z + normal.z * currentW / 2));
+                        rightPts.push(new THREE.Vector2(pt.p.x - normal.x * currentW / 2, pt.p.z - normal.z * currentW / 2));
+                    });
+
+                    let holeVerts = [];
+                    holeVerts.push(...leftPts);
+                    
+                    if (seg[seg.length - 1].t >= 0.99) {
+                        holeVerts.push(..._capPtsAtHeight(1.0, false, yMid));
+                    }
+                    
+                    for (let k = rightPts.length - 1; k >= 0; k--) holeVerts.push(rightPts[k]);
+                    
+                    if (seg[0].t <= 0.01) {
+                        const includeEntrance = yMid < (getH(0) * 0.95);
+                        if (includeEntrance) {
+                            const tang0 = getSafeTangent(baseCurve, 0);
+                            const outward = new THREE.Vector2(-tang0.x, -tang0.z).normalize();
+                            const pL = leftPts[0], pR = rightPts[0];
+                            const extR = new THREE.Vector2(pR.x + outward.x * 60, pR.y + outward.y * 60);
+                            const extL = new THREE.Vector2(pL.x + outward.x * 60, pL.y + outward.y * 60);
+                            holeVerts.push(extR, extL);
+                        } else {
+                            holeVerts.push(..._capPtsAtHeight(0.0, true, yMid)); 
+                        }
+                    }
+
+                    if (seg[0].t <= 0.01 && yMid < (getH(0) * 0.95)) {
+                        let hitR = null, idxR = -1;
+                        for (let k = rightPts.length - 1; k > 0; k--) {
+                            let res = findIntersectionWithPoly(rightPts[k], rightPts[k-1], clipPoly);
+                            if (res) { hitR = res; idxR = k; break; }
+                        }
+                        let hitL = null, idxL = -1;
+                        for (let k = leftPts.length - 2; k >= 0; k--) {
+                            let res = findIntersectionWithPoly(leftPts[k+1], leftPts[k], clipPoly);
+                            if (res) { hitL = res; idxL = k; break; }
+                        }
+
+                        if (hitR && hitL) {
+                            isStandardHole = false;
+                            shape.moveTo(hitR.pt.x, hitR.pt.y);
+                            
+                            let curr = (hitR.edge + 1) % clipPoly.length;
+                            let count = 0;
+                            while (count < clipPoly.length) {
+                                shape.lineTo(clipPoly[curr].x, clipPoly[curr].y);
+                                if (curr === hitL.edge) break;
+                                curr = (curr + 1) % clipPoly.length;
+                                count++;
+                            }
+                            
+                            shape.lineTo(hitL.pt.x, hitL.pt.y);
+                            
+                            for (let k = idxL + 1; k < leftPts.length; k++) {
+                                shape.lineTo(leftPts[k].x, leftPts[k].y);
+                            }
+                            
+                            if (seg[seg.length - 1].t >= 0.99) {
+                                const backCap = _capPtsAtHeight(1.0, false, yMid); 
+                                for (let k = 0; k < backCap.length; k++) {
+                                    shape.lineTo(backCap[k].x, backCap[k].y);
+                                }
+                            }
+                            
+                            for (let k = rightPts.length - 1; k >= idxR; k--) {
+                                shape.lineTo(rightPts[k].x, rightPts[k].y);
+                            }
+                        }
+                    } 
+                    
+                    if (isStandardHole) {
+                        const clipped = _sutherlandHodgman(holeVerts, clipPoly, 0.05);
+                        if (clipped.length >= 3) {
+                            let holeArea = 0;
+                            for (let k = 0; k < clipped.length; k++) {
+                                let a = clipped[k], b = clipped[(k + 1) % clipped.length];
+                                holeArea += (a.x * b.y - b.x * a.y);
+                            }
+                            if (holeArea > 0) clipped.reverse(); 
+                            const hole = new THREE.Path();
+                            hole.moveTo(clipped[0].x, clipped[0].y);
+                            for (let k = 1; k < clipped.length; k++) hole.lineTo(clipped[k].x, clipped[k].y);
+                            hole.closePath();
+                            shape.holes.push(hole);
+                        }
+                    }
+                });
+                
+                if (isStandardHole) {
+                    shape.moveTo(clipPoly[0].x, clipPoly[0].y);
+                    for (let k = 1; k < clipPoly.length; k++) shape.lineTo(clipPoly[k].x, clipPoly[k].y);
+                    shape.closePath();
+                }
+
+                try {
+                    const geo = new THREE.ExtrudeGeometry(shape, {
+                        depth: layerThick,
+                        bevelEnabled: false
+                    });
+                    geo.rotateX(Math.PI / 2);
+                    geo.translate(0, curY + layerThick, 0);
+
+                    const layerColor = i % 2 === 0 ? 0xC9AE84 : 0xBFA277;
+                    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: layerColor }));
+                    mesh.castShadow = true; mesh.receiveShadow = true;
+                    mesh.visible = false;
+                    concreteGroup.add(mesh);
+                    
+                    generatedLayers.push({ mesh: mesh, layerIndex: i, shape: shape });
+                } catch (e) { console.error('Concrete layer error', i, e); }
+            }
+
+            if (formworkLine) scene.remove(formworkLine);
+
+            let cl = 0;
+            const targetStopLayer = Math.floor(totalLayers * 0.6); 
+
+            const pourInterval = setInterval(() => {
+                if (cl < targetStopLayer) {
+                    generatedLayers.forEach(item => {
+                        if (item.layerIndex === cl) item.mesh.visible = true;
+                    });
+                    slider.value = cl + 1;
+                    document.getElementById('layer-count').innerText = `${cl + 1}/${totalLayers}`;
+                    cl++;
+                } else {
+                    clearInterval(pourInterval);
+                    slider.disabled = false;
+                    completeStep(4);
+                }
+            }, 90);
+        });
+
+        document.getElementById('concrete-slider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('layer-count').innerText = `${val}/${totalLayers}`;
+            
+            if (voidVisible) {
+                concreteGroup.children.forEach(m => m.visible = false);
+                if (voidLines) { scene.remove(voidLines); voidLines = null; }
+                if (concreteEdgesGroup) { scene.remove(concreteEdgesGroup); concreteEdgesGroup = null; }
+                if (voidFloorMesh) { scene.remove(voidFloorMesh); voidFloorMesh = null; }
+                
+                voidLines = _buildVoidWireframe();
+                if (voidLines) scene.add(voidLines);
+                
+                concreteEdgesGroup = _buildConcreteEdges();
+                if (concreteEdgesGroup) scene.add(concreteEdgesGroup);
+
+                voidFloorMesh = _buildVoidFloor();
+                if (voidFloorMesh) scene.add(voidFloorMesh);
+            } else {
+                generatedLayers.forEach(item => { item.mesh.visible = item.layerIndex < val; });
+            }
+        });
+
+        // =====================================================
+        // STEP 5: Burn
+        // =====================================================
+        
+        function resetParticlePos(p) {
+            if (!burnData.pourMaxH) return; 
+            let type = p.userData.originType;
+            if (type === 'oculus') {
+                p.position.set(burnData.oculusPt.x + (Math.random()-0.5)*1.8, burnData.pourMaxH - Math.random()*2, burnData.oculusPt.z + (Math.random()-0.5)*1.8);
+            } else if (type === 'entrance') {
+                p.position.set(burnData.entrancePt.x + (Math.random()-0.5)*1.5, Math.random() * 3, burnData.entrancePt.z + (Math.random()-0.5)*1.5);
+            } else {
+                let sideAngle = Math.random() * Math.PI * 2;
+                let dx = Math.cos(sideAngle) * (burnData.rw + 0.5);
+                let dz = Math.sin(sideAngle) * (burnData.rd + 0.5);
+                if (Math.abs(dx) > burnData.rw) dx = Math.sign(dx) * burnData.rw;
+                if (Math.abs(dz) > burnData.rd) dz = Math.sign(dz) * burnData.rd;
+                p.position.set(burnData.cx + dx + (Math.random()-0.5)*0.5, Math.random() * burnData.pourMaxH, burnData.cz + dz + (Math.random()-0.5)*0.5);
+            }
+        }
+
+        document.getElementById('btn-5').addEventListener('click', () => {
+            if (currentStep !== 5) return;
+            document.getElementById('slider-container').style.opacity = '0.5';
+            document.getElementById('concrete-slider').disabled = true;
+
+            if (stackedFormworkGroup) { 
+                scene.remove(stackedFormworkGroup); 
+                stackedFormworkGroup = null; 
+            }
+
+            const enclosedLogs = logsGroup.children.slice();
+
+            const maxH = Math.max(...nodeData.map(nd => nd.height));
+            burnData.pourMaxH = maxH - 1.5;
+            burnData.entrancePt = baseCurve.getPoint(0);
+            burnData.oculusPt = baseCurve.getPoint(1.0);
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            fwLockedPoly.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+            });
+            burnData.cx = (minX + maxX)/2;
+            burnData.cz = (minZ + maxZ)/2;
+            burnData.rw = (maxX - minX)/2;
+            burnData.rd = (maxZ - minZ)/2;
+            let tang0 = getSafeTangent(baseCurve, 0);
+            burnData.outward = new THREE.Vector3(-tang0.x, 0, -tang0.z).normalize();
+
+            for (let i = 0; i < 500; i++) {
+                let typeRand = Math.random();
+                let originType = typeRand < 0.60 ? 'oculus' : (typeRand < 0.85 ? 'entrance' : 'sides');
+                let isSide = originType === 'sides';
+                let isSmoke = isSide ? true : Math.random() > 0.4;
+                
+                let c = isSide ? 0x6a6a6a : (isSmoke ? 0x3a3a3a : [0xfff2c0, 0xffcc55, 0xff9a2e, 0xff5522][Math.floor(Math.random() * 4)]);
+
+                const pMaterial = new THREE.SpriteMaterial({ 
+                    color: c, 
+                    transparent: true, 
+                    opacity: isSmoke ? (isSide ? 0.1 : 0.25) : 0.9, 
+                    depthWrite: false, 
+                    blending: isSmoke ? THREE.NormalBlending : THREE.AdditiveBlending 
+                });
+                const p = new THREE.Sprite(pMaterial);
+
+                let pScale = (isSide ? (Math.random() * 0.25 + 0.15) : 1.0) * 2.0; 
+                
+                let velocity = new THREE.Vector3();
+                if (originType === 'oculus') {
+                    velocity.set((Math.random() - 0.5) * 0.1, Math.random() * 0.4 + 0.2, (Math.random() - 0.5) * 0.1);
+                } else if (originType === 'entrance') {
+                    velocity.set(burnData.outward.x * (Math.random()*0.15 + 0.05), Math.random() * 0.1 + 0.05, burnData.outward.z * (Math.random()*0.15 + 0.05));
+                } else {
+                    velocity.set((Math.random()-0.5)*0.05, Math.random()*0.1 + 0.05, (Math.random()-0.5)*0.05);
+                }
+
+                p.userData = {
+                    v: velocity,
+                    isSmoke: isSmoke,
+                    flicker: Math.random() * Math.PI * 2,
+                    originType: originType,
+                    baseScale: pScale
+                };
+                
+                resetParticlePos(p);
+                p.scale.set(pScale, pScale, pScale);
+                scene.add(p); 
+                fireParticles.push(p);
+            }
+
+            new TWEEN.Tween(fireLight).to({ intensity: 1.5 }, 500).start();
+
+            enclosedLogs.forEach(l => {
+                new TWEEN.Tween(l.material.color).to({ r: 0.02, g: 0.02, b: 0.02 }, 2500).start();
+                l.material.transparent = true;
+                l.material.depthWrite = false; 
+                new TWEEN.Tween(l.material).to({ opacity: 0 }, 3000).delay(2000)
+                    .onComplete(() => { l.visible = false; logsGroup.remove(l); }).start();
+            });
+
+            concreteGroup.children.forEach(m => {
+                const c = m.material.color;
+                new TWEEN.Tween(c).to({
+                    r: c.r * 0.62,
+                    g: c.g * 0.58,
+                    b: c.b * 0.52
+                }, 4500).start();
+            });
+
+            const targetGroundColor = new THREE.Color(0x879687);
+            new TWEEN.Tween(groundMat.color).to({
+                r: targetGroundColor.r,
+                g: targetGroundColor.g,
+                b: targetGroundColor.b
+            }, 4500).delay(1000).start();
+
+            new TWEEN.Tween(grassMaterial).to({ opacity: 0.7 }, 4500).delay(1000).start();
+
+            setTimeout(() => {
+                fireParticles.forEach(p => new TWEEN.Tween(p.material).to({ opacity: 0 }, 1500).onComplete(() => scene.remove(p)).start());
+                fireParticles = [];
+                new TWEEN.Tween(fireLight).to({ intensity: 0 }, 1500).start();
+                document.getElementById('btn-5').classList.remove('active', 'btn-danger');
+                document.getElementById('btn-5').disabled = true;
+
+                document.getElementById('btn-void').disabled = false;
+                document.getElementById('concrete-slider').disabled = false;
+
+                new TWEEN.Tween(camera.position).to({ x: 26, y: 16, z: 26 }, 2500)
+                    .easing(TWEEN.Easing.Cubic.InOut).start();
+
+                setTimeout(() => {
+                    document.getElementById('btn-void').click();
+                    statusText.innerText = 'Complete. The true void left by timber is shown.';
+                    statusText.className = 'info-text';
+                }, 2600);
+            }, 6500);
+
+            completeStep(5);
+        });
+
+        // =====================================================
+        // SHOW NEGATIVE SPACE
+        // =====================================================
+        let voidLines = null;
+        let voidVisible = false;
+        let voidFloorMesh = null;
+
+        function _buildVoidFloor() {
+            if (!fwLockedPoly || fwLockedPoly.length < 3) return null;
+            if (generatedLayers.length === 0) return null;
+            
+            const g = new THREE.Group();
+
+            // 1. พื้นสีเทา ตรงส่วนของกำแพงคอนกรีต (ความหนากำแพง)
+            const baseShape = generatedLayers[0].shape;
+            const floorGeo = new THREE.ShapeGeometry(baseShape);
+            floorGeo.rotateX(Math.PI / 2);
+            floorGeo.translate(0, 0.05, 0); 
+
+            const floorMat = new THREE.MeshBasicMaterial({ 
+                color: 0x777777, // สีเทาสำหรับกำแพง
+                side: THREE.DoubleSide, 
+                transparent: true, 
+                opacity: 0.95 
+            });
+            g.add(new THREE.Mesh(floorGeo, floorMat));
+
+            // 2. พื้นสีดิน ตรงส่วนที่เป็นพื้นที่ว่างสำหรับเดิน (Negative Space)
+            const numPts = Math.max(30, drawPoints.length * 2);
+            const pts = baseCurve.getSpacedPoints(numPts);
+            let leftPts = [], rightPts = [];
+            
+            pts.forEach((pt, j) => {
+                const t = j / (pts.length - 1);
+                const currentW = Math.max(0.3, getW(t)); 
+                let tangent = getSafeTangent(baseCurve, t);
+                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                leftPts.push(new THREE.Vector2(pt.x + normal.x * currentW / 2, pt.z + normal.z * currentW / 2));
+                rightPts.push(new THREE.Vector2(pt.x - normal.x * currentW / 2, pt.z - normal.z * currentW / 2));
+            });
+
+            let holeVerts = [];
+            holeVerts.push(...leftPts);
+            
+            const halfW_end = getW(1.0) / 2;
+            const capDepth_end = halfW_end * CAP_DEPTH_FRAC;
+            let arc = _capArc(1.0, halfW_end, Math.max(0.1, capDepth_end), 24).map(e => new THREE.Vector2(e.p.x, e.p.z));
+            arc = arc.slice(1, arc.length - 1);
+            holeVerts.push(...arc);
+            
+            for (let k = rightPts.length - 1; k >= 0; k--) holeVerts.push(rightPts[k]);
+            
+            const tang0 = getSafeTangent(baseCurve, 0);
+            const outward = new THREE.Vector2(-tang0.x, -tang0.z).normalize();
+            const extR = new THREE.Vector2(rightPts[0].x + outward.x * 60, rightPts[0].y + outward.y * 60);
+            const extL = new THREE.Vector2(leftPts[0].x + outward.x * 60, leftPts[0].y + outward.y * 60);
+            holeVerts.push(extR, extL);
+
+            // สร้าง Polygon ของกรอบนอกเพื่อตัดเอาเฉพาะโถงทางเดินด้านใน
+            const clipPoly = fwLockedPoly.map(p => new THREE.Vector2(p.x, p.z));
+            let areaClip = 0;
+            for (let i = 0; i < clipPoly.length; i++) {
+                const a = clipPoly[i], b = clipPoly[(i + 1) % clipPoly.length];
+                areaClip += (a.x * b.y - b.x * a.y);
+            }
+            if (areaClip < 0) clipPoly.reverse();
+
+            const clippedVoid = _sutherlandHodgman(holeVerts, clipPoly, 0);
+            
+            if (clippedVoid.length >= 3) {
+                let areaVoid = 0;
+                for (let k = 0; k < clippedVoid.length; k++) {
+                    let a = clippedVoid[k], b = clippedVoid[(k + 1) % clippedVoid.length];
+                    areaVoid += (a.x * b.y - b.x * a.y);
+                }
+                if (areaVoid > 0) clippedVoid.reverse();
+
+                const voidShape = new THREE.Shape();
+                voidShape.moveTo(clippedVoid[0].x, clippedVoid[0].y);
+                for (let k = 1; k < clippedVoid.length; k++) voidShape.lineTo(clippedVoid[k].x, clippedVoid[k].y);
+                voidShape.closePath();
+
+                const earthGeo = new THREE.ShapeGeometry(voidShape);
+                earthGeo.rotateX(Math.PI / 2);
+                earthGeo.translate(0, 0.052, 0); // ยกให้ลอยเหนือพื้นเทาเล็กน้อย
+                
+                const earthMat = new THREE.MeshBasicMaterial({ 
+                    color: 0x9b856d, // สีดินอ่อน
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.95
+                });
+                g.add(new THREE.Mesh(earthGeo, earthMat));
+            }
+
+            return g;
+        }
+
+        function _buildVoidWireframe() {
+            const enclosed = logFootprintData;
+            if (enclosed.length < 2) return null;
+
+            const val = parseInt(document.getElementById('concrete-slider').value);
+            const topY = val * 0.5; 
+
+            const verts = [];
+            enclosed.forEach(ld => {
+                let base = ld.basePt;
+                let ridge = ld.ridgePt;
+                
+                let clippedSeg = clipLineToPoly(base, ridge, fwLockedPoly);
+                if (!clippedSeg) return;
+                base = clippedSeg.p1;
+                ridge = clippedSeg.p2;
+
+                if (ridge.y > topY) {
+                    const t = (topY - base.y) / (ridge.y - base.y);
+                    ridge = new THREE.Vector3(
+                        base.x + (ridge.x - base.x) * t,
+                        topY,
+                        base.z + (ridge.z - base.z) * t
+                    );
+                }
+                
+                if(base.y < ridge.y) {
+                    verts.push(base.x, base.y, base.z);
+                    verts.push(ridge.x, ridge.y, ridge.z);
+                }
+            });
+
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+
+            const mat = new THREE.LineBasicMaterial({
+                color: 0xff8a1f,
+                transparent: true,
+                opacity: 0.85
+            });
+            const lines = new THREE.LineSegments(geom, mat);
+            lines.name = 'negativeSpaceWireframe';
+            return lines;
+        }
+
+        let concreteEdgesGroup = null; 
+
+        function _buildConcreteEdges() {
+            if (!fwLockedPoly || fwLockedPoly.length < 3) return new THREE.Group();
+            if (generatedLayers.length === 0) return new THREE.Group();
+
+            const val = parseInt(document.getElementById('concrete-slider').value);
+            if (val === 0) return new THREE.Group();
+            
+            const g = new THREE.Group();
+            const mat = new THREE.LineBasicMaterial({ color: 0x2f4a5c, transparent: true, opacity: 0.75 });
+            const verts = [];
+
+            function addShapeOutline(shape, yHeight) {
+                const pts = shape.getPoints();
+                for(let i=0; i<pts.length; i++) {
+                    const p1 = pts[i], p2 = pts[(i+1)%pts.length];
+                    verts.push(p1.x, yHeight, p1.y, p2.x, yHeight, p2.y);
+                }
+                if(shape.holes) {
+                    shape.holes.forEach(hole => {
+                        const hPts = hole.getPoints();
+                        for(let i=0; i<hPts.length; i++) {
+                            const p1 = hPts[i], p2 = hPts[(i+1)%hPts.length];
+                            verts.push(p1.x, yHeight, p1.y, p2.x, yHeight, p2.y);
+                        }
+                    });
+                }
+            }
+
+            addShapeOutline(generatedLayers[0].shape, 0);
+
+            const topLayerIdx = val - 1;
+            const topY = val * 0.5; 
+            addShapeOutline(generatedLayers[topLayerIdx].shape, topY);
+
+            for(let i=0; i<fwLockedPoly.length; i++){
+                const p1 = fwLockedPoly[i];
+                verts.push(p1.x, 0, p1.z, p1.x, topY, p1.z);
+            }
+
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            g.add(new THREE.LineSegments(geom, mat));
+            return g;
+        }
+
+        document.getElementById('btn-void').addEventListener('click', () => {
+            voidVisible = !voidVisible;
+            document.getElementById('btn-void').classList.toggle('active', voidVisible);
+
+            if (voidVisible) {
+                if (voidLines) { scene.remove(voidLines); voidLines = null; }
+                if (concreteEdgesGroup) { scene.remove(concreteEdgesGroup); concreteEdgesGroup = null; }
+                if (voidFloorMesh) { scene.remove(voidFloorMesh); voidFloorMesh = null; }
+
+                voidLines = _buildVoidWireframe();
+                if (voidLines) scene.add(voidLines);
+                
+                concreteEdgesGroup = _buildConcreteEdges();
+                if (concreteEdgesGroup) scene.add(concreteEdgesGroup);
+
+                voidFloorMesh = _buildVoidFloor(); 
+                if (voidFloorMesh) scene.add(voidFloorMesh);
+                
+                concreteGroup.children.forEach(m => m.visible = false);
+                
+                statusText.innerText = 'Timber wireframe (orange) vs. concrete outline (blue). Entrance is open.';
+                statusText.className = 'info-text';
+            } else {
+                if (voidLines) voidLines.visible = false;
+                if (concreteEdgesGroup) concreteEdgesGroup.visible = false;
+                if (voidFloorMesh) voidFloorMesh.visible = false; 
+                
+                generatedLayers.forEach(item => {
+                    const val = parseInt(document.getElementById('concrete-slider').value);
+                    if (item.layerIndex < val) item.mesh.visible = true;
+                });
+                
+                statusText.innerText = 'Concrete mass restored.';
+                statusText.className = 'info-text';
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+
+        function completeStep(s) {
+            currentStep = s + 1;
+            enableOrbit(); 
+            if (currentStep === 3) {
+                document.getElementById('btn-3').disabled = false;
+                document.getElementById('btn-3').classList.add('active');
+                statusText.innerText = 'Logs placed. Next: set up the outer formwork.';
+            } else if (currentStep === 4) {
+                document.getElementById('btn-4').disabled = false;
+                document.getElementById('btn-4').classList.add('active');
+                statusText.innerText = 'Formwork locked. Next: pour the concrete.';
+            } else if (currentStep === 5) {
+                document.getElementById('btn-5').disabled = false;
+                document.getElementById('btn-5').classList.add('btn-danger');
+                document.getElementById('btn-void').disabled = false;
+                statusText.innerText = 'Concrete cast. Next: burn the internal logs.';
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            w = container.clientWidth || window.innerWidth;
+            h = container.clientHeight || 440;
+            camera.left = -viewSize * (w / h); camera.right = viewSize * (w / h);
+            camera.updateProjectionMatrix(); renderer.setSize(w, h);
+        });
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+
+            if (currentStep === 1) {
+                labelsContainer.style.display = 'block';
+                const cw = container.clientWidth;
+                const ch = container.clientHeight;
+                const allNodes = [...pathHandles, ...hHandles, ...wHandles];
+                
+                allNodes.forEach(mesh => {
+                    if (mesh.userData && mesh.userData.labelEl) {
+                        mesh.userData.labelEl.innerText = mesh.userData.updateLabel();
+                        
+                        const pos = mesh.position.clone();
+                        pos.y += (mesh.userData.type === 'height') ? 0.5 : 0.3;
+                        pos.project(camera);
+                        
+                        const x = (pos.x * 0.5 + 0.5) * cw;
+                        const y = (pos.y * -0.5 + 0.5) * ch;
+                        
+                        mesh.userData.labelEl.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+                    }
+                });
+            } else {
+                labelsContainer.style.display = 'none'; 
+            }
+
+            if (fireParticles.length > 0) {
+                fireLight.intensity = 1.1 + Math.sin(time * 0.012) * 0.25 + Math.random() * 0.25; 
+                fireParticles.forEach(p => {
+                    p.material.rotation += 0.03; 
+                    
+                    if (!p.userData.isSmoke) {
+                        p.scale.multiplyScalar(0.97);
+                        p.material.color.lerp(new THREE.Color(0xcc1a00), 0.04);
+                        p.material.opacity = 0.75 + Math.sin(time * 0.02 + p.userData.flicker) * 0.15;
+                        if (p.scale.x < 0.1) {
+                            resetParticlePos(p);
+                            p.scale.set(p.userData.baseScale, p.userData.baseScale, p.userData.baseScale);
+                            p.material.color.setHex([0xfff2c0, 0xffcc55, 0xff9a2e, 0xff5522][Math.floor(Math.random() * 4)]);
+                        }
+                        
+                        if (p.userData.originType === 'entrance') {
+                            p.position.add(burnData.outward.clone().multiplyScalar(0.02));
+                            p.position.y += 0.01;
+                            p.position.x += Math.sin(time * 0.005 + p.userData.flicker) * 0.01;
+                        } else if (p.userData.originType === 'sides') {
+                            p.position.add(new THREE.Vector3((p.position.x - burnData.cx)*0.002, 0.01, (p.position.z - burnData.cz)*0.002));
+                        } else {
+                            p.position.y += 0.06;
+                            p.position.x += (Math.random()-0.5)*0.02 + Math.sin(time * 0.005 + p.userData.flicker) * 0.01;
+                            p.position.z += (Math.random()-0.5)*0.02 + Math.cos(time * 0.005 + p.userData.flicker) * 0.01;
+                        }
+
+                    } else {
+                        if (p.userData.originType === 'entrance') {
+                            p.position.add(burnData.outward.clone().multiplyScalar(0.04));
+                            p.position.y += 0.02;
+                            p.position.x += Math.sin(time * 0.003 + p.userData.flicker) * 0.02;
+                        } else if (p.userData.originType === 'sides') {
+                             p.position.add(new THREE.Vector3((p.position.x - burnData.cx)*0.005, 0.01, (p.position.z - burnData.cz)*0.005));
+                        } else {
+                            p.position.y += 0.08;
+                            p.position.x += Math.sin(time * 0.002 + p.userData.flicker) * 0.02;
+                            p.position.z += Math.cos(time * 0.002 + p.userData.flicker) * 0.02;
+                        }
+                        
+                        if (p.scale.x < p.userData.baseScale * 3.5) {
+                            p.scale.multiplyScalar(1.008); 
+                        }
+                        
+                        if (p.position.y > 25 || Math.abs(p.position.x) > 20 || Math.abs(p.position.z) > 20 || p.material.opacity <= 0) {
+                            resetParticlePos(p);
+                            p.scale.set(p.userData.baseScale, p.userData.baseScale, p.userData.baseScale); 
+                            p.material.opacity = p.userData.originType === 'sides' ? 0.1 : 0.25;
+                        } else {
+                            p.material.opacity -= 0.0055; 
+                        }
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    } catch (e) {
+        document.getElementById('status-text').innerHTML = 'Error initializing: ' + e.message;
+        document.getElementById('status-text').className = 'warn-text';
+    }
+}
+</script>
+</body>
+</html>
