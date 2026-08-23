@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Snowdon Aviary: Tensegrity Kinematics & Wind Load</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+    /* Reset & Base Setup (100vh No-Scroll) */
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #111;
+        padding: 15px 30px; 
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Top Navigation Bar */
+    .portfolio-bar {
+        max-width: 1100px; width: 100%; margin: 0 auto 10px auto; display: flex; 
+        justify-content: space-between; align-items: baseline; padding-bottom: 5px; 
+        border-bottom: 1px solid #111; flex-shrink: 0;
+    }
+    .portfolio-bar a { color: #111; text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+    .portfolio-bar a:hover { color: #d32f2f; }
+    .portfolio-bar .idx { font-family: 'Courier New', monospace; font-size: 11px; color: #999; letter-spacing: 1px; }
+
+    /* Header Section */
+    .header { text-align: right; max-width: 1100px; width: 100%; margin: 0 auto 10px auto; flex-shrink: 0; }
+    .header h1 { margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+    .header h2 { margin: 2px 0 0 0; font-size: 13px; font-weight: normal; color: #666; letter-spacing: 0.5px; } 
+    
+    /* 3D Canvas Container */
+    .canvas-container { 
+        max-width: 1100px; width: 100%; margin: 0 auto; 
+        border-bottom: 1px dashed #aaa; 
+        padding-bottom: 10px; position: relative;
+        flex: 1 1 auto; 
+        min-height: 0; 
+        display: flex; flex-direction: column;
+    }
+    
+    #canvas-inner {
+        width: 100%; height: 100%; flex: 1 1 auto; background: #fdfdfd;
+        border: 1px solid #eaeaea; position: relative; touch-action: none;
+        cursor: move; outline: none; overflow: hidden;
+    }
+    
+    #labels-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+    .node-label {
+        position: absolute; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 10px; font-weight: 600; background: rgba(255,255,255,0.85);
+        padding: 1px 4px; border-radius: 2px; transform: translate(7px, -7px);
+        white-space: nowrap; pointer-events: none; transition: opacity 0.2s;
+    }
+    
+    #loading {
+        position: absolute; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+        background: #fdfdfd; font-size: 12px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #111;
+    }
+
+    #status-text {
+        font-size: 11px; font-weight: bold; text-align: center; margin-top: 8px; flex-shrink: 0; 
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    .safe-text { color: #555; }
+    .warning-text { color: #f57c00; }
+    .danger-text { color: #d32f2f; }
+    .wind-text { color: #0277bd; }
+
+    /* Bottom Controls Container */
+    .controls-container { 
+        display: flex; justify-content: space-between; align-items: stretch; max-width: 1100px; width: 100%;
+        margin: 10px auto 0 auto; font-size: 11px; line-height: 1.4; flex-shrink: 0; gap: 20px; 
+    }
+    .column { flex: 1; padding: 0 15px; border-left: 1px solid #ccc; display: flex; flex-direction: column; justify-content: flex-start; } 
+    .column:first-child { border-left: none; padding-left: 0; }
+    .column h3 { 
+        margin-top: 0; font-size: 11px; font-weight: bold; 
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; color: #333; 
+    }
+    
+    .control-row { margin-bottom: 6px; } 
+    label { display: flex; justify-content: space-between; margin-bottom: 2px; font-weight: bold; color: #333;}
+    .val { font-family: monospace; color: #555; }
+    
+    input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+    input[type="range"]::-webkit-slider-thumb { 
+        -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -5px; 
+    }
+    input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 2px; cursor: pointer; background: #ccc; }
+    
+    #windSlider::-webkit-slider-thumb { background: #0288d1; }
+    
+    /* Toggle Buttons */
+    .btn-row { display: flex; gap: 8px; margin-bottom: 2px; } 
+    button.toggle-btn {
+        border: 1px solid #999; background: #fff; color: #333; padding: 5px 8px; 
+        font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
+        cursor: pointer; transition: all 0.15s ease; flex: 1; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    button.toggle-btn:hover { background: #eee; }
+    button.toggle-btn.active { background: #111; border-color: #111; color: #fff; }
+
+    /* Origami Bird Icon Button */
+    .bird-icon-btn {
+        background: transparent; border: 1px solid transparent; color: #111; 
+        padding: 4px 8px; width: 100%; margin: 0 auto; cursor: pointer; 
+        display: flex; flex-direction: row; 
+        align-items: center; justify-content: center; gap: 10px; 
+        opacity: 0.4; transition: all 0.2s;
+    }
+    .bird-icon-btn.active { opacity: 1; color: #111; }
+    .bird-icon-btn:hover { opacity: 0.8; border: 1px dashed #ccc; }
+    .bird-icon-btn svg { pointer-events: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; flex-shrink: 0; }
+    .bird-icon-label { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;}
+
+</style>
+</head>
+<body>
+
+<div class="portfolio-bar">
+    <a href="#">&larr; Index</a>
+    <span class="idx">08 / STRUCTURAL BUOYANCY & WIND</span>
+</div>
+
+<div class="header">
+    <h1>Tensegrity Kinematics: Prestress & Buoyancy</h1>
+    <h2>Lord Snowdon, Cedric Price and Frank Newby, The Snowdon Aviary</h2>
+</div>
+
+<div class="canvas-container">
+    <div id="canvas-inner">
+        <div id="loading">INITIALIZING GRAVITY & BUOYANCY PHYSICS...</div>
+        <div id="labels-container"></div>
+    </div>
+    <div id="status-text" class="safe-text">Status: 100% Prestress - Structure Rigid & Stable</div>
+</div>
+
+<div class="controls-container">
+    
+    <div class="column" style="flex: 0.8;">
+        <h3>Display Modes</h3>
+        <div class="btn-row">
+            <button id="labelToggle" class="toggle-btn active">Labels</button>
+            <button id="arrowToggle" class="toggle-btn active">Forces</button>
+        </div>
+        <p style="color:#777; font-size:9px; margin-top:4px; margin-bottom:0; line-height: 1.3;">
+            Diagram: Compression (<span style="color:#00bfff; font-weight:bold;">Cyan</span>) & Tension (<span style="color:#c1442d; font-weight:bold;">Red</span>).<br>
+            Forces visually map the continuous tension and discontinuous compression network.
+        </p>
+    </div>
+
+    <!-- Center Column -->
+    <div class="column" style="flex: 1.5;">
+        <h3>Structural Physics & External Loads</h3>
+        <div class="control-row">
+            <label>Prestress Cable Tension <span id="val-prestress" class="val">100%</span></label>
+            <input type="range" id="prestressSlider" min="0" max="100" value="100" title="Adjust to observe structural dependency">
+        </div>
+        <div class="control-row">
+            <label style="color:#0277bd;">Lateral Wind Force <span id="val-wind" class="val">0%</span></label>
+            <input type="range" id="windSlider" min="0" max="100" value="0" title="Simulate aerodynamic drag on cables">
+        </div>
+        <p style="color:#777; font-size:9px; margin-top:2px; margin-bottom:0; line-height: 1.3;">
+            Values &lt; 50% tension cause buoyancy floating. High wind induces aerodynamic drag and cable flutter.
+        </p>
+    </div>
+    
+    <div class="column" style="flex: 0.8; align-items: center; justify-content: center;">
+        <button id="birdToggle" class="bird-icon-btn active" title="Toggle Ecosystem">
+            <svg viewBox="0 0 100 80" width="35" height="28">
+                <polygon points="15,18 27,5 27,15" fill="none" />
+                <polyline points="15,18 27,15 27,25" fill="none" />
+                <polygon points="27,5 57,25 27,25" fill="none" />
+                <polygon points="27,15 23,38 27,42" fill="none" />
+                <polygon points="27,25 57,25 87,50 67,66 48,59 27,48 27,42" fill="none" />
+                <polygon points="87,50 100,64 78,60 76,59" fill="none" />
+                <polygon points="48,59 58,80 43,80 49,70 38,70 45,63" fill="none" />
+            </svg>
+            <span class="bird-icon-label">Toggle Aviary</span>
+        </button>
+    </div>
+</div>
+
+<script>
+window.addEventListener('load', initApp);
+
+function initApp() {
+    try {
+        const container = document.getElementById('canvas-inner');
+        const labelsContainer = document.getElementById('labels-container');
+        const statusText = document.getElementById('status-text');
+        
+        let w = container.clientWidth;
+        let h = container.clientHeight;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfdfdfd);
+
+        const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; controls.dampingFactor = 0.08;
+        
+        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(30, 80, 20); scene.add(dirLight);
+
+        // ==========================================
+        // 1. DATA STRUCTURE 
+        // ==========================================
+        const geometryData = { 
+            "vertices": [[64.324992, 160.742884, 11.1522256], [69.429884, 141.61389, 11.2899952], [69.28942199999999, 151.0792, 38.959281999999995], [74.38009, 147.522946, -2.37499906], [83.870038, 155.30372799999998, 11.070005799999999], [65.37855746817502, 163.59558590858472, 4.6712314500000005], [78.25994, 156.894784, 34.049969999999995], [77.81010599999999, 169.845736, 33.850072], [64.65239799999999, 171.441618, 16.8855898], [85.03031, 171.75607, 16.960494399999998], [73.384918, 178.13096199999998, 4.6712314500000005], [75.017884, 189.165738, 17.0687746], [70.176898, 176.832514, 38.993572], [74.499978, 164.985954, 4.6712314500000005], [74.499978, 161.76244, 4.6712314500000005], [9.435187999999997, 160.742884, 11.1522256], [4.33029599999999, 141.61389, 11.2899952], [4.470758000000004, 151.0792, 38.959281999999995], [-0.6199100000000044, 147.522946, -2.37499906], [-10.109858000000003, 155.30372799999998, 11.070005799999999], [8.381622531824972, 163.59558590858472, 4.6712314500000005], [-4.499760000000009, 156.894784, 34.049969999999995], [-4.049925999999999, 169.845736, 33.850072], [9.107782, 171.441618, 16.8855898], [-11.270130000000009, 171.75607, 16.960494399999998], [0.3752619999999922, 178.13096199999998, 4.6712314500000005], [-1.257704000000004, 189.165738, 17.0687746], [3.583281999999997, 176.832514, 38.993572], [-0.7397980000000075, 164.985954, 4.6712314500000005], [-0.7397980000000075, 161.76244, 4.6712314500000005], [36.88009, 144.61389, 11.2899952], [36.88009, 183.46977224, 20.93014339], [36.88009000000001, 163.40564930887075, 33.94947476586488], [36.88009, 175.85657775, 31.1675308], [36.88009, 151.0792, 31.1675308], [65.37840629110477, 163.395585965721, 4.6712314500000005], [8.381773708895219, 163.395585965721, 4.6712314500000005]], 
+            "vertexOrigId": [1, 2, 3, 4, 5, "6a", 7, 8, 9, 10, 11, 12, 13, 15, 16, "1'", "2'", "3'", "4'", "5'", "6a'", "7'", "8'", "9'", "10'", "11'", "12'", "13'", "15'", "16'", "X1", "X2", "X3", "X4", "X5", "6b", "6b'"], 
+            "vertexRoles": ["pyramidA", "pyramidA", "pyramidA", "groundLow", "pyramidA", "groundUpper", "vmast", "vmast", "pyramidB", "pyramidB", "groundUpper", "pyramidB", "pyramidB", "groundUpper", "groundUpper", "pyramidA", "pyramidA", "pyramidA", "groundLow", "pyramidA", "groundUpper", "vmast", "vmast", "pyramidB", "pyramidB", "groundUpper", "pyramidB", "pyramidB", "groundUpper", "groundUpper", "crossing", "crossing", "crossing", "crossing", "crossing", "groundUpper", "groundUpper"], 
+            "edges": [[3, 1], [2, 3], [5, 3], [1, 2], [2, 5], [5, 1], [4, 1], [4, 2], [4, 5], [13, 9], [13, 10], [13, 12], [9, 10], [10, 12], [12, 9], [11, 9], [11, 10], [11, 12], [36, 7], [6, 8], [13, 8], [8, 7], [7, 3], [18, 16], [17, 18], [20, 18], [16, 17], [17, 20], [20, 16], [19, 16], [19, 17], [19, 20], [28, 24], [28, 25], [28, 27], [24, 25], [25, 27], [27, 24], [26, 24], [26, 25], [26, 27], [37, 22], [21, 23], [29, 23], [30, 22], [28, 23], [23, 22], [22, 18], [13, 33], [33, 18], [3, 33], [33, 28], [12, 32], [32, 27], [2, 31], [31, 17], [32, 34], [34, 33], [31, 35], [35, 33], [13, 34], [34, 28], [3, 35], [35, 18], [14, 8], [15, 7], [8, 33], [33, 22], [7, 33], [33, 23], [13, 32], [32, 26], [28, 32], [32, 11], [3, 31], [31, 19], [18, 31], [31, 4], [10, 14], [5, 15], [25, 29], [20, 30]], 
+            "edgeKind": ["compression", "compression", "compression", "compression", "compression", "compression", "tension", "tension", "tension", "compression", "compression", "compression", "compression", "compression", "compression", "tension", "tension", "tension", "compression", "compression", "tension", "tension", "tension", "compression", "compression", "compression", "compression", "compression", "compression", "tension", "tension", "tension", "compression", "compression", "compression", "compression", "compression", "compression", "tension", "tension", "tension", "compression", "compression", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension", "tension"], 
+            "groundUpperZ": 4.67, 
+            "groundLowerZ": -2.37 
+        };
+
+        const WALKWAY_HEIGHT = 5.17;
+        const ROLE_COLORS = { pyramidA: 0x2b4f6e, pyramidB: 0x416086, vmast: 0x2b4f6e, groundLow: 0xc1442d, groundUpper: 0xc1442d, crossing: 0x111111 };
+        const verts = geometryData.vertices.map(v => new THREE.Vector3(v[0], v[2], v[1]));
+
+        // ==========================================
+        // 2. VERLET PHYSICS ENGINE INITIALIZATION
+        // ==========================================
+        let particles = [];
+        let rigidConstraints = [];
+        let cableConstraints = [];
+
+        verts.forEach((v, i) => {
+            const role = geometryData.vertexRoles[i];
+            const isPinned = role.includes("ground"); 
+            particles.push({
+                origPos: v.clone(), 
+                pos: v.clone(),
+                oldPos: v.clone(),
+                pinned: isPinned,
+                role: role,
+                groundY: role.includes("groundUpper") ? geometryData.groundUpperZ : (role.includes("groundLow") ? geometryData.groundLowerZ : -5)
+            });
+        });
+
+        geometryData.edges.forEach(([idx0, idx1], i) => {
+            const p1 = idx0 - 1, p2 = idx1 - 1;
+            const dist = particles[p1].origPos.distanceTo(particles[p2].origPos);
+            if (geometryData.edgeKind[i] === "compression") {
+                rigidConstraints.push({ p1: p1, p2: p2, length: dist });
+            } else {
+                cableConstraints.push({ p1: p1, p2: p2, length: dist, origLength: dist });
+            }
+        });
+
+        const rigidGroups = [
+            [0,1,2,4,5,8,13], // Pyramid Right
+            [15,16,17,19,20,23,28], // Pyramid Left
+            [6,7], // V-Mast Right
+            [21,22] // V-Mast Left
+        ];
+        rigidGroups.forEach(group => {
+            for(let i=0; i<group.length; i++) {
+                for(let j=i+1; j<group.length; j++) {
+                    const dist = particles[group[i]].origPos.distanceTo(particles[group[j]].origPos);
+                    rigidConstraints.push({ p1: group[i], p2: group[j], length: dist });
+                }
+            }
+        });
+
+        // ==========================================
+        // 3. RENDER MESHES, ARROWS, BALLOONS & WIND LINES
+        // ==========================================
+        const thickTubeGroup = new THREE.Group(); scene.add(thickTubeGroup);
+        const forceGroup = new THREE.Group(); scene.add(forceGroup);
+        const balloonGroup = new THREE.Group(); scene.add(balloonGroup);
+        const windGroup = new THREE.Group(); scene.add(windGroup);
+        
+        const matCompArrow = new THREE.MeshBasicMaterial({ color: 0x00bfff }); 
+        const matTenArrow = new THREE.MeshBasicMaterial({ color: 0xc1442d });
+        const matCompDashed = new THREE.LineDashedMaterial({ color: 0x00bfff, linewidth: 1, dashSize: 0.4, gapSize: 0.3 });
+        const lineTenMat = new THREE.LineBasicMaterial({ color: 0xc1442d });
+        
+        const balloonMat = new THREE.MeshLambertMaterial({ color: 0xdb7093, transparent: true, opacity: 0.85 }); 
+        const stringMat = new THREE.LineBasicMaterial({ color: 0x999999 });
+
+        const arrowGeom = new THREE.ConeGeometry(0.25, 0.6, 6); 
+        arrowGeom.translate(0, 0.3, 0); arrowGeom.rotateX(Math.PI / 2); 
+        function createArrow(mat) { const m = new THREE.Mesh(arrowGeom, mat); forceGroup.add(m); return m; }
+
+        let renderComps = [];
+        let renderCables = [];
+
+        function findVertIdx(label) { return geometryData.vertexOrigId.indexOf(label); }
+        const baseLegPairs = [ [findVertIdx("6a"), findVertIdx(8)], [findVertIdx("6b"), findVertIdx(7)], [findVertIdx("6a'"), findVertIdx("8'")], [findVertIdx("6b'"), findVertIdx("7'")] ];
+        function isBaseLeg(i0, i1) { return baseLegPairs.some(([a, b]) => (a === i0 && b === i1) || (a === i1 && b === i0)); }
+        function isVmast(i0, i1) { return geometryData.vertexRoles[i0] === "vmast" && geometryData.vertexRoles[i1] === "vmast"; }
+
+        geometryData.edges.forEach(([idx0, idx1], i) => {
+            const p1 = idx0 - 1, p2 = idx1 - 1;
+            if (geometryData.edgeKind[i] === "compression") {
+                const rad = (isBaseLeg(p1, p2) || isVmast(p1, p2)) ? 0.15 : 0.10;
+                const mesh = new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0,1,0)), 1, rad, 8, false), new THREE.MeshBasicMaterial({ color: 0x2b4f6e }));
+                thickTubeGroup.add(mesh);
+                let arr1 = null, arr2 = null;
+                if (particles[p1].origPos.distanceTo(particles[p2].origPos) > 1.5) {
+                    arr1 = createArrow(matCompArrow); arr2 = createArrow(matCompArrow);
+                }
+                renderComps.push({ p1, p2, mesh, arr1, arr2 });
+            } else {
+                let arr1 = null, arr2 = null;
+                if (particles[p1].origPos.distanceTo(particles[p2].origPos) > 1.5) {
+                    arr1 = createArrow(matTenArrow); arr2 = createArrow(matTenArrow);
+                }
+                renderCables.push({ p1, p2, arr1, arr2 });
+            }
+        });
+
+        const compLinesGeo = new THREE.BufferGeometry();
+        const compLinesMesh = new THREE.LineSegments(compLinesGeo, matCompDashed);
+        forceGroup.add(compLinesMesh);
+
+        const segmentsPerCable = 10;
+        const tenGeo = new THREE.BufferGeometry(); 
+        scene.add(new THREE.LineSegments(tenGeo, lineTenMat));
+
+        // Balloons
+        const renderBalloons = [];
+        const balloonGeom = new THREE.SphereGeometry(0.8, 16, 16);
+        balloonGeom.scale(1, 1.2, 1); 
+
+        const peaks = [2, 6, 7, 12, 17, 21, 22, 27]; 
+        
+        particles.forEach((p, idx) => {
+            if ((p.role.includes("pyramid") || p.role.includes("vmast")) && !p.pinned) {
+                const bMesh = new THREE.Mesh(balloonGeom, balloonMat);
+                const stringGeo = new THREE.BufferGeometry();
+                const stringMesh = new THREE.Line(stringGeo, stringMat);
+                balloonGroup.add(bMesh); balloonGroup.add(stringMesh);
+                
+                const isPeak = peaks.includes(idx);
+                const baseScaleFactor = isPeak ? 1.0 : 0.55; 
+
+                renderBalloons.push({ pIdx: idx, mesh: bMesh, string: stringMesh, baseScale: baseScaleFactor, phaseOffset: Math.random() * Math.PI * 2 });
+            }
+        });
+
+        // Wind Flow Lines Particle System
+        const windParticleCount = 150;
+        const windParticles = [];
+        const windMat = new THREE.LineDashedMaterial({ color: 0x0288d1, linewidth: 1, dashSize: 2, gapSize: 2, transparent: true, opacity: 0.3 });
+        
+        for (let i = 0; i < windParticleCount; i++) {
+            const geo = new THREE.BufferGeometry();
+            const startX = -10 + Math.random() * 100;
+            const startY = 5 + Math.random() * 40;
+            const startZ = 120 + Math.random() * 60; 
+            
+            geo.setAttribute('position', new THREE.Float32BufferAttribute([startX, startY, startZ, startX, startY, startZ + 4], 3));
+            const line = new THREE.Line(geo, windMat);
+            line.computeLineDistances();
+            windGroup.add(line);
+            
+            windParticles.push({
+                mesh: line,
+                x: startX, y: startY, z: startZ,
+                speed: 1.0 + Math.random() * 1.5,
+                resetZ: 120
+            });
+        }
+        windGroup.visible = false; 
+
+        // ==========================================
+        // 4. PHYSICS SIMULATION LOOP
+        // ==========================================
+        let prestressVal = 1.0;
+        let windVal = 0.0;
+        let time = 0;
+
+        function physicsStep() {
+            time += 0.05;
+            const sagFactor = 1.0 - prestressVal;
+            const isFloating = prestressVal < 0.5;
+            const floatIntensity = isFloating ? (0.5 - prestressVal) * 2.0 : 0; 
+            const windGust = (Math.sin(time * 1.5) * 0.3 + 0.7) * windVal; 
+
+            particles.forEach((p, i) => {
+                if (p.pinned) return;
+                
+                const restoreDir = new THREE.Vector3().subVectors(p.origPos, p.pos);
+                const stiffness = isFloating ? 0.005 : (0.02 * prestressVal); 
+                const restoreForce = restoreDir.multiplyScalar(stiffness);
+
+                const vx = (p.pos.x - p.oldPos.x) * 0.96; 
+                const vy = (p.pos.y - p.oldPos.y) * 0.96;
+                const vz = (p.pos.z - p.oldPos.z) * 0.96;
+                
+                p.oldPos.copy(p.pos);
+                
+                let netWindZ = 0;
+                if (windVal > 0) {
+                    const isCrossing = p.role === "crossing";
+                    const susceptibility = isCrossing ? (0.05 + 0.1 * sagFactor) : (0.01 + 0.05 * sagFactor);
+                    netWindZ = windGust * susceptibility;
+                    
+                    if (sagFactor > 0.1) {
+                        p.pos.x += Math.sin(time * 5.0 + i) * 0.02 * windVal * sagFactor;
+                        p.pos.y += Math.cos(time * 4.0 + i) * 0.01 * windVal * sagFactor;
+                    }
+                }
+                
+                p.pos.x += vx + restoreForce.x;
+                p.pos.z += vz + netWindZ + restoreForce.z; 
+                
+                let netY = -0.05; 
+                
+                const balloonData = renderBalloons.find(b => b.pIdx === i);
+                if (balloonData && sagFactor > 0.01) {
+                    netY += 0.06 * sagFactor * balloonData.baseScale; 
+                }
+
+                if (isFloating && balloonData) {
+                    const bobbing = Math.sin(time * 0.5 + balloonData.phaseOffset) * 0.02 * floatIntensity; 
+                    netY += bobbing;
+                }
+                
+                p.pos.y += vy + netY + restoreForce.y;
+                
+                if (p.pos.y < p.groundY) p.pos.y = p.groundY; 
+            });
+
+            for (let iter = 0; iter < 30; iter++) {
+                cableConstraints.forEach(c => {
+                    const p1 = particles[c.p1], p2 = particles[c.p2];
+                    const delta = new THREE.Vector3().subVectors(p2.pos, p1.pos);
+                    const dist = delta.length();
+                    
+                    let targetLength = c.origLength * (1.0 + sagFactor * 0.4); 
+                    
+                    if (dist > targetLength && dist > 0.001) {
+                        const diff = (dist - targetLength) / dist;
+                        const offset = delta.multiplyScalar(diff * 0.5);
+                        if (!p1.pinned) p1.pos.add(offset);
+                        if (!p2.pinned) p2.pos.sub(offset);
+                    }
+                });
+
+                rigidConstraints.forEach(c => {
+                    const p1 = particles[c.p1], p2 = particles[c.p2];
+                    const delta = new THREE.Vector3().subVectors(p2.pos, p1.pos);
+                    const dist = delta.length();
+                    if (dist > 0.001) {
+                        const diff = (dist - c.length) / dist;
+                        const offset = delta.multiplyScalar(diff * 0.5);
+                        if (!p1.pinned) p1.pos.add(offset);
+                        if (!p2.pinned) p2.pos.sub(offset);
+                    }
+                });
+            }
+            
+            if (windVal > 0) {
+                windMat.opacity = 0.1 + (windVal * 0.4);
+                windParticles.forEach(wp => {
+                    wp.z += wp.speed * windVal * 3.0; 
+                    if (wp.z > 220) {
+                        wp.z = wp.resetZ;
+                        wp.x = -10 + Math.random() * 100;
+                        wp.y = 5 + Math.random() * 40;
+                    }
+                    const pts = wp.mesh.geometry.attributes.position.array;
+                    pts[0] = wp.x; pts[1] = wp.y; pts[2] = wp.z;
+                    pts[3] = wp.x; pts[4] = wp.y; pts[5] = wp.z + (4 + windVal * 6); 
+                    wp.mesh.geometry.attributes.position.needsUpdate = true;
+                    wp.mesh.computeLineDistances();
+                });
+            }
+        }
+
+        // ==========================================
+        // 5. UPDATE RENDERING MESHES 
+        // ==========================================
+        function updateVisuals() {
+            const sagFactor = 1.0 - prestressVal;
+            const isFloating = prestressVal < 0.5;
+            const floatIntensity = isFloating ? (0.5 - prestressVal) * 2.0 : 0;
+
+            const compDashedPositions = [];
+            
+            renderComps.forEach(rc => {
+                const v1 = particles[rc.p1].pos, v2 = particles[rc.p2].pos;
+                rc.mesh.geometry.dispose();
+                rc.mesh.geometry = new THREE.TubeGeometry(new THREE.LineCurve3(v1, v2), 1, rc.mesh.geometry.parameters.radius, 8, false);
+
+                if (rc.arr1 && rc.arr2) {
+                    const dir = new THREE.Vector3().subVectors(v2, v1).normalize();
+                    let perp = new THREE.Vector3(0,1,0).cross(dir);
+                    if (perp.lengthSq() < 0.001) perp = new THREE.Vector3(1,0,0).cross(dir);
+                    perp.normalize().multiplyScalar(0.4); 
+
+                    const pA = v1.clone().lerp(v2, 0.25).add(perp);
+                    const pMid = v1.clone().lerp(v2, 0.50).add(perp);
+                    const pB = v1.clone().lerp(v2, 0.75).add(perp);
+
+                    compDashedPositions.push(pA.x, pA.y, pA.z, pMid.x, pMid.y, pMid.z);
+                    compDashedPositions.push(pMid.x, pMid.y, pMid.z, pB.x, pB.y, pB.z);
+
+                    rc.arr1.position.copy(pA.clone().lerp(pMid, 0.5)); 
+                    rc.arr1.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
+                    rc.arr2.position.copy(pMid.clone().lerp(pB, 0.5)); 
+                    rc.arr2.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir.clone().negate());
+                }
+            });
+
+            if (compDashedPositions.length > 0) {
+                compLinesGeo.setAttribute("position", new THREE.Float32BufferAttribute(compDashedPositions, 3));
+                compLinesMesh.computeLineDistances();
+            }
+
+            const posT = [];
+            renderCables.forEach((rc, idx) => {
+                const A = particles[rc.p1].pos, B = particles[rc.p2].pos;
+                
+                const mid = new THREE.Vector3().lerpVectors(A, B, 0.5);
+                const sagDist = cableConstraints[idx].origLength * 0.15 * sagFactor; 
+                const windBowDist = cableConstraints[idx].origLength * 0.1 * windVal * sagFactor;
+                
+                const C = new THREE.Vector3(mid.x, mid.y - sagDist, mid.z + windBowDist);
+                const curve = new THREE.QuadraticBezierCurve3(A, C, B);
+                const pts = curve.getPoints(segmentsPerCable);
+                
+                for(let i=0; i<segmentsPerCable; i++) {
+                    posT.push(pts[i].x, pts[i].y, pts[i].z, pts[i+1].x, pts[i+1].y, pts[i+1].z);
+                }
+
+                if (rc.arr1 && rc.arr2) {
+                    const p1 = curve.getPoint(0.40); const t1 = curve.getTangent(0.40).normalize();
+                    const p2 = curve.getPoint(0.60); const t2 = curve.getTangent(0.60).normalize();
+                    
+                    rc.arr1.position.copy(p1); rc.arr1.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), t1.clone().negate());
+                    rc.arr2.position.copy(p2); rc.arr2.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), t2);
+                    
+                    const scale = 0.2 + 0.8 * prestressVal;
+                    rc.arr1.scale.set(scale, scale, scale);
+                    rc.arr2.scale.set(scale, scale, scale);
+                }
+            });
+            tenGeo.setAttribute("position", new THREE.Float32BufferAttribute(posT, 3));
+
+            renderBalloons.forEach(rb => {
+                if (prestressVal > 0.95) {
+                    rb.mesh.visible = false;
+                    rb.string.visible = false;
+                } else {
+                    rb.mesh.visible = true;
+                    rb.string.visible = true;
+                    
+                    const anchorPos = particles[rb.pIdx].pos;
+                    const floatHeight = (4 * rb.baseScale) + (sagFactor * 8); 
+                    
+                    const windSwayZ = windVal * 15.0 * sagFactor; 
+                    const windFlutterX = Math.sin(time * 3.0 + rb.pIdx) * windVal * 2.0 * sagFactor;
+                    
+                    const swayX = Math.sin(time * 0.4 + rb.phaseOffset) * (1.0 + floatIntensity * 3.0) * sagFactor + windFlutterX;
+                    const swayZ = Math.cos(time * 0.3 + rb.phaseOffset) * (1.0 + floatIntensity * 3.0) * sagFactor;
+                    
+                    const balloonPos = new THREE.Vector3(anchorPos.x + swayX, anchorPos.y + floatHeight, anchorPos.z + swayZ + windSwayZ);
+                    rb.mesh.position.copy(balloonPos);
+                    
+                    const bScale = rb.baseScale * (0.6 + (sagFactor * 1.5));
+                    rb.mesh.scale.set(bScale, bScale * 1.2, bScale);
+                    
+                    const stringVec = new THREE.Vector3().subVectors(balloonPos, anchorPos).normalize();
+                    const upVec = new THREE.Vector3(0, 1, 0);
+                    const quaternion = new THREE.Quaternion().setFromUnitVectors(upVec, stringVec);
+                    rb.mesh.setRotationFromQuaternion(quaternion);
+                    
+                    const balloonBottom = balloonPos.clone().add(stringVec.clone().multiplyScalar(-bScale * 1.2));
+                    
+                    rb.string.geometry.setAttribute("position", new THREE.Float32BufferAttribute([
+                        anchorPos.x, anchorPos.y, anchorPos.z,
+                        balloonBottom.x, balloonBottom.y, balloonBottom.z
+                    ], 3));
+                }
+            });
+
+            // Update Labels
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+            labelData.forEach(ld => {
+                const pos = particles[ld.idx].pos.clone();
+                ld.mesh.position.copy(pos);
+                pos.project(camera);
+                if (pos.z > 1) { ld.element.style.opacity = '0'; } 
+                else {
+                    const x = (pos.x * 0.5 + 0.5) * cw;
+                    const y = (pos.y * -0.5 + 0.5) * ch;
+                    ld.element.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+                    ld.element.style.opacity = labelsVisible ? '1' : '0';
+                }
+            });
+        }
+
+        // ==========================================
+        // 6. ENVIRONMENT & BIRDS (WITH WIND PHYSICS)
+        // ==========================================
+        const walkwayPointsSVG = [[-7.27, 164.05623959000638], [-4.209342959998391, 162.16770659833438], [3.8760481065100656, 162.334266495836], [3.8760481065100656, 159.39], [26.22497114011625, 160.39021353833013], [39.04563461577138, 168.6122934016656], [51.462294913822575, 160.445733504164], [62.20345192365707, 163.39], [68.44108340204734, 167.39], [74.67782696136597, 161.22301302583813], [81.03, 166.05666666666664], [74.67782696136597, 166.6673862908392], [74.67782696136597, 171.27896006833225], [54.81152565211271, 164.33469357249626], [46.957881463306705, 165.33405295750586], [41.87543269714217, 171.39], [34.772080123886326, 171.39], [30.383096152685876, 165.72354687166344], [12.827160267884079, 161.6125069399957], [3.991477585825473, 167.61207986333545], [1.0462500251392726, 165.72354687166344], [-7.27, 164.05623959000638]];
+        const shape = new THREE.Shape();
+        for (let i = 0; i < walkwayPointsSVG.length; i++) {
+            const px = walkwayPointsSVG[i][0];
+            const pz = walkwayPointsSVG[i][1] - 1; 
+            if (i === 0) shape.moveTo(px, pz); else shape.lineTo(px, pz);
+        }
+        const slabGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: false });
+        slabGeo.rotateX(Math.PI / 2);
+        const slabMesh = new THREE.Mesh(slabGeo, new THREE.MeshBasicMaterial({ color: 0x8a8578, side: THREE.DoubleSide }));
+        slabMesh.position.set(0, WALKWAY_HEIGHT, 0);
+        scene.add(slabMesh);
+
+        function boundsFor(indices) {
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            indices.forEach(i => { const p2 = verts[i - 1]; minX = Math.min(minX, p2.x); maxX = Math.max(maxX, p2.x); minZ = Math.min(minZ, p2.z); maxZ = Math.max(maxZ, p2.z); });
+            return { minX, maxX, minZ, maxZ };
+        }
+        function addPlaneWireframe(planeMesh, w2, d2, spacing = 1) {
+            const hw = w2 / 2, hd = d2 / 2;
+            const borderPts = [-hw, -hd, 0, hw, -hd, 0, hw, -hd, 0, hw, hd, 0, hw, hd, 0, -hw, hd, 0, -hw, hd, 0, -hw, -hd, 0];
+            const borderGeo = new THREE.BufferGeometry();
+            borderGeo.setAttribute("position", new THREE.Float32BufferAttribute(borderPts, 3));
+            planeMesh.add(new THREE.LineSegments(borderGeo, new THREE.LineBasicMaterial({ color: 0x5a5a50, transparent: true, opacity: 0.7 })));
+            
+            const gridPts = [];
+            for (let x = spacing; x < w2; x += spacing) { gridPts.push(-hw + x, -hd, 0, -hw + x, hd, 0); }
+            for (let y = spacing; y < d2; y += spacing) { gridPts.push(-hw, -hd + y, 0, hw, -hd + y, 0); }
+            if (gridPts.length) {
+                const gridGeo = new THREE.BufferGeometry();
+                gridGeo.setAttribute("position", new THREE.Float32BufferAttribute(gridPts, 3));
+                planeMesh.add(new THREE.LineSegments(gridGeo, new THREE.LineBasicMaterial({ color: 0x6b6b60, transparent: true, opacity: 0.22 })));
+            }
+        }
+        function makeFlatPlane(minX, maxX, minZ, maxZ, y) {
+            const w2 = maxX - minX, d2 = maxZ - minZ;
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w2, d2), new THREE.MeshBasicMaterial({ color: 0x9a968c, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+            mesh.rotation.x = -Math.PI / 2; 
+            mesh.position.set((minX + maxX) / 2, y, (minZ + maxZ) / 2);
+            scene.add(mesh);
+            addPlaneWireframe(mesh, w2, d2);
+            return mesh;
+        }
+
+        const origUpperIdx = [], origLowerIdx = [], mirUpperIdx = [], mirLowerIdx = [];
+        geometryData.vertexRoles.forEach((role, idx) => {
+            const i = idx + 1; if (i > 30) return;
+            const isMirror = i > 15;
+            if (role === "groundUpper") (isMirror ? mirUpperIdx : origUpperIdx).push(i);
+            if (role === "groundLow") (isMirror ? mirLowerIdx : origLowerIdx).push(i);
+        });
+        
+        const bOrigUpper = boundsFor(origUpperIdx), bMirUpper = boundsFor(mirUpperIdx);
+        const upX0 = Math.min(bOrigUpper.minX, bMirUpper.minX) - (Math.max(bOrigUpper.maxX, bMirUpper.maxX) - Math.min(bOrigUpper.minX, bMirUpper.minX)) * 0.15;
+        const upX1 = Math.max(bOrigUpper.maxX, bMirUpper.maxX) + (Math.max(bOrigUpper.maxX, bMirUpper.maxX) - Math.min(bOrigUpper.minX, bMirUpper.minX)) * 0.15;
+        const upZ0 = Math.min(bOrigUpper.minZ, bMirUpper.minZ) - (Math.max(bOrigUpper.maxZ, bMirUpper.maxZ) - Math.min(bOrigUpper.minZ, bMirUpper.minZ)) * 0.15;
+        const upZ1 = Math.max(bOrigUpper.maxZ, bMirUpper.maxZ) + (Math.max(bOrigUpper.maxZ, bMirUpper.maxZ) - Math.min(bOrigUpper.minZ, bMirUpper.minZ)) * 0.15;
+
+        makeFlatPlane(upX0, upX1, upZ0, upZ1, geometryData.groundUpperZ);
+        const vertH = geometryData.groundUpperZ - geometryData.groundLowerZ;
+        const meshVert = new THREE.Mesh(new THREE.PlaneGeometry(upX1 - upX0, vertH), new THREE.MeshBasicMaterial({ color: 0x9a968c, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+        meshVert.position.set((upX0 + upX1) / 2, (geometryData.groundUpperZ + geometryData.groundLowerZ) / 2, upZ0);
+        scene.add(meshVert);
+        addPlaneWireframe(meshVert, upX1 - upX0, vertH);
+        makeFlatPlane(upX0, upX1, upZ0 - (upZ1 - upZ0), upZ0, geometryData.groundLowerZ);
+
+        const labelData = [];
+        const nodeGeo = new THREE.SphereGeometry(0.12, 12, 12), crossGeo = new THREE.SphereGeometry(0.22, 14, 14);
+        particles.forEach((p, idx) => {
+            const role = p.role, color = ROLE_COLORS[role] || 0x8a8578;
+            const m = new THREE.Mesh(role === "crossing" ? crossGeo : nodeGeo, new THREE.MeshBasicMaterial({ color }));
+            m.position.copy(p.pos); scene.add(m);
+            const el = document.createElement("div");
+            el.className = "node-label" + (role === "crossing" ? " crossing-label" : "");
+            el.textContent = (role === "crossing" ? "" : "v") + geometryData.vertexOrigId[idx];
+            if (role !== "crossing") el.style.color = "#" + color.toString(16).padStart(6, "0");
+            labelsContainer.appendChild(el);
+            labelData.push({ element: el, idx: idx, mesh: m });
+        });
+
+        // Birds System
+        const birdGroup = new THREE.Group();
+        scene.add(birdGroup);
+        const aviaryBounds = { minX: 10, maxX: 65, minZ: 146, maxZ: 180 };
+        
+        function createLowPolyBird() {
+            const geo = new THREE.BufferGeometry();
+            const vertices = new Float32Array([ 0.0, -0.1, -2.0, 0.0, 0.3, -0.8, 0.2, -0.2, -0.6, -0.2, -0.2, -0.6, 0.0, 0.1, 0.6, 0.0, 0.0, 1.8, 2.4, 0.2, 0.2, -2.4, 0.2, 0.2 ]);
+            const indices = [ 0,2,1, 0,1,3, 0,3,2, 1,2,4, 1,4,3, 4,2,5, 4,5,3, 2,3,5, 1,6,4, 1,4,7 ];
+            geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geo.setIndex(indices); geo.computeVertexNormals();
+            return geo;
+        }
+        const baseBirdGeo = createLowPolyBird();
+
+        class EcosystemBird {
+            constructor(type) {
+                this.type = type; 
+                const color = type === 'gull' ? 0x6a7b8c : 0x2b4f6e; 
+                this.mesh = new THREE.Mesh(baseBirdGeo.clone(), new THREE.MeshLambertMaterial({ color: color, side: THREE.DoubleSide, flatShading: true }));
+                this.baseScale = type === 'gull' ? 0.25 : 0.6;
+                this.mesh.scale.set(this.baseScale, this.baseScale, this.baseScale); 
+                this.velocity = new THREE.Vector3(); this.acceleration = new THREE.Vector3(); this.flapPhase = Math.random() * Math.PI * 2; 
+                this.minSpeed = type === 'gull' ? 0.02 : 0.01; this.maxSpeed = type === 'gull' ? 0.04 + Math.random()*0.02 : 0.08 + Math.random()*0.04;
+                this.maxForce = type === 'gull' ? 0.002 : 0.004; this.flapSpeed = type === 'gull' ? 0.04 + Math.random()*0.02 : 0.08 + Math.random()*0.04;
+                this.blownAway = false;
+                birdGroup.add(this.mesh); this.spawn(); 
+            }
+            spawn() {
+                this.state = 'flying'; this.lifeTimer = 1500 + Math.random() * 3000; 
+                this.blownAway = false;
+                this.mesh.scale.set(this.baseScale, this.baseScale, this.baseScale);
+                const minY = this.type === 'gull' ? 18 : 10; const maxY = this.type === 'gull' ? 35 : 17;
+                
+                let startZ = (windVal > 0.5) ? aviaryBounds.minZ : aviaryBounds.minZ + Math.random() * (aviaryBounds.maxZ - aviaryBounds.minZ);
+                this.mesh.position.set(aviaryBounds.minX + Math.random() * (aviaryBounds.maxX - aviaryBounds.minX), minY + Math.random() * (maxY - minY), startZ);
+                this.velocity.set((Math.random() - 0.5), 0, (Math.random() - 0.5)).normalize().multiplyScalar(this.maxSpeed);
+            }
+            checkBounds(allowDive) {
+                if (this.blownAway) return;
+
+                let hitWall = false;
+                if (this.mesh.position.x > aviaryBounds.maxX) { this.mesh.position.x = aviaryBounds.maxX; this.velocity.x *= -1; hitWall = true; }
+                if (this.mesh.position.x < aviaryBounds.minX) { this.mesh.position.x = aviaryBounds.minX; this.velocity.x *= -1; hitWall = true; }
+                
+                if (this.mesh.position.z > aviaryBounds.maxZ) { 
+                    if (windVal > 0.7) {
+                        this.blownAway = true; 
+                    } else {
+                        this.mesh.position.z = aviaryBounds.maxZ; this.velocity.z *= -1; hitWall = true; 
+                    }
+                }
+                
+                if (this.mesh.position.z < aviaryBounds.minZ) { this.mesh.position.z = aviaryBounds.minZ; this.velocity.z *= -1; hitWall = true; }
+                if (hitWall) {
+                    const horizSpeed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
+                    if (horizSpeed < this.minSpeed) { this.velocity.x = (this.velocity.x / horizSpeed || 1) * this.minSpeed * 2; this.velocity.z = (this.velocity.z / horizSpeed || 1) * this.minSpeed * 2; }
+                }
+                
+                const floorLevel = WALKWAY_HEIGHT + 0.1; 
+                if (this.mesh.position.y <= floorLevel) {
+                    this.mesh.position.y = floorLevel; this.velocity.y = Math.max(0, this.velocity.y); 
+                    if (this.state === 'diving') { this.state = 'walking'; this.walkTimer = 100 + Math.random() * 150; this.velocity.y = 0; this.velocity.x *= 0.5; this.velocity.z *= 0.5; }
+                }
+                if (!allowDive && this.state === 'flying') {
+                    const minY = this.type === 'gull' ? 18 : 10; const maxY = this.type === 'gull' ? 35 : 17;
+                    if (this.mesh.position.y > maxY) { this.velocity.y -= 0.005; }
+                    if (this.mesh.position.y < minY) { this.velocity.y += 0.005; }
+                }
+            }
+            flock(boids) {
+                if (this.blownAway) return;
+                
+                let align = new THREE.Vector3(), cohesion = new THREE.Vector3(), separation = new THREE.Vector3();
+                let perception = this.type === 'gull' ? 10 : 20; let total = 0;
+                for (let other of boids) {
+                    if (other !== this && other.type === this.type && other.state === 'flying' && !other.blownAway) {
+                        let d = this.mesh.position.distanceTo(other.mesh.position);
+                        if (d < perception) {
+                            align.add(other.velocity); cohesion.add(other.mesh.position);
+                            let diff = new THREE.Vector3().subVectors(this.mesh.position, other.mesh.position); diff.divideScalar(d * d); separation.add(diff); total++;
+                        }
+                    }
+                }
+                if (total > 0) {
+                    align.divideScalar(total).setLength(this.maxSpeed).sub(this.velocity).clampLength(0, this.maxForce);
+                    cohesion.divideScalar(total).sub(this.mesh.position).setLength(this.maxSpeed).sub(this.velocity).clampLength(0, this.maxForce);
+                    separation.divideScalar(total).setLength(this.maxSpeed).sub(this.velocity).clampLength(0, this.maxForce * 1.5);
+                }
+                
+                if (windVal > 0) {
+                   let windPush = new THREE.Vector3(0, 0, windVal * 0.015);
+                   this.acceleration.add(windPush);
+                }
+                
+                this.acceleration.add(align.multiplyScalar(1.0)); this.acceleration.add(cohesion.multiplyScalar(0.2)); this.acceleration.add(separation.multiplyScalar(1.8));
+            }
+            update(allBoids) {
+                let flapOffset = 0; 
+                
+                if (this.blownAway) {
+                    this.velocity.z += 0.05 * windVal; 
+                    this.mesh.position.add(this.velocity);
+                    this.flapPhase += 0.2; 
+                    flapOffset = Math.sin(this.flapPhase) * 1.5;
+                    
+                    if (this.mesh.position.z > 300) this.spawn(); 
+                    
+                    const positions = this.mesh.geometry.attributes.position.array;
+                    positions[6 * 3 + 1] = flapOffset; positions[7 * 3 + 1] = flapOffset; this.mesh.geometry.attributes.position.needsUpdate = true;
+                    return;
+                }
+
+                if (this.state === 'flying') {
+                    this.lifeTimer--; if (this.lifeTimer <= 0 && Math.random() < 0.002 && windVal < 0.3) { this.state = 'diving'; } else if (this.lifeTimer <= 0) { this.lifeTimer = 200 + Math.random() * 500; }
+                    this.flock(allBoids); this.checkBounds(false); this.velocity.y *= 0.98; 
+                    
+                    if (!this.blownAway && this.velocity.length() < this.minSpeed) this.velocity.setLength(this.minSpeed);
+                    
+                    let effectiveFlapSpeed = this.flapSpeed + (windVal * 0.15);
+                    this.flapPhase += effectiveFlapSpeed; 
+                    flapOffset = Math.sin(this.flapPhase) * (1.2 + windVal*0.5);
+                } else if (this.state === 'diving') {
+                    this.acceleration.set(0, -0.001, 0); this.checkBounds(true); 
+                    const horizSpeed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
+                    if (horizSpeed < this.minSpeed * 2) { this.velocity.x *= 1.05; this.velocity.z *= 1.05; }
+                    flapOffset = 0.5; 
+                } else if (this.state === 'walking') {
+                    this.walkTimer--; this.checkBounds(true); this.mesh.position.y = WALKWAY_HEIGHT + 0.1; 
+                    if (windVal > 0.5) this.velocity.z += windVal * 0.002;
+                    flapOffset = -0.5; 
+                    if (this.walkTimer <= 0) this.state = 'landing'; 
+                } else if (this.state === 'landing') {
+                    this.mesh.scale.multiplyScalar(0.9); this.velocity.multiplyScalar(0.8); flapOffset = -0.5; 
+                    if (this.mesh.scale.x < 0.01) { this.state = 'respawning'; this.lifeTimer = 200 + Math.random() * 500; }
+                } else if (this.state === 'respawning') {
+                    this.lifeTimer--; if (this.lifeTimer <= 0) this.spawn(); 
+                }
+
+                if (this.state !== 'respawning') {
+                    if (this.state === 'walking') {
+                        const wSpeed = this.minSpeed * 1.5; const currentHoriz = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
+                        if (currentHoriz > 0.001) { this.velocity.x = (this.velocity.x / currentHoriz) * wSpeed; this.velocity.z = (this.velocity.z / currentHoriz) * wSpeed; }
+                    } else {
+                        this.velocity.add(this.acceleration);
+                        if (!this.blownAway && windVal < 0.7) this.velocity.clampLength(0, this.maxSpeed * 1.5);
+                    }
+                    this.mesh.position.add(this.velocity); this.acceleration.set(0, 0, 0);
+                    if (this.velocity.lengthSq() > 0.0001) {
+                        const lookDir = this.velocity.clone();
+                        if (this.blownAway) { lookDir.z *= -1; } 
+                        if (this.state === 'diving' && lookDir.y < -this.maxSpeed * 0.5) lookDir.y = -this.maxSpeed * 0.5; 
+                        if (this.state === 'walking' || this.state === 'landing') lookDir.y = 0; 
+                        const lookTarget = this.mesh.position.clone().add(lookDir); this.mesh.lookAt(lookTarget);
+                    }
+                    const positions = this.mesh.geometry.attributes.position.array;
+                    positions[6 * 3 + 1] = flapOffset; positions[7 * 3 + 1] = flapOffset; this.mesh.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+        }
+
+        const flyingBirds = [];
+        for (let i = 0; i < 12; i++) flyingBirds.push(new EcosystemBird('gull'));   
+        for (let i = 0; i < 6; i++) flyingBirds.push(new EcosystemBird('heron'));  
+
+        const groundBirds = [];
+        const groundPoints = [ new THREE.Vector3(12, WALKWAY_HEIGHT + 0.1, 161), new THREE.Vector3(39, WALKWAY_HEIGHT + 0.1, 167), new THREE.Vector3(62, WALKWAY_HEIGHT + 0.1, 162) ];
+        groundPoints.forEach(pos => {
+            const bMesh = new THREE.Mesh(baseBirdGeo.clone(), new THREE.MeshLambertMaterial({ color: 0x111111, flatShading: true }));
+            bMesh.scale.set(0.4, 0.4, 0.4); bMesh.position.copy(pos); bMesh.rotation.y = Math.random() * Math.PI * 2; birdGroup.add(bMesh);
+            groundBirds.push({ mesh: bMesh, timer: Math.random() * 100, isPecking: false, targetYRot: bMesh.rotation.y });
+        });
+
+        const box = new THREE.Box3().setFromPoints(verts);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3()).length();
+        camera.position.copy(center).add(new THREE.Vector3(size * 0.55, size * 0.4, size * 0.55));
+        controls.target.copy(center);
+
+        // ==========================================
+        // 7. UI CONTROLS 
+        // ==========================================
+        let labelsVisible = true;
+        document.getElementById("labelToggle").addEventListener("click", (e) => {
+            labelsVisible = !labelsVisible; e.target.classList.toggle("active", labelsVisible);
+        });
+
+        let forceVisible = true;
+        document.getElementById("arrowToggle").addEventListener("click", (e) => {
+            forceVisible = !forceVisible; forceGroup.visible = forceVisible;
+            renderCables.forEach(rc => { if(rc.arr1) { rc.arr1.visible = forceVisible; rc.arr2.visible = forceVisible; } });
+            e.target.classList.toggle("active", forceVisible);
+        });
+
+        document.getElementById("birdToggle").addEventListener("click", (e) => {
+            birdGroup.visible = !birdGroup.visible; e.currentTarget.classList.toggle("active", birdGroup.visible);
+        });
+        
+        function updateStatus() {
+            if (windVal > 0.5 && prestressVal < 0.5) {
+                statusText.className = "wind-text";
+                statusText.innerText = "Status: Extreme Wind & Low Tension - Severe Flutter & Drift";
+            } else if (windVal > 0.7) {
+                statusText.className = "wind-text";
+                statusText.innerText = "Status: Gale Warning - Ecosystem Disrupted";
+            } else if (prestressVal >= 0.95) {
+                statusText.className = "safe-text";
+                statusText.innerText = "Status: 100% Prestress - Structure Rigid & Stable";
+            } else if (prestressVal >= 0.5) {
+                statusText.className = "warning-text";
+                statusText.innerText = "Status: Tension Reduced - Gravity Pulling, Balloons Assisting";
+            } else {
+                statusText.className = "danger-text";
+                statusText.innerText = "Status: Floating Mechanism Active - Stiffness Lost";
+            }
+        }
+
+        document.getElementById("prestressSlider").addEventListener("input", (e) => { 
+            prestressVal = parseInt(e.target.value) / 100;
+            const looseColor = new THREE.Color(0x7a7a7a); const tightColor = new THREE.Color(0xc1442d);
+            const matColor = looseColor.clone().lerp(tightColor, prestressVal);
+            lineTenMat.color.copy(matColor);
+            matTenArrow.color.copy(matColor);
+            
+            document.getElementById("val-prestress").innerText = e.target.value + "%";
+            updateStatus();
+        });
+
+        document.getElementById("windSlider").addEventListener("input", (e) => { 
+            windVal = parseInt(e.target.value) / 100;
+            document.getElementById("val-wind").innerText = e.target.value + "%";
+            windGroup.visible = windVal > 0;
+            updateStatus();
+        });
+
+        window.addEventListener("resize", () => { 
+            w = container.clientWidth; 
+            h = container.clientHeight; 
+            camera.aspect = w / h; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(w, h); 
+        });
+        
+        for(let i=0; i<50; i++) physicsStep();
+        updateVisuals();
+        document.getElementById("loading").style.display = "none";
+
+        // ==========================================
+        // 8. RENDER LOOP
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+            physicsStep(); 
+            updateVisuals();
+            
+            flyingBirds.forEach(b => b.update(flyingBirds)); 
+            
+            groundBirds.forEach(gb => {
+                gb.timer--;
+                if (gb.timer <= 0) {
+                    gb.isPecking = !gb.isPecking; gb.timer = gb.isPecking ? 20 + Math.random() * 40 : 100 + Math.random() * 200; 
+                    if (!gb.isPecking && Math.random() < 0.5) gb.targetYRot += (Math.random() - 0.5) * Math.PI; 
+                }
+                const targetX = gb.isPecking ? Math.PI / 4 : 0;
+                gb.mesh.rotation.x += (targetX - gb.mesh.rotation.x) * 0.1;
+                gb.mesh.rotation.y += (gb.targetYRot - gb.mesh.rotation.y) * 0.05;
+                
+                if (windVal > 0.5) {
+                    gb.mesh.position.z += windVal * 0.02;
+                    if (gb.mesh.position.z > aviaryBounds.maxZ) gb.mesh.position.z = aviaryBounds.minZ; 
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    } catch (e) {
+        console.error("Initialization error:", e);
+        document.getElementById("loading").innerHTML = "Error loading simulation. See console.";
+    }
+}
+</script>
+</body>
+</html>
