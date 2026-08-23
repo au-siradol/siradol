@@ -5,25 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Axonometric Structural System (Mixed Load Paths)</title>
     <style>
-        body { 
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-            background-color: #f4f4f4; 
-            color: #111; 
-            margin: 0; 
-            padding: 40px; 
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #111;
+            margin: 0;
+            padding: 0 24px 24px;
         }
-        .header { 
-            text-align: right; 
-            max-width: 1100px; 
-            margin: 0 auto 20px auto; 
+        .study-bar {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 14px 0 8px 0;
+            border-bottom: 1px solid #111;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-sizing: border-box;
         }
-        .header h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-        .header h2 { margin: 5px 0 0 0; font-size: 14px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
-        
-        .canvas-container { 
-            max-width: 1100px; 
-            margin: 0 auto; 
-            border-bottom: 1px dashed #aaa; 
+        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
+        .study-bar a:hover { color:#1976d2; }
+        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
+        .study-bar .idx { font-family:'Courier New', monospace; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
+        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
+        .study-bar .titleline b { font-weight:bold; color:#111; }
+        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
+        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+
+        .canvas-container {
+            max-width: 1100px;
+            margin: 16px auto 0;
+            border-bottom: 1px dashed #aaa;
             padding-bottom: 15px;
             position: relative;
         }
@@ -45,29 +59,60 @@
         .info-text { color: #1976d2; }
         .danger-text { color: #d32f2f; }
 
-        .controls-container { 
-            display: flex; 
-            justify-content: space-between; 
-            max-width: 1100px; 
-            margin: 25px auto 0 auto; 
-            font-size: 11px; 
+        /* ---- compact horizontal control strip ---- */
+        .controls-strip {
+            max-width: 1100px;
+            margin: 14px auto 0;
+            padding-top: 12px;
+            border-top: 1px dashed #aaa;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            font-size: 11px;
             line-height: 1.5;
         }
-        .column { 
-            flex: 1; 
-            padding: 0 20px; 
-            border-left: 1px solid #ccc; 
+        .strip-row { display: flex; align-items: flex-start; gap: 0; }
+        .strip-row.halves .cluster { flex: 1 1 0; }
+        .strip-row.full .cluster { flex: 1 1 auto; }
+
+        .cluster {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 24px;
+            margin-right: 24px;
+            border-right: 1px solid #ccc;
+            min-width: 0;
         }
-        .column:first-child { border-left: none; padding-left: 0; }
-        .column h3 { 
-            margin-top: 0; font-size: 11px; font-weight: bold; 
-            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; color: #333;
+        .cluster:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+        .cluster-desc {
+            font-size: 9.5px;
+            color: #999;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
+        .cluster-label {
+            margin-top: 0; font-size: 8.5px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.8px; color: #333;
+            border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 2px;
+        }
+        .cluster-fields { display: flex; flex-wrap: wrap; gap: 12px 16px; }
+
+        .field { width: 100px; flex: none; }
+        .field.wide { width: 180px; }
+        .field label {
+            display: flex; justify-content: space-between; align-items: baseline;
+            font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; color: #777;
+            margin-bottom: 3px; white-space: nowrap; overflow: hidden;
+        }
+        .field .val { font-family: monospace; color: #111; font-weight: bold; font-size: 9.5px; flex: none; margin-left: 4px; }
+
         .control-row { margin-bottom: 12px; }
         label { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .val { font-family: monospace; color: #555; font-weight: bold;}
-        
+
         input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
         input[type="range"]::-webkit-slider-thumb { 
             -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
@@ -80,18 +125,20 @@
         .auto-calc-box {
             background: #fdfdfd;
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 7px 8px;
             border-radius: 4px;
-            margin-top: 8px;
+            width: 100%;
+            font-size: 9.5px;
         }
         .auto-calc-box label {
             margin-bottom: 0;
             color: #333;
             font-weight: bold;
+            font-size: 9.5px;
         }
         .auto-calc-box .val {
             color: #111;
-            font-size: 12px;
+            font-size: 9.5px;
         }
         .warning-box {
             background: #ffebee;
@@ -100,144 +147,136 @@
         .warning-box label {
             color: #c62828;
         }
-        
+
         .floor-control-group {
             background: #f9f9f9;
             border: 1px solid #eee;
-            padding: 10px;
+            padding: 8px;
             border-radius: 4px;
-            margin-bottom: 10px;
+            width: 100%;
+            font-size: 9.5px;
         }
-
-        .portfolio-bar {
-            max-width: 1100px;
-            margin: 0 auto 34px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding-bottom: 14px;
-            border-bottom: 1px solid #111;
-        }
-        .portfolio-bar a {
-            color: #111;
-            text-decoration: none;
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .portfolio-bar a:hover { color: #1976d2; }
-        .portfolio-bar .idx {
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            color: #999;
-            letter-spacing: 1px;
-        }
+        .floor-control-group .control-row { margin-bottom: 6px; }
+        .floor-control-group .control-row:last-child { margin-bottom: 0; }
     </style>
 </head>
 <body>
 
-    <div class="portfolio-bar">
+    <div class="study-bar">
         <a href="../index.html">&larr; Index</a>
-        <span class="idx">02 / STRUCTURAL STUDIES</span>
-    </div>
-
-    <div class="header">
-        <h1>Axonometric Structural System</h1>
-        <h2>Mixed Load Paths: Interlaced Tension & Compression</h2>
+        <span class="titlegroup">
+            <span class="idx">02</span>
+            <span class="titleline"><b>Axonometric Structural System</b><span class="sep">&mdash;</span><span class="sub">Mixed Load Paths: Interlaced Tension &amp; Compression</span></span>
+        </span>
     </div>
 
     <div class="canvas-container">
-        <canvas id="simCanvas" width="1100" height="750"></canvas>
+        <canvas id="simCanvas" width="1100" height="560"></canvas>
         <div id="status-text" class="info-text">Rendering Structural System...</div>
     </div>
 
-    <div class="controls-container">
-        <!-- Section 1: Floor Plate & Floors -->
-        <div class="column">
-            <h3>1. Floor Plate & Spacing</h3>
-            <div class="control-row">
-                <label>Number of Floors <span id="val-numFloors" class="val">3</span></label>
-                <input type="range" id="numFloors" min="1" max="6" step="1" value="3">
-            </div>
-            <div class="control-row">
-                <label>Floor Height (m) <span id="val-floorHeight" class="val">4.5 m</span></label>
-                <input type="range" id="floorHeight" min="3.0" max="6.0" step="0.5" value="4.5">
-            </div>
-            <div class="control-row">
-                <label>Plate Width (X) <span id="val-plateWidth" class="val">25.0 m</span></label>
-                <input type="range" id="plateWidth" min="10" max="50" step="1" value="25">
-            </div>
-            <div class="control-row">
-                <label>Plate Depth (Z) <span id="val-plateDepth" class="val">15.0 m</span></label>
-                <input type="range" id="plateDepth" min="10" max="50" step="1" value="15">
-            </div>
-            <div class="control-row">
-                <label>Max Column Span <span id="val-maxSpan" class="val">8.0 m</span></label>
-                <input type="range" id="maxSpan" min="4" max="15" step="1" value="8">
-            </div>
-            
-            <div class="auto-calc-box" id="slabThickBox">
-                <label>Max Slab Thickness (Center) <span id="val-slabThick" class="val">0.83 m</span></label>
-                <label style="margin-top:5px; font-weight:normal; color:#555;">Edge Slab Thickness <span id="val-edgeThick" class="val">0.20 m</span></label>
-            </div>
-            
-            <div id="clearanceWarning" class="auto-calc-box warning-box hidden">
-                <label>LOW CLEARANCE WARNING</label>
-                <p style="color:#c62828; font-size:10px; margin-top:4px; margin-bottom:0;">
-                    Usable floor clearance (<span id="val-clearance" class="val" style="color:#c62828"></span>) is below 2.5 m due to slab thickness.
-                </p>
-            </div>
-        </div>
-
-        <!-- Section 2: Concrete Core -->
-        <div class="column">
-            <h3>2. Hollow Concrete Core</h3>
-            <div class="control-row">
-                <label>Core Width (%) <span id="val-coreWidthPct" class="val">20%</span></label>
-                <input type="range" id="coreWidthPct" min="5" max="50" step="5" value="20">
-            </div>
-            <div class="control-row">
-                <label>Core Depth (%) <span id="val-coreDepthPct" class="val">20%</span></label>
-                <input type="range" id="coreDepthPct" min="5" max="50" step="5" value="20">
-            </div>
-            <br>
-            <div class="auto-calc-box" style="background: #fafafa;">
-                <label style="color:#333;">Core Wall Thickness <span class="val">0.30 m</span></label>
-                <p style="color:#777; font-size:10px; margin-top:4px; margin-bottom:0; font-weight:normal;">* Core structure is a hollow concrete tube spanning all floors.</p>
+    <div class="controls-strip">
+        <div class="strip-row full">
+            <div class="cluster">
+                <div class="cluster-label">Floor Plate &amp; Spacing</div>
+                <div class="cluster-desc">Storey count, height, plan size and max column span.</div>
+                <div class="cluster-fields">
+                    <div class="field">
+                        <label>Floors <span id="val-numFloors" class="val">3</span></label>
+                        <input type="range" id="numFloors" min="1" max="6" step="1" value="3">
+                    </div>
+                    <div class="field">
+                        <label>Height <span id="val-floorHeight" class="val">4.5m</span></label>
+                        <input type="range" id="floorHeight" min="3.0" max="6.0" step="0.5" value="4.5">
+                    </div>
+                    <div class="field">
+                        <label>Width X <span id="val-plateWidth" class="val">25.0m</span></label>
+                        <input type="range" id="plateWidth" min="10" max="50" step="1" value="25">
+                    </div>
+                    <div class="field">
+                        <label>Depth Z <span id="val-plateDepth" class="val">15.0m</span></label>
+                        <input type="range" id="plateDepth" min="10" max="50" step="1" value="15">
+                    </div>
+                    <div class="field">
+                        <label>Max Span <span id="val-maxSpan" class="val">8.0m</span></label>
+                        <input type="range" id="maxSpan" min="4" max="15" step="1" value="8">
+                    </div>
+                    <div class="field" style="width:220px;">
+                        <div class="auto-calc-box" id="slabThickBox">
+                            <label>Max Slab Thickness <span id="val-slabThick" class="val">0.83 m</span></label>
+                            <label style="margin-top:4px; font-weight:normal; color:#555;">Edge Slab Thickness <span id="val-edgeThick" class="val">0.20 m</span></label>
+                        </div>
+                    </div>
+                    <div id="clearanceWarning" class="field hidden" style="width:260px;">
+                        <div class="auto-calc-box warning-box">
+                            <label>LOW CLEARANCE WARNING</label>
+                            <p style="color:#c62828; font-size:9.5px; margin-top:4px; margin-bottom:0;">
+                                Clearance (<span id="val-clearance" class="val" style="color:#c62828"></span>) is below 2.5 m.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Section 3: Structural Supports (Per Floor) -->
-        <div class="column">
-            <h3>3. Perimeter Supports (Per Floor)</h3>
-            <div class="control-row">
-                <label>Corner Support Type</label>
-                <select id="cornerSupport" onchange="updateSimulation()">
-                    <option value="compression">Compression at Corners</option>
-                    <option value="tension">Tension at Corners</option>
-                </select>
-            </div>
-            <br>
-            <p style="color:#666; font-size:10px; margin-top:0;">Assign support strategies per level. Top floor tension ties directly to core.</p>
-            
-            <div id="floorSupportControls" class="floor-control-group">
-                <!-- Dynamically populated via JS -->
-            </div>
-            
-            <div id="colSizeContainer" class="auto-calc-box hidden">
-                <label>Column Section Size <span id="val-colSize" class="val">0.60 x 0.60 m</span></label>
-                <label style="margin-top:5px; font-weight:normal; color:#555;">Active Compression Columns <span id="val-colCount" class="val">0</span></label>
-            </div>
-            
-            <div id="tensionInfoContainer" class="auto-calc-box hidden" style="border-color: #666;">
-                <label style="color: #333;">Tension Mode Active</label>
-                <p style="color:#555; font-size:10px; margin-top:4px; margin-bottom:0;">Cables support floors and tie back directly to core at top level.</p>
-                <label style="margin-top:5px; font-weight:normal; color:#333;">Active Suspension Cables <span id="val-tensionCount" class="val">0</span></label>
+        <div class="strip-row halves">
+            <div class="cluster">
+                <div class="cluster-label">Hollow Concrete Core</div>
+                <div class="cluster-desc">Core footprint as a percentage of the floor plate.</div>
+                <div class="cluster-fields">
+                    <div class="field">
+                        <label>Width % <span id="val-coreWidthPct" class="val">20%</span></label>
+                        <input type="range" id="coreWidthPct" min="5" max="50" step="5" value="20">
+                    </div>
+                    <div class="field">
+                        <label>Depth % <span id="val-coreDepthPct" class="val">20%</span></label>
+                        <input type="range" id="coreDepthPct" min="5" max="50" step="5" value="20">
+                    </div>
+                    <div class="field" style="width:100%;">
+                        <div class="auto-calc-box" style="background: #fafafa;">
+                            <label style="color:#333;">Core Wall Thickness <span class="val">0.30 m</span></label>
+                            <p style="color:#777; font-size:9.5px; margin-top:4px; margin-bottom:0; font-weight:normal;">Hollow concrete tube spanning all floors.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div id="failureInfoContainer" class="auto-calc-box warning-box hidden">
-                <label>STRUCTURAL FAILURE</label>
-                <p style="color:#c62828; font-size:10px; margin-top:4px; margin-bottom:0;">One or more floors lack perimeter support. The cantilever distance exceeds limits, causing severe deflection.</p>
+            <div class="cluster">
+                <div class="cluster-label">Perimeter Supports</div>
+                <div class="cluster-desc">Per-floor support strategy, assigned top to bottom.</div>
+                <div class="cluster-fields">
+                    <div class="field wide">
+                        <label>Corner Support</label>
+                        <select id="cornerSupport" onchange="updateSimulation()">
+                            <option value="compression">Compression at Corners</option>
+                            <option value="tension">Tension at Corners</option>
+                        </select>
+                    </div>
+                    <div class="field" style="width:100%;">
+                        <div id="floorSupportControls" class="floor-control-group">
+                            <!-- Dynamically populated via JS -->
+                        </div>
+                    </div>
+                    <div id="colSizeContainer" class="field hidden" style="width:100%;">
+                        <div class="auto-calc-box">
+                            <label>Column Section Size <span id="val-colSize" class="val">0.60 x 0.60 m</span></label>
+                            <label style="margin-top:4px; font-weight:normal; color:#555;">Active Compression Columns <span id="val-colCount" class="val">0</span></label>
+                        </div>
+                    </div>
+                    <div id="tensionInfoContainer" class="field hidden" style="width:100%;">
+                        <div class="auto-calc-box" style="border-color: #666;">
+                            <label style="color: #333;">Tension Mode Active</label>
+                            <p style="color:#555; font-size:9.5px; margin-top:4px; margin-bottom:0;">Cables tie back directly to core at top level.</p>
+                            <label style="margin-top:4px; font-weight:normal; color:#333;">Active Suspension Cables <span id="val-tensionCount" class="val">0</span></label>
+                        </div>
+                    </div>
+                    <div id="failureInfoContainer" class="field hidden" style="width:100%;">
+                        <div class="auto-calc-box warning-box">
+                            <label>STRUCTURAL FAILURE</label>
+                            <p style="color:#c62828; font-size:9.5px; margin-top:4px; margin-bottom:0;">One or more floors lack support — cantilever exceeds limits.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -748,6 +787,9 @@
                 }
             });
         }
+
+        // Initialize
+        updateSimulation();
     </script>
 </body>
 </html>

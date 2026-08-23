@@ -5,32 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Axonometric Portal Frame Array</title>
     <style>
-        body { 
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-            background-color: #f4f4f4; 
-            color: #111; 
-            margin: 0; 
-            padding: 40px; 
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #111;
+            margin: 0;
+            padding: 0 24px 24px;
         }
-        .header { 
-            text-align: right; 
-            max-width: 1100px; 
-            margin: 0 auto 20px auto; 
+
+        .study-bar {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 14px 0 8px 0;
+            border-bottom: 1px solid #111;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-sizing: border-box;
         }
-        .header h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-        .header h2 { margin: 5px 0 0 0; font-size: 14px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
-        
-        .canvas-container { 
-            max-width: 1100px; 
-            margin: 0 auto; 
-            border-bottom: 1px dashed #aaa; 
-            padding-bottom: 15px;
+        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
+        .study-bar a:hover { color:#d32f2f; }
+        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
+        .study-bar .idx { font-family:'Courier New', monospace; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
+        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
+        .study-bar .titleline b { font-weight:bold; color:#111; }
+        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
+        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+
+        .canvas-container {
+            max-width: 1100px;
+            margin: 16px auto 0;
             position: relative;
         }
-        canvas { 
-            display: block; 
-            width: 100%; 
-            background: #fdfdfd; 
+        canvas {
+            display: block;
+            width: 100%;
+            background: #fdfdfd;
             border: 1px solid #eaeaea;
         }
 
@@ -45,73 +58,77 @@
         .safe-text { color: #555; }
         .danger-text { color: #d32f2f; }
 
-        .controls-container { 
-            display: flex; 
-            justify-content: space-between; 
-            max-width: 1100px; 
-            margin: 25px auto 0 auto; 
-            font-size: 11px; 
-            line-height: 1.5;
-        }
-        .column { 
-            flex: 1; 
-            padding: 0 20px; 
-            border-left: 1px solid #ccc; 
-        }
-        .column:first-child { border-left: none; padding-left: 0; }
-        .column h3 { 
-            margin-top: 0; font-size: 11px; font-weight: bold; 
-            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; color: #333;
-        }
-        
-        .control-row { margin-bottom: 12px; }
-        label { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .val { font-family: monospace; color: #555; }
-        
-        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
-        input[type="range"]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
-        }
-        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
-        select { width: 100%; padding: 4px; font-family: inherit; font-size: 11px; background: transparent; border: 1px solid #999; border-radius: 0; }
-        
-        .hidden { display: none !important; }
-
-        .portfolio-bar {
+        /* ---- compact horizontal control strip ---- */
+        .controls-strip {
             max-width: 1100px;
-            margin: 0 auto 34px auto;
+            margin: 14px auto 0;
+            padding-top: 12px;
+            border-top: 1px dashed #aaa;
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding-bottom: 14px;
-            border-bottom: 1px solid #111;
+            flex-direction: column;
+            gap: 18px;
         }
-        .portfolio-bar a {
-            color: #111;
-            text-decoration: none;
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+        .strip-row { display: flex; align-items: stretch; }
+        .strip-row.thirds .cluster { flex: 1 1 0; }
+        .strip-row.full .cluster { flex: 1 1 auto; }
+
+        .cluster {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 24px;
+            margin-right: 24px;
+            border-right: 1px solid #ddd;
+            min-width: 0;
         }
-        .portfolio-bar a:hover { color: #d32f2f; }
-        .portfolio-bar .idx {
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
+        .cluster:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+        .cluster-desc {
+            font-size: 9.5px;
             color: #999;
-            letter-spacing: 1px;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+        .cluster-label {
+            font-size: 8.5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #333;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+            margin-bottom: 2px;
+        }
+        .cluster-fields { display: flex; flex-wrap: wrap; gap: 12px 16px; }
+
+        .field { width: 100px; flex: none; }
+        .field label {
+            display: flex; justify-content: space-between; align-items: baseline;
+            font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; color: #777;
+            margin-bottom: 3px; white-space: nowrap; overflow: hidden;
+        }
+        .field .val { font-family: monospace; color: #111; font-weight: bold; font-size: 9.5px; flex: none; margin-left: 4px; }
+        .field input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; display: block; }
+        .field input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 9px; width: 9px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px;
+        }
+        .field input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+        .field select { width: 100%; padding: 3px 2px; font-family: inherit; font-size: 9.5px; background: transparent; border: 1px solid #999; border-radius: 0; }
+        .field.wide { width: 150px; }
+        .field .note { color:#999; font-size:8.5px; margin-top:3px; line-height:1.3; display:block; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="portfolio-bar">
+    <div class="study-bar">
         <a href="../index.html">&larr; Index</a>
-        <span class="idx">01 / STRUCTURAL STUDIES</span>
-    </div>
-
-    <div class="header">
-        <h1>Asymmetric Portal Frame Array</h1>
-        <h2>Axonometric Wireframe Computation (TIS Standard)</h2>
+        <span class="titlegroup">
+            <span class="idx">01</span>
+            <span class="titleline"><b>Asymmetric Portal Frame Array</b><span class="sep">&mdash;</span><span class="sub">Axonometric Wireframe Computation (TIS Standard)</span></span>
+        </span>
     </div>
 
     <div class="canvas-container">
@@ -119,106 +136,118 @@
         <div id="status-text" class="safe-text">Status: Safe</div>
     </div>
 
-    <div class="controls-container">
-        <div class="column">
-            <h3>Structural Bay</h3>
-            <div class="control-row">
-                <label>Number of Frames <span id="val-numFrames" class="val">5</span></label>
-                <input type="range" id="numFrames" min="1" max="15" step="1" value="5">
-            </div>
-            <div class="control-row">
-                <label>Bay Spacing (Distance) <span id="val-spacing" class="val">6.00 m</span></label>
-                <input type="range" id="spacing" min="3" max="12" step="0.5" value="6">
-            </div>
-            
-            <br>
-            <h3>Rules (Geometry)</h3>
-            <div class="control-row">
-                <label>Span Distance (L) <span id="val-span" class="val">25.00 m</span></label>
-                <input type="range" id="span" min="10" max="50" step="1" value="25">
-            </div>
-            <div class="control-row">
-                <label>Left Column (hL) <span id="val-hL" class="val">6.00 m</span></label>
-                <input type="range" id="hL" min="2" max="25" step="1" value="6">
-            </div>
-            <div class="control-row">
-                <label>Right Column (hR) <span id="val-hR" class="val">12.00 m</span></label>
-                <input type="range" id="hR" min="2" max="25" step="1" value="12">
-            </div>
-            <div class="control-row">
-                <label>Apex Offset (x) <span id="val-apex" class="val">35%</span></label>
-                <input type="range" id="apex" min="20" max="80" step="5" value="35">
-            </div>
-            <div class="control-row">
-                <label>Eaves Radius (r1) <span id="val-curve" class="val">30</span></label>
-                <input type="range" id="curve" min="0" max="100" step="5" value="30">
-            </div>
-            <div class="control-row">
-                <label>Apex Radius (r2) <span id="val-apexCurve" class="val">20</span></label>
-                <input type="range" id="apexCurve" min="0" max="100" step="5" value="20">
+    <div class="controls-strip">
+        <div class="strip-row full">
+            <div class="cluster">
+                <div class="cluster-label">Geometry</div>
+                <div class="cluster-desc">Span, column heights, apex position and curvature.</div>
+                <div class="cluster-fields">
+                    <div class="field">
+                        <label>Span L <span id="val-span" class="val">25.00m</span></label>
+                        <input type="range" id="span" min="10" max="50" step="1" value="25">
+                    </div>
+                    <div class="field">
+                        <label>Col hL <span id="val-hL" class="val">6.00m</span></label>
+                        <input type="range" id="hL" min="2" max="25" step="1" value="6">
+                    </div>
+                    <div class="field">
+                        <label>Col hR <span id="val-hR" class="val">12.00m</span></label>
+                        <input type="range" id="hR" min="2" max="25" step="1" value="12">
+                    </div>
+                    <div class="field">
+                        <label>Apex X <span id="val-apex" class="val">35%</span></label>
+                        <input type="range" id="apex" min="20" max="80" step="5" value="35">
+                    </div>
+                    <div class="field">
+                        <label>Eaves r1 <span id="val-curve" class="val">30</span></label>
+                        <input type="range" id="curve" min="0" max="100" step="5" value="30">
+                    </div>
+                    <div class="field">
+                        <label>Apex r2 <span id="val-apexCurve" class="val">20</span></label>
+                        <input type="range" id="apexCurve" min="0" max="100" step="5" value="20">
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="column">
-            <h3>Section Parameters</h3>
-            <div class="control-row">
-                <label>Material / Type</label>
-                <select id="materialType" onchange="toggleMaterialInputs()">
-                    <option value="concrete">Reinforced Concrete</option>
-                    <option value="steel_i">TIS Standard I-Beam</option>
-                </select>
-            </div>
-            
-            <div id="concrete-inputs">
-                <br>
-                <div class="control-row">
-                    <label>Concrete Width (b) <span id="val-b" class="val">0.40 m</span></label>
-                    <input type="range" id="b" min="0.2" max="1.5" step="0.1" value="0.4">
-                </div>
-                <div class="control-row">
-                    <label>Concrete Depth (h) <span id="val-h" class="val">0.80 m</span></label>
-                    <input type="range" id="h" min="0.3" max="2.5" step="0.1" value="0.8">
+        <div class="strip-row thirds">
+            <div class="cluster">
+                <div class="cluster-label">Structural Bay</div>
+                <div class="cluster-desc">Frame count and spacing along the row.</div>
+                <div class="cluster-fields">
+                    <div class="field">
+                        <label>Frames <span id="val-numFrames" class="val">5</span></label>
+                        <input type="range" id="numFrames" min="1" max="15" step="1" value="5">
+                    </div>
+                    <div class="field">
+                        <label>Spacing <span id="val-spacing" class="val">6.00m</span></label>
+                        <input type="range" id="spacing" min="3" max="12" step="0.5" value="6">
+                    </div>
                 </div>
             </div>
 
-            <div id="steel-inputs" class="hidden">
-                <br>
-                <div class="control-row">
-                    <label>I-Beam Size (HxB)</label>
-                    <select id="iBeamSize">
-                        <option value="0.150,0.075">150 x 75 mm</option>
-                        <option value="0.200,0.100">200 x 100 mm</option>
-                        <option value="0.200,0.150">200 x 150 mm</option>
-                        <option value="0.250,0.125">250 x 125 mm</option>
-                        <option value="0.300,0.150" selected>300 x 150 mm</option>
-                        <option value="0.350,0.150">350 x 150 mm</option>
-                        <option value="0.400,0.150">400 x 150 mm</option>
-                        <option value="0.450,0.175">450 x 175 mm</option>
-                        <option value="0.600,0.190">600 x 190 mm</option>
-                    </select>
+            <div class="cluster">
+                <div class="cluster-label">Section</div>
+                <div class="cluster-desc">Concrete or TIS steel I-beam section.</div>
+                <div class="cluster-fields">
+                    <div class="field wide">
+                        <label>Material</label>
+                        <select id="materialType" onchange="toggleMaterialInputs()">
+                            <option value="concrete">Reinforced Concrete</option>
+                            <option value="steel_i">TIS Standard I-Beam</option>
+                        </select>
+                    </div>
+                    <div id="concrete-inputs" style="display:contents;">
+                        <div class="field">
+                            <label>Width b <span id="val-b" class="val">0.40m</span></label>
+                            <input type="range" id="b" min="0.2" max="1.5" step="0.1" value="0.4">
+                        </div>
+                        <div class="field">
+                            <label>Depth h <span id="val-h" class="val">0.80m</span></label>
+                            <input type="range" id="h" min="0.3" max="2.5" step="0.1" value="0.8">
+                        </div>
+                    </div>
+                    <div id="steel-inputs" class="hidden" style="display:none;">
+                        <div class="field wide">
+                            <label>I-Beam HxB</label>
+                            <select id="iBeamSize">
+                                <option value="0.150,0.075">150 x 75 mm</option>
+                                <option value="0.200,0.100">200 x 100 mm</option>
+                                <option value="0.200,0.150">200 x 150 mm</option>
+                                <option value="0.250,0.125">250 x 125 mm</option>
+                                <option value="0.300,0.150" selected>300 x 150 mm</option>
+                                <option value="0.350,0.150">350 x 150 mm</option>
+                                <option value="0.400,0.150">400 x 150 mm</option>
+                                <option value="0.450,0.175">450 x 175 mm</option>
+                                <option value="0.600,0.190">600 x 190 mm</option>
+                            </select>
+                            <span class="note">TIS 1227-2558</span>
+                        </div>
+                    </div>
                 </div>
-                <p style="color:#777; font-size:10px; margin-top:5px;">Standard Sectional Dimension refers to TIS 1227-2558</p>
             </div>
-        </div>
 
-        <div class="column">
-            <h3>External Forces</h3>
-            <div class="control-row">
-                <label>Roof Gravity Load (W)</label>
-                <select id="roofType">
-                    <option value="2">Metal Sheet (~2 kN/m)</option>
-                    <option value="30">Precast Concrete (~30 kN/m)</option>
-                </select>
-            </div>
-            <br>
-            <div class="control-row">
-                <label>Lateral Event (F)</label>
-                <select id="lateralEvent">
-                    <option value="2">Normal Wind (2 kN/m)</option>
-                    <option value="10">Strong Wind (10 kN/m)</option>
-                    <option value="25">Storm (25 kN/m)</option>
-                    <option value="60">Earthquake (60 kN/m)</option>
-                </select>
+            <div class="cluster">
+                <div class="cluster-label">External Forces</div>
+                <div class="cluster-desc">Roof load plus wind, storm or seismic.</div>
+                <div class="cluster-fields">
+                    <div class="field wide">
+                        <label>Roof Load W</label>
+                        <select id="roofType">
+                            <option value="2">Metal Sheet (~2 kN/m)</option>
+                            <option value="30">Precast Concrete (~30 kN/m)</option>
+                        </select>
+                    </div>
+                    <div class="field wide">
+                        <label>Lateral Event F</label>
+                        <select id="lateralEvent">
+                            <option value="2">Normal Wind (2 kN/m)</option>
+                            <option value="10">Strong Wind (10 kN/m)</option>
+                            <option value="25">Storm (25 kN/m)</option>
+                            <option value="60">Earthquake (60 kN/m)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -231,10 +260,12 @@
         function toggleMaterialInputs() {
             const mat = document.getElementById('materialType').value;
             if (mat === 'steel_i') {
-                document.getElementById('concrete-inputs').classList.add('hidden');
+                document.getElementById('concrete-inputs').style.display = 'none';
+                document.getElementById('steel-inputs').style.display = 'contents';
                 document.getElementById('steel-inputs').classList.remove('hidden');
             } else {
-                document.getElementById('concrete-inputs').classList.remove('hidden');
+                document.getElementById('concrete-inputs').style.display = 'contents';
+                document.getElementById('steel-inputs').style.display = 'none';
                 document.getElementById('steel-inputs').classList.add('hidden');
             }
             updateSimulation();
@@ -251,20 +282,20 @@
 
         function updateLabels() {
             document.getElementById('val-numFrames').innerText = document.getElementById('numFrames').value;
-            document.getElementById('val-spacing').innerText = parseFloat(document.getElementById('spacing').value).toFixed(2) + " m";
-            document.getElementById('val-span').innerText = parseFloat(document.getElementById('span').value).toFixed(2) + " m";
-            document.getElementById('val-hL').innerText = parseFloat(document.getElementById('hL').value).toFixed(2) + " m";
-            document.getElementById('val-hR').innerText = parseFloat(document.getElementById('hR').value).toFixed(2) + " m";
+            document.getElementById('val-spacing').innerText = parseFloat(document.getElementById('spacing').value).toFixed(2) + "m";
+            document.getElementById('val-span').innerText = parseFloat(document.getElementById('span').value).toFixed(2) + "m";
+            document.getElementById('val-hL').innerText = parseFloat(document.getElementById('hL').value).toFixed(2) + "m";
+            document.getElementById('val-hR').innerText = parseFloat(document.getElementById('hR').value).toFixed(2) + "m";
             document.getElementById('val-apex').innerText = document.getElementById('apex').value + "%";
             document.getElementById('val-curve').innerText = document.getElementById('curve').value;
             document.getElementById('val-apexCurve').innerText = document.getElementById('apexCurve').value;
-            document.getElementById('val-b').innerText = parseFloat(document.getElementById('b').value).toFixed(2) + " m";
-            document.getElementById('val-h').innerText = parseFloat(document.getElementById('h').value).toFixed(2) + " m";
+            document.getElementById('val-b').innerText = parseFloat(document.getElementById('b').value).toFixed(2) + "m";
+            document.getElementById('val-h').innerText = parseFloat(document.getElementById('h').value).toFixed(2) + "m";
         }
 
         function updateSimulation() {
             updateLabels();
-            
+
             const numFrames = parseInt(document.getElementById('numFrames').value);
             const frameSpacing = parseFloat(document.getElementById('spacing').value);
             const L = parseFloat(document.getElementById('span').value);
@@ -273,10 +304,10 @@
             const apexOffset = parseFloat(document.getElementById('apex').value) / 100;
             const curvePct = parseFloat(document.getElementById('curve').value);
             const apexCurvePct = parseFloat(document.getElementById('apexCurve').value);
-            
+
             const material = document.getElementById('materialType').value;
             let b, h;
-            
+
             if (material === 'steel_i') {
                 const sizeArr = document.getElementById('iBeamSize').value.split(',');
                 h = parseFloat(sizeArr[0]);
@@ -289,16 +320,16 @@
             const roofLoad = parseFloat(document.getElementById('roofType').value);
             const lateralLoad = parseFloat(document.getElementById('lateralEvent').value);
 
-            const materialFactor = (material === 'steel_i') ? 15000 : 500; 
-            const capacity = b * Math.pow(h, 2) * materialFactor; 
+            const materialFactor = (material === 'steel_i') ? 15000 : 500;
+            const capacity = b * Math.pow(h, 2) * materialFactor;
 
-            const tributaryAreaFactor = frameSpacing / 5; 
+            const tributaryAreaFactor = frameSpacing / 5;
             const gravityMoment = ((roofLoad * tributaryAreaFactor) * Math.pow(L, 2)) / 8;
             const maxHeight = Math.max(hL, hR);
             const asymmetryFactor = 1 + Math.abs(hL - hR) / 15;
             const lateralMoment = (lateralLoad * tributaryAreaFactor * maxHeight * asymmetryFactor);
 
-            const appliedMoment = (gravityMoment * 0.5) + lateralMoment; 
+            const appliedMoment = (gravityMoment * 0.5) + lateralMoment;
             const isSafe = appliedMoment <= capacity;
 
             if (isSafe) {
@@ -313,8 +344,8 @@
         }
 
         // --- Math & Projections ---
-        const angleX = Math.PI / 6; 
-        const angleZ = Math.PI / 6; 
+        const angleX = Math.PI / 6;
+        const angleZ = Math.PI / 6;
 
         function getVec(p1, p2) {
             const dx = p2.x - p1.x; const dy = p2.y - p1.y;
@@ -326,17 +357,17 @@
             const v1 = getVec(pB, pA);
             const v2 = getVec(pB, pC);
             const r = Math.min(radius, v1.len * 0.5, v2.len * 0.5);
-            if (r < 0.1) return [pB]; 
+            if (r < 0.1) return [pB];
             const startPoint = { x: pB.x + v1.dx * r, y: pB.y + v1.dy * r };
             const endPoint = { x: pB.x + v2.dx * r, y: pB.y + v2.dy * r };
-            
+
             let pts = [];
             for (let i = 0; i <= segments; i++) {
                 const t = i / segments;
                 const inv = 1 - t;
-                pts.push({ 
-                    x: inv*inv*startPoint.x + 2*inv*t*pB.x + t*t*endPoint.x, 
-                    y: inv*inv*startPoint.y + 2*inv*t*pB.y + t*t*endPoint.y 
+                pts.push({
+                    x: inv*inv*startPoint.x + 2*inv*t*pB.x + t*t*endPoint.x,
+                    y: inv*inv*startPoint.y + 2*inv*t*pB.y + t*t*endPoint.y
                 });
             }
             return pts;
@@ -344,21 +375,18 @@
 
         function drawAxonometricArray(numFrames, spacing, L, hL, hR, apexOffset, curvePct, apexCurvePct, isSafe, material, b, h) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 1. Calculate dynamic zoom (Auto-Scale)
-            const totalZ = (numFrames - 1) * spacing;
-            const maxH = Math.max(hL, hR) + L * 0.4; // Approximated max height including apex
-            const pad = 2; 
 
-            // Create 3D bounding box corners
+            const totalZ = (numFrames - 1) * spacing;
+            const maxH = Math.max(hL, hR) + L * 0.4;
+            const pad = 2;
+
             const bounds3D = [
-                {x: -pad, y: -pad, z: -pad}, {x: L+pad, y: -pad, z: -pad}, 
+                {x: -pad, y: -pad, z: -pad}, {x: L+pad, y: -pad, z: -pad},
                 {x: -pad, y: maxH+pad, z: -pad}, {x: L+pad, y: maxH+pad, z: -pad},
                 {x: -pad, y: -pad, z: totalZ+pad}, {x: L+pad, y: -pad, z: totalZ+pad},
                 {x: -pad, y: maxH+pad, z: totalZ+pad}, {x: L+pad, y: maxH+pad, z: totalZ+pad}
             ];
 
-            // Project bounds with scale = 1 to find required canvas space
             let minRawX = Infinity, maxRawX = -Infinity, minRawY = Infinity, maxRawY = -Infinity;
             bounds3D.forEach(pt => {
                 const px = (pt.x - pt.z) * Math.cos(angleX);
@@ -370,15 +398,13 @@
             const rawWidth = maxRawX - minRawX;
             const rawHeight = maxRawY - minRawY;
 
-            // Define available safe area (leave room on right for the section drawing)
-            const availWidth = canvas.width - 250; 
+            const availWidth = canvas.width - 250;
             const availHeight = canvas.height - 80;
 
-            // Calculate auto-scale and center offsets
             const scale = Math.min(availWidth / rawWidth, availHeight / rawHeight);
             const rawMidX = (minRawX + maxRawX) / 2;
             const rawMidY = (minRawY + maxRawY) / 2;
-            const offsetX = (canvas.width / 2) - (rawMidX * scale) - 60; // Shift left
+            const offsetX = (canvas.width / 2) - (rawMidX * scale) - 60;
             const offsetY = (canvas.height / 2) - (rawMidY * scale) + 10;
 
             function project3D(x, y, z) {
@@ -387,15 +413,14 @@
                 return { x: px * scale + offsetX, y: py * scale + offsetY };
             }
 
-            // 2. Generate 2D Center line profile
             const V0 = { x: 0, y: 0 };
             const V1 = { x: 0, y: hL };
-            const V2 = { x: L * apexOffset, y: Math.max(hL, hR) + (L*0.1) }; 
+            const V2 = { x: L * apexOffset, y: Math.max(hL, hR) + (L*0.1) };
             const V3 = { x: L, y: hR };
             const V4 = { x: L, y: 0 };
 
             const rEaves = (curvePct / 100) * Math.min(hL, hR, L/2) * 0.8;
-            const rApex = (apexCurvePct / 100) * L * 0.4; 
+            const rApex = (apexCurvePct / 100) * L * 0.4;
 
             let path2D = [];
             path2D.push(V0);
@@ -404,7 +429,6 @@
             path2D = path2D.concat(generateCorner(V2, V3, V4, rEaves));
             path2D.push(V4);
 
-            // 3. Draw Ground Grid (Site Boundaries)
             ctx.strokeStyle = "#ddd";
             ctx.setLineDash([3, 3]);
             ctx.lineWidth = 1;
@@ -417,11 +441,9 @@
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 4. Track connections
             let connectionNodes = [];
-
             const wireColor = isSafe ? "#111" : "#d32f2f";
-            
+
             function drawPath(pts, color, width) {
                 ctx.beginPath();
                 ctx.moveTo(pts[0].x, pts[0].y);
@@ -431,18 +453,17 @@
                 ctx.stroke();
             }
 
-            // 5. Render frames Back to Front
             for (let f = numFrames - 1; f >= 0; f--) {
                 const zOffset = f * spacing;
                 let lines = { c1: [], c2: [], c3: [], c4: [], w1: [], w2: [], w3: [], w4: [] };
-                let frameKeyNodes = []; 
+                let frameKeyNodes = [];
 
                 for (let i = 0; i < path2D.length; i++) {
                     const pt = path2D[i];
                     let nx = 1, ny = 0;
                     if (i < path2D.length - 1) {
                         const vec = getVec(pt, path2D[i+1]);
-                        nx = -vec.dy; ny = vec.dx; 
+                        nx = -vec.dy; ny = vec.dx;
                     } else if (i > 0) {
                         const vec = getVec(path2D[i-1], pt);
                         nx = -vec.dy; ny = vec.dx;
@@ -450,7 +471,7 @@
 
                     const h2 = h / 2;
                     const b2 = b / 2;
-                    
+
                     const ptC1 = project3D(pt.x + nx*h2, pt.y + ny*h2, zOffset + b2);
                     const ptC2 = project3D(pt.x - nx*h2, pt.y - ny*h2, zOffset + b2);
                     const ptC3 = project3D(pt.x + nx*h2, pt.y + ny*h2, zOffset - b2);
@@ -459,7 +480,7 @@
                     lines.c1.push(ptC1); lines.c2.push(ptC2); lines.c3.push(ptC3); lines.c4.push(ptC4);
 
                     if (material === 'steel_i') {
-                        const tf = h * 0.15; 
+                        const tf = h * 0.15;
                         lines.w1.push(project3D(pt.x + nx*(h2-tf), pt.y + ny*(h2-tf), zOffset + b2));
                         lines.w2.push(project3D(pt.x - nx*(h2-tf), pt.y - ny*(h2-tf), zOffset + b2));
                         lines.w3.push(project3D(pt.x + nx*(h2-tf), pt.y + ny*(h2-tf), zOffset - b2));
@@ -472,13 +493,13 @@
                 }
                 connectionNodes.push(frameKeyNodes);
 
-                const op = f === 0 ? 1 : 0.4; // Make back frames more transparent
+                const op = f === 0 ? 1 : 0.4;
                 const colOuter = isSafe ? `rgba(17,17,17,${op})` : `rgba(211,47,47,${op})`;
                 const colInner = isSafe ? `rgba(150,150,150,${op*0.5})` : `rgba(229,115,115,${op*0.5})`;
 
-                drawPath(lines.c3, colInner, 0.5); 
-                drawPath(lines.c4, colInner, 0.5); 
-                
+                drawPath(lines.c3, colInner, 0.5);
+                drawPath(lines.c4, colInner, 0.5);
+
                 if (material === 'steel_i') {
                     drawPath(lines.w3, colInner, 0.5);
                     drawPath(lines.w4, colInner, 0.5);
@@ -486,7 +507,6 @@
                     drawPath(lines.w2, colOuter, 0.8);
                 }
 
-                // Faces
                 for(let i=0; i<path2D.length; i+=10) {
                     ctx.beginPath();
                     ctx.moveTo(lines.c1[i].x, lines.c1[i].y); ctx.lineTo(lines.c2[i].x, lines.c2[i].y);
@@ -499,7 +519,6 @@
                 drawPath(lines.c2, colOuter, f === 0 ? 1.5 : 1);
             }
 
-            // 6. Draw Purlins
             ctx.strokeStyle = "rgba(100,100,100,0.3)";
             ctx.lineWidth = 1;
             if(numFrames > 1) {
@@ -517,7 +536,7 @@
         }
 
         function drawSectionDetail(material, b, h, isSafe) {
-            const secScale = material === 'steel_i' ? 100 : 40; 
+            const secScale = material === 'steel_i' ? 100 : 40;
             const secW = b * secScale;
             const secH = h * secScale;
             const secX = 980;
@@ -527,7 +546,7 @@
             ctx.font = "11px 'Helvetica Neue'";
             ctx.textAlign = "center";
             ctx.fillText("SECTION (A-A)", secX, secY - 20);
-            
+
             ctx.font = "9px 'Helvetica Neue'";
             ctx.fillStyle = "#666";
             const labelStr = material === 'steel_i' ? `I-Beam ${h*1000}x${b*1000} mm` : `RC Box ${(b).toFixed(1)}x${(h).toFixed(1)} m`;
@@ -551,8 +570,8 @@
                     });
                 }
             } else {
-                const tf = secH * 0.12; 
-                const tw = secW * 0.12; 
+                const tf = secH * 0.12;
+                const tw = secW * 0.12;
                 ctx.moveTo(secX - secW/2, secY);
                 ctx.lineTo(secX + secW/2, secY);
                 ctx.lineTo(secX + secW/2, secY + tf);

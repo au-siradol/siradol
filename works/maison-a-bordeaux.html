@@ -5,34 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Axonometric Structural System (Accurate Forces & Clean Wireframe)</title>
     <style>
-        body { 
-            font-family: 'Helvetica Neue', Helvetica ; 
-            background-color: #f4f4f4; 
-            color: #111; 
-            margin: 0; 
-            padding: 40px; 
+        body {
+            font-family: 'Helvetica Neue', Helvetica ;
+            background-color: #f4f4f4;
+            color: #111;
+            margin: 0;
+            padding: 0 24px 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .header { 
-            text-align: right; 
+        .study-bar {
+            max-width: 1100px;
             width: 100%;
-            max-width: 1100px; 
-            margin: 0 auto 20px auto; 
+            margin: 0 auto;
+            padding: 14px 0 8px 0;
+            border-bottom: 1px solid #111;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-sizing: border-box;
         }
-        .header h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-        .header h2 { margin: 5px 0 0 0; font-size: 14px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
-        
-        .canvas-container { 
+        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
+        .study-bar a:hover { color:#d32f2f; }
+        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
+        .study-bar .idx { font-family:'Courier New', monospace; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
+        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
+        .study-bar .titleline b { font-weight:bold; color:#111; }
+        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
+        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+
+        .canvas-container {
             width: 100%;
-            max-width: 1100px; 
-            height: 600px;
-            margin: 0 auto; 
-            border-bottom: 1px dashed #aaa; 
+            max-width: 1100px;
+            height: 460px;
+            margin: 16px auto 0;
+            border-bottom: 1px dashed #aaa;
             padding-bottom: 15px;
             position: relative;
-            background: #ffffff; 
+            background: #ffffff;
             border: 1px solid #eaeaea;
         }
         
@@ -68,14 +81,16 @@
         }
 
         /* Improved 3-Column Layout with Aligned Headings */
-        .controls-container { 
-            display: flex; 
-            justify-content: space-between; 
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
             align-items: stretch;
             width: 100%;
-            max-width: 1100px; 
-            margin: 25px auto 0 auto; 
-            font-size: 11px; 
+            max-width: 1100px;
+            margin: 14px auto 0;
+            padding-top: 12px;
+            border-top: 1px dashed #aaa;
+            font-size: 11px;
             line-height: 1.5;
             gap: 25px;
         }
@@ -95,13 +110,15 @@
             padding-left: 20px;
         }
 
-        .column h3 { 
-            margin: 0 0 12px 0; 
-            font-size: 11px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
+        .column h3 {
+            margin: 0 0 10px 0;
+            font-size: 8.5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
             color: #333;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
         }
 
         /* Styled Box Only Around Behaviour Content */
@@ -119,7 +136,7 @@
             align-items: center;
             justify-content: flex-start;
             gap: 8px;
-            font-size: 12px;
+            font-size: 9.5px;
             font-weight: normal;
             cursor: pointer;
             margin-bottom: 10px;
@@ -132,7 +149,7 @@
             padding-left: 0;
             list-style: none;
             color: #444;
-            font-size: 12px;
+            font-size: 10.5px;
         }
         
         .element-list li { 
@@ -219,32 +236,6 @@
             font-family: monospace;
         }
     </style>
-
-    <style>
-        .portfolio-bar {
-            max-width: 1100px;
-            margin: 0 auto 34px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding-bottom: 14px;
-            border-bottom: 1px solid #111;
-        }
-        .portfolio-bar a {
-            color: #111;
-            text-decoration: none;
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .portfolio-bar a:hover { color: #d32f2f; }
-        .portfolio-bar .idx {
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            color: #999;
-            letter-spacing: 1px;
-        }
-    </style>
     <script type="importmap">
         {
             "imports": {
@@ -256,14 +247,12 @@
 </head>
 <body>
 
-    <div class="portfolio-bar">
+    <div class="study-bar">
         <a href="../index.html">&larr; Index</a>
-        <span class="idx">04 / STRUCTURAL STUDIES</span>
-    </div>
-
-    <div class="header">
-        <h1>Maison à Bordeaux - Structural Elements</h1>
-        <h2>Structural Logic and Behaviour</h2>
+        <span class="titlegroup">
+            <span class="idx">04</span>
+            <span class="titleline"><b>Maison &agrave; Bordeaux &mdash; Structural Elements</b><span class="sep">&mdash;</span><span class="sub">Structural Logic and Behaviour</span></span>
+        </span>
     </div>
 
     <div class="canvas-container">

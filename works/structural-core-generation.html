@@ -9,35 +9,38 @@
             font-family: Helvetica, Arial, sans-serif !important;
         }
 
-        body { 
-            background-color: #f4f5f5; 
-            color: #111; 
-            margin: 0; 
-            padding: 40px; 
+        body {
+            background-color: #f4f5f5;
+            color: #111;
+            margin: 0;
+            padding: 0 24px 24px;
         }
-        
-        .header { 
-            text-align: right; 
-            max-width: 1200px; 
-            margin: 0 auto 30px auto; 
+
+        .study-bar {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 14px 0 8px 0;
+            border-bottom: 1px solid #111;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            box-sizing: border-box;
         }
-        .header h1 { 
-            margin: 0; 
-            font-size: 20px; 
-            font-weight: bold; 
-            letter-spacing: 0.5px; 
-        }
-        .header h2 { 
-            margin: 5px 0 0 0; 
-            font-size: 12px; 
-            font-weight: normal; 
-            color: #666; 
-            letter-spacing: 0.5px; 
-        }
-        
+        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
+        .study-bar a:hover { color:#d32f2f; }
+        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
+        .study-bar .idx { font-family: Helvetica, Arial, sans-serif; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
+        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
+        .study-bar .titleline b { font-weight:bold; color:#111; }
+        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
+        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+
         .main-container {
             max-width: 1200px;
-            margin: 0 auto;
+            margin: 16px auto 0;
         }
 
         .main-view-panel {
@@ -64,7 +67,7 @@
         #simContainer {
             display: block;
             width: 100%;
-            height: 500px;
+            height: 420px;
             background: transparent;
             cursor: grab;
             position: relative;
@@ -110,7 +113,7 @@
         canvas#editorCanvas {
             display: block;
             width: 100%;
-            height: 350px;
+            height: 300px;
             background: #fff;
             border: 1px solid #eee;
             cursor: crosshair;
@@ -147,57 +150,49 @@
         hr.dashed {
             border: 0;
             border-top: 1px dashed #ccc;
-            margin: 30px 0;
+            margin: 16px 0;
         }
 
-        .controls-grid { 
-            display: flex; 
-            gap: 40px;
+        /* ---- compact horizontal control strip ---- */
+        .controls-strip {
+            display: flex;
+            gap: 0;
         }
-        .column { flex: 1; }
-        .column h3 { 
-            margin-top: 0; font-size: 11px; font-weight: bold; 
-            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; color: #111;
+        .cluster {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 24px;
+            margin-right: 24px;
+            border-right: 1px solid #ddd;
+            min-width: 0;
         }
-        
-        .control-row { margin-bottom: 18px; font-size: 11px; }
-        label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #333; }
-        .val { font-size: 10px; color: #555; }
-        
+        .cluster:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+        .cluster-label {
+            margin-top: 0; font-size: 8.5px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.8px; color: #111;
+            border-bottom: 1px solid #111; padding-bottom: 4px; margin-bottom: 2px;
+        }
+        .cluster-desc {
+            font-size: 9.5px; color: #999; line-height: 1.4;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .control-row { margin-bottom: 12px; font-size: 9.5px; }
+        label { display: flex; justify-content: space-between; margin-bottom: 5px; color: #333; }
+        .val { font-size: 9.5px; color: #555; }
+
         input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
         input[type="range"]:focus { outline: none; }
-        input[type="range"]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px;
         }
         input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
-        
-        .info-box {
-            margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee;
-            color: #666; font-size: 10px; line-height: 1.6;
-        }
 
-        .portfolio-bar {
-            max-width: 1100px;
-            margin: 0 auto 34px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding-bottom: 14px;
-            border-bottom: 1px solid #111;
-        }
-        .portfolio-bar a {
-            color: #111;
-            text-decoration: none;
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .portfolio-bar a:hover { color: #d32f2f; }
-        .portfolio-bar .idx {
-            font-family: Helvetica, Arial, sans-serif;
-            font-size: 11px;
-            color: #999;
-            letter-spacing: 1px;
+        .info-box {
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;
+            color: #666; font-size: 9.5px; line-height: 1.55;
         }
     </style>
     <script type="importmap">
@@ -211,14 +206,12 @@
 </head>
 <body>
 
-    <div class="portfolio-bar">
+    <div class="study-bar">
         <a href="../index.html">&larr; Index</a>
-        <span class="idx">03 / STRUCTURAL STUDIES</span>
-    </div>
-
-    <div class="header">
-        <h1>STRUCTURAL WALL GENERATION</h1>
-        <h2>Axonometric Wireframe & Floor Plan Editor (RC Standard)</h2>
+        <span class="titlegroup">
+            <span class="idx">03</span>
+            <span class="titleline"><b>Structural Wall Generation</b><span class="sep">&mdash;</span><span class="sub">Axonometric Wireframe &amp; Floor Plan Editor (RC Standard)</span></span>
+        </span>
     </div>
 
     <div class="main-container">
@@ -249,9 +242,10 @@
 
         <hr class="dashed">
 
-        <div class="controls-grid">
-            <div class="column">
-                <h3>Architecture & Massing</h3>
+        <div class="controls-strip">
+            <div class="cluster">
+                <div class="cluster-label">Architecture &amp; Massing</div>
+                <div class="cluster-desc">Storey count and floor-to-floor height.</div>
                 <div class="control-row">
                     <label>Number of Floors <span id="val-floors" class="val">3</span></label>
                     <input type="range" id="floors" min="2" max="8" step="1" value="3">
@@ -272,8 +266,9 @@
                 </div>
             </div>
 
-            <div class="column">
-                <h3>RC Structure Parameters</h3>
+            <div class="cluster">
+                <div class="cluster-label">RC Structure Parameters</div>
+                <div class="cluster-desc">Wall thickness and occupancy live load.</div>
                 <div class="control-row">
                     <label>Wall Thickness (T_c) <span id="val-coreT" class="val">0.20 m</span></label>
                     <input type="range" id="coreT" min="0.2" max="1.5" step="0.1" value="0.2">
@@ -288,14 +283,15 @@
                 </div>
                 <div class="info-box">
                     <b>Auto Target Wall Span:</b> <span id="val-autoSpan" class="val" style="color:#007BFF; font-weight:bold;">3.00 m</span><br>
-                    Auto-mapped from Live Load & slenderness ratio (H/T_c). Shorter spans increase fold stiffness for taller or heavier buildings.<br><br>
+                    Auto-mapped from Live Load &amp; slenderness ratio (H/T_c).<br><br>
                     <b>Slab Thickness (T_s):</b> <span id="val-slabT" class="val" style="color:#007BFF; font-weight:bold;">0.30 m</span><br>
-                    Auto-calculated based on maximum cantilever span and selected live load.
+                    Auto-calculated from cantilever span and live load.
                 </div>
             </div>
-            
-            <div class="column">
-                <h3>Safety Criteria</h3>
+
+            <div class="cluster">
+                <div class="cluster-label">Safety Criteria</div>
+                <div class="cluster-desc">Overlap and cantilever span checks.</div>
                 <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
                     <b>1. Structural Overlap (Punching Shear Risk):</b><br>
                     Overlapping core areas (solid blue in 3D) are evaluated for load distribution. A minimum of 3 distinct support points or adequate footprint spread is required between floors.<br><br>
