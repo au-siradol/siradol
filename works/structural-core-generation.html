@@ -316,6 +316,10 @@
                         <span style="display:inline-block; width:12px; height:6px; border:1px dashed #d32f2f; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Eurocode 8's mandatory 5% of the plan
                     </div>
                     <div style="margin-top:6px; color:#111;"><b>Click a check row</b> on the right to show what it measures here.</div>
+                    <div style="margin-top:8px;"><b>In the model:</b><br>
+                        <span style="display:inline-block; width:10px; height:6px; background:rgba(208,106,60,0.35); margin-right:5px; vertical-align:middle;"></span> a storey warms only past 70% of its lateral capacity &mdash; the house stays white until one is actually working<br>
+                        <span style="display:inline-block; width:12px; height:1px; background:#8a8580; margin-right:5px; vertical-align:middle;"></span> the slab edge where it ends up, at &times;25 &mdash; the flat slab above it is the undeformed reference
+                    </div>
                 </div>
             </div>
 
@@ -2034,6 +2038,34 @@
                                 { x: d2.x + (c.x - d2.x) * f, z: d2.z + (c.z - d2.z) * f }], false);
                     editCtx.stroke();
                 }
+                /* The direction of ascent, drawn the way a plan always draws it -
+                   and here it carries information rather than convention: the slab
+                   opening sits at the TOP of the run, the end headroom decides, so
+                   the arrow says which end of the slot is which. stairWireframe
+                   treats poly[1] as the top, so the arrow agrees with the model. */
+                (function () {
+                    const a = sl.poly[0], b = sl.poly[1], c = sl.poly[2], d2 = sl.poly[3];
+                    const foot = { x: (a.x + d2.x) / 2, z: (a.z + d2.z) / 2 };
+                    const head = { x: (b.x + c.x) / 2, z: (b.z + c.z) / 2 };
+                    let dx = head.x - foot.x, dz = head.z - foot.z;
+                    const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+                    const tail = { x: foot.x + dx * L * 0.12, z: foot.z + dz * L * 0.12 };
+                    const tip  = { x: foot.x + dx * L * 0.88, z: foot.z + dz * L * 0.88 };
+                    strokePath([tail, tip], false);
+                    editCtx.strokeStyle = 'rgba(85,85,85,0.85)'; editCtx.lineWidth = 1.1;
+                    editCtx.stroke();
+                    // head
+                    const hw = 0.16, hl = 0.34;
+                    const nx = dz, nz = -dx;
+                    strokePath([{ x: tip.x - dx * hl + nx * hw, z: tip.z - dz * hl + nz * hw },
+                                tip,
+                                { x: tip.x - dx * hl - nx * hw, z: tip.z - dz * hl - nz * hw }], false);
+                    editCtx.stroke();
+                    // a short bar at the foot, so the bottom end reads as the bottom
+                    strokePath([{ x: tail.x + nx * hw, z: tail.z + nz * hw },
+                                { x: tail.x - nx * hw, z: tail.z - nz * hw }], false);
+                    editCtx.stroke();
+                })();
             });
 
             drawHighlight(st, idx, nodes);
@@ -2872,8 +2904,28 @@
         scene.add(sun.target);
 
         const wallMaterial     = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+        /* D - EACH STOREY'S WALL CARRIES ITS OWN LOAD, so the model says which
+           storey is working. The house stays WHITE, which is the whole look: the
+           tint only starts at 70% of capacity and only reaches a muted amber-red at
+           the limit. Below 70% nothing changes, so a comfortable design is the
+           white model it was, and the middle floor announces itself only when it is
+           actually the hot one. Materials are cached per bucket - three.js would
+           otherwise leak one per storey per refresh. */
+        const storeyMatCache = new Map();
+        function storeyWallMaterial(use) {
+            if (!isFinite(use) || use <= 0.70) return wallMaterial;
+            const k = Math.min(Math.round(Math.min(use, 1.15) * 20) / 20, 1.15);
+            if (storeyMatCache.has(k)) return storeyMatCache.get(k);
+            const f = clamp((k - 0.70) / 0.45, 0, 1);          // 0 at 70%, 1 at 115%
+            const col = new THREE.Color(0xffffff).lerp(new THREE.Color(0xd06a3c), f * 0.55);
+            const m = new THREE.MeshLambertMaterial({ color: col, transparent: true,
+                                                      opacity: 0.78, side: THREE.DoubleSide });
+            storeyMatCache.set(k, m);
+            return m;
+        }
         const wallEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x9a9a9a });
         const floorMaterial    = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+        const deflMaterial     = new THREE.LineBasicMaterial({ color: 0x8a8580, transparent: true, opacity: 0.85 });
         const floorEdgeMaterial= new THREE.LineBasicMaterial({ color: 0xbcbcbc });
         const bearMaterial     = new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide });
         const bearEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x2a6fb8 });
@@ -2909,6 +2961,31 @@
         // two stringers plus a nosing at every tread. It climbs from the floor of
         // its storey to the top of the slab it opens, arriving at the far end of
         // the slot - which is why the opening sits at the top of the run.
+        const DEFL_EXAG = 25;
+        function deflectedEdge(fl, P, slabT, yTop) {
+            const verts = fl.verts, nodes = fl.nodes;
+            const pts = [];
+            for (let i = 0; i < verts.length; i++) {
+                const a = verts[i], b = verts[(i + 1) % verts.length];
+                const seg = distXZ(a, b), n = Math.max(2, Math.ceil(seg / 0.4));
+                for (let k = 0; k < n; k++) {
+                    const f = k / n;
+                    const p = { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f };
+                    let dd = Infinity;
+                    for (let j = 0; j < nodes.length - 1; j++)
+                        dd = Math.min(dd, pointToSegmentDistance(p, nodes[j], nodes[j + 1]));
+                    const r = Math.max(0.2, dd - P.coreT / 2);
+                    const rho = slabSteelFor(gravityDesign(slabT) * r * r / 2, slabT);
+                    const w = cantileverDeflection(slabT, r, rho);
+                    pts.push(new THREE.Vector3(p.x, yTop - w * DEFL_EXAG, p.z));
+                }
+            }
+            if (pts.length < 3) return null;
+            pts.push(pts[0].clone());
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            return new THREE.Line(geo, deflMaterial);
+        }
+
         function stairWireframe(slot, g, yFloor) {
             const c0 = slot.poly[0], c1 = slot.poly[1];
             let dx = c1.x - c0.x, dz = c1.z - c0.z;
@@ -3035,14 +3112,26 @@
             clearGroup(modelGroup);
             for (let i = 0; i < numFloors; i++) {
                 const yB = i * P.floorH, yT = yB + P.floorH, slabYB = yT - slabT;
+                const wm = storeyWallMaterial(floors[i].comb.use);
                 floors[i].quads.forEach(q => {
-                    const g = createExtrusionGroup(q, yB, slabYB, wallMaterial, wallEdgeMaterial);
+                    const g = createExtrusionGroup(q, yB, slabYB, wm, wallEdgeMaterial);
                     if (g) modelGroup.add(g);
                 });
                 const fg = createExtrusionGroup(floorData[i].vertices, slabYB, yT, floorMaterial, floorEdgeMaterial,
                                                 floors[i].slots.map(sl => sl.poly));
                 if (fg) modelGroup.add(fg);
             }
+            /* E - THE SLAB EDGE, WHERE IT ACTUALLY ENDS UP. The flat slab stays as
+               the undeformed reference and a line is hung below it at the deflection
+               SIA 262 eq. 103 gives - the same formula the check uses, sampled along
+               the boundary with the local reach in place of the span. So it is the
+               edge profile of a one-way cantilever, not a plate analysis. At x25 a
+               12 mm tip becomes 300 mm against a 3 m storey: visible, not silly. */
+            for (let i = 0; i < numFloors; i++) {
+                const line = deflectedEdge(floors[i], P, slabT, (i + 1) * P.floorH);
+                if (line) modelGroup.add(line);
+            }
+
             // flights: the one in storey i rises to the top of slab i
             for (let i = 0; i < numFloors; i++) {
                 floors[i].slots.forEach(sl => modelGroup.add(stairWireframe(sl, st.stair, i * P.floorH)));
