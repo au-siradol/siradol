@@ -790,6 +790,9 @@
                 });
             });
 
+            // trim the stretch-end keep-out as well - no pins, just less room
+            const open2 = subtractSpans(open, foldKeepOut(idx, P_coreT()), FOLD_MIN_SEG);
+            open.length = 0; open2.forEach(z => open.push(z));
             const lens = open.map(z => Math.max(0, z[1] - z[0]));
             const tot = lens.reduce((a, v) => a + v, 0);
             if (tot < 1e-6 || foldCount <= 0) return pins;
@@ -2249,11 +2252,61 @@
 
         // where a fold may actually live: the fold zones, less the openings of the
         // floor below, which the wall has to run straight across
+        /* A fold placed right at the edge of a blocked band still fails, because a
+           wall that TURNS there is wider than the axis line: the 0.55 m thick
+           quad's mitred corner sweeps back over the band and clips the opening
+           below. So the band has to be widened by about the wall's own thickness
+           before it is cut out of the fold zones. Without this, + Fold on the
+           middle floor picked a gap starting exactly at the band edge, and every
+           attempt was rejected by "the wall clears the slots". */
+        /* TWO DIFFERENT MARGINS, and conflating them broke the solver once.
+
+           blockedBands - the openings of the floor BELOW. The wall must run
+           straight across these, so the fold zones are cut here AND the wall is
+           pinned on the axis at each cut. Padded by the wall thickness, because a
+           wall that turns at the cut edge is wider than the axis line: the mitred
+           corner of the quad sweeps back over the band.
+
+           foldKeepOut - a margin at the ends of THIS floor's reserved stretches.
+           Same geometry, different remedy: no pin belongs here, because the wall is
+           already on the stretch line at that end. Dropping a pin 0,56 m past the
+           end instead left a segment shorter than FOLD_MIN_SEG and killed every
+           candidate the solver tried. So this one only trims where folds may go. */
+        function bandPad(coreT) { return coreT + STAIR_CLEAR; }
+
+        function blockedBands(idx, coreT) {
+            if (idx <= 0) return [];
+            const gp = padOpening(stairParams().g, SOLVE_PAD);
+            const pad = bandPad(coreT);
+            return mergeSpans(slotsFor(idx - 1, gp, coreT)
+                .map(sl => [sl.t0 - pad, sl.t1 + pad]));
+        }
+
+        function foldKeepOut(idx, coreT) {
+            const pad = bandPad(coreT);
+            return mergeSpans(wallSegments(idx, currentRun()).segs
+                .map(sg => [sg.t0 - pad, sg.t1 + pad]));
+        }
+
+        // spans minus cuts, keeping only what is still long enough to fold in
+        function subtractSpans(spans, cuts, minLen) {
+            const out = [];
+            spans.forEach(z => {
+                let cursor = z[0];
+                for (const c of cuts) {
+                    if (c[1] <= cursor || c[0] >= z[1]) continue;
+                    const lo = Math.max(c[0], cursor);
+                    if (lo - cursor > minLen) out.push([cursor, lo]);
+                    cursor = Math.max(cursor, Math.min(c[1], z[1]));
+                }
+                if (z[1] - cursor > minLen) out.push([cursor, z[1]]);
+            });
+            return out;
+        }
+
         function foldableSpans(idx) {
             const coreT = P_coreT();
-            const gp = padOpening(stairParams().g, SOLVE_PAD);
-            const bl = mergeSpans(idx > 0
-                ? slotsFor(idx - 1, gp, coreT).map(sl => [sl.t0, sl.t1]) : []);
+            const bl = blockedBands(idx, coreT);
             const out = [];
             foldZones(idx, currentRun()).zones.forEach(z => {
                 let cursor = z[0];
@@ -2265,7 +2318,7 @@
                 }
                 if (z[1] - cursor > FOLD_MIN_SEG) out.push([cursor, z[1]]);
             });
-            return out;
+            return subtractSpans(out, foldKeepOut(idx, coreT), FOLD_MIN_SEG);
         }
 
         function foldsStillFit(idx) {
@@ -2365,7 +2418,7 @@
             const mustMiss = ownSlots.concat(belowSlots);
             // the wall of this floor stands on the slab below, so its openings are
             // where this wall may not leave the axis
-            const blocked = belowSlots.map(s2 => [s2.t0, s2.t1]);
+            const blocked = blockedBands(idx, P.coreT);
             // ...and where it does not stand on the wall below, that slab has to
             // carry it as a transfer element, so the solver has to want to stack
             const belowNodes = idx > 0 ? getWallNodes(idx - 1) : null;
