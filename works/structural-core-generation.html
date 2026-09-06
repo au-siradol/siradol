@@ -76,6 +76,19 @@
         #simContainer:active {
             cursor: grabbing;
         }
+        #view-mode {
+            position: absolute; top: 8px; left: 10px; display: flex; z-index: 2;
+        }
+        #view-mode button {
+            padding: 4px 9px; background: rgba(255,255,255,0.85); color: #999;
+            border: 1px solid #ddd; font-size: 8px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.6px; cursor: pointer;
+            transition: 0.15s;
+        }
+        #view-mode button + button { border-left: none; }
+        #view-mode button:hover { color: #111; border-color: #bbb; }
+        #view-mode button.on { background: #111; color: #fff; border-color: #111; }
+
         #sim-hint {
             position: absolute;
             bottom: 8px;
@@ -258,6 +271,10 @@
             <div class="canvases-wrapper">
                 <div class="canvas-3d-wrapper">
                     <div id="simContainer"></div>
+                    <div id="view-mode">
+                        <button data-mode="forces" class="on" onclick="setViewMode('forces')">Forces</button>
+                        <button data-mode="concrete" onclick="setViewMode('concrete')">Concrete</button>
+                    </div>
                     <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
                 </div>
                 <div class="canvas-2d-wrapper">
@@ -3361,7 +3378,7 @@
              D_HALF * (simContainer.clientWidth / Math.max(simContainer.clientHeight, 1)),
              D_HALF, -D_HALF, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.enabled = false;         // FORCES opens without them
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.setSize(simContainer.clientWidth, simContainer.clientHeight);
         simContainer.appendChild(renderer.domElement);
@@ -3383,7 +3400,23 @@
         scene.add(sun);
         scene.add(sun.target);
 
-        const wallMaterial     = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+        /* TWO VIEWS OF THE SAME MODEL.
+           FORCES is the analytic one: translucent so the wall inside is legible,
+           tinted by the capacity each storey uses, with the deflected slab edge,
+           the bearings and the flights all drawn. No shadows - a shadow across a
+           translucent diagram only muddies the readings.
+           CONCRETE is the building: opaque grey, shadows on, and every overlay put
+           away. No envelope, by choice - the storeys are left open at the sides,
+           which is what lets the wall still be seen from outside.
+
+           Toggling shadows changes the shader program key, so every SHARED material
+           has to be told to recompile; three.js caches programs per material and a
+           stale one renders unlit or throws. Hence the shared() register. */
+        let viewMode = 'forces';
+        const sharedMaterials = [];
+        const shared = m => { sharedMaterials.push(m); return m; };
+
+        const wallMaterial     = shared(new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, side: THREE.DoubleSide }));
         /* D - EACH STOREY'S WALL CARRIES ITS OWN LOAD, so the model says which
            storey is working. The house stays WHITE, which is the whole look: the
            tint only starts at 70% of capacity and only reaches a muted amber-red at
@@ -3393,6 +3426,7 @@
            otherwise leak one per storey per refresh. */
         const storeyMatCache = new Map();
         function storeyWallMaterial(use) {
+            if (viewMode === 'concrete') return concreteWall;   // the building, not the reading
             if (!isFinite(use) || use <= 0.70) return wallMaterial;
             const k = Math.min(Math.round(Math.min(use, 1.15) * 20) / 20, 1.15);
             if (storeyMatCache.has(k)) return storeyMatCache.get(k);
@@ -3403,8 +3437,17 @@
             storeyMatCache.set(k, m);
             return m;
         }
-        const wallEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x9a9a9a });
-        const floorMaterial    = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+        const wallEdgeMaterial = shared(new THREE.LineBasicMaterial({ color: 0x9a9a9a }));
+        const floorMaterial    = shared(new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.42, side: THREE.DoubleSide }));
+
+        /* Concrete, and darker than it looks here: the hemisphere fill runs at 3.1
+           in three.js physical units, so a Lambert base of 0x82 already renders as
+           a mid grey. It has to be dark enough for a WHITE line to read on it,
+           because the flights are white in this mode and LineBasicMaterial has no
+           usable line width in WebGL - contrast is the only lever there is. */
+        const concreteWall = shared(new THREE.MeshLambertMaterial({ color: 0x7c7973, side: THREE.DoubleSide }));
+        const concreteSlab = shared(new THREE.MeshLambertMaterial({ color: 0x8a8781, side: THREE.DoubleSide }));
+        const concreteEdge = shared(new THREE.LineBasicMaterial({ color: 0x55534e }));
         /* The deflected edge is coloured ALONG ITS LENGTH by how close that point
            is to its own a/250 limit - the same idea as the wall's line weight, so
            the line is not merely visible but tells you which stretch of edge is at
@@ -3424,10 +3467,20 @@
         function deflColour(u) {
             return u >= 1 ? DEFL_OVER : u > 0.85 ? DEFL_WARM : DEFL_COOL;
         }
-        const floorEdgeMaterial= new THREE.LineBasicMaterial({ color: 0xbcbcbc });
-        const bearMaterial     = new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide });
-        const bearEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x2a6fb8 });
-        const stairMaterial    = new THREE.LineBasicMaterial({ color: 0x007BFF });
+        const floorEdgeMaterial= shared(new THREE.LineBasicMaterial({ color: 0xbcbcbc }));
+        const bearMaterial     = shared(new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide }));
+        const bearEdgeMaterial = shared(new THREE.LineBasicMaterial({ color: 0x2a6fb8 }));
+        const stairMaterial    = shared(new THREE.LineBasicMaterial({ color: 0x007BFF }));
+        /* In CONCRETE the flight is the one thing lighter than the building - and
+           it has to be drawn THROUGH it. Once the slabs are opaque they occlude
+           every flight below the top one, so the white wireframe would simply be
+           invisible; depthTest off draws it over the solid instead, which is the
+           ordinary way an architect lays a wireframe over a massing. depthWrite
+           off as well, or it would then occlude the concrete in turn. */
+        const overlay = c => shared(new THREE.LineBasicMaterial(
+            Object.assign({ depthTest: false, depthWrite: false }, c)));
+        const stairWhite      = overlay({ color: 0xffffff });
+        const stairWhiteGhost = overlay({ color: 0xffffff, transparent: true, opacity: 0.4 });
         /* The flights were reading as blue lines running out through the massing.
            Measured first: all 164 points of every flight sit inside the plate and
            inside their own storey, so nothing actually pokes out - the slabs are
@@ -3435,7 +3488,7 @@
            colour in the model, so a flight two storeys down shows straight through
            the outline above it. The 2D editor already answers this by ghosting the
            floors you are not editing; the model now does the same. */
-        const stairGhostMaterial = new THREE.LineBasicMaterial({ color: 0x9fb8cc, transparent: true, opacity: 0.5 });
+        const stairGhostMaterial = shared(new THREE.LineBasicMaterial({ color: 0x9fb8cc, transparent: true, opacity: 0.5 }));
 
         function createExtrusionGroup(poly2D, yB, yT, material, edgeMaterial, holes) {
             if (!poly2D || poly2D.length < 3) return null;
@@ -3641,14 +3694,18 @@
             }
 
             clearGroup(modelGroup);
+            const asBuilt = viewMode === 'concrete';
+            const slabMat = asBuilt ? concreteSlab : floorMaterial;
+            const wallEdge = asBuilt ? concreteEdge : wallEdgeMaterial;
+            const slabEdge = asBuilt ? concreteEdge : floorEdgeMaterial;
             for (let i = 0; i < numFloors; i++) {
                 const yB = i * P.floorH, yT = yB + P.floorH, slabYB = yT - slabT;
                 const wm = storeyWallMaterial(floors[i].comb.use);
                 floors[i].quads.forEach(q => {
-                    const g = createExtrusionGroup(q, yB, slabYB, wm, wallEdgeMaterial);
+                    const g = createExtrusionGroup(q, yB, slabYB, wm, wallEdge);
                     if (g) modelGroup.add(g);
                 });
-                const fg = createExtrusionGroup(floorData[i].vertices, slabYB, yT, floorMaterial, floorEdgeMaterial,
+                const fg = createExtrusionGroup(floorData[i].vertices, slabYB, yT, slabMat, slabEdge,
                                                 floors[i].slots.map(sl => sl.poly));
                 if (fg) modelGroup.add(fg);
             }
@@ -3658,7 +3715,7 @@
                the boundary with the local reach in place of the span. So it is the
                edge profile of a one-way cantilever, not a plate analysis. At x25 a
                12 mm tip becomes 300 mm against a 3 m storey: visible, not silly. */
-            for (let i = 0; i < numFloors; i++) {
+            if (!asBuilt) for (let i = 0; i < numFloors; i++) {
                 const line = deflectedEdge(floors[i], P, slabT, (i + 1) * P.floorH);
                 if (line) modelGroup.add(line);
             }
@@ -3666,11 +3723,16 @@
             // flights: the one in storey i rises to the top of slab i
             const shown = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             for (let i = 0; i < numFloors; i++) {
-                const mat = i === shown ? stairMaterial : stairGhostMaterial;
-                floors[i].slots.forEach(sl => modelGroup.add(stairWireframe(sl, st.stair, i * P.floorH, mat)));
+                const mat = asBuilt ? (i === shown ? stairWhite : stairWhiteGhost)
+                                    : (i === shown ? stairMaterial : stairGhostMaterial);
+                floors[i].slots.forEach(sl => {
+                    const w = stairWireframe(sl, st.stair, i * P.floorH, mat);
+                    if (asBuilt) w.renderOrder = 10;        // over the concrete
+                    modelGroup.add(w);
+                });
             }
 
-            bearings.forEach(b => {
+            if (!asBuilt) bearings.forEach(b => {
                 const g = createExtrusionGroup(b.poly, b.floorIdx * P.floorH - slabT, b.floorIdx * P.floorH, bearMaterial, bearEdgeMaterial);
                 if (g) modelGroup.add(g);
             });
@@ -3996,6 +4058,19 @@
             resolveAll();                // refreshes and fits on its own
         }
         window.resetDesign = resetDesign;
+
+        function setViewMode(mode) {
+            if (mode === viewMode) return;
+            viewMode = mode;
+            renderer.shadowMap.enabled = (viewMode === 'concrete');
+            sharedMaterials.forEach(m => { m.needsUpdate = true; });
+            storeyMatCache.forEach(m => { m.needsUpdate = true; });
+            groundPlane.material.needsUpdate = true;
+            document.querySelectorAll('#view-mode button').forEach(b =>
+                b.classList.toggle('on', b.dataset.mode === viewMode));
+            refresh();
+        }
+        window.setViewMode = setViewMode;
 
         window.addEventListener('load', () => {
             ensureCanvasSize(editCanvas);
