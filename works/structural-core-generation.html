@@ -650,16 +650,77 @@
                      t1: Math.max(axisParam(P0), axisParam(P1)) };
         }
 
-        // Snap the two together when they come close, so an overlap is always a
-        // deliberate pair rather than two lines fighting for the same station.
-        function syncStretches(idx, runLen) {
+        // Two stretches share one line when they sit at the same station, to
+        // within the tolerance the wall assembly can tell apart.
+        function stretchesPaired(idx, runLen) {
             const a = stretchOf(idx, 0, runLen), b = stretchOf(idx, 1, runLen);
-            if (Math.abs(a.tc - b.tc) < a.len * 0.55) {
-                const tc = (a.tc + b.tc) / 2, sc = (a.sc + b.sc) / 2, ang = (a.ang + b.ang) / 2;
-                floorData[idx].stairs.forEach(st => { st.tc = tc; st.sc = sc; st.ang = ang; });
+            return Math.abs(a.tc - b.tc) < 1e-6;
+        }
+
+        /* The wall is ONE line, so its two reserved stretches are either the same
+           line or two disjoint lines. A partial overlap asks the wall to double
+           back on itself - foldZones hands it a zone of negative length - so the
+           band 0 < |tc0 - tc1| < len is forbidden, not merely discouraged. A drag
+           that lands inside it is put on the nearest edge: sharing the line, or
+           abutting it on either side.
+
+           The old rule averaged the two whenever they came within 0,55 len, which
+           welded them for good: once they coincide the distance is 0, inside the
+           band on every later move, so no drag could separate them again and the
+           two stairs looked permanently opposite each other. Now the band is
+           crossed, not fallen into - and mover / paired say which stretch yields
+           and whether the pair was sharing a line when the drag began, because a
+           shared line has to slide as one until the drag asks to leave it. */
+        function syncStretches(idx, runLen, mover, paired, from) {
+            const k = mover === undefined ? 1 : mover;
+            const st = floorData[idx].stairs[k], other = floorData[idx].stairs[1 - k];
+            const a = stretchOf(idx, k, runLen), b = stretchOf(idx, 1 - k, runLen);
+            const len = a.len;
+            if (Math.abs(a.tc - b.tc) >= len) return false;      // disjoint: free
+            if (Math.abs(a.tc - b.tc) < 1e-6) {                  // already one line
+                if (paired) { other.sc = a.sc; other.ang = a.ang; }
+                else        { st.sc = b.sc;    st.ang = b.ang;    }
                 return true;
             }
-            return false;
+
+            /* Three stations are open to this stretch: sharing the other's line, or
+               abutting it on either side. Everything between asks the wall to
+               double back. A drag does not LEAP across the band - it waits at the
+               station it has already reached until the pointer arrives at the next
+               one, so the stretch lands under your finger rather than jumping ahead
+               of it, and the same threshold releases and re-forms the pair. */
+            const cands = [b.tc - len, b.tc, b.tc + len];
+            // legal is a SET, not three points: sharing the line, or anywhere a
+            // full stretch clear of it. Only the band between is out of bounds.
+            const legal = t => Math.abs(t - b.tc) < 1e-6 || Math.abs(t - b.tc) >= len - 1e-9;
+            let pick;
+            if (from === undefined || !legal(from)) {
+                pick = cands.reduce((p, c) =>
+                    Math.abs(c - a.tc) < Math.abs(p - a.tc) ? c : p, cands[0]);
+            } else {
+                /* Travel from where the stretch stands towards where the pointer
+                   is asking, and stop at the farthest station actually reached.
+                   The set is disconnected, so leaving the shared line cannot be
+                   continuous - but requiring the pointer to REACH the next station
+                   makes the crossing deliberate, and makes it symmetrical: the same
+                   gesture that parts the pair puts it back together. */
+                pick = from;
+                for (const c of cands) {
+                    const towards = (c - from) * (a.tc - from) >= 0;
+                    const reached = Math.abs(c - from) <= Math.abs(a.tc - from);
+                    if (towards && reached && Math.abs(c - from) >= Math.abs(pick - from)) pick = c;
+                }
+            }
+            st.tc = pick;
+            // an abutting station outside the plate is clamped straight back into
+            // the band, so fall back to the one station always within reach
+            if (Math.abs(stretchOf(idx, k, runLen).tc - pick) > 1e-6) { st.tc = pick = b.tc; }
+            if (Math.abs(pick - b.tc) > 1e-6) return false;      // abutting
+            // one line means one tilt and one offset: whoever was already on it
+            // keeps it, and a stretch arriving from elsewhere conforms to it
+            if (paired) { other.sc = a.sc; other.ang = a.ang; }
+            else        { st.sc = b.sc;    st.ang = b.ang;    }
+            return true;
         }
 
         // the reserved segments in axis order, merged when they coincide
@@ -2555,10 +2616,11 @@
                 const st0 = d.stairs[k];
                 const keep = { tc: st0.tc, sc: st0.sc, ang: st0.ang };
                 const keepAll = d.stairs.map(x => ({ tc: x.tc, sc: x.sc, ang: x.ang }));
+                const paired = stretchesPaired(idx, g.run);
                 const mid = { x: cx, z: cz };
                 st0.tc = axisParam(mid); st0.sc = axisSide(mid);
                 st0.ang = Math.atan2(dirx * nn.x + dirz * nn.z, dirx * u.x + dirz * u.z);
-                syncStretches(idx, g.run);
+                syncStretches(idx, g.run, k, paired, r.tc);
                 const why = stairMoveFault(idx, g, k);
                 if (why) {
                     d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
@@ -2576,21 +2638,25 @@
                 const along  = rel.x * r.d.x + rel.z * r.d.z;
                 const across = (rel.x * r.n.x + rel.z * r.n.z) * st0.side;
                 const keepAll = d.stairs.map(x => ({ tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap }));
+                const paired = stretchesPaired(idx, g.run);
                 const u = axisDir();
                 st0.tc = r.tc + along * (r.d.x * u.x + r.d.z * u.z);
-                /* 3 - snap onto the position that keeps the flights chained. One run
-                   from the floor below is the only spacing at which a flight arrives
-                   where the next departs, so it is worth pulling towards rather than
-                   leaving the user to find it and a check to complain afterwards. */
+                /* 3 - snap onto the position that keeps the flights chained. One
+                   PITCH from the floor below - a run plus the landing you arrive on
+                   - is the spacing at which a flight arrives where the next departs,
+                   so it is worth pulling towards rather than leaving the user to
+                   find it and a check to complain afterwards. Aiming at a bare run
+                   pulled the flight onto the edge of the overlap band instead, so
+                   the drag fought the check that rejects it. */
                 if (idx > 0 && floorData[idx - 1].stairs[k]) {
                     const b = stretchOf(idx - 1, k, g.run).tc;
-                    for (const cand of [b + g.run, b - g.run]) {
-                        if (Math.abs(st0.tc - cand) < g.run * 0.12) { st0.tc = cand; break; }
+                    for (const cand of [b + g.pitch, b - g.pitch]) {
+                        if (Math.abs(st0.tc - cand) < g.pitch * 0.12) { st0.tc = cand; break; }
                     }
                 }
                 st0.sc = r.sc; st0.ang = r.ang;
                 st0.gap = clamp(across - P_coreT() / 2 - g.width / 2, ROOT_MIN, 2.0);
-                syncStretches(idx, g.run);
+                syncStretches(idx, g.run, k, paired, r.tc);
                 /* Clamp rather than reject. r.tc / st0.gap at entry were legal, so
                    bisect between there and where the pointer is asking for, and stop
                    at the last legal point - the limit becomes a stop you can feel.
@@ -2606,7 +2672,7 @@
                 const put = f => {
                     st0.tc = from.tc + (want.tc - from.tc) * f;
                     st0.gap = from.gap + (want.gap - from.gap) * f;
-                    syncStretches(idx, g.run);
+                    syncStretches(idx, g.run, k, paired, r.tc);
                 };
                 if (stairMoveFault(idx, g, k)) {
                     const note = stairMoveFault(idx, g, k);
@@ -3119,10 +3185,12 @@
                     // with no wall left to fold.
                     const chain = Math.max(0, numFloors - 2 - i) * g.pitch;
                     const march = Math.max(0, chain - Math.max(hi - tc, tc - lo));
-                    // stagger: either share the stretch outright, or clear it fully
+                    // Share the stretch outright or clear it: a partial overlap is
+                    // not a wall. BOTH edges of the band are legal, so the penalty
+                    // peaks in the middle of it instead of at one end.
                     const apart = other && other.tc !== undefined ? Math.abs(tc - other.tc) : Infinity;
-                    const stagger = apart < half * 2 + FOLD_MIN_GAP && apart > half * 1.1
-                        ? (half * 2 + FOLD_MIN_GAP - apart) * 4 : 0;
+                    const stagger = apart > 1e-6 && apart < half * 2
+                        ? Math.min(apart, half * 2 - apart) * 8 : 0;
                     const score = (inside ? 0 : 200)
                                 + Math.max(0, PASSAGE_COMFORT - pass) * 10
                                 + Math.max(0, APPROACH_MIN + 0.4 - app) * 20
@@ -3136,23 +3204,25 @@
                 }
                 st.tc = bestClear ? bestClear.tc : (best !== null ? best : keep);
             });
-            syncStretches(i, g.run);
+            syncStretches(i, g.run, 1, false);
         }
 
 
+        /* Moving the stairs invalidates the fold layout - the openings below are
+           exactly where the wall may not leave the axis - so placing without a fold
+           pass only traded one fault for another: it lifted the wall off the opening
+           below and left that floor dead straight instead. resolveAll already
+           alternates the two, which is what this needed all along; it just must not
+           snatch the camera back while the user is looking somewhere. */
         function autoPlaceStairs() {
             stairsManual = false;       // asking for auto placement hands it back
-            for (let pass = 0; pass < 2; pass++) {
-                const { P, g } = stairParams();
-                for (let i = 0; i < numFloors; i++) placeStairsOn(i, P, g);
-                refresh();
-            }
+            resolveAll(false);
         }
 
         // A parameter change moves both the wall and the slots, so the previous
         // solution stops being valid. Re-solving on release keeps the page
         // parametric instead of just turning red; hand-placed flights are kept.
-        function resolveAll() {
+        function resolveAll(refit) {
             // Placement and folding constrain each other: an upper wall has to
             // clear the openings below, and the openings want to sit where that
             // wall is not. One pass each way left the two upper walls with nowhere
@@ -3166,8 +3236,14 @@
                 for (let i = 0; i < numFloors; i++) floorData[i].foldNodes = solveFolds(i, P, g);
                 refresh();
             };
-            for (let pass = 0; pass < 3; pass++) step();
-            fitCamera();
+            /* Five, not three. The slab is derived from the reach, the reach from
+               the fold layout, and the fold layout from the slab through the length
+               of the openings - so the loop can still be climbing when it is cut
+               off, and it settles in a thick-slab basin where nothing fits. Three
+               passes left the default a fold short on the middle floor; five reach
+               the same answer as eight, so five is where it converges. */
+            for (let pass = 0; pass < 5; pass++) step();
+            if (refit !== false) fitCamera();
         }
 
         function optimizeWall() {
