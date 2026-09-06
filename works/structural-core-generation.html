@@ -294,8 +294,8 @@
                     <input type="range" id="floors" autocomplete="off" min="2" max="8" step="1" value="3">
                 </div>
                 <div class="control-row">
-                    <label>Floor-to-Floor Height (H) <span id="val-floorH" class="val">3.00 m</span></label>
-                    <input type="range" id="floorH" autocomplete="off" min="2.5" max="5.0" step="0.1" value="3.0">
+                    <label>Floor-to-Floor Height (H) <span id="val-floorH" class="val">3.55 m</span></label>
+                    <input type="range" id="floorH" autocomplete="off" min="2.5" max="5.0" step="0.05" value="3.55">
                 </div>
                 <div class="control-row">
                     <label style="margin-bottom:2px;"><label style="display:inline;margin:0;"><input type="checkbox" id="uniformPlate" checked autocomplete="off" style="vertical-align:middle;margin:0 4px 0 0;">Uniform plate on every floor</label><span class="val">&nbsp;</span></label>
@@ -327,8 +327,8 @@
                 <div class="cluster-label">RC Structure Parameters</div>
                 <div class="cluster-desc">Wall thickness and slab depth. Residential 2.0 kN/m&sup2; throughout.</div>
                 <div class="control-row">
-                    <label>Wall Thickness (T_c) <span id="val-coreT" class="val">0.55 m</span></label>
-                    <input type="range" id="coreT" autocomplete="off" min="0.2" max="1.5" step="0.05" value="0.55">
+                    <label>Wall Thickness (T_c) <span id="val-coreT" class="val">0.43 m</span></label>
+                    <input type="range" id="coreT" autocomplete="off" min="0.2" max="1.5" step="0.01" value="0.43">
                 </div>
                 <div class="control-row">
                     <label>Slab Thickness (T_s)
@@ -932,7 +932,18 @@
            as a position on the division axis; the slot in the slab runs parallel
            to that axis, and the wall must fold out of its way.
            ===================================================================== */
-        const STAIR_RISER_MAX  = 0.18;   // comfortable max riser, under the Swiss 0.20 limit
+        /* MEASURED off the plans. L2 carries one straight flight: 18 treads at
+           0.0139 of the plate length = 0.256 m, so 19 risers of 0.187 m over a
+           3.55 m storey, and a run of 4.61 m. GL climbs the same height in TWO
+           flights of ten with a landing between - the arrangement changes storey
+           by storey, the dimensions do not.
+
+           0.187 m is over the 0.18 m this page used to assume and 19 risers over
+           its 18-per-flight limit, so both caps had to move to let the page
+           reproduce the building it is about. Nothing is being bent to do it: VKF
+           16-15 clause 3.2.2 al. 3 places NO requirement on a stair inside a
+           dwelling unit, and 0.187 m is still under the Swiss 0.20 m ceiling. */
+        const STAIR_RISER_MAX  = 0.19;   // measured 0.187, under the Swiss 0.20 limit
         const STAIR_BLONDEL    = 0.630;  // 2s + a, top of the Swiss/German 600-630 band
         const STAIR_GOING_MIN  = 0.24;   // Swiss minimum tread
         const STAIR_GOING_MAX  = 0.32;
@@ -940,7 +951,8 @@
         const JOIN_TOL = 0.10;           // m slack on the floor between two flights
         const JOIN_MAX = 3;              // landings between flights before the two
                                          // stop reading as one stair
-        const MAX_FLIGHT_RISERS = 18;    // beyond this a straight flight needs a landing
+        const MAX_FLIGHT_RISERS = 20;    // beyond this a straight flight needs a landing;
+                                         // L2's flight runs 19 straight
         const STAIR_SLAB       = 0.20;   // structural thickness of an open-riser flight
 
         /* (i) HEAD UNDER THE FLIGHT ABOVE - the thing that hits you first, and the
@@ -973,7 +985,11 @@
         // on the wall face, so the "must clear the slot" test sat on a knife-edge
         // and a wall straight on the axis passed or failed on rounding.
         const STAIR_CLEAR      = 0.01;
-        const STAIR_WIDTH  = 1.05;       // assumed clear width, Swiss practice for a house
+        const STAIR_WIDTH  = 0.86;       // MEASURED: 0.0941 of the plate width. Narrow,
+                                         // and legal - a stair inside a dwelling has no
+                                         // required width (VKF 16-15, 3.2.2 al. 3). The
+                                         // 1.2 m escape-route width applies to a stair
+                                         // serving more than one unit, which this is not.
         const ROOT_MIN     = 0.05;   // nominal construction gap, wall face to opening
 
         // Wall density index: cross-sectional wall area resisting one direction,
@@ -1880,13 +1896,30 @@
         // identical is what makes that legible, and it lands the wall ends on the
         // same two facade points all the way up.
         const MIN_DEPTH = 6.0;
+
+        /* MEASURED off the three published plans (GL, L1, L2), not invented. The
+           half-width profile is identical on all three to within 2 %: a short end
+           edge at 0.568 of the full width, a dead straight taper to full width at
+           0.40 of the length, PARALLEL sides from 0.40 to 0.60, then the mirror.
+           That is eight vertices, not six - the earlier hexagon put its waist at
+           mid-length and was too fat (aspect 1.75 against the measured 2.01).
+
+           Scale comes from the architect's own credits: gross floor area 420 m2
+           over the three storeys the plans show = 140.0 m2 each. This outline
+           encloses 0.8272 x L x W, so L = 18.45 m and W = 9.18 m.
+
+           The 3-storey reading is what makes the stair buildable: at 420/4 the
+           tread measured off the plans would come out 0.216 m, under any tread
+           anyone would build, against 0.256 m here. */
         const PLATE = [
-            { x: -3.6, z:  0, edge: 'front' },
-            { x:  3.6, z:  0, edge: 'front' },
-            { x:  4.0, z:  7 },
-            { x:  3.1, z: 14, edge: 'back' },
-            { x: -3.1, z: 14, edge: 'back' },
-            { x: -4.0, z:  7 }
+            { x: -2.61, z:  0.00, edge: 'front' },
+            { x:  2.61, z:  0.00, edge: 'front' },
+            { x:  4.59, z:  7.38 },
+            { x:  4.59, z: 11.07 },
+            { x:  2.61, z: 18.45, edge: 'back' },
+            { x: -2.61, z: 18.45, edge: 'back' },
+            { x: -4.59, z: 11.07 },
+            { x: -4.59, z:  7.38 }
         ];
         for (let i = 0; i < 8; i++) {
             floorData.push({
