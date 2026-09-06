@@ -206,7 +206,35 @@
         .val .use  { font-weight: bold; color: #333; }
         .val.warn .use { color: #b26a00; }
         .val.bad  .use { color: #d32f2f; }
-        .val .raw  { color: #aaa; }
+        /* THE WORKING, ON ONE ROW AT A TIME. The headline is the answer and the
+           grey figures behind it are the evidence - but thirteen sets of evidence
+           at once is a wall of numbers. They appear under the pointer, and stay on
+           the row you clicked, which the highlight already marks .on. */
+        .val .raw  { color: #aaa; display: none; }
+        .metric-row:hover .val .raw,
+        .metric-row.on .val .raw { display: inline; }
+        .metric-row:hover { background: #fafafa; }
+        .metric-row.shows { cursor: pointer; }
+        .metric-row.shows > span:first-child::after { content: ' \203A'; color: #ccc; }
+        .metric-row.sub > span:first-child { padding-left: 8px; color: #999; }
+        .metric-row.folded, .group-label.folded { display: none; }
+        #moreChecks {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            margin: 7px 0 2px; padding: 5px 7px; border: 1px dashed #ddd; cursor: pointer;
+            font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #999;
+        }
+        #moreChecks:hover { border-color: #999; color: #111; }
+
+        /* the one thing the legend held about the 3D view that cannot be guessed */
+        #defl-key {
+            position: absolute; bottom: 8px; left: 10px; display: flex; align-items: center;
+            gap: 5px; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
+            color: #aaa; pointer-events: none;
+        }
+        #defl-key i {
+            display: inline-block; width: 14px; height: 2px;
+            background: linear-gradient(to right, #0e7c86 55%, #b26a00 55%);
+        }
         .group-label {
             font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase;
             color: #999; margin: 10px 0 3px; padding-top: 6px;
@@ -249,8 +277,8 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
             }
         }
     </script>
@@ -275,6 +303,7 @@
                         <button data-mode="forces" class="on" onclick="setViewMode('forces')">Forces</button>
                         <button data-mode="concrete" onclick="setViewMode('concrete')">Concrete</button>
                     </div>
+                    <div id="defl-key"><i></i>slab edge &times;25</div>
                     <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
                 </div>
                 <div class="canvas-2d-wrapper">
@@ -282,7 +311,6 @@
                         <h3>2D Geometry Editor</h3>
                         <select id="floorIndex" autocomplete="off"></select>
                     </div>
-                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag: &#9632; wall ends &middot; &#9679; folds &middot; stretch ends to tilt &middot; plate corners &middot; a slot along the wall, or out from it.<br>The two flights share one line or clear it: drag one a full stretch to part them, back onto the other to pair them.</p>
                     <canvas id="editorCanvas"></canvas>
                     
                     <div class="btn-group">
@@ -316,27 +344,6 @@
                 </div>
                 <div class="control-row">
                     <label style="margin-bottom:2px;"><label style="display:inline;margin:0;"><input type="checkbox" id="uniformPlate" checked autocomplete="off" style="vertical-align:middle;margin:0 4px 0 0;">Uniform plate on every floor</label><span class="val">&nbsp;</span></label>
-                    <div style="font-size:9px;color:#999;line-height:1.4;">Facade end edges always stay level; this also ties the side nodes together.</div>
-                </div>
-                <div class="info-box">
-                    <b>2D Editor Legend:</b><br>
-                    <div style="margin-top: 4px;">
-                        <span style="display:inline-block; width:4px; height:4px; border:1px solid #111; border-radius:50%; margin-right:5px; background:#fff; vertical-align:middle;"></span> Plate Edge Node &mdash; facade ends drag on every floor at once<br>
-                        <span style="display:inline-block; width:6px; height:6px; background:#111; margin-right:5px; vertical-align:middle;"></span> Wall End &mdash; drag along the envelope<br>
-                        <span style="display:inline-block; width:5px; height:5px; background:#007BFF; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Fold Node (Blue, draggable)<br>
-                        <span style="display:inline-block; width:12px; height:1px; background:#d32f2f; margin-right:5px; vertical-align:middle;"></span> Division Axis (shared by all floors)<br>
-                        <span style="display:inline-block; width:12px; height:1px; background:rgba(180,180,180,0.6); margin-right:5px; vertical-align:middle;"></span> Other Floors Wireframe<br>
-                        <span style="display:inline-block; width:12px; height:6px; border:1px dashed #555; margin-right:5px; vertical-align:middle; background:rgba(0,0,0,0.05);"></span> Stair Slots &mdash; two per floor, none in the roof; drag along the wall<br>
-                        <span style="display:inline-block; width:12px; height:6px; border:1px dashed #007BFF; margin-right:5px; vertical-align:middle; background:rgba(0,123,255,0.07);"></span> Cantilever Reach Band<br>
-                        <span style="display:inline-block; width:12px; height:4px; background:linear-gradient(to right, rgba(0,123,255,0.35), #007BFF); margin-right:5px; vertical-align:middle;"></span> Wall weight &mdash; share of capacity in that segment<br>
-                        <span style="display:inline-block; width:5px; height:5px; border:1px solid #111; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Centre of mass &nbsp;&nbsp;<span style="color:#d32f2f;">&#10010;</span> Centre of rigidity, on the wall<br>
-                        <span style="display:inline-block; width:12px; height:6px; border:1px dashed #d32f2f; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Eurocode 8's mandatory 5% of the plan
-                    </div>
-                    <div style="margin-top:6px; color:#111;"><b>Click a check row</b> on the right to show what it measures here.</div>
-                    <div style="margin-top:8px;"><b>In the model:</b><br>
-                        <span style="display:inline-block; width:10px; height:6px; background:rgba(208,106,60,0.35); margin-right:5px; vertical-align:middle;"></span> a storey warms only past 70% of its lateral capacity &mdash; the house stays white until one is actually working<br>
-                        <span style="display:inline-block; width:12px; height:2px; background:linear-gradient(to right, #0e7c86 60%, #b26a00 60%); margin-right:5px; vertical-align:middle;"></span> the slab edge where it ends up, at &times;25, warming towards its own a/250 &mdash; the flat slab above is the undeformed reference
-                    </div>
                 </div>
             </div>
 
@@ -356,38 +363,31 @@
                 <div class="info-box">
                     <div class="metric-row"><span>Cantilever capacity of T_s</span><span id="val-capacity" class="val hi">&ndash;</span></div>
                     <div class="metric-row"><span>Fold panel guide <i>(detailing)</i></span><span id="val-panelLimit" class="val hi">&ndash;</span></div>
-                    <div style="margin-top:6px;">Cantilever capacity is the reach at which the tip deflection reaches <b>a/250</b>, from SIA 262 eq. 103 for the cracked state &mdash; the standard gives no span/depth shortcut. The fold-panel figure is a detailing guide, not a limit.</div>
+                    <div style="margin-top:6px;">Reach at <b>a/250</b>, SIA 262 eq. 103. The panel figure is a detailing guide, not a limit.</div>
                 </div>
             </div>
 
             <div class="cluster">
                 <div class="cluster-label">Structural Check</div>
                 <div class="cluster-desc" id="checkScope">Selected floor &mdash; the bar above reports the worst.</div>
-                <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
-                    <div class="group-label">What decides &mdash; share of capacity used</div>
+                <div class="info-box" id="checkList" style="margin-top: 0; border: none; padding: 0;">
+                    <div class="group-label">What decides</div>
                     <div class="metric-row shows" data-hl="reach"><span>Cantilever reach</span><span id="val-reachL" class="val">&ndash;</span></div>
                     <div class="metric-row shows" data-hl="openend"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Head under the flight above</span><span id="val-head" class="val">&ndash;</span></div>
                     <div class="metric-row shows" data-hl="lateral"><span>Lateral &mdash; shear and twist together</span><span id="val-combined" class="val">&ndash;</span></div>
+                    <div class="metric-row sub"><span>&mdash; wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
+                    <div class="metric-row sub"><span>&mdash; lever the fold gives it</span><span id="val-twist" class="val">&ndash;</span></div>
                     <div class="metric-row shows" data-hl="transfer"><span>Slab under the wall above</span><span id="val-transfer" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Way past the flight</span><span id="val-bypass" class="val">&ndash;</span></div>
-
-                    <div class="group-label">Checked &mdash; the margin left</div>
-                    <div class="metric-row"><span>Bracing wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
-                    <div class="metric-row shows" data-hl="twist"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall bent out of plane</span><span id="val-oop" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Slab shear at the wall face</span><span id="val-shear" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall crushing at the base</span><span id="val-base" class="val">&ndash;</span></div>
-                    <div class="metric-row shows" data-hl="diaph"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
+                    <div id="moreChecks" hidden><span></span><span>&#8964;</span></div>
 
                     <div class="group-label">What the design implies</div>
-                    <div class="metric-row"><span>Base resultant vs the kern</span><span id="val-kern" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Strip footing at 300 kPa</span><span id="val-footing" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Slab reinforcement the reach needs</span><span id="val-steel" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
-                    <div class="metric-row" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
+                    <div class="metric-row" id="govRow" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
-                        <b>Twist is what forces the fold, not shear.</b> The plan draws it: the cross sits on the wall, the circle is the centre of mass, and the red line between them is the lever the earthquake pulls on. Straighten the wall and every arm collapses &mdash; one line of wall can only push along itself, so it has no torsional capacity at all. Read the two centres as an aid, not a result: the centre of rigidity is an elastic construct being paired with plastic capacities.
+                        <b>Twist is what forces the fold, not shear.</b> Straighten the wall and the lever goes to zero.
                     </div>
                     <details class="fine">
                         <summary>What is assumed, and what is still not checked</summary>
@@ -396,9 +396,12 @@
                         <b>The slab follows SIA 262 eq. 103:</b> the tip deflection of the cracked cantilever under the quasi-permanent load, against a/250, with E_cm = k_E&middot;&#8731;f_cm at k_E = 10 000 for alluvial gravel (3.1.2.3.3) and a creep coefficient of 2.5 (&beta;_fc = 2.7 from Table 4; the rest of eq. 13 is read off Figure 2). Bending resistance is A_s = &rho;d at a lever of 0.9d with &rho; = 1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the seismic ones G + 0.3Q, and bearing G + Q.<br><br>
                         <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is <span id="val-hwlw">&ndash;</span>.<br><br>
                         <b>Measured off the published plans and the architect's credits:</b> gross floor area <b>420 m&sup2;</b> (Kerez, <i>Credits 1993&ndash;2024</i>) over the three storeys the plans show, so 140 m&sup2; each. The plate is an <b>octagon</b> &mdash; end edge at 0.568 of the full width, straight taper to full width at 0.40 of the length, parallel sides from 0.40 to 0.60, identical on GL, L1 and L2 to within 2% &mdash; which at that area gives <b>18.45 &times; 9.18 m</b>. The stair is 18 treads at 0.0139 of the plate length = 0.256 m, so 19 risers of 0.187 m over a <b>3.55 m</b> storey, a run of <b>4.61 m</b>, and a width of 0.0941 of the plate width = <b>0.86 m</b>. Take the three-storey reading as forced rather than chosen: over four storeys the same tread comes out 0.216 m, which nobody would build. VKF 16-15 cl. 3.2.2 al. 3 places <i>no</i> requirement on a stair inside a dwelling unit, so 0.86 m is this building's figure and not a code minimum &mdash; the 1.2 m escape-route width (cl. 2.4.5 al. 3) applies to a stair serving more than one unit, which this is not.<br><br>
-                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 300 kPa allowable bearing (SIA 267); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 2.10 m headroom.<br><br>
+                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 2.10 m headroom.<br><br>
                         <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
-                        <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints; anything below the footing's bearing plane.
+                        <b>The two centres are an aid, not a result:</b> the cross sits on the wall, the circle is the centre of mass, and the red arm between them is the lever the earthquake pulls on &mdash; a straight wall has an arm of exactly zero, because one line of wall can only push along itself. But the centre of rigidity is an elastic construct being paired with plastic capacities, so read it as a diagnosis of the geometry rather than a number to design to.<br><br>
+                        <b>Checked, and never close:</b> the slab's diaphragm shear into the wall, and one-way shear at the wall face. Both are required checks and both are reported here rather than in the column, because across 60 combinations of storeys, height and wall thickness the worst case seen was <b>7.5%</b> of the diaphragm's capacity and <b>50%</b> of the slab's. On a house this size they cannot decide anything.<br><br>
+                        <b>Not modelled at all:</b> the foundation. Nothing below the wall's own base section is drawn, checked or assumed &mdash; the base stress against f_cd is a check on the WALL, not on what carries it.<br><br>
+                        <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints.
                         </div>
                     </details>
                     </div>
@@ -1286,7 +1289,6 @@
            wall needs N / (allowable bearing) of width. The overturning half of the
            question is already on the page as the base resultant against the wall
            footprint's kern - it is the fold that gives the base its lever arm. */
-        const SOIL_BEARING = 300;   // kN/m2, still assumed - moraine, Swiss plateau
 
         // SIA 262 4.3.3.2.1, at approximation level 1 (the conservative one)
         function slabShearResistance(slabT) {
@@ -1317,11 +1319,6 @@
         function slabShearCheck(slabT, reach) {
             const vEd = gravityDesign(slabT) * reach.max;          // kN per metre
             return { vEd, cap: slabShearResistance(slabT) };
-        }
-
-        function footingCheck(base) {
-            return { width: base.Nline / SOIL_BEARING, N: base.Nline,
-                     bearing: SOIL_BEARING };
         }
 
         function projectedWall(nodes) {
@@ -2090,7 +2087,6 @@
                 slotIssues, bearsOnVoid, tight, severed, stair: g,
                 disconnected: [...disconnected], unbraced, cramped, twisted, headHit,
                 overloaded, transferred, crushed, bent, endLoaded, sheared,
-                footing: footingCheck(floors[0].base),
 
                 intrudes: floors.some(f => f.intrudes > 0),
                 capacity:   cantileverCapacity(slabT),
@@ -2411,6 +2407,12 @@
                 editCtx.moveTo(cr.px, cr.pz - 4); editCtx.lineTo(cr.px, cr.pz + 4);
                 editCtx.strokeStyle = 'rgba(211,47,47,' + (0.9 * dim) + ')';
                 editCtx.lineWidth = 1.4; editCtx.stroke();
+                /* The one thing the old legend held about this plan that cannot be
+                   read off it: the ring is a CODE requirement, not a result. It
+                   belongs on the ring, not in a list of eleven other swatches. */
+                editCtx.font = '8px Helvetica';
+                editCtx.fillStyle = 'rgba(211,47,47,' + (0.85 * dim) + ')';
+                editCtx.fillText('5% e \u2014 EC8', cm.px + rAcc + 5, cm.pz - 2);
                 editCtx.restore();
             })();
 
@@ -3783,8 +3785,63 @@
             updateGround();
         }
 
+        /* SIX CHECKS THAT CAN DECIDE, AND A COUNT FOR THE REST. Thirteen rows with
+           twelve of them usually saying "clear" meant the one that decides had to
+           be hunted for, which was the real clutter - not the words. Show what is
+           at or over 85% of its capacity and put the rest behind their own count.
+           Nothing is removed: it is a disclosure, and a row you have selected stays
+           out whatever its margin, because you asked for it.
+
+           The two sub rows are not checks. Wall-across-the-plan and lever-from-the-
+           fold are the two halves of the lateral check, and scoring them separately
+           reported one physical problem three times - a dead straight wall fails
+           all three at once. Worse, both ratios are ill-conditioned there: measured
+           over 60 combinations they reach 2.8e6 and 4.4e12, because their
+           denominators go to zero, while the combined check handles the same case
+           at 14.9. So they appear as the BREAKDOWN of the row that decides, only
+           when you open it. */
+        let checksOpen = false;
+        function foldChecks() {
+            const box = document.getElementById('checkList');
+            const rows = [...box.querySelectorAll('.metric-row')].filter(r => r.id !== 'govRow');
+            const lateralOpen = box.querySelector('[data-hl="lateral"]').classList.contains('on');
+            let hidden = 0, clear = 0;
+            rows.forEach(r => {
+                if (r.classList.contains('sub')) { r.classList.toggle('folded', !lateralOpen); return; }
+                const u = parseFloat(r.dataset.u);
+                const quiet = isFinite(u) && u <= 0.85 && !r.classList.contains('on');
+                if (quiet) clear++;
+                const fold = quiet && !checksOpen;
+                r.classList.toggle('folded', fold);
+                if (fold) hidden++;
+            });
+            // a heading with every row folded away is worse than no heading
+            box.querySelectorAll('.group-label').forEach(g => {
+                let any = false;
+                for (let n = g.nextElementSibling; n; n = n.nextElementSibling) {
+                    if (n.classList.contains('group-label')) break;
+                    if (n.classList.contains('metric-row') && n.id !== 'govRow'
+                        && !n.classList.contains('folded')) { any = true; break; }
+                }
+                g.classList.toggle('folded', !any);
+            });
+            const more = document.getElementById('moreChecks');
+            more.hidden = clear === 0;
+            more.firstElementChild.innerText = checksOpen
+                ? 'hide the ' + clear + ' clear'
+                : hidden + (hidden === 1 ? ' more check \u00b7 clear'
+                                         : ' more checks \u00b7 all clear');
+            more.lastElementChild.innerHTML = checksOpen ? '&#8963;' : '&#8964;';
+        }
+        document.getElementById('moreChecks').addEventListener('click', () => {
+            checksOpen = !checksOpen; foldChecks();
+        });
+
+        /* Every setter tolerates a missing element, so retiring a check is a
+           one-line markup edit and never a runtime error. */
         function setMetric(id, text, bad) {
             const el = document.getElementById(id);
+            if (!el) return;
             el.innerText = text;
             el.className = 'val' + (bad ? ' bad' : '');
         }
@@ -3793,6 +3850,7 @@
         function setUse(id, demand, cap, raw) {
             const el = document.getElementById(id);
             const u = cap > 1e-9 ? demand / cap : Infinity;
+            if (!el) return u;
             // a clearance that is badly short gives 1243%, which is noise - the raw
             // figure beside it is the informative half at that point
             const head = !isFinite(u) ? 'no load path'
@@ -3800,12 +3858,15 @@
             el.className = 'val' + (u > CHECK_TOL ? ' bad' : (u > 0.85 ? ' warn' : ''));
             el.innerHTML = '<span class="use">' + head + '</span>'
                          + (raw ? ' <span class="raw">' + raw + '</span>' : '');
+            const row = el.closest('.metric-row');
+            if (row) row.dataset.u = isFinite(u) ? u : 99;
             return u;
         }
 
         // A check that is only reported: lead with how much room is left.
         function setSpare(id, demand, cap, raw) {
             const el = document.getElementById(id);
+            if (!el) return;
             const u = cap > 1e-9 ? demand / cap : Infinity;
             let head;
             if (!isFinite(u)) head = 'no load path';
@@ -3815,13 +3876,15 @@
             el.className = 'val' + (u > CHECK_TOL ? ' bad' : (u > 0.85 ? ' warn' : ''));
             el.innerHTML = '<span class="use">' + head + '</span>'
                          + (raw ? ' <span class="raw">' + raw + '</span>' : '');
+            const row = el.closest('.metric-row');
+            if (row) row.dataset.u = isFinite(u) ? u : 99;
         }
 
         function updateReadouts(st) {
             const { P, slabT, capacity, panelLimit, maxReach, maxPanel, floors, escaped,
                     slotIssues, bearsOnVoid, tight, severed, stair, disconnected,
                     unbraced, cramped, twisted, overloaded, transferred, crushed, bent,
-                    endLoaded, sheared, footing, headHit } = st;
+                    endLoaded, sheared, headHit } = st;
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const r = floors[idx].reach;
 
@@ -3889,11 +3952,6 @@
                      + dp.cap.toFixed(0) + ' kN over ' + dp.joined.toFixed(1) + ' m');
 
             /* ----- statements, not checks ---------------------------------------- */
-            setMetric('val-kern', 'e ' + bs.ecc.toFixed(2) + ' m vs kern ' + bs.kern.toFixed(2)
-                      + ' m \u2014 ' + (bs.ecc > bs.kern ? 'needs tension steel at the base'
-                                                          : 'all in compression'), false);
-            setMetric('val-footing', footing.width.toFixed(2) + ' m wide, from '
-                      + footing.N.toFixed(0) + ' kN/m', false);
             // the steel the GOVERNING moment needs, not just the plain cantilever -
             // the transfer moment is usually the larger of the two
             const rhoReq = slabSteelFor(fl.moment, slabT);
@@ -3950,13 +4008,23 @@
                reversal - but at 1.20 m the fold solver runs out of room and three
                floors lose their bracing outright. Naming thickness as the fix sent
                the slider the one way that also takes the supply away. */
-            if (unbraced.length)    unsafe.push(say('not enough wall across the plan on floor ' + unbraced.join(', '),
+            /* A dead straight wall fails all three of these at once, so the two
+               halves only speak for the floors the combined check has not already
+               claimed. Naming one problem three times was the column's own noise. */
+            const covered = new Set(overloaded);
+            const shortWall = unbraced.filter(f => !covered.has(f));
+            const noLever   = twisted.filter(f => !covered.has(f));
+            if (overloaded.length) {
+                const why = unbraced.some(f => covered.has(f)) ? ' \u2014 too little wall across the plan'
+                          : twisted.some(f => covered.has(f)) ? ' \u2014 no lever to resist twist' : '';
+                unsafe.push(say('wall over capacity on floor ' + overloaded.join(', ')
+                                + ' once shear and twist act together' + why,
+                                'add folds, or deepen them \u2014 a thicker wall folds less tightly'));
+            }
+            if (shortWall.length)   unsafe.push(say('not enough wall across the plan on floor ' + shortWall.join(', '),
                                                      'add folds, or deepen them \u2014 a thicker wall folds less tightly'));
-            if (twisted.length)     unsafe.push(say('nothing resists twist on floor ' + twisted.join(', '),
+            if (noLever.length)     unsafe.push(say('nothing resists twist on floor ' + noLever.join(', '),
                                                      'add a fold, or deepen the folds'));
-            if (overloaded.length)  unsafe.push(say('wall over capacity on floor ' + overloaded.join(', ')
-                                                     + ' once shear and twist act together',
-                                                     'deepen the folds, or thicken the wall'));
 
             if (crushed.length)     unsafe.push(say('wall crushed at the base on floor ' + crushed.join(', '),
                                                      'thicken the wall'));
@@ -4004,6 +4072,7 @@
             const [hwA, hwB] = wallAnchors(floorData[0].vertices);
             document.getElementById('val-hwlw').innerText =
                 (numFloors * P.floorH / Math.max(distXZ(hwA, hwB), 0.01)).toFixed(2);
+            foldChecks();
         }
 
         /* =====================================================================
@@ -4116,6 +4185,7 @@
             groundPlane.material.needsUpdate = true;
             document.querySelectorAll('#view-mode button').forEach(b =>
                 b.classList.toggle('on', b.dataset.mode === viewMode));
+            document.getElementById('defl-key').hidden = (viewMode === 'concrete');
             refresh();
         }
         window.setViewMode = setViewMode;
