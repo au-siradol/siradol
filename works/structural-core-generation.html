@@ -350,6 +350,7 @@
                     <div class="group-label">What decides &mdash; share of capacity used</div>
                     <div class="metric-row shows" data-hl="reach"><span>Cantilever reach</span><span id="val-reachL" class="val">&ndash;</span></div>
                     <div class="metric-row shows" data-hl="openend"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Head under the flight above</span><span id="val-head" class="val">&ndash;</span></div>
                     <div class="metric-row shows" data-hl="lateral"><span>Lateral &mdash; shear and twist together</span><span id="val-combined" class="val">&ndash;</span></div>
                     <div class="metric-row shows" data-hl="transfer"><span>Slab under the wall above</span><span id="val-transfer" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Way past the flight</span><span id="val-bypass" class="val">&ndash;</span></div>
@@ -866,6 +867,33 @@
         const STAIR_GOING_MAX  = 0.32;
         const STAIR_HEADROOM   = 2.10;   // clear head under the slab above
         const MAX_FLIGHT_RISERS = 18;    // beyond this a straight flight needs a landing
+        const STAIR_SLAB       = 0.20;   // structural thickness of an open-riser flight
+
+        /* (i) HEAD UNDER THE FLIGHT ABOVE - the thing that hits you first, and the
+           model had no notion of it. xCrit only ever checked head under the SLAB
+           (soffit = floorH - slabT). Climbing storey i, what is overhead is storey
+           i+1's FLIGHT: far lower than the slab, and sloping.
+
+           Two flights of the same pitch running the same way, their centres d apart
+           along the axis, overlap in plan when d < run, and in that overlap the
+           clear height is CONSTANT:
+
+               clear = floorH x (1 - d/run) - STAIR_SLAB
+
+           So there are two safe regimes and a forbidden band between them: end to
+           end (d >= run, no overlap at all) or nearly stacked, with the upper flight
+           already climbed clear (d <= run x (1 - (headroom + t_s)/floorH), which is
+           1.03 m at the default). Between 1.03 m and 4.43 m your head is in it - and
+           `disconnected` tolerates |d - run| up to 40% of run, so d = 2.66 m counted
+           as a properly chained stair while giving 1.00 m of headroom. */
+        function flightClear(idx, k, g, floorH) {
+            if (idx + 1 > numFloors - 2) return Infinity;      // no flight above this one
+            if (!floorData[idx].stairs[k] || !floorData[idx + 1].stairs[k]) return Infinity;
+            const a = stretchOf(idx, k, g.run).tc, b = stretchOf(idx + 1, k, g.run).tc;
+            const d = Math.abs(b - a);
+            if (d >= g.run) return Infinity;                   // they do not overlap in plan
+            return floorH * (1 - d / g.run) - STAIR_SLAB;
+        }
         // A TOLERANCE, not a second gap. The wall-face-to-opening gap is already
         // ROOT_MIN; inflating the slot by another 0.05 m put its inner edge exactly
         // on the wall face, so the "must clear the slot" test sat on a knife-edge
@@ -1835,10 +1863,24 @@
                                          Math.max(need.Vx, need.Vz)),
                         oop: outOfPlane(P, slabT, reach, area, wallLen, i),
                         openEnd: openingEndCheck(slabT, slots, verts),
+                        headClear: Math.min(flightClear(i, 0, g, P.floorH),
+                                            flightClear(i, 1, g, P.floorH)),
                         shear: slabShearCheck(slabT, reach),
                         panel: longestPanel(nodes, straightSpans(i, g.run, below)),
                         escapes: wallEscapesPlate(nodes, verts, P.coreT),
-                        slotsOutside: slots.some(sl => !slotInsidePlate(sl, verts)),
+                        /* (ii) The message says "flight runs off the plate" - so it
+                           has to test the FLIGHT, not the opening. The flight is
+                           longer than its own opening (the opening covers only the
+                           stretch where headroom would be lost), by 0.61 m at the
+                           default, and that overhang sits under solid slab. If the
+                           opening's lower end is within the overhang of the plate
+                           edge, the flight is drawn outside the building - visible
+                           as a blue wireframe in the air, with nothing reporting it,
+                           because slotsOutside only ever looked at the slot.
+                           footprintOnPlate already existed and tests the real thing;
+                           it had never been wired into a check. */
+                        slotsOutside: slots.some(sl => !slotInsidePlate(sl, verts)
+                            || !footprintOnPlate(sl, g, floorData[Math.max(0, i - 1)].vertices)),
                         passage: Math.min(...slots.map(sl => slotPassage(sl, verts))),
                         bypass: Math.min(...slots.map(sl => slotBypass(sl, verts))),
                         approach: Math.min(...slots.map(sl => approachClear(sl, g, floorData[Math.max(0, i - 1)].vertices))),
@@ -1864,7 +1906,8 @@
 
             const escaped = [], slotIssues = [], bearsOnVoid = [], tight = [],
                   severed = [], unbraced = [], cramped = [], twisted = [],
-                  overloaded = [], transferred = [], crushed = [], bent = [], endLoaded = [], sheared = [];
+                  overloaded = [], transferred = [], crushed = [], bent = [], endLoaded = [],
+                  sheared = [], headHit = [];
             const disconnected = new Set();
             for (let i = 0; i < numFloors; i++) {
                 if (floors[i].escapes) escaped.push(i + 1);
@@ -1879,6 +1922,7 @@
                 if (floors[i].shear.vEd > floors[i].shear.cap * CHECK_TOL) sheared.push(i + 1);
                 if (isFinite(floors[i].bypass) && floors[i].bypass < PASSAGE_MIN) severed.push(i + 1);
                 else if (floors[i].passage < PASSAGE_MIN) tight.push(i + 1);
+                if (floors[i].headClear < STAIR_HEADROOM) headHit.push(i + 1);
                 if (isFinite(floors[i].approach) && floors[i].approach < APPROACH_MIN) cramped.push(i + 1);
                 else if (floors[i].passage < PASSAGE_COMFORT) tight.push(i + 1);
                 // the wall of floor i+1 stands on slab i, so it must miss slab i's slots
@@ -1897,7 +1941,7 @@
                 P, floors, maxReach, maxPanel, needT, slabT, escaped,
 
                 slotIssues, bearsOnVoid, tight, severed, stair: g,
-                disconnected: [...disconnected], unbraced, cramped, twisted,
+                disconnected: [...disconnected], unbraced, cramped, twisted, headHit,
                 overloaded, transferred, crushed, bent, endLoaded, sheared,
                 footing: footingCheck(floors[0].base),
 
@@ -1927,6 +1971,10 @@
         let hlKey = null;
         // 2 - a refusal that names itself, drawn in the editor where the eye is
         let refuseNote = '';
+        /* The last accepted move is not a safe fallback - if it was itself illegal
+           the clamp has nothing legal to climb back to. This is the state at
+           pointerdown, which is known good, so an escape becomes impossible. */
+        let dragSafe = null;
         function refuse(note) { refuseNote = note; invalidFlash = 8; }
 
         /* Only the stair's OWN constraints refuse a stair move. The wall's fold
@@ -1935,10 +1983,16 @@
         function stairMoveFault(idx, g, k) {
             const d = floorData[idx], coreT = P_coreT();
             const nodes = getWallNodes(idx);
+            const standsOn = floorData[Math.max(0, idx - 1)].vertices;
             for (let j = 0; j < d.stairs.length; j++) {
                 const who = j === k ? 'this flight' : 'the other flight';
                 const sl = stairSlot(d.stairs[j], g, coreT, nodes, idx, j);
-                if (!slotInsidePlate(sl, d.vertices)) return who + ' would run off the plate';
+                if (!slotInsidePlate(sl, d.vertices)) return who + '\u2019s opening would run off the plate';
+                /* The flight is longer than its own opening, so testing the opening
+                   alone let the FLIGHT hang outside the building - drawn as a blue
+                   wireframe in mid air. It is a hard limit, so the clamp has to know
+                   about it, not just the report. */
+                if (!footprintOnPlate(sl, g, standsOn)) return who + ' would run off the plate';
                 if (slotBypass(sl, d.vertices) < PASSAGE_MIN)
                     return 'no way past ' + who + ' \u2014 needs ' + PASSAGE_MIN.toFixed(2) + ' m';
             }
@@ -2037,14 +2091,17 @@
             });
 
             // two stair slots, one per dwelling, parallel to the division axis
-            st.floors[idx].slots.forEach(sl => {
+            st.floors[idx].slots.forEach((sl, k) => {
                 const bad = !slotInsidePlate(sl, data.vertices) || slotPassage(sl, data.vertices) < PASSAGE_MIN;
+                // amber: legal, but this position leaves the wall too little to fold
+                const tight = !bad && stairRoomTight(idx, k, st.stair, st.P);
                 strokePath(sl.poly, true);
-                editCtx.fillStyle = bad ? 'rgba(211,47,47,0.10)' : 'rgba(0,0,0,0.05)';
+                editCtx.fillStyle = bad ? 'rgba(211,47,47,0.10)'
+                                  : tight ? 'rgba(178,106,0,0.10)' : 'rgba(0,0,0,0.05)';
                 editCtx.fill();
                 editCtx.save();
                 editCtx.setLineDash([4, 3]);
-                editCtx.strokeStyle = bad ? '#d32f2f' : '#555';
+                editCtx.strokeStyle = bad ? '#d32f2f' : tight ? '#b26a00' : '#555';
                 editCtx.lineWidth = 1; editCtx.stroke();
                 editCtx.restore();
                 // open risers, drawn across the flight
@@ -2190,49 +2247,21 @@
 
         function drawStairAid(st, idx) {
             if (idx >= numFloors - 1) return;
-            const g = st.stair, P = st.P;
-            const dragging = dragType === 'stair' || dragType === 'stretch';
-            const only = dragType === 'stair' ? dragIdx
-                       : dragType === 'stretch' ? (dragIdx >> 1) : null;
+            if (dragType !== 'stair' && dragType !== 'stretch') return;
 
-            /* 4 - WHAT THIS STAIR COSTS THE FLOOR ABOVE. Its openings force the wall
+            /* WHAT THIS STAIR COSTS THE FLOOR ABOVE. Its openings force the wall
                of the storey above to run straight across them, so moving a stair
                changes what can be folded on TWO floors. Shown while a stair is being
                moved, which is exactly when that price is being paid. */
-            if (dragging && idx + 1 < numFloors) {
+            if (idx + 1 < numFloors) {
                 const hw = plateHalfWidth(floorData[idx].vertices);
-                blockedBands(idx + 1, P.coreT).forEach(b => {
+                blockedBands(idx + 1, st.P.coreT).forEach(b => {
                     strokePath([axisToXZ(b[0], -hw), axisToXZ(b[1], -hw),
                                 axisToXZ(b[1], hw), axisToXZ(b[0], hw)], true);
                     editCtx.fillStyle = 'rgba(211,47,47,0.055)'; editCtx.fill();
                 });
             }
 
-            for (let k = 0; k < 2; k++) {
-                if (only !== null && only !== k) continue;
-                const tr = stairTrack(idx, k, g, P);
-                if (!tr) continue;
-                const q = t => axisToXZ(t, tr.side * tr.off);
-                // 1 - the track: clear, only just, or impossible
-                for (let i = 0; i < tr.samples.length - 1; i++) {
-                    const worst = Math.min(tr.samples[i].state, tr.samples[i + 1].state);
-                    if (worst === 0) continue;
-                    strokePath([q(tr.samples[i].t), q(tr.samples[i + 1].t)], false);
-                    editCtx.save();
-                    if (worst === 1) { editCtx.setLineDash([2, 2]); editCtx.strokeStyle = 'rgba(178,106,0,0.85)'; }
-                    else editCtx.strokeStyle = 'rgba(14,124,134,0.75)';
-                    editCtx.lineWidth = dragging ? 3.5 : 2.5;
-                    editCtx.stroke(); editCtx.restore();
-                }
-                // 3 - the chained positions, worth aiming at
-                const n = axisNormal();
-                tr.snaps.forEach(t => {
-                    const a = q(t);
-                    strokePath([{ x: a.x - n.x * 0.28, z: a.z - n.z * 0.28 },
-                                { x: a.x + n.x * 0.28, z: a.z + n.z * 0.28 }], false);
-                    editCtx.strokeStyle = 'rgba(14,124,134,0.9)'; editCtx.lineWidth = 1.6; editCtx.stroke();
-                });
-            }
         }
 
         function drawHighlight(st, idx, nodes) {
@@ -2355,77 +2384,22 @@
             return { x: a.x + dx * t, z: a.z + dz * t };
         }
 
-        /* 1 - WHERE MAY THIS STAIR ACTUALLY GO.
-           The page already knew: placeStairsOn sweeps 40 positions and scores every
-           one of them. It just never showed the answer, so dragging a stair was
-           guessing followed by a red flash. Same predicates, swept for the stair in
-           hand with the others held still, classified three ways: clear, only just,
-           and impossible. 24 samples rather than 40 because this runs inside a
-           drag; the geometry is restored afterwards, exactly as placeStairsOn does. */
-        function stairTrack(idx, k, g, P) {
-            if (idx >= numFloors - 1) return null;              // no flight in the roof
+        /* (iii) The track is gone. A hard limit is now something you cannot cross
+           rather than something reported after the fact: the drag clamps, so an
+           illegal position is unreachable. What is left over is the SOFT trade -
+           a position that is legal but leaves the wall too little to fold - and
+           that gets amber on the slot itself, because it is a trade to weigh, not
+           an error to forbid. No new visual vocabulary, and nothing to look up.
+           (The 25-sample sweep the track needed is gone with it; clamping bisects
+           the boundary instead, which is both faster and exact.) */
+        function stairRoomTight(idx, k, g, P) {
+            if (idx >= numFloors - 1) return false;
             const d = floorData[idx], st = d.stairs[k];
-            if (!st) return null;
-            const [A, B] = wallAnchors(d.vertices);
-            const tA = axisParam(A), tB = axisParam(B);
-            const half = Math.min(g.run, Math.max(0.5, (tB - tA) - 2 * FOLD_MIN_GAP)) / 2;
-            const lo = tA + FOLD_MIN_GAP + half, hi = tB - FOLD_MIN_GAP - half;
-            if (hi <= lo) return null;
-            const standsOn = floorData[Math.max(0, idx - 1)].vertices;
-            /* The track has to enforce exactly what the DRAG enforces, or it lies
-               about where you may go. So the pass/fail uses the plain opening, the
-               same as stairMoveFault - and the solver's deliberately longer padded
-               opening (the slab converges thicker afterwards) only downgrades a
-               position to "only just", which is what that state is for. */
-            const gp = padOpening(g, SOLVE_PAD);
-            const st2T = parseFloat(document.getElementById('slabT').value) || 0.4;
-            const keep = st.tc, N = 24, samples = [];
-            for (let i = 0; i <= N; i++) {
-                const t = lo + (hi - lo) * i / N;
-                st.tc = t;
-                const nodes = getWallNodes(idx);
-                /* The wall's own foldability is deliberately NOT tested here. It was
-                   at first, and it made the track almost empty - one legal position
-                   out of 25 on the middle floor - because moving the stretch leaves
-                   the EXISTING folds behind and the wall goes invalid. That is not a
-                   limit on where the stair may go; it is a fold layout that has to
-                   be recomputed, which endDrag now does. The track answers the
-                   question that belongs to the stair: plate, passage, approach. */
-                let state = 2;
-                {
-                    const sl = stairSlot(st, g, P.coreT, nodes, idx, k);
-                    if (!slotInsidePlate(sl, d.vertices)) state = 0;
-                    else if (slotBypass(sl, d.vertices) < PASSAGE_MIN) state = 0;
-                    else {
-                        const by = slotBypass(sl, d.vertices);
-                        const ap = approachClear(sl, g, standsOn);
-                        const pd = stairSlot(st, gp, P.coreT, nodes, idx, k);
-                        /* And the thing that actually bites once legality is not the
-                           problem: how much wall is LEFT to fold. The stretch this
-                           stair reserves, plus the band it casts on the floor above,
-                           eat the length the bracing needs - so the track warns where
-                           a legal position would leave the wall too little to work
-                           with. Measured, not guessed: the foldable spans against
-                           the fold count the lateral demand implies. */
-                        const room = foldableSpans(idx).reduce((a, z) => a + (z[1] - z[0]), 0);
-                        const need = (foldCountForDensity(P, d.vertices, st2T) + 1) * FOLD_MIN_SEG;
-                        if (by < PASSAGE_COMFORT || ap < APPROACH_MIN
-                            || !footprintOnPlate(sl, g, standsOn)
-                            || !slotInsidePlate(pd, d.vertices)
-                            || room < need) state = 1;
-                    }
-                }
-                samples.push({ t, state });
-            }
-            st.tc = keep;
-            // 3 - the positions that keep the flights chained, one run apart
-            const snaps = [];
-            if (idx > 0 && floorData[idx - 1].stairs[k]) {
-                const b = stretchOf(idx - 1, k, g.run).tc;
-                [b + g.run, b - g.run].forEach(t => { if (t > lo && t < hi) snaps.push(t); });
-            }
-            return { lo, hi, samples, snaps, side: st.side,
-                     off: P.coreT / 2 + Math.max(st.gap || ROOT_MIN, ROOT_MIN) + g.width + 0.30 };
+            if (!st) return false;
+            const room = foldableSpans(idx).reduce((a2, z) => a2 + (z[1] - z[0]), 0);
+            const slabTNow = parseFloat(document.getElementById('slabT').value) || 0.4;
+            const need = (foldCountForDensity(P, d.vertices, slabTNow) + 1) * FOLD_MIN_SEG;
+            return room < need;
         }
 
         function canvasPoint(e) {
@@ -2446,7 +2420,12 @@
             for (let k = 0; k < 2; k++) {
                 const r = stretchOf(idx, k, runNow);
                 for (let e = 0; e < 2; e++) {
-                    if (near([r.P0, r.P1][e])) { dragType = 'stretch'; dragIdx = k * 2 + e; return; }
+                    if (near([r.P0, r.P1][e])) {
+                        dragType = 'stretch'; dragIdx = k * 2 + e;
+                        dragSafe = floorData[idx].stairs.map(x => ({
+                            side: x.side, tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap }));
+                        return;
+                    }
                 }
             }
 
@@ -2470,8 +2449,10 @@
             }
             const { P, g } = stairParams();
             const slots = slotsFor(idx, g, P.coreT);
+            const snap = () => { dragSafe = floorData[idx].stairs.map(x => ({
+                side: x.side, tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap })); };
             for (let k = 0; k < slots.length; k++) {
-                if (pointInPolygon(m, slots[k].poly)) { dragType = 'stair'; dragIdx = k; return; }
+                if (pointInPolygon(m, slots[k].poly)) { dragType = 'stair'; dragIdx = k; snap(); return; }
             }
             /* 6 - the strip between the two slots is the wall itself, and clicking
                it used to hit nothing at all. Fall back to the nearer flight, so the
@@ -2479,7 +2460,7 @@
                rectangles with a dead lane down the middle. */
             for (let k = 0; k < slots.length; k++) {
                 if (pointInPolygon(m, inflatedSlot(slots[k], 0.45).poly)) {
-                    dragType = 'stair'; dragIdx = k; return;
+                    dragType = 'stair'; dragIdx = k; snap(); return;
                 }
             }
         });
@@ -2586,13 +2567,39 @@
                 st0.sc = r.sc; st0.ang = r.ang;
                 st0.gap = clamp(across - P_coreT() / 2 - g.width / 2, ROOT_MIN, 2.0);
                 syncStretches(idx, g.run);
-                /* 2 - say WHY. This was one boolean covering five conditions, and
-                   the worst of it was that the OTHER stair failing blocked this drag
-                   with no hint which stair was the problem. */
-                const why = stairMoveFault(idx, g, k);
-                if (why) {
-                    d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
-                    refuse(why);
+                /* Clamp rather than reject. r.tc / st0.gap at entry were legal, so
+                   bisect between there and where the pointer is asking for, and stop
+                   at the last legal point - the limit becomes a stop you can feel.
+                   The reason is still named, so the stop is never mysterious. */
+                const want = { tc: st0.tc, gap: st0.gap };
+                /* gap is undefined until the flight has been dragged once, and it
+                   then resolves to ROOT_MIN inside stairSlot - so that, not the
+                   wanted value, is where the interpolation starts. Starting it at
+                   the wanted gap made f = 0 something other than the entry state,
+                   and the clamp could never climb back out of an illegal offset. */
+                const from = { tc: r.tc,
+                               gap: keepAll[k].gap === undefined ? ROOT_MIN : keepAll[k].gap };
+                const put = f => {
+                    st0.tc = from.tc + (want.tc - from.tc) * f;
+                    st0.gap = from.gap + (want.gap - from.gap) * f;
+                    syncStretches(idx, g.run);
+                };
+                if (stairMoveFault(idx, g, k)) {
+                    const note = stairMoveFault(idx, g, k);
+                    let lo = 0, hi = 1;
+                    for (let step = 0; step < 14; step++) {
+                        const m = (lo + hi) / 2;
+                        put(m);
+                        if (stairMoveFault(idx, g, k)) hi = m; else lo = m;
+                    }
+                    put(lo);
+                    if (stairMoveFault(idx, g, k)) {
+                        d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
+                        if (stairMoveFault(idx, g, k) && dragSafe) {
+                            d.stairs.forEach((x, j) => Object.assign(x, dragSafe[j]));
+                        }
+                    }
+                    refuse(note);
                 }
             } else {
                 const coreT = parseFloat(document.getElementById('coreT').value);
@@ -2675,6 +2682,29 @@
                 }
             }
             refresh();
+
+            /* Last line of defence for a STAIR drag, and it has to come AFTER the
+               refresh: the auto slab thickness is re-derived there, which changes the
+               opening length and so moves the slot under a stair that was legal
+               mid-drag. A flight that cannot be made legal goes back to where it was
+               grabbed rather than being left hanging outside the building.
+
+               Deliberately NOT extended to a stretch drag. I chased one case there
+               four times before reading the measurements properly: dragging the
+               stretch made the design need a thicker slab, a thicker slab lengthens
+               the opening (opening = run - xCrit), and the longer opening no longer
+               fits between the plate ends. The stair never moved. That is a real
+               infeasibility the user created by moving the WALL, and the page already
+               reports it with the right lever - "drag the stairs inward, or lower the
+               storey height". Reverting it would be undoing what they asked for. */
+            if (moved === 'stair' && dragSafe) {
+                const g2 = stairParams().g;
+                if (stairMoveFault(idx, g2, 0) || stairMoveFault(idx, g2, 1)) {
+                    floorData[idx].stairs.forEach((x, j) => Object.assign(x, dragSafe[j]));
+                    refuse('put back \u2014 that would leave the flight outside the building');
+                    refresh();
+                }
+            }
         };
         editCanvas.addEventListener('pointerup', endDrag);
         editCanvas.addEventListener('pointercancel', endDrag);
@@ -3139,6 +3169,14 @@
         const bearMaterial     = new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide });
         const bearEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x2a6fb8 });
         const stairMaterial    = new THREE.LineBasicMaterial({ color: 0x007BFF });
+        /* The flights were reading as blue lines running out through the massing.
+           Measured first: all 164 points of every flight sit inside the plate and
+           inside their own storey, so nothing actually pokes out - the slabs are
+           0.42 opacity and the walls 0.78, and the flights are the only saturated
+           colour in the model, so a flight two storeys down shows straight through
+           the outline above it. The 2D editor already answers this by ghosting the
+           floors you are not editing; the model now does the same. */
+        const stairGhostMaterial = new THREE.LineBasicMaterial({ color: 0x9fb8cc, transparent: true, opacity: 0.5 });
 
         function createExtrusionGroup(poly2D, yB, yT, material, edgeMaterial, holes) {
             if (!poly2D || poly2D.length < 3) return null;
@@ -3202,7 +3240,7 @@
             return new THREE.Line(geo, deflMaterial);
         }
 
-        function stairWireframe(slot, g, yFloor) {
+        function stairWireframe(slot, g, yFloor, mat) {
             const c0 = slot.poly[0], c1 = slot.poly[1];
             let dx = c1.x - c0.x, dz = c1.z - c0.z;
             const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
@@ -3219,7 +3257,7 @@
                 if (seg.dm > 0) pts.push(P(m1, 0, h1), P(m1, g.width, h1));   // nosing / landing edge
                 m = m1; h = h1;
             }
-            return new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), stairMaterial);
+            return new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat || stairMaterial);
         }
 
         function clearGroup(group) {
@@ -3349,8 +3387,10 @@
             }
 
             // flights: the one in storey i rises to the top of slab i
+            const shown = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             for (let i = 0; i < numFloors; i++) {
-                floors[i].slots.forEach(sl => modelGroup.add(stairWireframe(sl, st.stair, i * P.floorH)));
+                const mat = i === shown ? stairMaterial : stairGhostMaterial;
+                floors[i].slots.forEach(sl => modelGroup.add(stairWireframe(sl, st.stair, i * P.floorH, mat)));
             }
 
             bearings.forEach(b => {
@@ -3370,7 +3410,10 @@
         function setUse(id, demand, cap, raw) {
             const el = document.getElementById(id);
             const u = cap > 1e-9 ? demand / cap : Infinity;
-            const head = isFinite(u) ? Math.round(u * 100) + '%' : 'no load path';
+            // a clearance that is badly short gives 1243%, which is noise - the raw
+            // figure beside it is the informative half at that point
+            const head = !isFinite(u) ? 'no load path'
+                       : u > 9.99 ? '\u003e999%' : Math.round(u * 100) + '%';
             el.className = 'val' + (u > CHECK_TOL ? ' bad' : (u > 0.85 ? ' warn' : ''));
             el.innerHTML = '<span class="use">' + head + '</span>'
                          + (raw ? ' <span class="raw">' + raw + '</span>' : '');
@@ -3395,7 +3438,7 @@
             const { P, slabT, capacity, panelLimit, maxReach, maxPanel, floors, escaped,
                     slotIssues, bearsOnVoid, tight, severed, stair, disconnected,
                     unbraced, cramped, twisted, overloaded, transferred, crushed, bent,
-                    endLoaded, sheared, footing } = st;
+                    endLoaded, sheared, footing, headHit } = st;
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const r = floors[idx].reach;
 
@@ -3424,6 +3467,10 @@
             if (isRoof || !oe.worst) setMetric('val-openend', 'no opening in the roof', false);
             else setUse('val-openend', oe.demand, oe.cap,
                         oe.demand.toFixed(0) + ' of ' + oe.cap.toFixed(0) + ' kNm/m');
+            if (!isFinite(fl.headClear))
+                setMetric('val-head', 'the flights do not overlap', false);
+            else setUse('val-head', STAIR_HEADROOM, fl.headClear,
+                        fl.headClear.toFixed(2) + ' of ' + STAIR_HEADROOM.toFixed(2) + ' m clear');
             const cb = fl.comb;
             setUse('val-combined', cb.use, 1, 'worst in ' + cb.governs);
             const tr = fl.transfer;
@@ -3504,6 +3551,8 @@
                                                      'press Place Stairs'));
             if (bearsOnVoid.length) unsafe.push(say('wall of floor ' + bearsOnVoid.join(', ') + ' lands on the opening below',
                                                      'press Place Stairs, or drag the stairs below it along the wall'));
+            if (headHit.length)     unsafe.push(say('head hits the flight above on floor ' + headHit.join(', '),
+                                                     'press Place Stairs, or move them a full run apart'));
             if (unbraced.length)    unsafe.push(say('not enough wall across the plan on floor ' + unbraced.join(', '),
                                                      'thicken the wall, or add folds'));
             if (twisted.length)     unsafe.push(say('nothing resists twist on floor ' + twisted.join(', '),
