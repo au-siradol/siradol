@@ -352,7 +352,7 @@
                     <div class="group-label">What the design implies</div>
                     <div class="metric-row"><span>Base resultant vs the kern</span><span id="val-kern" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Strip footing at 300 kPa</span><span id="val-footing" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Wall slenderness H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Wall H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
                     <div class="metric-row" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
                         <b>Twist is what forces the fold, not shear.</b> A wall segment can only push along its own line, so a dead straight wall has no lever arm about the plan's centre and its torsional capacity is exactly zero &mdash; and Eurocode 8 makes an accidental eccentricity of 5% of the plan mandatory, so there is always a torque to carry. The lateral check solves the storey as a rigid diaphragm in three degrees of freedom, so shear and twist are weighed together on the one wall section rather than reported side by side.
@@ -361,7 +361,8 @@
                         <summary>What is assumed, and what is still not checked</summary>
                         <div>
                         <b>From prSIA 262:2024, with clause numbers in the source:</b> &gamma;_C 1.5 and &gamma;_S 1.15 (2.4.2.6); &tau;_cd = 0.3&radic;f_ck/&gamma;_C = 1.10 MPa and f_sd = 435 MPa (2.4.2.4&ndash;5); f_cd = 20.0 MPa for C 30/37 (Table 8); k_c = 0.55 for a shear panel (4.2.1.7); the compression field taken at 30&deg;, the normal-case minimum (4.3.3.3.3); slab shear without links from eq. 35; wall reinforcement 0.6% vertical and 25% of that horizontal (5.5.4.3, 5.5.4.11), which is what gives the wall's <b>1.13 MPa</b> in-plane shear.<br><br>
-                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind at &gamma; 1.5 and S_d 0.107 for the lowest Swiss seismic zone (both SIA 261, not checked against it); 300 kPa allowable bearing; 25 kN/m&sup3; concrete; residential 2.0 kN/m&sup2;; 1.05 m stair width (Swiss practice &mdash; no published drawing gives this building's figure); 2.10 m headroom.<br><br>
+                        <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is 0.64.<br><br>
+                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 300 kPa allowable bearing (SIA 267); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 1.05 m stair width (Swiss practice &mdash; no published drawing gives this building's figure); 2.10 m headroom.<br><br>
                         <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
                         <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints; anything below the footing's bearing plane.
                         </div>
@@ -435,7 +436,6 @@
         // measure, wall slenderness, which is reported because it always passes.
         function panelGuide(floorH) { return clamp(1.4 * floorH, 2.0, 6.0); }
         function wallSlenderness(floorH, coreT) { return floorH / Math.max(coreT, 0.05); }
-        const SLENDERNESS_LIMIT = 30;
 
         function readParams() {
             return {
@@ -793,7 +793,17 @@
         // q_p is a characteristic value while S_d already carries the behaviour
         // factor, so the two cannot be compared until the wind is factored.
         const WIND_GAMMA     = 1.50;
-        const SEISMIC_SD     = 0.107;  // design spectral acceleration / g, lowest Swiss zone
+        /* Design spectral value, checked out rather than assumed:
+             a_gd = 0,60 m/s2 for zone Z1, the lowest Swiss zone (SIA 261 16.2.1.2)
+             S    = 1,4 for ground class C
+             q    = 2,0 - SIA 262 Table 14 gives q = 2,0 for a NON-DUCTILE
+                    structure reinforced with ductility class B steel, which is the
+                    normal Swiss bar. Non-ductile is the right row here: 4.3.9.4.1
+                    starts the ductile-wall rules at h_w/l_w > 2 and this wall is
+                    0,64, so it cannot be designed as a ductile wall at all.
+                    (q = 1,5 is for class A steel, q = 3,0/4,0 only if ductile.)
+             S_d  = a_gd x S x 2,5 / q = 1,05 m/s2 = 0,107 g   */
+        const SEISMIC_SD     = 0.107;
         /* ===== FROM THE CODE TEXT, prSIA 262:2024 =====
            These were assumed figures until they were checked against the standard.
            Clause numbers are given so each one can be argued with.
@@ -2770,9 +2780,18 @@
                                                           : 'all in compression'), false);
             setMetric('val-footing', footing.width.toFixed(2) + ' m wide, from '
                       + footing.N.toFixed(0) + ' kN/m', false);
+            /* SIA 262 has no slenderness cap for walls: 4.3.7 handles compression
+               members through second-order eccentricities, e_d = e_0d + e_1d + e_2d.
+               So this row states the ratio and why second order is not in play,
+               rather than quoting a limit the code does not contain. */
+            /* lambda = l_0/i = 3,46 H/t for a rectangular section, so H/t of about 8
+               is where lambda reaches the 25-30 at which second order starts to
+               matter. Below that, say so; above it, say it is NOT checked rather
+               than implying it is. */
             const sl = wallSlenderness(P.floorH, P.coreT);
-            setMetric('val-slender', sl.toFixed(1) + ' \u2014 a thickness rule, not \u03bb',
-                      sl > SLENDERNESS_LIMIT);
+            setMetric('val-slender', sl.toFixed(1) + (sl < 8
+                      ? ' \u2014 too stocky for second-order effects'
+                      : ' \u2014 second order not checked (4.3.7)'), sl >= 8);
 
             // Three tiers by consequence: the structure fails, the design does not
             // work, or it is merely worth knowing. Only the first turns the bar red,
