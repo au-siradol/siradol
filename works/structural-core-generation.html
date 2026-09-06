@@ -2647,16 +2647,31 @@
             if (dragType === null) return;
             const moved = dragType, idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             dragType = null; dragIdx = null;
-            /* Moving a stair moves the stretch the wall is built around, so the folds
-               that were there are usually no longer valid. Re-solve that floor rather
-               than refusing the move - the wall follows the stair, which is the way
-               round this building works. */
-            if (moved === 'stair' || moved === 'stretch') {
-                const d = floorData[idx], coreT = P_coreT();
-                const nodes = getWallNodes(idx);
-                if (!isFoldGeometryValid(nodes, coreT) || wallEscapesPlate(nodes, d.vertices, coreT)) {
-                    const { P, g } = stairParams();
-                    d.foldNodes = solveFolds(idx, P, g);
+            /* THE WALL FOLLOWS THE PROGRAMME AND THE ENVELOPE, NOT THE OTHER WAY.
+               Moving a stair moves the stretch the wall is built around; moving a
+               plate corner or a wall end moves the envelope the wall has to fit and
+               the openings it has to miss. In every one of those cases the folds
+               that were there may no longer be valid, and the remedy is purely
+               computational - so re-solve rather than leave the user staring at
+               "press Auto-Fold" for something the page can do itself.
+               Deliberately NOT done for a fold drag: there the user is editing the
+               folds, and re-solving would undo the edit as they made it. Nor is it
+               needed for the fold buttons, which already refuse a placement that
+               would land on the opening below.
+               Every floor is examined, not just the selected one - moving a stair on
+               one floor invalidates the wall of the floor ABOVE, which is what the
+               "lands on the opening below" message is about. */
+            if (moved === 'stair' || moved === 'stretch' || moved === 'vertex' || moved === 'anchor') {
+                const { P, g } = stairParams();
+                const coreT = P_coreT();
+                for (let i = 0; i < numFloors; i++) {
+                    const fd = floorData[i], nodes = getWallNodes(i);
+                    const must = slotsFor(i, g, coreT)
+                        .concat(i > 0 ? slotsFor(i - 1, g, coreT) : []);
+                    const broken = !isFoldGeometryValid(nodes, coreT)
+                        || wallEscapesPlate(nodes, fd.vertices, coreT)
+                        || !wallClearsSlots(generateWallQuads(nodes, coreT, endDirsFor(fd.vertices)), must);
+                    if (broken) fd.foldNodes = solveFolds(i, P, g);
                 }
             }
             refresh();
@@ -3480,9 +3495,15 @@
                                                      'thicken the slab, or pull the plate corners in'));
             if (escaped.length)     unsafe.push(say('wall leaves the plate on floor ' + escaped.join(', '),
                                                      'press Auto-Fold, or widen the plate'));
-            if (st.intrudes)        unsafe.push(say('wall cuts into a stair slot', 'press Auto-Fold on that floor'));
+            /* These two both mean "no fold layout can dodge these openings", and
+               Auto-Fold has ALREADY been tried automatically on any drag that could
+               have caused them - so pointing at it again is advice that cannot work.
+               Verified: Auto-Fold All leaves both standing, Place Stairs clears
+               them, because placement scores the clash with the wall above. */
+            if (st.intrudes)        unsafe.push(say('wall cuts into a stair slot',
+                                                     'press Place Stairs'));
             if (bearsOnVoid.length) unsafe.push(say('wall of floor ' + bearsOnVoid.join(', ') + ' lands on the opening below',
-                                                     'drag that floor\u2019s stairs along the wall'));
+                                                     'press Place Stairs, or drag the stairs below it along the wall'));
             if (unbraced.length)    unsafe.push(say('not enough wall across the plan on floor ' + unbraced.join(', '),
                                                      'thicken the wall, or add folds'));
             if (twisted.length)     unsafe.push(say('nothing resists twist on floor ' + twisted.join(', '),
