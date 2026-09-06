@@ -282,7 +282,7 @@
                         <h3>2D Geometry Editor</h3>
                         <select id="floorIndex" autocomplete="off"></select>
                     </div>
-                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag: &#9632; wall ends &middot; &#9679; folds &middot; stretch ends to tilt &middot; a slot to offset it &middot; plate corners.</p>
+                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag: &#9632; wall ends &middot; &#9679; folds &middot; stretch ends to tilt &middot; plate corners &middot; a slot along the wall, or out from it.<br>The two flights share one line or clear it: drag one a full stretch to part them, back onto the other to pair them.</p>
                     <canvas id="editorCanvas"></canvas>
                     
                     <div class="btn-group">
@@ -394,8 +394,9 @@
                         <div>
                         <b>From prSIA 262:2024, with clause numbers in the source:</b> &gamma;_C 1.5 and &gamma;_S 1.15 (2.4.2.6); &tau;_cd = 0.3&radic;f_ck/&gamma;_C = 1.10 MPa and f_sd = 435 MPa (2.4.2.4&ndash;5); f_cd = 20.0 MPa for C 30/37 (Table 8); k_c = 0.55 for a shear panel (4.2.1.7); the compression field taken at 30&deg;, the normal-case minimum (4.3.3.3.3); slab shear without links from eq. 35; wall reinforcement 0.6% vertical and 25% of that horizontal (5.5.4.3, 5.5.4.11), which is what gives the wall's <b>1.13 MPa</b> in-plane shear.<br><br>
                         <b>The slab follows SIA 262 eq. 103:</b> the tip deflection of the cracked cantilever under the quasi-permanent load, against a/250, with E_cm = k_E&middot;&#8731;f_cm at k_E = 10 000 for alluvial gravel (3.1.2.3.3) and a creep coefficient of 2.5 (&beta;_fc = 2.7 from Table 4; the rest of eq. 13 is read off Figure 2). Bending resistance is A_s = &rho;d at a lever of 0.9d with &rho; = 1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the seismic ones G + 0.3Q, and bearing G + Q.<br><br>
-                        <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is 0.64.<br><br>
-                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 300 kPa allowable bearing (SIA 267); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 1.05 m stair width (Swiss practice &mdash; no published drawing gives this building's figure); 2.10 m headroom.<br><br>
+                        <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is <span id="val-hwlw">&ndash;</span>.<br><br>
+                        <b>Measured off the published plans and the architect's credits:</b> gross floor area <b>420 m&sup2;</b> (Kerez, <i>Credits 1993&ndash;2024</i>) over the three storeys the plans show, so 140 m&sup2; each. The plate is an <b>octagon</b> &mdash; end edge at 0.568 of the full width, straight taper to full width at 0.40 of the length, parallel sides from 0.40 to 0.60, identical on GL, L1 and L2 to within 2% &mdash; which at that area gives <b>18.45 &times; 9.18 m</b>. The stair is 18 treads at 0.0139 of the plate length = 0.256 m, so 19 risers of 0.187 m over a <b>3.55 m</b> storey, a run of <b>4.61 m</b>, and a width of 0.0941 of the plate width = <b>0.86 m</b>. Take the three-storey reading as forced rather than chosen: over four storeys the same tread comes out 0.216 m, which nobody would build. VKF 16-15 cl. 3.2.2 al. 3 places <i>no</i> requirement on a stair inside a dwelling unit, so 0.86 m is this building's figure and not a code minimum &mdash; the 1.2 m escape-route width (cl. 2.4.5 al. 3) applies to a stair serving more than one unit, which this is not.<br><br>
+                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 300 kPa allowable bearing (SIA 267); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 2.10 m headroom.<br><br>
                         <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
                         <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints; anything below the footing's bearing plane.
                         </div>
@@ -424,7 +425,9 @@
 
         let numFloors = 3;
         let floorData = [];
-        let axisEnds = [{ x: 0, z: 0 }, { x: 0, z: 14 }];   // the two facade points the wall runs between
+        // overwritten by seedAxis() before anything reads it; kept only so the
+        // shape of the value is visible at the declaration
+        let axisEnds = [{ x: 0, z: 0 }, { x: 0, z: 18.45 }];
 
         const editCanvas = document.getElementById('editorCanvas');
         const editCtx = editCanvas.getContext('2d');
@@ -784,17 +787,16 @@
 
         function getWallNodes(idx) { return assembleWall(idx, floorData[idx].foldNodes); }
 
+        /* ONE source for the run. This used to carry its own copy of the walk -
+           risers, going, landing, the lot - while the checks read g.run out of
+           stairGeometry. They agreed, but eight call sites assembled the wall from
+           one copy while every check measured the other, and this file has been
+           bitten four times by two copies drifting apart. The run does not depend
+           on the slab, so any slabT would do; the slider is read anyway. */
         function currentRun() {
             const floorH = parseFloat(document.getElementById('floorH').value) || 3.0;
-            const risers = Math.ceil(floorH / STAIR_RISER_MAX);
-            const riser = floorH / risers;
-            const going = clamp(STAIR_BLONDEL - 2 * riser, STAIR_GOING_MIN, STAIR_GOING_MAX);
-            const flights = Math.ceil(risers / MAX_FLIGHT_RISERS);
-            const perFlight = Math.ceil(risers / flights);
-            const landing = Math.max(STAIR_WIDTH, going * 3);
-            let run = 0;
-            for (let k = 0; k < risers - 1; k++) run += ((k + 1) % perFlight === 0) ? landing : going;
-            return run;
+            const slabT = parseFloat(document.getElementById('slabT').value) || 0.30;
+            return stairGeometry(floorH, slabT).run;
         }
 
         function plateHalfWidth(vertices) {
@@ -1054,8 +1056,10 @@
                        k_g = 48/(16 + D_max),  eps_v = f_sd/E_s at level 1
              5.5.4.3   walls: minimum vertical reinforcement 0,6% of the section
              5.5.4.11  walls: horizontal reinforcement at least 25% of the vertical
-             4.3.9.4.1 the ductile-wall rules apply from h_w/l_w > 2; this wall is
-                       9/14 = 0,64, so it is squat and they do not apply    */
+             4.3.9.4.1 the ductile-wall rules apply from h_w/l_w > 2; this wall
+                       is squat, so they do not apply. The ratio is REPORTED,
+                       not typed - it sat in the prose as 9/14 = 0,64 and went
+                       stale the moment the plate was measured               */
         const F_CK    = 30000;         // kN/m2, C 30/37
         const GAMMA_C = 1.5, GAMMA_S = 1.15;
         const F_CD    = 20000;         // kN/m2, Table 8
@@ -2197,6 +2201,42 @@
                 editCtx.fillText('F' + (i + 1), p0.px + 5, p0.pz - 5);
             }
 
+            /* WHAT THE FLOOR BELOW FORBIDS. Two different things, and conflating
+               them is what made this confusing to use:
+
+               - the OPENINGS below, faintly outlined. The wall of this floor
+                 stands on that slab, so it may not land on them.
+               - the BAND those openings forbid, which is wider: bandPad inflates
+                 each one by coreT + STAIR_CLEAR, because a turning wall is thicker
+                 than its own axis line. Drawn separately, because a ghost of the
+                 opening alone would stop the wall a wall-thickness short of the
+                 line you can see, and that reads as the page being broken. */
+            if (idx > 0) (function () {
+                // `data` is declared further down, so read the source directly -
+                // referencing it here would be a temporal dead zone
+                const verts = floorData[idx].vertices;
+                const coreT = st.P.coreT;
+                const half = plateHalfWidth(verts) * 1.6;
+                editCtx.save();
+                blockedBands(idx, coreT).forEach(b => {
+                    const strip = clipPolygon([
+                        axisToXZ(b[0], -half), axisToXZ(b[1], -half),
+                        axisToXZ(b[1], half), axisToXZ(b[0], half)
+                    ], verts);
+                    if (strip.length < 3) return;
+                    strokePath(strip, true);
+                    editCtx.fillStyle = 'rgba(211,47,47,0.055)'; editCtx.fill();
+                    editCtx.setLineDash([2, 3]);
+                    editCtx.strokeStyle = 'rgba(211,47,47,0.30)'; editCtx.lineWidth = 1; editCtx.stroke();
+                });
+                editCtx.setLineDash([1, 3]);
+                st.floors[idx - 1].slots.forEach(sl => {
+                    strokePath(sl.poly, true);
+                    editCtx.strokeStyle = 'rgba(150,150,150,0.75)'; editCtx.lineWidth = 1; editCtx.stroke();
+                });
+                editCtx.restore();
+            })();
+
             // division axis - the fixed line the wall ends are locked to
             (function () {
                 const p0 = axisPoint(), u = axisDir(), L = 200;
@@ -2648,7 +2688,7 @@
 
                 if (floorData.some(fl => !polygonSimple(fl.vertices))) {
                     floorData.forEach((fl, k) => fl.vertices.forEach((w, m) => { w.x = before[k][m].x; w.z = before[k][m].z; }));
-                    invalidFlash = 1;
+                    refuse('put back \u2014 that corner would fold the plate over itself');
                 }
                 /* The wall ends are the axis crossed with the plate boundary, so the
                    WALL already follows a dragged corner - but the two draggable
@@ -2664,7 +2704,8 @@
                 axisEnds[dragIdx] = nearestOnPolygon(target, floorData[0].vertices);
                 if (distXZ(axisEnds[0], axisEnds[1]) < MIN_DEPTH) {
                     axisEnds[dragIdx] = keep;
-                    invalidFlash = 1;
+                    refuse('put back \u2014 the wall would be under '
+                           + MIN_DEPTH.toFixed(2) + ' m end to end');
                 }
             } else if (dragType === 'stretch') {
                 // hold the far end and aim the near one: one gesture slides,
@@ -2777,7 +2818,7 @@
                         const toLow = Math.abs(t - sg.t0), toHigh = Math.abs(sg.t1 - t);
                         t = toLow <= toHigh ? sg.t0 - FOLD_MIN_GAP : sg.t1 + FOLD_MIN_GAP;
                         t = clamp(t, tA + FOLD_MIN_GAP, tB - FOLD_MIN_GAP);
-                        invalidFlash = 1;
+                        refuse('pushed clear \u2014 a fold cannot sit in the stretch a stair reserves');
                     }
                 }
                 const maxAmp = FOLD_MAX_AMP_RATIO * plateHalfWidth(d.vertices);
@@ -2802,7 +2843,7 @@
                         if (fits()) lo = mid; else hi = mid;
                     }
                     put(lo);
-                    invalidFlash = 1;
+                    refuse('stopped \u2014 any further and the wall leaves the plate');
                 }
             }
             refresh();
@@ -3046,14 +3087,16 @@
         function addFold() {
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const more = foldPlus(idx, floorData[idx].foldNodes);
-            if (more) floorData[idx].foldNodes = more; else invalidFlash = 1;
+            if (more) floorData[idx].foldNodes = more;
+            else refuse('no room for another fold \u2014 the openings leave no straight run of '
+                        + FOLD_MIN_SEG.toFixed(2) + ' m to turn in');
             refresh();
         }
 
         function removeFold() {
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const d = floorData[idx];
-            if (!d.foldNodes.length) { invalidFlash = 1; refresh(); return; }
+            if (!d.foldNodes.length) { refuse('nothing to remove \u2014 this wall is already straight'); refresh(); return; }
             const zones = foldZones(idx, currentRun()).zones;
             const inWall = t => zones.some(z => t > z[0] + 1e-6 && t < z[1] - 1e-6);
 
@@ -3070,7 +3113,8 @@
                     if (a > 1e-3 && a < least) { least = a; k = i; }
                 });
             }
-            if (k < 0) { invalidFlash = 1; refresh(); return; }   // only pins left
+            // only pins left: nodes the stair openings require, not folds you chose
+            if (k < 0) { refuse('only the folds the stair openings require are left'); refresh(); return; }
             d.foldNodes.splice(k, 1);
             refresh();
         }
@@ -3956,6 +4000,10 @@
             }
             const lead = unsafe[0] || broken[0] || null;
             setMetric('val-gov', lead ? lead.split('  →  ')[1] : 'nothing binding', unsafe.length > 0);
+            // h_w/l_w, reported so the squat-wall claim in the notes cannot go stale
+            const [hwA, hwB] = wallAnchors(floorData[0].vertices);
+            document.getElementById('val-hwlw').innerText =
+                (numFloors * P.floorH / Math.max(distXZ(hwA, hwB), 0.01)).toFixed(2);
         }
 
         /* =====================================================================
