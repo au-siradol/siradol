@@ -272,7 +272,7 @@
                         <button class="action-btn" onclick="addFold()">+ Fold</button>
                         <button class="action-btn" onclick="removeFold()">&minus; Fold</button>
                         <button class="action-btn" onclick="autoPlaceStairs()">Stairs</button>
-                        <button class="action-btn" style="color:#999;" onclick="location.reload()">Reset</button>
+                        <button class="action-btn" onclick="resetDesign()">Reset</button>
                     </div>
                     <div class="btn-group" style="margin-top:5px;">
                         <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeWall()">Auto-Fold Floor</button>
@@ -1921,21 +1921,29 @@
             { x: -4.59, z: 11.07 },
             { x: -4.59, z:  7.38 }
         ];
-        for (let i = 0; i < 8; i++) {
-            floorData.push({
-                vertices: PLATE.map(v => ({ x: v.x, z: v.z, edge: v.edge || null })),
-                foldNodes: [],
-                stairs: [{ side: 1, tc: undefined, sc: 0, ang: 0, gap: undefined },
-                         { side: -1, tc: undefined, sc: 0, ang: 0, gap: undefined }],
-                stretch: undefined
-            });
+        // Named, because Reset re-seeds in memory rather than reloading: a reload
+        // hands the browser a chance to restore form state, and it throws away the
+        // camera the user has just aimed.
+        function seedFloors() {
+            for (let i = 0; i < 8; i++) {
+                floorData[i] = {
+                    vertices: PLATE.map(v => ({ x: v.x, z: v.z, edge: v.edge || null })),
+                    foldNodes: [],
+                    stairs: [{ side: 1, tc: undefined, sc: 0, ang: 0, gap: undefined },
+                             { side: -1, tc: undefined, sc: 0, ang: 0, gap: undefined }],
+                    stretch: undefined
+                };
+            }
         }
 
-        (function seedAxis() {
+        function seedAxis() {
             const fz = PLATE.filter(v => v.edge === 'front'), bz = PLATE.filter(v => v.edge === 'back');
             const mid = a => ({ x: a.reduce((t, v) => t + v.x, 0) / a.length, z: a[0].z });
             axisEnds = [mid(fz), mid(bz)];
-        })();
+        }
+
+        seedFloors();
+        seedAxis();
 
         let seedPending = true;   // solveFolds is defined below; seeded on load
 
@@ -3179,8 +3187,39 @@
         // flights actually chain into a stair.
         // Each stair carries its own straight stretch, so this picks one position
         // per stair - stair 0 first, then stair 1 with stair 0 already placed.
-        function placeStairsOn(i, P, gIn) {
-            if (i >= numFloors - 1) return;                // roof slab, no opening
+        /* THE CHAIN HAS A DIRECTION, AND IT BELONGS TO THE CHAIN.
+           Scoring |tc - below| against the pitch gave + pitch and - pitch exactly
+           the same score, so the direction fell out of whichever local term broke
+           the tie and the stair reversed storey by storey. That is a switchback;
+           the published plans march one way. Both directions are now solved and
+           the cheaper kept - two passes of 41 samples per stair.
+
+           This is a choice about the PROGRAMME, not the structure: it moves the
+           openings, which moves the fold layout, but it changes no capacity, load
+           or check. Where a march cannot fit at all - five storeys want
+           2 x 0.80 + 4.61 + 3 x 5.47 = 22.62 m of an 18.45 m wall - the run simply
+           cannot reach and `disconnected` says so, which is the honest outcome.
+
+           The CHECK stays direction-blind on purpose. A switchback is a perfectly
+           good stair, so a hand-dragged one has to stay legal; marching is what
+           the precedent does, so it is what auto placement reproduces. */
+        function placeChain(P, g) {
+            const snap = () => floorData.map(d => d.stairs.map(x => Object.assign({}, x)));
+            const put = st => floorData.forEach((d, i) =>
+                d.stairs.forEach((x, k) => Object.assign(x, st[i][k])));
+            const start = snap();
+            let best = null;
+            for (const dir of [1, -1]) {
+                put(start);
+                let cost = 0;
+                for (let i = 0; i < numFloors; i++) cost += placeStairsOn(i, P, g, dir);
+                if (best === null || cost < best.cost) best = { cost, state: snap() };
+            }
+            put(best.state);
+        }
+
+        function placeStairsOn(i, P, gIn, dir) {
+            if (i >= numFloors - 1) return 0;              // roof slab, no opening
             const g = padOpening(gIn, SOLVE_PAD);
             const verts = floorData[i].vertices;
             const standsOn = floorData[Math.max(0, i - 1)].vertices;
@@ -3189,7 +3228,7 @@
             const end = stretchEndMin();
             const half = Math.min(g.run, Math.max(0.5, (tB - tA) - 2 * end)) / 2;
             const lo = tA + end + half, hi = tB - end - half;
-            if (hi <= lo) return;
+            if (hi <= lo) return 0;
 
             const above = i < numFloors - 1
                 ? generateWallQuads(getWallNodes(i + 1), P.coreT, endDirsFor(floorData[i + 1].vertices)) : [];
@@ -3197,6 +3236,7 @@
             // auto placement hands back the hand-tilted stretches too
             floorData[i].stairs.forEach(st => { st.sc = 0; st.ang = 0; st.gap = undefined; });
 
+            let total = 0;
             floorData[i].stairs.forEach((st, k) => {
                 const below = i > 0 && floorData[i - 1].stairs[k]
                     ? floorData[i - 1].stairs[k].tc : undefined;
@@ -3216,18 +3256,24 @@
                     const app    = inside ? approachClear(sl, g, standsOn) : 0;
                     const clash  = above.length ? wallIntoSlots(above, [sl]) : 0;
 
-                    // aim a full pitch from the flight below; short of it the two
-                    // overlap and you hit your head, long of it is only a longer
-                    // walk - so the two sides are not weighed alike
-                    const d = below === undefined ? g.pitch : Math.abs(tc - below);
-                    const step = d < g.pitch ? (g.pitch - d) * 3 : (d - g.pitch);
+                    /* Aim a full pitch from the flight below, SIGNED. Short of a
+                       pitch either way the flights overlap and you hit your head;
+                       past it is only a longer walk; the right distance the WRONG
+                       way is what used to cost nothing at all. Two pitches is what
+                       reversing costs now - heavy, but reachable, so a chain that
+                       cannot march still finds its best available answer. */
+                    const want = dir * g.pitch;
+                    const d = below === undefined ? want : tc - below;
+                    const over = Math.abs(d) - g.pitch;
+                    const step = over < 0 ? -over * 3
+                               : (d * dir < 0 ? over + g.pitch * 2 : over);
                     // A marching stair has to start at one end. Every flight above
-                    // this one still needs its own pitch of wall, so placing floor
-                    // by floor from the middle outwards dooms the upper floors
-                    // before they are reached - they end up clamped, off pitch, and
-                    // with no wall left to fold.
+                    // this one still needs its own pitch of wall ON THE MARCHING
+                    // SIDE, so placing floor by floor from the middle outwards
+                    // dooms the upper floors before they are reached - clamped, off
+                    // pitch, and with no wall left to fold.
                     const chain = Math.max(0, numFloors - 2 - i) * g.pitch;
-                    const march = Math.max(0, chain - Math.max(hi - tc, tc - lo));
+                    const march = Math.max(0, chain - (dir > 0 ? hi - tc : tc - lo));
                     // Share the stretch outright or clear it: a partial overlap is
                     // not a wall. BOTH edges of the band are legal, so the penalty
                     // peaks in the middle of it instead of at one end.
@@ -3246,8 +3292,10 @@
                     if (score < bestScore) { bestScore = score; best = tc; }
                 }
                 st.tc = bestClear ? bestClear.tc : (best !== null ? best : keep);
+                total += bestClear ? bestClear.score : bestScore;
             });
             syncStretches(i, g.run, 1, false);
+            return total;
         }
 
 
@@ -3275,7 +3323,7 @@
             // solves against a stale slab.
             const step = () => {
                 const { P, g } = stairParams();
-                if (!stairsManual) for (let i = 0; i < numFloors; i++) placeStairsOn(i, P, g);
+                if (!stairsManual) placeChain(P, g);
                 for (let i = 0; i < numFloors; i++) floorData[i].foldNodes = solveFolds(i, P, g);
                 refresh();
             };
@@ -3912,34 +3960,53 @@
         window.optimizeAll = optimizeAll;
         window.autoPlaceStairs = autoPlaceStairs;
 
+        /* THE DEFAULT STATE IS THE BUILDING. One definition of it, used both on
+           load and by Reset: the measured plate, the wall on the measured axis,
+           no hand-placed folds or flights, and every control back to its markup
+           default - 3 storeys, 3.55 m, T_c 0.43 m, which is Witikon.
+
+           Browsers restore form state across a reload, and every control here
+           feeds the solver, so a restored value made the seeded design depend on
+           the last visit: consecutive loads landed on different walls, one amber
+           and one UNSAFE. Resetting only T_s was not enough. Reset therefore
+           re-seeds in memory instead of reloading - it also keeps the camera the
+           user has just aimed, which a reload throws away. */
+        function resetDesign() {
+            ['floors', 'floorH', 'coreT', 'slabT'].forEach(id => {
+                const el = document.getElementById(id);
+                el.value = el.defaultValue;
+            });
+            ['slabAuto', 'uniformPlate'].forEach(id => {
+                const el = document.getElementById(id);
+                el.checked = el.defaultChecked;
+            });
+            numFloors = parseInt(document.getElementById('floors').value) || 3;
+            seedFloors();
+            seedAxis();
+            stairsManual = false;
+            refuseNote = ''; invalidFlash = 0;
+            dragType = null; dragIdx = null; dragSafe = null;
+            document.getElementById('val-floors').innerText = numFloors;
+            document.getElementById('val-floorH').innerText =
+                parseFloat(document.getElementById('floorH').value).toFixed(2) + ' m';
+            document.getElementById('val-coreT').innerText =
+                parseFloat(document.getElementById('coreT').value).toFixed(2) + ' m';
+            document.getElementById('floorIndex').value = '0';
+            updateFloorDropdown();
+            resolveAll();                // refreshes and fits on its own
+        }
+        window.resetDesign = resetDesign;
+
         window.addEventListener('load', () => {
             ensureCanvasSize(editCanvas);
-            document.getElementById('val-coreT').innerText = parseFloat(document.getElementById('coreT').value).toFixed(2) + ' m';
-            document.getElementById('val-floorH').innerText = parseFloat(document.getElementById('floorH').value).toFixed(2) + ' m';
             updateFloorDropdown();
             if (seedPending) {
                 seedPending = false;
-                /* Browsers restore form state across a reload, and every control
-                   here feeds the solver - so a restored value makes the seeded
-                   design depend on the last visit. Resetting only T_s was not
-                   enough: consecutive loads still landed on different walls, one
-                   amber and one UNSAFE. A study page has to open in a defined
-                   state, so put every control back to its markup default. */
-                ['floors', 'floorH', 'coreT', 'slabT'].forEach(id => {
-                    const el = document.getElementById(id);
-                    el.value = el.defaultValue;
-                });
-                ['slabAuto', 'uniformPlate'].forEach(id => {
-                    const el = document.getElementById(id);
-                    el.checked = el.defaultChecked;
-                });
-                numFloors = parseInt(document.getElementById('floors').value) || 3;
-                document.getElementById('val-floors').innerText = numFloors;
-                document.getElementById('floorIndex').value = '0';
-                updateFloorDropdown();
-                resolveAll();
-                return;                  // resolveAll refreshes and fits on its own
+                resetDesign();
+                return;
             }
+            document.getElementById('val-coreT').innerText = parseFloat(document.getElementById('coreT').value).toFixed(2) + ' m';
+            document.getElementById('val-floorH').innerText = parseFloat(document.getElementById('floorH').value).toFixed(2) + ' m';
             refresh();
             fitCamera();
         });
