@@ -318,7 +318,7 @@
                     <div style="margin-top:6px; color:#111;"><b>Click a check row</b> on the right to show what it measures here.</div>
                     <div style="margin-top:8px;"><b>In the model:</b><br>
                         <span style="display:inline-block; width:10px; height:6px; background:rgba(208,106,60,0.35); margin-right:5px; vertical-align:middle;"></span> a storey warms only past 70% of its lateral capacity &mdash; the house stays white until one is actually working<br>
-                        <span style="display:inline-block; width:12px; height:1px; background:#8a8580; margin-right:5px; vertical-align:middle;"></span> the slab edge where it ends up, at &times;25 &mdash; the flat slab above it is the undeformed reference
+                        <span style="display:inline-block; width:12px; height:2px; background:linear-gradient(to right, #0e7c86 60%, #b26a00 60%); margin-right:5px; vertical-align:middle;"></span> the slab edge where it ends up, at &times;25, warming towards its own a/250 &mdash; the flat slab above is the undeformed reference
                     </div>
                 </div>
             </div>
@@ -2925,7 +2925,25 @@
         }
         const wallEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x9a9a9a });
         const floorMaterial    = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
-        const deflMaterial     = new THREE.LineBasicMaterial({ color: 0x8a8580, transparent: true, opacity: 0.85 });
+        /* The deflected edge is coloured ALONG ITS LENGTH by how close that point
+           is to its own a/250 limit - the same idea as the wall's line weight, so
+           the line is not merely visible but tells you which stretch of edge is at
+           its limit. A calm teal at rest keeps it distinct from the wall's blue and
+           from the red axis; it warms through amber and goes red past the limit.
+           Vertex colours, because a Line takes one material and linewidth is
+           ignored in WebGL, so colour is the only lever there is. */
+        const deflMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
+        /* Three steps, not a ramp. A continuous blend from teal to amber spends
+           most of its range in muddy olive, which is the opposite of legible - and
+           these are the same three steps the wall already uses, so the two read as
+           one language. Teal rather than the wall's blue keeps a serviceability
+           reading distinct from a strength one. */
+        const DEFL_COOL = new THREE.Color(0x0e7c86);   // comfortable
+        const DEFL_WARM = new THREE.Color(0xb26a00);   // past 85% of a/250
+        const DEFL_OVER = new THREE.Color(0xd32f2f);   // past a/250
+        function deflColour(u) {
+            return u >= 1 ? DEFL_OVER : u > 0.85 ? DEFL_WARM : DEFL_COOL;
+        }
         const floorEdgeMaterial= new THREE.LineBasicMaterial({ color: 0xbcbcbc });
         const bearMaterial     = new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide });
         const bearEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x2a6fb8 });
@@ -2964,7 +2982,10 @@
         const DEFL_EXAG = 25;
         function deflectedEdge(fl, P, slabT, yTop) {
             const verts = fl.verts, nodes = fl.nodes;
-            const pts = [];
+            const pts = [], cols = [];
+            // colour on the SAME measure the Cantilever reach row reports, so the
+            // steps in the model and the percentage in the column agree
+            const cap = cantileverCapacity(slabT);
             for (let i = 0; i < verts.length; i++) {
                 const a = verts[i], b = verts[(i + 1) % verts.length];
                 const seg = distXZ(a, b), n = Math.max(2, Math.ceil(seg / 0.4));
@@ -2978,11 +2999,15 @@
                     const rho = slabSteelFor(gravityDesign(slabT) * r * r / 2, slabT);
                     const w = cantileverDeflection(slabT, r, rho);
                     pts.push(new THREE.Vector3(p.x, yTop - w * DEFL_EXAG, p.z));
+                    cols.push(deflColour(r / Math.max(cap, 1e-6)));
                 }
             }
             if (pts.length < 3) return null;
-            pts.push(pts[0].clone());
+            pts.push(pts[0].clone()); cols.push(cols[0]);
             const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            const ca = new Float32Array(cols.length * 3);
+            cols.forEach((c, i) => { ca[i * 3] = c.r; ca[i * 3 + 1] = c.g; ca[i * 3 + 2] = c.b; });
+            geo.setAttribute('color', new THREE.BufferAttribute(ca, 3));
             return new THREE.Line(geo, deflMaterial);
         }
 
