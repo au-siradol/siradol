@@ -1925,6 +1925,25 @@
            below, 100%" becomes "here is where it steps, and here is the node".
            No new controls: the column that reports is the column that points. */
         let hlKey = null;
+        // 2 - a refusal that names itself, drawn in the editor where the eye is
+        let refuseNote = '';
+        function refuse(note) { refuseNote = note; invalidFlash = 8; }
+
+        /* Only the stair's OWN constraints refuse a stair move. The wall's fold
+           layout is not one of them: it is recomputed when the drag ends, so a fold
+           sitting in the way is not a reason to pin the stair. */
+        function stairMoveFault(idx, g, k) {
+            const d = floorData[idx], coreT = P_coreT();
+            const nodes = getWallNodes(idx);
+            for (let j = 0; j < d.stairs.length; j++) {
+                const who = j === k ? 'this flight' : 'the other flight';
+                const sl = stairSlot(d.stairs[j], g, coreT, nodes, idx, j);
+                if (!slotInsidePlate(sl, d.vertices)) return who + ' would run off the plate';
+                if (slotBypass(sl, d.vertices) < PASSAGE_MIN)
+                    return 'no way past ' + who + ' \u2014 needs ' + PASSAGE_MIN.toFixed(2) + ' m';
+            }
+            return '';
+        }
         let stairsManual = false;   // set once a flight has been placed by hand
 
         function ensureCanvasSize(canvas) {
@@ -2068,6 +2087,7 @@
                 })();
             });
 
+            drawStairAid(st, idx);
             drawHighlight(st, idx, nodes);
 
             /* THE WALL DRAWS ITS OWN UTILISATION. Each segment is weighted and
@@ -2156,7 +2176,63 @@
                 editCtx.beginPath(); editCtx.arc(p.px, p.pz, 3, 0, Math.PI * 2); editCtx.fill();
             }
 
-            if (invalidFlash > 0) { invalidFlash--; setTimeout(() => refresh(), 160); }
+            if (refuseNote && invalidFlash > 0) {
+                editCtx.font = 'bold 10px Helvetica';
+                editCtx.fillStyle = 'rgba(211,47,47,0.95)';
+                editCtx.fillText(refuseNote, 8, editCanvas.height - 8);
+            }
+            if (invalidFlash > 0) {
+                invalidFlash--;
+                if (invalidFlash === 0) refuseNote = '';
+                setTimeout(() => refresh(), 160);
+            }
+        }
+
+        function drawStairAid(st, idx) {
+            if (idx >= numFloors - 1) return;
+            const g = st.stair, P = st.P;
+            const dragging = dragType === 'stair' || dragType === 'stretch';
+            const only = dragType === 'stair' ? dragIdx
+                       : dragType === 'stretch' ? (dragIdx >> 1) : null;
+
+            /* 4 - WHAT THIS STAIR COSTS THE FLOOR ABOVE. Its openings force the wall
+               of the storey above to run straight across them, so moving a stair
+               changes what can be folded on TWO floors. Shown while a stair is being
+               moved, which is exactly when that price is being paid. */
+            if (dragging && idx + 1 < numFloors) {
+                const hw = plateHalfWidth(floorData[idx].vertices);
+                blockedBands(idx + 1, P.coreT).forEach(b => {
+                    strokePath([axisToXZ(b[0], -hw), axisToXZ(b[1], -hw),
+                                axisToXZ(b[1], hw), axisToXZ(b[0], hw)], true);
+                    editCtx.fillStyle = 'rgba(211,47,47,0.055)'; editCtx.fill();
+                });
+            }
+
+            for (let k = 0; k < 2; k++) {
+                if (only !== null && only !== k) continue;
+                const tr = stairTrack(idx, k, g, P);
+                if (!tr) continue;
+                const q = t => axisToXZ(t, tr.side * tr.off);
+                // 1 - the track: clear, only just, or impossible
+                for (let i = 0; i < tr.samples.length - 1; i++) {
+                    const worst = Math.min(tr.samples[i].state, tr.samples[i + 1].state);
+                    if (worst === 0) continue;
+                    strokePath([q(tr.samples[i].t), q(tr.samples[i + 1].t)], false);
+                    editCtx.save();
+                    if (worst === 1) { editCtx.setLineDash([2, 2]); editCtx.strokeStyle = 'rgba(178,106,0,0.85)'; }
+                    else editCtx.strokeStyle = 'rgba(14,124,134,0.75)';
+                    editCtx.lineWidth = dragging ? 3.5 : 2.5;
+                    editCtx.stroke(); editCtx.restore();
+                }
+                // 3 - the chained positions, worth aiming at
+                const n = axisNormal();
+                tr.snaps.forEach(t => {
+                    const a = q(t);
+                    strokePath([{ x: a.x - n.x * 0.28, z: a.z - n.z * 0.28 },
+                                { x: a.x + n.x * 0.28, z: a.z + n.z * 0.28 }], false);
+                    editCtx.strokeStyle = 'rgba(14,124,134,0.9)'; editCtx.lineWidth = 1.6; editCtx.stroke();
+                });
+            }
         }
 
         function drawHighlight(st, idx, nodes) {
@@ -2279,6 +2355,79 @@
             return { x: a.x + dx * t, z: a.z + dz * t };
         }
 
+        /* 1 - WHERE MAY THIS STAIR ACTUALLY GO.
+           The page already knew: placeStairsOn sweeps 40 positions and scores every
+           one of them. It just never showed the answer, so dragging a stair was
+           guessing followed by a red flash. Same predicates, swept for the stair in
+           hand with the others held still, classified three ways: clear, only just,
+           and impossible. 24 samples rather than 40 because this runs inside a
+           drag; the geometry is restored afterwards, exactly as placeStairsOn does. */
+        function stairTrack(idx, k, g, P) {
+            if (idx >= numFloors - 1) return null;              // no flight in the roof
+            const d = floorData[idx], st = d.stairs[k];
+            if (!st) return null;
+            const [A, B] = wallAnchors(d.vertices);
+            const tA = axisParam(A), tB = axisParam(B);
+            const half = Math.min(g.run, Math.max(0.5, (tB - tA) - 2 * FOLD_MIN_GAP)) / 2;
+            const lo = tA + FOLD_MIN_GAP + half, hi = tB - FOLD_MIN_GAP - half;
+            if (hi <= lo) return null;
+            const standsOn = floorData[Math.max(0, idx - 1)].vertices;
+            /* The track has to enforce exactly what the DRAG enforces, or it lies
+               about where you may go. So the pass/fail uses the plain opening, the
+               same as stairMoveFault - and the solver's deliberately longer padded
+               opening (the slab converges thicker afterwards) only downgrades a
+               position to "only just", which is what that state is for. */
+            const gp = padOpening(g, SOLVE_PAD);
+            const st2T = parseFloat(document.getElementById('slabT').value) || 0.4;
+            const keep = st.tc, N = 24, samples = [];
+            for (let i = 0; i <= N; i++) {
+                const t = lo + (hi - lo) * i / N;
+                st.tc = t;
+                const nodes = getWallNodes(idx);
+                /* The wall's own foldability is deliberately NOT tested here. It was
+                   at first, and it made the track almost empty - one legal position
+                   out of 25 on the middle floor - because moving the stretch leaves
+                   the EXISTING folds behind and the wall goes invalid. That is not a
+                   limit on where the stair may go; it is a fold layout that has to
+                   be recomputed, which endDrag now does. The track answers the
+                   question that belongs to the stair: plate, passage, approach. */
+                let state = 2;
+                {
+                    const sl = stairSlot(st, g, P.coreT, nodes, idx, k);
+                    if (!slotInsidePlate(sl, d.vertices)) state = 0;
+                    else if (slotBypass(sl, d.vertices) < PASSAGE_MIN) state = 0;
+                    else {
+                        const by = slotBypass(sl, d.vertices);
+                        const ap = approachClear(sl, g, standsOn);
+                        const pd = stairSlot(st, gp, P.coreT, nodes, idx, k);
+                        /* And the thing that actually bites once legality is not the
+                           problem: how much wall is LEFT to fold. The stretch this
+                           stair reserves, plus the band it casts on the floor above,
+                           eat the length the bracing needs - so the track warns where
+                           a legal position would leave the wall too little to work
+                           with. Measured, not guessed: the foldable spans against
+                           the fold count the lateral demand implies. */
+                        const room = foldableSpans(idx).reduce((a, z) => a + (z[1] - z[0]), 0);
+                        const need = (foldCountForDensity(P, d.vertices, st2T) + 1) * FOLD_MIN_SEG;
+                        if (by < PASSAGE_COMFORT || ap < APPROACH_MIN
+                            || !footprintOnPlate(sl, g, standsOn)
+                            || !slotInsidePlate(pd, d.vertices)
+                            || room < need) state = 1;
+                    }
+                }
+                samples.push({ t, state });
+            }
+            st.tc = keep;
+            // 3 - the positions that keep the flights chained, one run apart
+            const snaps = [];
+            if (idx > 0 && floorData[idx - 1].stairs[k]) {
+                const b = stretchOf(idx - 1, k, g.run).tc;
+                [b + g.run, b - g.run].forEach(t => { if (t > lo && t < hi) snaps.push(t); });
+            }
+            return { lo, hi, samples, snaps, side: st.side,
+                     off: P.coreT / 2 + Math.max(st.gap || ROOT_MIN, ROOT_MIN) + g.width + 0.30 };
+        }
+
         function canvasPoint(e) {
             const rect = editCanvas.getBoundingClientRect();
             return fromPx((e.clientX - rect.left) * (editCanvas.width / rect.width),
@@ -2323,6 +2472,15 @@
             const slots = slotsFor(idx, g, P.coreT);
             for (let k = 0; k < slots.length; k++) {
                 if (pointInPolygon(m, slots[k].poly)) { dragType = 'stair'; dragIdx = k; return; }
+            }
+            /* 6 - the strip between the two slots is the wall itself, and clicking
+               it used to hit nothing at all. Fall back to the nearer flight, so the
+               whole band around the stair is grabbable rather than two thin
+               rectangles with a dead lane down the middle. */
+            for (let k = 0; k < slots.length; k++) {
+                if (pointInPolygon(m, inflatedSlot(slots[k], 0.45).poly)) {
+                    dragType = 'stair'; dragIdx = k; return;
+                }
             }
         });
 
@@ -2396,16 +2554,10 @@
                 st0.tc = axisParam(mid); st0.sc = axisSide(mid);
                 st0.ang = Math.atan2(dirx * nn.x + dirz * nn.z, dirx * u.x + dirz * u.z);
                 syncStretches(idx, g.run);
-                const nodes = getWallNodes(idx);
-                const bad = !isFoldGeometryValid(nodes, P_coreT())
-                         || wallEscapesPlate(nodes, d.vertices, P_coreT())
-                         || d.stairs.some((stx, j) => {
-                                const sl = stairSlot(stx, g, P_coreT(), nodes, idx, j);
-                                return !slotInsidePlate(sl, d.vertices) || slotBypass(sl, d.vertices) < PASSAGE_MIN;
-                            });
-                if (bad) {
+                const why = stairMoveFault(idx, g, k);
+                if (why) {
                     d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
-                    invalidFlash = 1;
+                    refuse(why);
                 }
             } else if (dragType === 'stair') {
                 // along the stretch slides it; across it sets how far the flight
@@ -2421,19 +2573,26 @@
                 const keepAll = d.stairs.map(x => ({ tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap }));
                 const u = axisDir();
                 st0.tc = r.tc + along * (r.d.x * u.x + r.d.z * u.z);
+                /* 3 - snap onto the position that keeps the flights chained. One run
+                   from the floor below is the only spacing at which a flight arrives
+                   where the next departs, so it is worth pulling towards rather than
+                   leaving the user to find it and a check to complain afterwards. */
+                if (idx > 0 && floorData[idx - 1].stairs[k]) {
+                    const b = stretchOf(idx - 1, k, g.run).tc;
+                    for (const cand of [b + g.run, b - g.run]) {
+                        if (Math.abs(st0.tc - cand) < g.run * 0.12) { st0.tc = cand; break; }
+                    }
+                }
                 st0.sc = r.sc; st0.ang = r.ang;
                 st0.gap = clamp(across - P_coreT() / 2 - g.width / 2, ROOT_MIN, 2.0);
                 syncStretches(idx, g.run);
-                const nodes = getWallNodes(idx);
-                const bad = !isFoldGeometryValid(nodes, P_coreT())
-                         || wallEscapesPlate(nodes, d.vertices, P_coreT())
-                         || d.stairs.some((stx, j) => {
-                                const sl = stairSlot(stx, g, P_coreT(), nodes, idx, j);
-                                return !slotInsidePlate(sl, d.vertices) || slotBypass(sl, d.vertices) < PASSAGE_MIN;
-                            });
-                if (bad) {
+                /* 2 - say WHY. This was one boolean covering five conditions, and
+                   the worst of it was that the OTHER stair failing blocked this drag
+                   with no hint which stair was the problem. */
+                const why = stairMoveFault(idx, g, k);
+                if (why) {
                     d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
-                    invalidFlash = 1;
+                    refuse(why);
                 }
             } else {
                 const coreT = parseFloat(document.getElementById('coreT').value);
@@ -2484,7 +2643,24 @@
             refresh();
         });
 
-        const endDrag = () => { if (dragType !== null) { dragType = null; dragIdx = null; refresh(); } };
+        const endDrag = () => {
+            if (dragType === null) return;
+            const moved = dragType, idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
+            dragType = null; dragIdx = null;
+            /* Moving a stair moves the stretch the wall is built around, so the folds
+               that were there are usually no longer valid. Re-solve that floor rather
+               than refusing the move - the wall follows the stair, which is the way
+               round this building works. */
+            if (moved === 'stair' || moved === 'stretch') {
+                const d = floorData[idx], coreT = P_coreT();
+                const nodes = getWallNodes(idx);
+                if (!isFoldGeometryValid(nodes, coreT) || wallEscapesPlate(nodes, d.vertices, coreT)) {
+                    const { P, g } = stairParams();
+                    d.foldNodes = solveFolds(idx, P, g);
+                }
+            }
+            refresh();
+        };
         editCanvas.addEventListener('pointerup', endDrag);
         editCanvas.addEventListener('pointercancel', endDrag);
         editCanvas.addEventListener('pointerleave', endDrag);
