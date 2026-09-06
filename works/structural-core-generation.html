@@ -216,6 +216,11 @@
         /* gap and right-align: the check values are long enough to run into their
            own labels once the column narrows */
         .metric-row { display:flex; justify-content:space-between; gap: 10px; padding: 2px 0; }
+        /* a row that can point at something in the plan */
+        .metric-row.shows { cursor: pointer; }
+        .metric-row.shows:hover span:first-child { color: #007BFF; }
+        .metric-row.shows.on { background: rgba(0,123,255,0.06); }
+        .metric-row.shows.on span:first-child { color: #007BFF; font-weight: bold; }
         .metric-row span:first-child { color:#666; flex: 1 1 auto; }
         .metric-row span:last-child { flex: 0 1 auto; text-align: right; }
         details.fine { margin-top: 8px; }
@@ -305,8 +310,12 @@
                         <span style="display:inline-block; width:12px; height:1px; background:#d32f2f; margin-right:5px; vertical-align:middle;"></span> Division Axis (shared by all floors)<br>
                         <span style="display:inline-block; width:12px; height:1px; background:rgba(180,180,180,0.6); margin-right:5px; vertical-align:middle;"></span> Other Floors Wireframe<br>
                         <span style="display:inline-block; width:12px; height:6px; border:1px dashed #555; margin-right:5px; vertical-align:middle; background:rgba(0,0,0,0.05);"></span> Stair Slots &mdash; two per floor, none in the roof; drag along the wall<br>
-                        <span style="display:inline-block; width:12px; height:6px; border:1px dashed #007BFF; margin-right:5px; vertical-align:middle; background:rgba(0,123,255,0.07);"></span> Cantilever Reach Band
+                        <span style="display:inline-block; width:12px; height:6px; border:1px dashed #007BFF; margin-right:5px; vertical-align:middle; background:rgba(0,123,255,0.07);"></span> Cantilever Reach Band<br>
+                        <span style="display:inline-block; width:12px; height:4px; background:linear-gradient(to right, rgba(0,123,255,0.35), #007BFF); margin-right:5px; vertical-align:middle;"></span> Wall weight &mdash; share of capacity in that segment<br>
+                        <span style="display:inline-block; width:5px; height:5px; border:1px solid #111; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Centre of mass &nbsp;&nbsp;<span style="color:#d32f2f;">&#10010;</span> Centre of rigidity, on the wall<br>
+                        <span style="display:inline-block; width:12px; height:6px; border:1px dashed #d32f2f; border-radius:50%; margin-right:5px; vertical-align:middle;"></span> Eurocode 8's mandatory 5% of the plan
                     </div>
+                    <div style="margin-top:6px; color:#111;"><b>Click a check row</b> on the right to show what it measures here.</div>
                 </div>
             </div>
 
@@ -335,19 +344,19 @@
                 <div class="cluster-desc" id="checkScope">Selected floor &mdash; the bar above reports the worst.</div>
                 <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
                     <div class="group-label">What decides &mdash; share of capacity used</div>
-                    <div class="metric-row"><span>Cantilever reach</span><span id="val-reachL" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Lateral &mdash; shear and twist together</span><span id="val-combined" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Slab under the wall above</span><span id="val-transfer" class="val">&ndash;</span></div>
+                    <div class="metric-row shows" data-hl="reach"><span>Cantilever reach</span><span id="val-reachL" class="val">&ndash;</span></div>
+                    <div class="metric-row shows" data-hl="openend"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
+                    <div class="metric-row shows" data-hl="lateral"><span>Lateral &mdash; shear and twist together</span><span id="val-combined" class="val">&ndash;</span></div>
+                    <div class="metric-row shows" data-hl="transfer"><span>Slab under the wall above</span><span id="val-transfer" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Way past the flight</span><span id="val-bypass" class="val">&ndash;</span></div>
 
                     <div class="group-label">Checked &mdash; the margin left</div>
                     <div class="metric-row"><span>Bracing wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
+                    <div class="metric-row shows" data-hl="twist"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall bent out of plane</span><span id="val-oop" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Slab shear at the wall face</span><span id="val-shear" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall crushing at the base</span><span id="val-base" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
+                    <div class="metric-row shows" data-hl="diaph"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
 
                     <div class="group-label">What the design implies</div>
                     <div class="metric-row"><span>Base resultant vs the kern</span><span id="val-kern" class="val">&ndash;</span></div>
@@ -356,7 +365,7 @@
                     <div class="metric-row"><span>Wall H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
                     <div class="metric-row" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
-                        <b>Twist is what forces the fold, not shear.</b> A wall segment can only push along its own line, so a dead straight wall has no lever arm about the plan's centre and its torsional capacity is exactly zero &mdash; and Eurocode 8 makes an accidental eccentricity of 5% of the plan mandatory, so there is always a torque to carry. The lateral check solves the storey as a rigid diaphragm in three degrees of freedom, so shear and twist are weighed together on the one wall section rather than reported side by side.
+                        <b>Twist is what forces the fold, not shear.</b> The plan draws it: the cross sits on the wall, the circle is the centre of mass, and the red line between them is the lever the earthquake pulls on. Straighten the wall and every arm collapses &mdash; one line of wall can only push along itself, so it has no torsional capacity at all. Read the two centres as an aid, not a result: the centre of rigidity is an elastic construct being paired with plastic capacities.
                     </div>
                     <details class="fine">
                         <summary>What is assumed, and what is still not checked</summary>
@@ -1212,13 +1221,25 @@
             // structural eccentricity plus the mandatory accidental one
             const eX = Math.abs(crZ - c.z) + ACCIDENTAL_ECC * b.z;
             const eZ = Math.abs(crX - c.x) + ACCIDENTAL_ECC * b.x;
+            /* The two centres and each segment's lever arm are handed back so the
+               plan can draw them. This is the picture that replaces a paragraph:
+               straighten the wall and every arm collapses to zero in front of you.
+               Read it as an aid, not a result - the centre of rigidity is an
+               elastic construct being paired with plastic capacities. */
             let cap = 0;
+            const arms = [];
             segs.forEach(g => {
                 const d = Math.abs((crX - g.a.x) * g.uz - (crZ - g.a.z) * g.ux);
                 cap += need.cap * g.L * d;
+                // foot of the perpendicular from the centre of rigidity
+                const t = (crX - g.a.x) * g.ux + (crZ - g.a.z) * g.uz;
+                arms.push({ d, foot: { x: g.a.x + g.ux * t, z: g.a.z + g.uz * t } });
             });
             const demand = Math.max(need.Vx * eX, need.Vz * eZ);
-            return { demand, cap, eX, eZ, arm: need.cap > 1e-6 ? cap / need.cap : 0 };
+            return { demand, cap, eX, eZ, arms,
+                     cr: { x: crX, z: crZ }, cm: c,
+                     accX: ACCIDENTAL_ECC * b.z, accZ: ACCIDENTAL_ECC * b.x,
+                     arm: need.cap > 1e-6 ? cap / need.cap : 0 };
         }
 
         /* COMBINED LATERAL CHECK - the one that decides.
@@ -1269,7 +1290,7 @@
                 if (L < 1e-9) continue;
                 const A = (c.x - a.x) / L, B = (c.z - a.z) / L;
                 const rx = (a.x + c.x) / 2 - O.x, rz = (a.z + c.z) / 2 - O.z;
-                segs.push({ L, A, B, C: (rx * B - rz * A) / Lref });
+                segs.push({ j, L, A, B, C: (rx * B - rz * A) / Lref });
             }
             if (!segs.length) return { use: Infinity, governs: 'no wall' };
 
@@ -1284,18 +1305,26 @@
                 cases.push({ n: 'X', Vx: need.Vx, Vz: 0, T: sgn * need.Vx * ACCIDENTAL_ECC * b.z });
                 cases.push({ n: 'Z', Vx: 0, Vz: need.Vz, T: sgn * need.Vz * ACCIDENTAL_ECC * b.x });
             }
+            /* The per-segment utilisation is kept, not just the maximum: it is the
+               only number in the file that says WHERE on the wall the work is
+               happening, so the plan can draw it and the reader can see which fold
+               to reach for. Worst case per segment across the four load cases. */
             let use = 0, governs = 'X';
+            const perSeg = {};
             for (const cs of cases) {
                 const q = solve3(M, [cs.Vx, cs.Vz, cs.T / Lref]);
-                if (!q) return { use: Infinity, governs: cs.n + ' (no load path)' };
+                if (!q) return { use: Infinity, governs: cs.n + ' (no load path)', perSeg: {} };
                 let worst = 0;
                 segs.forEach(g => {
-                    worst = Math.max(worst, Math.abs(q[0] * g.A + q[1] * g.B + q[2] * g.C));
+                    const f = Math.abs(q[0] * g.A + q[1] * g.B + q[2] * g.C);
+                    const u = f / Math.max(need.cap, 1e-9);
+                    if (u > (perSeg[g.j] || 0)) perSeg[g.j] = u;
+                    worst = Math.max(worst, f);
                 });
                 const u = worst / Math.max(need.cap, 1e-9);
                 if (u > use) { use = u; governs = cs.n; }
             }
-            return { use, governs };
+            return { use, governs, perSeg };
         }
 
         // The centre of MASS, so it has to be the centroid of the AREA. The
@@ -1887,6 +1916,11 @@
            ===================================================================== */
         let editView = { scale: 11, cx: 0, cz: 0 };
         let dragType = null, dragIdx = null, invalidFlash = 0;
+        /* A CHECK ROW IS ALSO A SWITCH. Clicking one asks the plan to show what
+           that row measures, and dims everything else - so "offset from the wall
+           below, 100%" becomes "here is where it steps, and here is the node".
+           No new controls: the column that reports is the column that points. */
+        let hlKey = null;
         let stairsManual = false;   // set once a flight has been placed by hand
 
         function ensureCanvasSize(canvas) {
@@ -2002,10 +2036,34 @@
                 }
             });
 
-            // the wall
-            strokePath(nodes, false);
-            editCtx.strokeStyle = invalidFlash > 0 ? '#d32f2f' : '#007BFF';
-            editCtx.lineWidth = 2.5; editCtx.stroke();
+            drawHighlight(st, idx, nodes);
+
+            /* THE WALL DRAWS ITS OWN UTILISATION. Each segment is weighted and
+               tinted by the share of its capacity the combined lateral check puts
+               into it - so the plan says which fold is working, which is the thing
+               the side column cannot say. Uniform blue when the check has no
+               answer, and red while an edit is being refused. */
+            (function () {
+                const per = st.floors[idx].comb.perSeg || {};
+                const dim = hlKey && hlKey !== 'lateral' ? 0.45 : 1;
+                for (let j = 0; j < nodes.length - 1; j++) {
+                    const u = per[j];
+                    strokePath([nodes[j], nodes[j + 1]], false);
+                    if (invalidFlash > 0) {
+                        editCtx.strokeStyle = '#d32f2f'; editCtx.lineWidth = 2.5;
+                    } else if (u === undefined) {
+                        editCtx.strokeStyle = 'rgba(0,123,255,' + (0.9 * dim) + ')';
+                        editCtx.lineWidth = 2.5;
+                    } else {
+                        const k = clamp(u, 0, 1.2);
+                        // blue at rest, warming through amber, red past the limit
+                        const col = u > 1 ? [211, 47, 47] : u > 0.85 ? [178, 106, 0] : [0, 123, 255];
+                        editCtx.strokeStyle = 'rgba(' + col.join(',') + ',' + ((0.35 + 0.6 * k) * dim) + ')';
+                        editCtx.lineWidth = 1.6 + 3.4 * k;
+                    }
+                    editCtx.stroke();
+                }
+            })();
 
             // locked ends
             (function () {   // one straight stretch per stair, merged when they coincide
@@ -2018,6 +2076,40 @@
                         editCtx.beginPath(); editCtx.arc(q.px, q.pz, 4.5, 0, Math.PI * 2); editCtx.fill();
                     });
                 });
+            })();
+
+            /* THE TWO CENTRES. Twist is what forces the fold, and this is the
+               picture of it: the centre of rigidity sits on the wall, the centre of
+               mass sits in the plate, and the gap between them is the lever the
+               earthquake pulls on. Eurocode 8 adds 5% of the plan whatever the
+               layout does, which is the ring. */
+            (function () {
+                const tw = st.floors[idx].tors;
+                if (!tw || !tw.cr) return;
+                const cr = toPx(tw.cr.x, tw.cr.z), cm = toPx(tw.cm.x, tw.cm.z);
+                const dim = hlKey && hlKey !== 'twist' ? 0.3 : 1;
+                editCtx.save();
+                // the mandatory accidental eccentricity, as a ring on the mass centre
+                const rAcc = Math.max(tw.accX, tw.accZ) * editView.scale;
+                editCtx.beginPath(); editCtx.arc(cm.px, cm.pz, rAcc, 0, Math.PI * 2);
+                editCtx.strokeStyle = 'rgba(211,47,47,' + (0.30 * dim) + ')';
+                editCtx.setLineDash([3, 3]); editCtx.lineWidth = 1; editCtx.stroke();
+                editCtx.setLineDash([]);
+                // the arm between them
+                editCtx.beginPath(); editCtx.moveTo(cm.px, cm.pz); editCtx.lineTo(cr.px, cr.pz);
+                editCtx.strokeStyle = 'rgba(211,47,47,' + (0.65 * dim) + ')';
+                editCtx.lineWidth = 1.2; editCtx.stroke();
+                // centre of mass: open circle
+                editCtx.beginPath(); editCtx.arc(cm.px, cm.pz, 3.5, 0, Math.PI * 2);
+                editCtx.strokeStyle = 'rgba(17,17,17,' + (0.75 * dim) + ')';
+                editCtx.lineWidth = 1.2; editCtx.stroke();
+                // centre of rigidity: cross on the wall
+                editCtx.beginPath();
+                editCtx.moveTo(cr.px - 4, cr.pz); editCtx.lineTo(cr.px + 4, cr.pz);
+                editCtx.moveTo(cr.px, cr.pz - 4); editCtx.lineTo(cr.px, cr.pz + 4);
+                editCtx.strokeStyle = 'rgba(211,47,47,' + (0.9 * dim) + ')';
+                editCtx.lineWidth = 1.4; editCtx.stroke();
+                editCtx.restore();
             })();
 
             editCtx.fillStyle = '#111';
@@ -2033,6 +2125,126 @@
             }
 
             if (invalidFlash > 0) { invalidFlash--; setTimeout(() => refresh(), 160); }
+        }
+
+        function drawHighlight(st, idx, nodes) {
+            if (!hlKey) return;
+            const fl = st.floors[idx], d = floorData[idx], coreT = st.P.coreT;
+            const dash = (a, b) => { editCtx.save(); editCtx.setLineDash([a, b]); };
+            const mark = (p, r, col) => {
+                const q = toPx(p.x, p.z);
+                editCtx.beginPath(); editCtx.arc(q.px, q.pz, r, 0, Math.PI * 2);
+                editCtx.fillStyle = col; editCtx.fill();
+            };
+
+            if (hlKey === 'reach') {
+                // the line the slab cannot reach past, and the corners that do
+                const cap = cantileverCapacity(st.slabT);
+                [1, -1].forEach(sg => {
+                    const off = offsetPolyline(nodes, sg * (coreT / 2 + cap), endDirsFor(d.vertices));
+                    if (!off || off.length < 2) return;
+                    strokePath(off, false);
+                    dash(4, 3);
+                    editCtx.strokeStyle = 'rgba(211,47,47,0.55)'; editCtx.lineWidth = 1.2;
+                    editCtx.stroke(); editCtx.restore();
+                });
+                /* Mark the point that SETS the number, always - an overlay that
+                   draws nothing when the design is comfortable reads as broken.
+                   Then anything else within three quarters of the limit. */
+                const pts = d.vertices.concat(...fl.slots.map(sl => sl.poly));
+                let worst = null;
+                const clearAt = pt => {
+                    let dd = Infinity;
+                    for (let j = 0; j < nodes.length - 1; j++)
+                        dd = Math.min(dd, pointToSegmentDistance(pt, nodes[j], nodes[j + 1]));
+                    return Math.max(0, dd - coreT / 2);
+                };
+                pts.forEach(pt => {
+                    const clear = clearAt(pt);
+                    if (!worst || clear > worst.clear) worst = { pt, clear };
+                    if (clear > cap * 0.75) mark(pt, clear > cap ? 4 : 3,
+                        clear > cap ? 'rgba(211,47,47,0.85)' : 'rgba(178,106,0,0.7)');
+                });
+                if (worst) {
+                    mark(worst.pt, 5.5, 'rgba(211,47,47,0.18)');
+                    mark(worst.pt, 2.5, 'rgba(211,47,47,0.9)');
+                    // and the line back to the wall that the number measures
+                    let dd = Infinity, foot = null;
+                    for (let j = 0; j < nodes.length - 1; j++) {
+                        const e = pointToSegmentDistance(worst.pt, nodes[j], nodes[j + 1]);
+                        if (e < dd) { dd = e; foot = nearestOnSeg(worst.pt, nodes[j], nodes[j + 1]); }
+                    }
+                    if (foot) {
+                        strokePath([worst.pt, foot], false);
+                        editCtx.strokeStyle = 'rgba(211,47,47,0.7)'; editCtx.lineWidth = 1.2;
+                        editCtx.stroke();
+                    }
+                }
+            }
+
+            if (hlKey === 'transfer' && idx > 0) {
+                // where this wall steps off the one below, and by how much
+                const below = st.floors[idx - 1].nodes;
+                strokePath(below, false);
+                editCtx.strokeStyle = 'rgba(211,47,47,0.35)'; editCtx.lineWidth = 3; editCtx.stroke();
+                for (let j = 0; j < nodes.length - 1; j++) {
+                    const a = nodes[j], b = nodes[j + 1];
+                    for (let k = 0; k <= 4; k++) {
+                        const pt = { x: a.x + (b.x - a.x) * k / 4, z: a.z + (b.z - a.z) * k / 4 };
+                        let dd = Infinity, foot = null;
+                        for (let i = 0; i < below.length - 1; i++) {
+                            const e = pointToSegmentDistance(pt, below[i], below[i + 1]);
+                            if (e < dd) { dd = e; foot = nearestOnSeg(pt, below[i], below[i + 1]); }
+                        }
+                        if (dd < 0.15 || !foot) continue;
+                        strokePath([pt, foot], false);
+                        editCtx.strokeStyle = 'rgba(211,47,47,' + clamp(dd / 2, 0.15, 0.7) + ')';
+                        editCtx.lineWidth = 1; editCtx.stroke();
+                    }
+                }
+            }
+
+            if (hlKey === 'openend') {
+                // the two ends of every opening, where the strip beside it lands
+                fl.slots.forEach(sl => {
+                    const c = sl.poly;
+                    mark({ x: (c[0].x + c[3].x) / 2, z: (c[0].z + c[3].z) / 2 }, 4, 'rgba(211,47,47,0.8)');
+                    mark({ x: (c[1].x + c[2].x) / 2, z: (c[1].z + c[2].z) / 2 }, 4, 'rgba(211,47,47,0.8)');
+                });
+            }
+
+            if (hlKey === 'diaph') {
+                // the wall face the slab is joined to, broken where an opening cuts it
+                [1, -1].forEach(sg => {
+                    const face = offsetPolyline(nodes, sg * coreT / 2, endDirsFor(d.vertices));
+                    if (!face || face.length < 2) return;
+                    strokePath(face, false);
+                    editCtx.strokeStyle = 'rgba(0,123,255,0.5)'; editCtx.lineWidth = 4; editCtx.stroke();
+                });
+                fl.slots.forEach(sl => {
+                    strokePath([sl.poly[0], sl.poly[1]], false);
+                    dash(2, 3);
+                    editCtx.strokeStyle = 'rgba(211,47,47,0.85)'; editCtx.lineWidth = 4;
+                    editCtx.stroke(); editCtx.restore();
+                });
+            }
+
+            if (hlKey === 'twist') {
+                // every segment's lever arm about the centre of rigidity
+                const tw = fl.tors;
+                if (tw && tw.arms) tw.arms.forEach(a => {
+                    strokePath([tw.cr, a.foot], false);
+                    editCtx.strokeStyle = 'rgba(211,47,47,0.30)'; editCtx.lineWidth = 1; editCtx.stroke();
+                });
+            }
+        }
+
+        function nearestOnSeg(p, a, b) {
+            const dx = b.x - a.x, dz = b.z - a.z;
+            const l2 = dx * dx + dz * dz;
+            if (l2 < 1e-12) return { x: a.x, z: a.z };
+            const t = clamp(((p.x - a.x) * dx + (p.z - a.z) * dz) / l2, 0, 1);
+            return { x: a.x + dx * t, z: a.z + dz * t };
         }
 
         function canvasPoint(e) {
@@ -3070,6 +3282,17 @@
         document.getElementById('floorH').addEventListener('change', resolveAll);
         document.getElementById('coreT').addEventListener('change', resolveAll);
         document.getElementById('floorIndex').addEventListener('change', refresh);
+
+        // clicking a check row asks the plan to show what it measures
+        document.querySelectorAll('.metric-row.shows').forEach(row => {
+            row.addEventListener('click', () => {
+                const k = row.dataset.hl;
+                hlKey = hlKey === k ? null : k;
+                document.querySelectorAll('.metric-row.shows').forEach(r =>
+                    r.classList.toggle('on', r.dataset.hl === hlKey));
+                refresh();
+            });
+        });
 
         window.addEventListener('resize', () => {
             renderer.setSize(simContainer.clientWidth, Math.max(simContainer.clientHeight, 1));
