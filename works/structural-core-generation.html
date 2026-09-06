@@ -2114,6 +2114,13 @@
                     floorData.forEach((fl, k) => fl.vertices.forEach((w, m) => { w.x = before[k][m].x; w.z = before[k][m].z; }));
                     invalidFlash = 1;
                 }
+                /* The wall ends are the axis crossed with the plate boundary, so the
+                   WALL already follows a dragged corner - but the two draggable
+                   handles are separate state and were left behind, sometimes ending
+                   up off the plate entirely. Put them back on the boundary. Both
+                   anchors lie on the axis by construction, so this moves the handles
+                   without turning the dividing line. */
+                axisEnds = wallAnchors(floorData[0].vertices).map(p => ({ x: p.x, z: p.z }));
             } else if (dragType === 'anchor') {
                 // the end stays on the envelope, and the stairs keep their place on
                 // the wall rather than sliding when the axis is re-aimed
@@ -2337,37 +2344,54 @@
             const d = floorData[idx];
             const byT = (a, b) => axisParam(a) - axisParam(b);
 
-            // the longest unfolded gap inside a foldable span - which is where a
-            // fold would do the most for the panel guide
-            let best = null;
+            /* Collect every unfolded gap, try the widest first, and SEARCH for an
+               amplitude that validates rather than guessing one.
+               Two things made a single guess fail on the middle floor:
+                 - the turn angle at the new node is 2 atan(p / 2a), so 0,3 x
+                   half-plate in a 1 m gap gives 24 degrees against the 45 minimum;
+                 - inserting a node also sharpens the angle at its NEIGHBOURS, so
+                   even a well-scaled amplitude can be rejected for a fold that is
+                   already there.
+               Same lesson as the solver's amplitude scan: the feasible set is not
+               an interval and one probe is not enough. */
+            const gaps = [];
             foldableSpans(idx).forEach(z => {
                 const ts = d.foldNodes.map(axisParam)
-                    .filter(t => t > z[0] && t < z[1]).sort((a, b) => a - b);
+                    .filter(t => t > z[0] && t < z[1]).sort((p, q) => p - q);
                 const marks = [z[0]].concat(ts, [z[1]]);
                 for (let i = 0; i < marks.length - 1; i++) {
                     const len = marks[i + 1] - marks[i];
-                    if (len > 2 * FOLD_MIN_GAP && (!best || len > best.len)) {
-                        best = { len, t: (marks[i] + marks[i + 1]) / 2 };
-                    }
+                    if (len > 2 * FOLD_MIN_GAP) gaps.push({ len, t: (marks[i] + marks[i + 1]) / 2 });
                 }
             });
-            // nowhere left to fold: say so instead of doing nothing
-            if (!best) { invalidFlash = 1; refresh(); return; }
+            if (!gaps.length) { invalidFlash = 1; refresh(); return; }
+            gaps.sort((p, q) => q.len - p.len);
 
-            // alternate away from the nearest existing fold
-            const amp = 0.3 * plateHalfWidth(d.vertices);
-            let near = null, nd = Infinity;
-            d.foldNodes.forEach(f => {
-                const dt = Math.abs(axisParam(f) - best.t);
-                if (dt < nd) { nd = dt; near = f; }
-            });
-            const ns = near ? axisSide(near) : 0;
-            const side = Math.abs(ns) < 1e-3 ? amp : -Math.sign(ns) * amp;
-
+            const half = plateHalfWidth(d.vertices);
             const keep = d.foldNodes.slice();
-            d.foldNodes.push(axisToXZ(best.t, side));
-            d.foldNodes.sort(byT);
-            if (!foldsStillFit(idx)) { d.foldNodes = keep; invalidFlash = 1; }
+            let placed = false;
+            for (const g of gaps) {
+                // 45 deg at the new node needs a <= p / (2 tan 22,5) = 0,6 L
+                const aMax = Math.min(0.3 * half, 0.6 * g.len);
+                let near = null, nd = Infinity;
+                keep.forEach(f => {
+                    const dt = Math.abs(axisParam(f) - g.t);
+                    if (dt < nd) { nd = dt; near = f; }
+                });
+                const ns = near ? axisSide(near) : 0;
+                const dir = Math.abs(ns) < 1e-3 ? 1 : -Math.sign(ns);
+                for (const f of [1, 0.75, 0.55, 0.4, 0.28, 0.18, 0.1]) {
+                    for (const sgn of [dir, -dir]) {
+                        d.foldNodes = keep.slice();
+                        d.foldNodes.push(axisToXZ(g.t, sgn * aMax * f));
+                        d.foldNodes.sort(byT);
+                        if (foldsStillFit(idx)) { placed = true; break; }
+                    }
+                    if (placed) break;
+                }
+                if (placed) break;
+            }
+            if (!placed) { d.foldNodes = keep; invalidFlash = 1; }
             refresh();
         }
 
