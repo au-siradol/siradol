@@ -187,6 +187,19 @@
         .val { font-size: 9.5px; color: #555; }
         .val.hi { color: #007BFF; font-weight: bold; }
         .val.bad { color: #d32f2f; font-weight: bold; }
+        /* the headline of a check row is how much of the capacity is used - a
+           percentage is scannable in a way that "131 / 135 kNm/m" is not, so the
+           raw figures follow it in grey */
+        .val .use  { font-weight: bold; color: #333; }
+        .val.warn .use { color: #b26a00; }
+        .val.bad  .use { color: #d32f2f; }
+        .val .raw  { color: #aaa; }
+        .group-label {
+            font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase;
+            color: #999; margin: 10px 0 3px; padding-top: 6px;
+            border-top: 1px solid #eee;
+        }
+        .group-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 
         input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
         input[type="range"]:focus { outline: none; }
@@ -321,28 +334,34 @@
                 <div class="cluster-label">Structural Check</div>
                 <div class="cluster-desc" id="checkScope">Selected floor &mdash; the bar above reports the worst.</div>
                 <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
+                    <div class="group-label">What decides &mdash; share of capacity used</div>
+                    <div class="metric-row"><span>Cantilever reach</span><span id="val-reachL" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Lateral &mdash; shear and twist together</span><span id="val-combined" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Cantilever reach &mdash; worst side</span><span id="val-reachL" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Offset from the wall below</span><span id="val-transfer" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Slab under the wall above</span><span id="val-transfer" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Way past the flight</span><span id="val-bypass" class="val">&ndash;</span></div>
-                    <div class="metric-row" style="border-top:1px solid #eee; margin-top:4px; padding-top:5px;"><span>Governing check</span><span id="val-gov" class="val">&ndash;</span></div>
-                    <div class="cluster-desc" style="margin-top:9px;">Reported &mdash; how it works, not what limits it</div>
+
+                    <div class="group-label">Checked &mdash; the margin left</div>
                     <div class="metric-row"><span>Bracing wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Wall bent out of plane</span><span id="val-oop" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Slab shear at the wall face</span><span id="val-shear" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Out-of-plane from unbalanced cantilevers</span><span id="val-oop" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Base stress, and the kern</span><span id="val-base" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Wall crushing at the base</span><span id="val-base" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
+
+                    <div class="group-label">What the design implies</div>
+                    <div class="metric-row"><span>Base resultant vs the kern</span><span id="val-kern" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Strip footing at 300 kPa</span><span id="val-footing" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall slenderness H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Strip footing the line load implies</span><span id="val-footing" class="val">&ndash;</span></div>
+                    <div class="metric-row" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
                         <b>Twist is what forces the fold, not shear.</b> A wall segment can only push along its own line, so a dead straight wall has no lever arm about the plan's centre and its torsional capacity is exactly zero &mdash; and Eurocode 8 makes an accidental eccentricity of 5% of the plan mandatory, so there is always a torque to carry. The lateral check solves the storey as a rigid diaphragm in three degrees of freedom, so shear and twist are weighed together on the one wall section rather than reported side by side.
                     </div>
                     <details class="fine">
                         <summary>What is assumed, and what is still not checked</summary>
                         <div>
-                        <b>Assumed, not verified against code text:</b> q_p 0.90 and c_f 1.30 for wind at &gamma; 1.5, S_d 0.107 for the lowest Swiss seismic zone, 1000 kN/m&sup2; allowable in-plane shear on the wall section (&rho;_h &asymp; 0.2% at f_yd 435 &mdash; a reinforced wall; 500 would be unreinforced), 25 kN/m&sup3; concrete, residential 2.0 kN/m&sup2;, 1.05 m stair width (Swiss practice; no published drawing gives this building's figure), 2.10 m headroom.<br><br>
+                        <b>From prSIA 262:2024, with clause numbers in the source:</b> &gamma;_C 1.5 and &gamma;_S 1.15 (2.4.2.6); &tau;_cd = 0.3&radic;f_ck/&gamma;_C = 1.10 MPa and f_sd = 435 MPa (2.4.2.4&ndash;5); f_cd = 20.0 MPa for C 30/37 (Table 8); k_c = 0.55 for a shear panel (4.2.1.7); the compression field taken at 30&deg;, the normal-case minimum (4.3.3.3.3); slab shear without links from eq. 35; wall reinforcement 0.6% vertical and 25% of that horizontal (5.5.4.3, 5.5.4.11), which is what gives the wall's <b>1.13 MPa</b> in-plane shear.<br><br>
+                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind at &gamma; 1.5 and S_d 0.107 for the lowest Swiss seismic zone (both SIA 261, not checked against it); 300 kPa allowable bearing; 25 kN/m&sup3; concrete; residential 2.0 kN/m&sup2;; 1.05 m stair width (Swiss practice &mdash; no published drawing gives this building's figure); 2.10 m headroom.<br><br>
                         <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
                         <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints; anything below the footing's bearing plane.
                         </div>
@@ -775,14 +794,50 @@
         // factor, so the two cannot be compared until the wind is factored.
         const WIND_GAMMA     = 1.50;
         const SEISMIC_SD     = 0.107;  // design spectral acceleration / g, lowest Swiss zone
-        /* Allowable average IN-PLANE shear on the wall section. 500 kN/m2 sat here
-           before, which is an UNREINFORCED value - wrong on its own terms for a
-           0.55 m structural wall in a three-storey house. For a reinforced wall the
-           in-plane shear is carried by the horizontal steel: tau = rho_h x f_yd,
-           and 0.2% at 435 MPa gives about 0.9 MPa, so 1.0 MPa is the normally
-           reinforced figure. This single constant scales every lateral capacity on
-           the page, so it is the number to argue with first. */
-        const WALL_TAU       = 1000;   // kN/m2, rho_h ~0.2% at f_yd 435
+        /* ===== FROM THE CODE TEXT, prSIA 262:2024 =====
+           These were assumed figures until they were checked against the standard.
+           Clause numbers are given so each one can be argued with.
+             2.4.2.6   gamma_C = 1,5   gamma_S = 1,15
+             2.4.2.4   tau_cd = 0,3 sqrt(f_ck) / gamma_C
+             2.4.2.5   f_sd = f_yk / gamma_S = 500 / 1,15
+             Table 8   f_cd = 20,0 MPa for C 30/37 at eta_t = 1,0
+             4.2.1.7   k_c = 0,55 for a compression field whose reinforcement runs
+                       oblique to the compression - which is what a shear panel is
+             4.3.3.3.2/3  the field angle may be chosen in alpha_min..45 deg, and
+                       alpha_min = 30 deg in the normal case (25 deg is allowed when
+                       a significant compression acts in the web, which is true
+                       here - taking 30 deg leaves that in hand)
+             4.3.3.3.4/eq.47  the field is capped at k_c f_cd sin a cos a
+             4.3.3.2.1/eq.35  slab shear without shear reinforcement:
+                       v_Rd = k_d tau_cd d_v,  k_d = 1/(1 + eps_v d k_g),
+                       k_g = 48/(16 + D_max),  eps_v = f_sd/E_s at level 1
+             5.5.4.3   walls: minimum vertical reinforcement 0,6% of the section
+             5.5.4.11  walls: horizontal reinforcement at least 25% of the vertical
+             4.3.9.4.1 the ductile-wall rules apply from h_w/l_w > 2; this wall is
+                       9/14 = 0,64, so it is squat and they do not apply    */
+        const F_CK    = 30000;         // kN/m2, C 30/37
+        const GAMMA_C = 1.5, GAMMA_S = 1.15;
+        const F_CD    = 20000;         // kN/m2, Table 8
+        const TAU_CD  = 0.3 * Math.sqrt(F_CK / 1000) / GAMMA_C * 1000;   // 1095 kN/m2
+        const F_SD    = 500000 / GAMMA_S;                                // 435 MPa
+        const E_S     = 205e6;         // kN/m2
+        const D_MAX   = 0.032;         // m, aggregate
+        const KC_PANEL = 0.55;
+        const ALPHA_FIELD = 30 * Math.PI / 180;
+        const RHO_V_MIN = 0.006;                  // 5.5.4.3
+        const RHO_H_MIN = 0.25 * RHO_V_MIN;       // 5.5.4.11
+
+        /* In-plane shear of the wall, as a stress field rather than an allowable:
+           the horizontal steel carries rho_h f_sd cot a, and the concrete field is
+           capped at k_c f_cd sin a cos a. At the code minimum reinforcement and a
+           30 deg field that is 1,13 MPa, with the crushing cap at 4,76 MPa nowhere
+           near governing. The 1,0 MPa assumed before was 13% low; the 0,5 MPa
+           before that was an unreinforced value and simply wrong for this wall.
+           This still scales every lateral capacity on the page - but now what to
+           argue with is the reinforcement ratio and the field angle, not a number. */
+        const WALL_TAU = Math.min(
+            RHO_H_MIN * F_SD * (1 / Math.tan(ALPHA_FIELD)),
+            KC_PANEL * F_CD * Math.sin(ALPHA_FIELD) * Math.cos(ALPHA_FIELD));
         const CONCRETE_GAMMA = 25.0;   // kN/m3 reinforced concrete
         const DEAD_EXTRA     = 1.50;   // kN/m2 finishes, partitions and the glazed envelope
         const LIVE_SEISMIC   = 0.30;   // share of the live load that moves with the frame
@@ -888,7 +943,6 @@
            direction. Reported: the peak compressive stress against f_cd, and
            whether the resultant stays inside the kern - outside it the base needs
            tension reinforcement, which is normal for RC, not a failure. */
-        const F_CD = 20000;   // kN/m2, C30/37 at gamma_c 1.5
         function baseStress(nodes, P, slabT, area, wallLen, storeys, V) {
             const q = gravityUDL(slabT);
             const N = (q * area + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH) * storeys;
@@ -936,19 +990,16 @@
            it, split between the storey above and the storey below. At the roof
            there is no wall above, so all of it goes into the storey below.
 
-           Capacity is what the code minimum vertical reinforcement gives: EC2
-           9.6.2 asks 0.2% of the section, half to each face, so one face has
-           0.001 x t per metre at f_yd, with a lever of about 0.9d. Exceed that and
+           Capacity is what the code minimum vertical reinforcement gives: SIA 262
+           5.5.4.3 asks 0,6% of the section, half to each face, so one face has
+           0,003 x t per metre at f_sd, with a lever of about 0.9d. Exceed that and
            the wall needs more than nominal steel on one face - a real design
            consequence, and the lever is to re-centre the dividing line. The axial
            precompression is reported as an eccentricity against the section's kern
            t/6, which is where the far face first goes into tension. */
-        const AS_VMIN_RATIO = 0.002;    // EC2 9.6.2, split between the two faces
-        const F_YD          = 435000;   // kN/m2, B500 at gamma_s 1.15
-
         function outOfPlaneCapacity(coreT) {
-            const asFace = AS_VMIN_RATIO * coreT / 2;              // m2 per m, one face
-            return asFace * F_YD * 0.9 * Math.max(0.05, coreT - SLAB_COVER);
+            const asFace = RHO_V_MIN * coreT / 2;                  // m2 per m, one face
+            return asFace * F_SD * 0.9 * Math.max(0.05, coreT - SLAB_COVER);
         }
 
         function outOfPlane(P, slabT, reach, area, wallLen, i) {
@@ -987,8 +1038,15 @@
            wall needs N / (allowable bearing) of width. The overturning half of the
            question is already on the page as the base resultant against the wall
            footprint's kern - it is the fold that gives the base its lever arm. */
-        const V_RDC        = 500;   // kN/m2, slab shear without links
-        const SOIL_BEARING = 300;   // kN/m2, assumed - moraine on the Swiss plateau
+        const SOIL_BEARING = 300;   // kN/m2, still assumed - moraine, Swiss plateau
+
+        // SIA 262 4.3.3.2.1, at approximation level 1 (the conservative one)
+        function slabShearResistance(slabT) {
+            const d = Math.max(0.05, slabT - SLAB_COVER);
+            const kg = 48 / (16 + D_MAX * 1000);
+            const kd = 1 / (1 + (F_SD / E_S) * d * 1000 * kg);
+            return kd * TAU_CD * d;                                // kN per metre
+        }
 
         function openingEndCheck(slabT, slots, verts) {
             const q = gravityUDL(slabT);
@@ -1010,10 +1068,8 @@
         }
 
         function slabShearCheck(slabT, reach) {
-            const q = gravityUDL(slabT);
-            const d = Math.max(0.05, slabT - SLAB_COVER);
-            const vEd = q * reach.max;                    // kN per metre of wall
-            return { vEd, v: vEd / d, cap: V_RDC };
+            const vEd = gravityUDL(slabT) * reach.max;             // kN per metre
+            return { vEd, cap: slabShearResistance(slabT) };
         }
 
         function footingCheck(base) {
@@ -1688,7 +1744,7 @@
                 if (floors[i].base.sigma > floors[i].base.fcd) crushed.push(i + 1);
                 if (floors[i].oop.M > floors[i].oop.cap * CHECK_TOL) bent.push(i + 1);
                 if (floors[i].openEnd.demand > floors[i].openEnd.cap * CHECK_TOL) endLoaded.push(i + 1);
-                if (floors[i].shear.v > floors[i].shear.cap * CHECK_TOL) sheared.push(i + 1);
+                if (floors[i].shear.vEd > floors[i].shear.cap * CHECK_TOL) sheared.push(i + 1);
                 if (isFinite(floors[i].bypass) && floors[i].bypass < PASSAGE_MIN) severed.push(i + 1);
                 else if (floors[i].passage < PASSAGE_MIN) tight.push(i + 1);
                 if (isFinite(floors[i].approach) && floors[i].approach < APPROACH_MIN) cramped.push(i + 1);
@@ -2620,6 +2676,31 @@
             el.className = 'val' + (bad ? ' bad' : '');
         }
 
+        // A check that can decide: lead with the share of capacity used.
+        function setUse(id, demand, cap, raw) {
+            const el = document.getElementById(id);
+            const u = cap > 1e-9 ? demand / cap : Infinity;
+            const head = isFinite(u) ? Math.round(u * 100) + '%' : 'no load path';
+            el.className = 'val' + (u > CHECK_TOL ? ' bad' : (u > 0.85 ? ' warn' : ''));
+            el.innerHTML = '<span class="use">' + head + '</span>'
+                         + (raw ? ' <span class="raw">' + raw + '</span>' : '');
+            return u;
+        }
+
+        // A check that is only reported: lead with how much room is left.
+        function setSpare(id, demand, cap, raw) {
+            const el = document.getElementById(id);
+            const u = cap > 1e-9 ? demand / cap : Infinity;
+            let head;
+            if (!isFinite(u)) head = 'no load path';
+            else if (u > CHECK_TOL) head = Math.round(u * 100) + '%';
+            else if (u < 1e-6) head = 'nothing to carry';
+            else { const n = 1 / u; head = (n >= 10 ? Math.round(n) : n.toFixed(1)) + '\u00d7 spare'; }
+            el.className = 'val' + (u > CHECK_TOL ? ' bad' : (u > 0.85 ? ' warn' : ''));
+            el.innerHTML = '<span class="use">' + head + '</span>'
+                         + (raw ? ' <span class="raw">' + raw + '</span>' : '');
+        }
+
         function updateReadouts(st) {
             const { P, slabT, capacity, panelLimit, maxReach, maxPanel, floors, escaped,
                     slotIssues, bearsOnVoid, tight, severed, stair, disconnected,
@@ -2637,57 +2718,61 @@
 
             const cantileverOK = maxReach <= capacity * CHECK_TOL;
             const panelOK      = maxPanel <= panelLimit * CHECK_TOL;
-            const pass         = floors[idx].passage;
 
-            setMetric('val-reachL', Math.max(r.left, r.right).toFixed(2) + ' m / capacity ' + capacity.toFixed(2) + ' m', maxReach > capacity * CHECK_TOL);
-            const isRoof = idx >= numFloors - 1;
-            setMetric('val-bypass', isRoof ? '—' : (isFinite(floors[idx].bypass) ? floors[idx].bypass.toFixed(2) + ' m' : '—'),
-                      !isRoof && floors[idx].bypass < PASSAGE_MIN);
+            const fl = floors[idx], isRoof = idx >= numFloors - 1;
             document.getElementById('checkScope').innerHTML =
                 'Floor ' + (idx + 1) + ' of ' + numFloors + ' &mdash; the bar above reports the worst floor.';
-            const pj = floors[idx].proj, nd = floors[idx].need;
-            // the check tests both directions, so report whichever is worse
+
+            /* ----- tight: what could decide, led by the share of capacity used --- */
+            setUse('val-reachL', maxReach, capacity,
+                   Math.max(r.left, r.right).toFixed(2) + ' of ' + capacity.toFixed(2) + ' m');
+            const oe = fl.openEnd;
+            if (isRoof || !oe.worst) setMetric('val-openend', 'no opening in the roof', false);
+            else setUse('val-openend', oe.demand, oe.cap,
+                        oe.demand.toFixed(0) + ' of ' + oe.cap.toFixed(0) + ' kNm/m');
+            const cb = fl.comb;
+            setUse('val-combined', cb.use, 1, 'worst in ' + cb.governs);
+            const tr = fl.transfer;
+            if (idx === 0) setMetric('val-transfer', 'stands on the foundation', false);
+            else setUse('val-transfer', tr.demand, tr.cap, tr.offset.toFixed(2) + ' m offset, '
+                        + tr.demand.toFixed(0) + ' of ' + tr.cap.toFixed(0) + ' kNm/m');
+            if (isRoof) setMetric('val-bypass', 'no flight in the roof', false);
+            else setUse('val-bypass', PASSAGE_MIN, fl.bypass,
+                        (isFinite(fl.bypass) ? fl.bypass.toFixed(2) : '\u2014')
+                        + ' m, needs ' + PASSAGE_MIN.toFixed(2));
+
+            /* ----- room to spare: checked, and the margin is the point ----------- */
+            const pj = fl.proj, nd = fl.need;
             const uX = nd.needLx / Math.max(pj.Lx, 1e-6), uZ = nd.needLz / Math.max(pj.Lz, 1e-6);
             const wrsX = uX >= uZ;
-            setMetric('val-densX',
-                (wrsX ? pj.Lx : pj.Lz).toFixed(2) + ' m / need ' + (wrsX ? nd.needLx : nd.needLz).toFixed(2)
-                + ' m (' + nd.governs + ', ' + (wrsX ? 'X' : 'Z') + ')',
-                Math.max(uX, uZ) > 1);
-            const tw = floors[idx].tors;
-            setMetric('val-twist', tw.cap.toFixed(0) + ' kNm / need ' + tw.demand.toFixed(0) + ' kNm'
-                      + (tw.cap > 1e-6 ? '' : '  (straight wall: no arm)'),
-                      tw.demand > tw.cap * CHECK_TOL);
-            const cb = floors[idx].comb;
-            setMetric('val-combined', isFinite(cb.use)
-                      ? (cb.use * 100).toFixed(0) + '% of capacity (' + cb.governs + ')'
-                      : 'no load path (' + cb.governs + ')', cb.use > CHECK_TOL);
-            const tr = floors[idx].transfer;
-            setMetric('val-transfer', idx === 0 ? 'stands on the foundation'
-                      : tr.offset.toFixed(2) + ' m offset, ' + tr.demand.toFixed(0)
-                        + ' / ' + tr.cap.toFixed(0) + ' kNm/m',
-                      tr.demand > tr.cap * CHECK_TOL);
-            const dp = floors[idx].diaph;
-            setMetric('val-diaph', dp.joined.toFixed(1) + ' m joined, ' + dp.demand.toFixed(0)
-                      + ' / ' + dp.cap.toFixed(0) + ' kN', dp.demand > dp.cap * CHECK_TOL);
-            const op = floors[idx].oop;
-            setMetric('val-oop', op.M.toFixed(0) + ' / ' + op.cap.toFixed(0) + ' kNm/m, e '
-                      + (isFinite(op.ecc) ? op.ecc.toFixed(2) : '\u221e') + ' m vs kern ' + op.kern.toFixed(2) + ' m',
-                      op.M > op.cap * CHECK_TOL);
-            const oe = floors[idx].openEnd;
-            setMetric('val-openend', isRoof || !oe.worst ? '\u2014'
-                      : oe.demand.toFixed(0) + ' / ' + oe.cap.toFixed(0) + ' kNm/m at the opening end',
-                      oe.demand > oe.cap * CHECK_TOL);
-            const sh = floors[idx].shear;
-            setMetric('val-shear', (sh.v / 1000).toFixed(2) + ' / ' + (sh.cap / 1000).toFixed(2)
-                      + ' MPa (' + sh.vEd.toFixed(0) + ' kN/m)', sh.v > sh.cap * CHECK_TOL);
-            setMetric('val-footing', footing.width.toFixed(2) + ' m strip at '
-                      + footing.bearing + ' kPa (' + footing.N.toFixed(0) + ' kN/m)', false);
-            const bs = floors[idx].base;
-            setMetric('val-base', (bs.sigma / 1000).toFixed(2) + ' / ' + (bs.fcd / 1000).toFixed(0)
-                      + ' MPa, e ' + bs.ecc.toFixed(2) + ' m vs kern ' + bs.kern.toFixed(2) + ' m',
-                      bs.sigma > bs.fcd);
+            setSpare('val-densX', wrsX ? nd.needLx : nd.needLz, wrsX ? pj.Lx : pj.Lz,
+                     (wrsX ? pj.Lx : pj.Lz).toFixed(2) + ' m of wall, needs '
+                     + (wrsX ? nd.needLx : nd.needLz).toFixed(2) + ' (' + nd.governs
+                     + ', ' + (wrsX ? 'X' : 'Z') + ')');
+            const tw = fl.tors;
+            setSpare('val-twist', tw.demand, tw.cap, tw.cap > 1e-6
+                     ? tw.cap.toFixed(0) + ' kNm against ' + tw.demand.toFixed(0) + ' needed'
+                     : 'straight wall: no lever arm');
+            const op = fl.oop;
+            setSpare('val-oop', op.M, op.cap, op.M.toFixed(0) + ' of ' + op.cap.toFixed(0) + ' kNm/m');
+            const sh = fl.shear;
+            setSpare('val-shear', sh.vEd, sh.cap, sh.vEd.toFixed(0) + ' of ' + sh.cap.toFixed(0) + ' kN/m');
+            const bs = fl.base;
+            setSpare('val-base', bs.sigma, bs.fcd,
+                     (bs.sigma / 1000).toFixed(2) + ' of ' + (bs.fcd / 1000).toFixed(0) + ' MPa');
+            const dp = fl.diaph;
+            setSpare('val-diaph', dp.demand, dp.cap, dp.demand.toFixed(0) + ' of '
+                     + dp.cap.toFixed(0) + ' kN over ' + dp.joined.toFixed(1) + ' m');
+
+            /* ----- statements, not checks ---------------------------------------- */
+            setMetric('val-kern', 'e ' + bs.ecc.toFixed(2) + ' m vs kern ' + bs.kern.toFixed(2)
+                      + ' m \u2014 ' + (bs.ecc > bs.kern ? 'needs tension steel at the base'
+                                                          : 'all in compression'), false);
+            setMetric('val-footing', footing.width.toFixed(2) + ' m wide, from '
+                      + footing.N.toFixed(0) + ' kN/m', false);
             const sl = wallSlenderness(P.floorH, P.coreT);
-            setMetric('val-slender', sl.toFixed(1) + ' / rule 30 (thickness, not \u03bb)', sl > SLENDERNESS_LIMIT);
+            setMetric('val-slender', sl.toFixed(1) + ' \u2014 a thickness rule, not \u03bb',
+                      sl > SLENDERNESS_LIMIT);
 
             // Three tiers by consequence: the structure fails, the design does not
             // work, or it is merely worth knowing. Only the first turns the bar red,
