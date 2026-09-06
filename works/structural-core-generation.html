@@ -326,7 +326,7 @@
                 <div class="info-box">
                     <div class="metric-row"><span>Cantilever capacity of T_s</span><span id="val-capacity" class="val hi">&ndash;</span></div>
                     <div class="metric-row"><span>Fold panel guide <i>(detailing)</i></span><span id="val-panelLimit" class="val hi">&ndash;</span></div>
-                    <div style="margin-top:6px;">Cantilever capacity is EC2's deemed-to-satisfy <b>l/d = 7.4</b> on the effective depth &mdash; for a cantilever this is the deflection check. The fold-panel figure is a detailing guide, not a limit.</div>
+                    <div style="margin-top:6px;">Cantilever capacity is the reach at which the tip deflection reaches <b>a/250</b>, from SIA 262 eq. 103 for the cracked state &mdash; the standard gives no span/depth shortcut. The fold-panel figure is a detailing guide, not a limit.</div>
                 </div>
             </div>
 
@@ -352,6 +352,7 @@
                     <div class="group-label">What the design implies</div>
                     <div class="metric-row"><span>Base resultant vs the kern</span><span id="val-kern" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Strip footing at 300 kPa</span><span id="val-footing" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Slab reinforcement the reach needs</span><span id="val-steel" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
                     <div class="metric-row" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
@@ -361,6 +362,7 @@
                         <summary>What is assumed, and what is still not checked</summary>
                         <div>
                         <b>From prSIA 262:2024, with clause numbers in the source:</b> &gamma;_C 1.5 and &gamma;_S 1.15 (2.4.2.6); &tau;_cd = 0.3&radic;f_ck/&gamma;_C = 1.10 MPa and f_sd = 435 MPa (2.4.2.4&ndash;5); f_cd = 20.0 MPa for C 30/37 (Table 8); k_c = 0.55 for a shear panel (4.2.1.7); the compression field taken at 30&deg;, the normal-case minimum (4.3.3.3.3); slab shear without links from eq. 35; wall reinforcement 0.6% vertical and 25% of that horizontal (5.5.4.3, 5.5.4.11), which is what gives the wall's <b>1.13 MPa</b> in-plane shear.<br><br>
+                        <b>The slab follows SIA 262 eq. 103:</b> the tip deflection of the cracked cantilever under the quasi-permanent load, against a/250, with E_cm = k_E&middot;&#8731;f_cm at k_E = 10 000 for alluvial gravel (3.1.2.3.3) and a creep coefficient of 2.5 (&beta;_fc = 2.7 from Table 4; the rest of eq. 13 is read off Figure 2). Bending resistance is A_s = &rho;d at a lever of 0.9d with &rho; = 1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the seismic ones G + 0.3Q, and bearing G + Q.<br><br>
                         <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is 0.64.<br><br>
                         <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 300 kPa allowable bearing (SIA 267); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 1.05 m stair width (Swiss practice &mdash; no published drawing gives this building's figure); 2.10 m headroom.<br><br>
                         <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
@@ -410,21 +412,99 @@
         // Eurocode residential figure, so there is nothing here to choose.
         const LIVE_LOAD = 2.0;
 
-        /* A CANTILEVER IS DECIDED BY DEFLECTION, NOT STRENGTH, and the ratio that
-           decides it is measured on the EFFECTIVE depth. EC2's deemed-to-satisfy
-           span/depth for a cantilever is K = 0.4 times a basic ratio of about 18.5,
-           so l/d of roughly 7.4 - not the l/h = 10 on overall thickness that used
-           to sit here as "(12 - LL) x T_s", which was an invented interpolation and
-           about 40% too generous. This IS the deflection check: satisfying the
-           ratio is what EC2 accepts in place of calculating the deflection. */
-        const CANT_L_OVER_D = 7.4;
-        const SLAB_COVER    = 0.04;   // surface to the centre of the top steel
-        function effectiveDepth(slabT) { return Math.max(0.05, slabT - SLAB_COVER); }
-        function cantileverCapacity(slabT) { return CANT_L_OVER_D * effectiveDepth(slabT); }
-        function requiredSlabT(reach) { return reach / CANT_L_OVER_D + SLAB_COVER; }
-
-        // gravity UDL on a slab, for the transfer and base-stress checks
+        /* ===== THREE LOAD COMBINATIONS, NAMED =====
+           Everything strength-related used to be checked with CHARACTERISTIC loads
+           against DESIGN resistances - f_cd, f_sd, tau_cd all already carry their
+           gamma_M, so the actions had to carry theirs too. They now do, and which
+           combination each check belongs to is written down:
+             gravityDesign  1,35 G + 1,5 Q   - every gravity strength check
+             floorWeight        G + 0,3 Q    - the quasi-permanent / seismic mass,
+                                               used for the seismic weight, for the
+                                               base stress that pairs with a seismic
+                                               moment, and for deflection
+             gravityUDL         G + Q        - characteristic, for bearing pressure
+           gamma_G and gamma_Q are the standard SIA 260 pair; that standard was not
+           obtained, so they are the one thing here still taken on trust. */
+        const GAMMA_G = 1.35, GAMMA_Q = 1.5;
+        function gravityDesign(slabT) {
+            return GAMMA_G * (CONCRETE_GAMMA * slabT + DEAD_EXTRA) + GAMMA_Q * LIVE_LOAD;
+        }
         function gravityUDL(slabT) { return CONCRETE_GAMMA * slabT + DEAD_EXTRA + LIVE_LOAD; }
+
+        /* ===== THE SLAB, THE SIA WAY =====
+           SIA 262 has NO deemed-to-satisfy span/depth ratio. 4.4.3.2.1 says the
+           allowable deflection is set project-specifically, and 4.4.3.2.4/5 give
+           formulas to CALCULATE it - so the l/d = 7,4 borrowed from EC2 was an
+           import into an otherwise Swiss page, and a conservative one. What follows
+           is eq. 103, the largely-cracked estimate (4.4.3.2.6 puts the truth between
+           it and the uncracked eq. 102, so this is the safe end):
+
+             w = (1 - 20 rho') / (10 rho^0,7) x (0,75 + 0,1 phi) x (h/d)^3 x w_c
+
+           with w_c the uncracked elastic deflection, here q a^4 / (8 E_cm I) for a
+           cantilever under the quasi-permanent load. E_cm = k_E x cbrt(f_cm) per
+           3.1.2.3.3, with k_E = 10 000 - the low end for alluvial gravel, which is
+           the conservative choice for a deflection. rho follows from the design
+           moment, so the thickness is solved by iteration rather than by a ratio.
+
+           And the slab finally has a REAL bending resistance instead of "the moment
+           corresponding to the deflection-governed reach", which is what used to be
+           passed around as a capacity. A_s = rho d per metre at a lever of 0,9 d. */
+        const SLAB_COVER = 0.04;      // surface to the centre of the top steel
+        const K_E        = 10000;
+        // f_cm and E_cm depend on F_CK, which is declared with the other material
+        // values further down the file - a top-level const here would read it inside
+        // its temporal dead zone, so this is computed on demand instead.
+        const Ecm = () => K_E * Math.cbrt((F_CK + 8000) / 1000) * 1000;   // kN/m2
+        const PHI_CREEP  = 2.5;       // beta_fc = 2,7 from Table 4; the rest of
+                                      // eq. 13 comes off Figure 2, so this is read
+                                      // as a normal indoor value, not from the text
+        const DEFL_LIMIT = 250;       // cantilever tip, a/250
+        const RHO_SLAB   = 0.010;     // top steel over the wall - a stated choice,
+                                      // the way the wall's rho_h is stated
+
+        function effectiveDepth(slabT) { return Math.max(0.05, slabT - SLAB_COVER); }
+        function slabMoment(slabT) {
+            const d = effectiveDepth(slabT);
+            return 0.9 * RHO_SLAB * F_SD * d * d;                    // kNm per metre
+        }
+        function slabSteelFor(M, slabT) {
+            const d = effectiveDepth(slabT);
+            return M / (0.9 * F_SD * d * d);
+        }
+
+        function cantileverDeflection(slabT, reach, rho) {
+            const I = slabT * slabT * slabT / 12;
+            const wc = floorWeight(slabT) * Math.pow(reach, 4) / (8 * Ecm() * I);
+            const r = Math.max(rho, 1e-4);
+            return (1 / (10 * Math.pow(r, 0.7))) * (0.75 + 0.1 * PHI_CREEP)
+                 * Math.pow(slabT / effectiveDepth(slabT), 3) * wc;
+        }
+
+        // how far this slab reaches before the tip deflection passes a/250.
+        // w scales as reach^2,6 against a limit linear in reach, so this is
+        // monotonic and safe to bisect - unlike the amplitude search elsewhere.
+        function cantileverCapacity(slabT) {
+            const over = a => cantileverDeflection(slabT, a,
+                                  slabSteelFor(gravityDesign(slabT) * a * a / 2, slabT))
+                              > a / DEFL_LIMIT;
+            let lo = 0.20, hi = 14;
+            if (over(lo)) return lo;
+            for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; if (over(m)) hi = m; else lo = m; }
+            return lo;
+        }
+
+        // the thickness the deflection limit asks for at a given reach
+        function deflectionThickness(reach) {
+            for (let t = 0.15; t <= 1.0001; t += 0.01) {
+                if (cantileverCapacity(t) >= reach) return t;
+            }
+            return 1.0;
+        }
+        // and the thickness the governing moment asks for at the stated steel ratio
+        function momentThickness(M) {
+            return Math.sqrt(Math.max(M, 0) / (0.9 * RHO_SLAB * F_SD)) + SLAB_COVER;
+        }
 
         // The fold is a stiffener against out-of-plane buckling of a free-standing
         // wall, so this is a MAXIMUM unstiffened panel length, not a minimum span.
@@ -917,12 +997,11 @@
         }
 
         function transferCheck(P, slabT, area, wallLen, storeys, offset) {
-            const q = gravityUDL(slabT);
+            const q = gravityDesign(slabT);
             // everything the offset length of wall carries, per metre of wall
-            const W = (q * area + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH)
+            const W = (q * area + GAMMA_G * CONCRETE_GAMMA * P.coreT * wallLen * P.floorH)
                     * storeys / Math.max(wallLen, 0.1);
-            const reach = cantileverCapacity(slabT);
-            return { demand: W * offset, cap: q * reach * reach / 2, offset, W };
+            return { demand: W * offset, cap: slabMoment(slabT), offset, W };
         }
 
         /* ITEM 4 - DIAPHRAGM SHEAR INTO THE WALL.
@@ -932,7 +1011,7 @@
            the ends of it. Two openings of about 4.4 m on a 14 m wall is a third of
            the collector gone. Checked per face, worse face reported. */
         function diaphragmCheck(P, slabT, area, wallLen, slots) {
-            const storeyW = gravityUDL(slabT) * area
+            const storeyW = floorWeight(slabT) * area
                           + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH;
             const demand = SEISMIC_SD * storeyW;         // this storey's own force
             let lost = 0;
@@ -954,8 +1033,12 @@
            whether the resultant stays inside the kern - outside it the base needs
            tension reinforcement, which is normal for RC, not a failure. */
         function baseStress(nodes, P, slabT, area, wallLen, storeys, V) {
-            const q = gravityUDL(slabT);
+            // a seismic moment pairs with the seismic combination, G + 0,3 Q at
+            // gamma 1,0 - not with a factored gravity load
+            const q = floorWeight(slabT);
             const N = (q * area + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH) * storeys;
+            const qk = gravityUDL(slabT);                     // characteristic, for bearing
+            const Nk = (qk * area + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH) * storeys;
             const M = V * 0.7 * storeys * P.floorH;      // resultant at about 2/3 height
             // second moment of the wall footprint about its own centroid, per axis
             const pts = [];
@@ -986,7 +1069,7 @@
             const worst = bx.sigma >= bz.sigma ? bx : bz;
             const useX = bx.sigma >= bz.sigma;
             return { sigma: worst.sigma, fcd: F_CD, kern: worst.kern,
-                     ecc: N > 1e-9 ? M / N : Infinity, N, M, Nline: N / Math.max(tot, 0.1),
+                     ecc: N > 1e-9 ? M / N : Infinity, N, M, Nline: Nk / Math.max(tot, 0.1),
                      spread: useX ? ex : ez, axis: useX ? 'X' : 'Z' };
         }
 
@@ -1013,14 +1096,14 @@
         }
 
         function outOfPlane(P, slabT, reach, area, wallLen, i) {
-            const q = gravityUDL(slabT);
+            const q = gravityDesign(slabT);
             const aL = reach.geomLeft, aR = reach.geomRight;
             const net = q * Math.abs(aL * aL - aR * aR) / 2;       // kNm per m of wall
             const share = i >= numFloors - 1 ? 1 : 0.5;            // no wall above the roof
             const M = net * share;
             const slabs = numFloors - i, walls = Math.max(0, numFloors - 1 - i);
             const N = (q * area * slabs
-                     + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH * walls)
+                     + GAMMA_G * CONCRETE_GAMMA * P.coreT * wallLen * P.floorH * walls)
                     / Math.max(wallLen, 0.1);
             return { M, N, cap: outOfPlaneCapacity(P.coreT),
                      ecc: N > 1e-9 ? M / N : Infinity, kern: P.coreT / 6 };
@@ -1059,9 +1142,8 @@
         }
 
         function openingEndCheck(slabT, slots, verts) {
-            const q = gravityUDL(slabT);
-            const reachCap = cantileverCapacity(slabT);
-            const cap = q * reachCap * reachCap / 2;
+            const q = gravityDesign(slabT);
+            const cap = slabMoment(slabT);
             let demand = 0, worst = null;
             for (const sl of slots) {
                 const w = slotPassage(sl, verts);
@@ -1078,7 +1160,7 @@
         }
 
         function slabShearCheck(slabT, reach) {
-            const vEd = gravityUDL(slabT) * reach.max;             // kN per metre
+            const vEd = gravityDesign(slabT) * reach.max;          // kN per metre
             return { vEd, cap: slabShearResistance(slabT) };
         }
 
@@ -1690,11 +1772,11 @@
             // The opening length depends on slab thickness, and slab thickness
             // depends on the reach the opening creates - two passes converge it.
             let slabT = P.slabAuto ? clamp(parseFloat(document.getElementById('slabT').value), 0.15, 1.0) : P.slabT;
-            let g = null, floors = [], maxReach = 0, maxPanel = 0, needT = 0, maxOpenEnd = 0;
+            let g = null, floors = [], maxReach = 0, maxPanel = 0, needT = 0, maxMoment = 0;
 
             for (let pass = 0; pass < 2; pass++) {
                 g = stairGeometry(P.floorH, slabT);
-                floors = []; maxReach = 0; maxPanel = 0; maxOpenEnd = 0;
+                floors = []; maxReach = 0; maxPanel = 0; maxMoment = 0;
                 for (let i = 0; i < numFloors; i++) {
                     const nodes = getWallNodes(i);
                     const verts = floorData[i].vertices;
@@ -1728,14 +1810,18 @@
                     });
                     maxReach = Math.max(maxReach, reach.max);
                     maxPanel = Math.max(maxPanel, floors[i].panel);
-                    maxOpenEnd = Math.max(maxOpenEnd, floors[i].openEnd.demand);
+                    floors[i].moment = Math.max(floors[i].openEnd.demand,
+                                         floors[i].transfer.demand,
+                                         gravityDesign(slabT) * reach.max * reach.max / 2);
+                    maxMoment = Math.max(maxMoment, floors[i].moment);
                 }
-                // The slab has to carry the opening-end moment as well as the
-                // plain cantilever, or the auto thickness produces a design that
-                // fails one of the page's own checks. Expressed as the cantilever
-                // that would give the same moment, so there is one slab rule.
-                const eqReach = Math.sqrt(2 * maxOpenEnd / gravityUDL(slabT));
-                needT = requiredSlabT(Math.max(maxReach, eqReach));
+                /* Two things size the slab, and it takes the thicker: the
+                   deflection limit at the longest reach, and the bending resistance
+                   the governing moment needs at the stated steel ratio. For a
+                   cantilever it is deflection that wins, which is the whole reason
+                   the EC2 ratio was there in the first place - now it is shown
+                   rather than assumed. */
+                needT = Math.max(deflectionThickness(maxReach), momentThickness(maxMoment));
                 if (!P.slabAuto) break;
                 slabT = clamp(needT, 0.15, 1.0);
             }
@@ -2734,8 +2820,12 @@
                 'Floor ' + (idx + 1) + ' of ' + numFloors + ' &mdash; the bar above reports the worst floor.';
 
             /* ----- tight: what could decide, led by the share of capacity used --- */
+            const rhoNow = slabSteelFor(gravityDesign(slabT) * maxReach * maxReach / 2, slabT);
+            const wTip = cantileverDeflection(slabT, maxReach, rhoNow);
             setUse('val-reachL', maxReach, capacity,
-                   Math.max(r.left, r.right).toFixed(2) + ' of ' + capacity.toFixed(2) + ' m');
+                   Math.max(r.left, r.right).toFixed(2) + ' of ' + capacity.toFixed(2)
+                   + ' m, tip ' + (wTip * 1000).toFixed(0) + ' of '
+                   + (maxReach / DEFL_LIMIT * 1000).toFixed(0) + ' mm');
             const oe = fl.openEnd;
             if (isRoof || !oe.worst) setMetric('val-openend', 'no opening in the roof', false);
             else setUse('val-openend', oe.demand, oe.cap,
@@ -2780,6 +2870,11 @@
                                                           : 'all in compression'), false);
             setMetric('val-footing', footing.width.toFixed(2) + ' m wide, from '
                       + footing.N.toFixed(0) + ' kN/m', false);
+            // the steel the GOVERNING moment needs, not just the plain cantilever -
+            // the transfer moment is usually the larger of the two
+            const rhoReq = slabSteelFor(fl.moment, slabT);
+            setMetric('val-steel', (rhoReq * 100).toFixed(2) + '% of the '
+                      + (RHO_SLAB * 100).toFixed(1) + '% assumed, over the wall', rhoReq > RHO_SLAB);
             /* SIA 262 has no slenderness cap for walls: 4.3.7 handles compression
                members through second-order eccentricities, e_d = e_0d + e_1d + e_2d.
                So this row states the ratio and why second order is not in play,
