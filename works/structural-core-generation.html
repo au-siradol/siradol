@@ -330,9 +330,12 @@
                     <div class="metric-row"><span>Bracing wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Slab at a stair opening end</span><span id="val-openend" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Slab shear at the wall face</span><span id="val-shear" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Out-of-plane from unbalanced cantilevers</span><span id="val-oop" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Base stress, and the kern</span><span id="val-base" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall slenderness H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Strip footing the line load implies</span><span id="val-footing" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
                         <b>Twist is what forces the fold, not shear.</b> A wall segment can only push along its own line, so a dead straight wall has no lever arm about the plan's centre and its torsional capacity is exactly zero &mdash; and Eurocode 8 makes an accidental eccentricity of 5% of the plan mandatory, so there is always a torque to carry. The lateral check solves the storey as a rigid diaphragm in three degrees of freedom, so shear and twist are weighed together on the one wall section rather than reported side by side.
                     </div>
@@ -340,7 +343,8 @@
                         <summary>What is assumed, and what is still not checked</summary>
                         <div>
                         <b>Assumed, not verified against code text:</b> q_p 0.90 and c_f 1.30 for wind at &gamma; 1.5, S_d 0.107 for the lowest Swiss seismic zone, 1000 kN/m&sup2; allowable in-plane shear on the wall section (&rho;_h &asymp; 0.2% at f_yd 435 &mdash; a reinforced wall; 500 would be unreinforced), 25 kN/m&sup3; concrete, residential 2.0 kN/m&sup2;, 1.05 m stair width (Swiss practice; no published drawing gives this building's figure), 2.10 m headroom.<br><br>
-                        <b>Still not checked:</b> the concentrated reactions where the slab outboard of an opening lands on the solid slab beside it; punching at the wall ends; the foundation.
+                        <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
+                        <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints; anything below the footing's bearing plane.
                         </div>
                     </details>
                     </div>
@@ -916,9 +920,10 @@
             };
             const bx = pick(Ix, ex), bz = pick(Iz, ez);
             const worst = bx.sigma >= bz.sigma ? bx : bz;
+            const useX = bx.sigma >= bz.sigma;
             return { sigma: worst.sigma, fcd: F_CD, kern: worst.kern,
-                     ecc: N > 1e-9 ? M / N : Infinity, N, M,
-                     axis: bx.sigma >= bz.sigma ? 'X' : 'Z' };
+                     ecc: N > 1e-9 ? M / N : Infinity, N, M, Nline: N / Math.max(tot, 0.1),
+                     spread: useX ? ex : ez, axis: useX ? 'X' : 'Z' };
         }
 
         /* UNBALANCED CANTILEVERS BEND THE WALL OUT OF PLANE.
@@ -958,6 +963,62 @@
                     / Math.max(wallLen, 0.1);
             return { M, N, cap: outOfPlaneCapacity(P.coreT),
                      ecc: N > 1e-9 ? M / N : Infinity, kern: P.coreT / 6 };
+        }
+
+        /* THE LAST THREE THINGS THE PAGE USED TO DECLARE UNCHECKED.
+
+           (a) The strip of slab outboard of a stair opening spans that opening, so
+           its two END REACTIONS land as point loads on the solid slab beside the
+           opening - which is itself cantilevering off the wall. That is the one
+           action the fixed cantilever check deliberately left out. Each reaction is
+           q L w / 2, at a lever of (gap + flight + w/2) from the wall face, spread
+           towards the support at 45 degrees over w + 2 x lever. It ADDS to the
+           UDL cantilever moment at that point, so the two are summed there.
+
+           (b) PUNCHING DOES NOT APPLY AT THE WALL ENDS in this geometry, and that
+           is worth saying rather than leaving as a gap: the wall runs edge to edge,
+           so its ends sit on the facade line with no slab beyond them. There is no
+           isolated support for the slab to punch through. What does act is ordinary
+           ONE-WAY shear at the wall face, largest where the cantilever is longest,
+           so that is what is checked - against the concrete alone, since a slab
+           this thick would not be given shear links.
+
+           (c) The FOUNDATION follows from the line load: a strip footing under the
+           wall needs N / (allowable bearing) of width. The overturning half of the
+           question is already on the page as the base resultant against the wall
+           footprint's kern - it is the fold that gives the base its lever arm. */
+        const V_RDC        = 500;   // kN/m2, slab shear without links
+        const SOIL_BEARING = 300;   // kN/m2, assumed - moraine on the Swiss plateau
+
+        function openingEndCheck(slabT, slots, verts) {
+            const q = gravityUDL(slabT);
+            const reachCap = cantileverCapacity(slabT);
+            const cap = q * reachCap * reachCap / 2;
+            let demand = 0, worst = null;
+            for (const sl of slots) {
+                const w = slotPassage(sl, verts);
+                if (!isFinite(w) || w <= 0.05) continue;
+                const L = sl.t1 - sl.t0;
+                const R = q * L * w / 2;                  // one end reaction
+                const arm = sl.root + sl.width + w / 2;   // lever from the wall face
+                const bEff = w + 2 * arm;                 // 45 degree spread to the support
+                const aEnd = sl.root + sl.width + w;      // solid slab reach at that end
+                const M = q * aEnd * aEnd / 2 + R * arm / bEff;
+                if (M > demand) { demand = M; worst = { R, arm, bEff, w }; }
+            }
+            return { demand, cap, worst };
+        }
+
+        function slabShearCheck(slabT, reach) {
+            const q = gravityUDL(slabT);
+            const d = Math.max(0.05, slabT - SLAB_COVER);
+            const vEd = q * reach.max;                    // kN per metre of wall
+            return { vEd, v: vEd / d, cap: V_RDC };
+        }
+
+        function footingCheck(base) {
+            return { width: base.Nline / SOIL_BEARING, N: base.Nline,
+                     bearing: SOIL_BEARING };
         }
 
         function projectedWall(nodes) {
@@ -1563,11 +1624,11 @@
             // The opening length depends on slab thickness, and slab thickness
             // depends on the reach the opening creates - two passes converge it.
             let slabT = P.slabAuto ? clamp(parseFloat(document.getElementById('slabT').value), 0.15, 1.0) : P.slabT;
-            let g = null, floors = [], maxReach = 0, maxPanel = 0, needT = 0;
+            let g = null, floors = [], maxReach = 0, maxPanel = 0, needT = 0, maxOpenEnd = 0;
 
             for (let pass = 0; pass < 2; pass++) {
                 g = stairGeometry(P.floorH, slabT);
-                floors = []; maxReach = 0; maxPanel = 0;
+                floors = []; maxReach = 0; maxPanel = 0; maxOpenEnd = 0;
                 for (let i = 0; i < numFloors; i++) {
                     const nodes = getWallNodes(i);
                     const verts = floorData[i].vertices;
@@ -1589,6 +1650,8 @@
                         base: baseStress(nodes, P, slabT, area, wallLen, storeys,
                                          Math.max(need.Vx, need.Vz)),
                         oop: outOfPlane(P, slabT, reach, area, wallLen, i),
+                        openEnd: openingEndCheck(slabT, slots, verts),
+                        shear: slabShearCheck(slabT, reach),
                         panel: longestPanel(nodes, straightSpans(i, g.run, below)),
                         escapes: wallEscapesPlate(nodes, verts, P.coreT),
                         slotsOutside: slots.some(sl => !slotInsidePlate(sl, verts)),
@@ -1599,15 +1662,21 @@
                     });
                     maxReach = Math.max(maxReach, reach.max);
                     maxPanel = Math.max(maxPanel, floors[i].panel);
+                    maxOpenEnd = Math.max(maxOpenEnd, floors[i].openEnd.demand);
                 }
-                needT = requiredSlabT(maxReach);
+                // The slab has to carry the opening-end moment as well as the
+                // plain cantilever, or the auto thickness produces a design that
+                // fails one of the page's own checks. Expressed as the cantilever
+                // that would give the same moment, so there is one slab rule.
+                const eqReach = Math.sqrt(2 * maxOpenEnd / gravityUDL(slabT));
+                needT = requiredSlabT(Math.max(maxReach, eqReach));
                 if (!P.slabAuto) break;
                 slabT = clamp(needT, 0.15, 1.0);
             }
 
             const escaped = [], slotIssues = [], bearsOnVoid = [], tight = [],
                   severed = [], unbraced = [], cramped = [], twisted = [],
-                  overloaded = [], transferred = [], crushed = [], bent = [];
+                  overloaded = [], transferred = [], crushed = [], bent = [], endLoaded = [], sheared = [];
             const disconnected = new Set();
             for (let i = 0; i < numFloors; i++) {
                 if (floors[i].escapes) escaped.push(i + 1);
@@ -1618,6 +1687,8 @@
                 if (floors[i].transfer.demand > floors[i].transfer.cap * CHECK_TOL) transferred.push(i + 1);
                 if (floors[i].base.sigma > floors[i].base.fcd) crushed.push(i + 1);
                 if (floors[i].oop.M > floors[i].oop.cap * CHECK_TOL) bent.push(i + 1);
+                if (floors[i].openEnd.demand > floors[i].openEnd.cap * CHECK_TOL) endLoaded.push(i + 1);
+                if (floors[i].shear.v > floors[i].shear.cap * CHECK_TOL) sheared.push(i + 1);
                 if (isFinite(floors[i].bypass) && floors[i].bypass < PASSAGE_MIN) severed.push(i + 1);
                 else if (floors[i].passage < PASSAGE_MIN) tight.push(i + 1);
                 if (isFinite(floors[i].approach) && floors[i].approach < APPROACH_MIN) cramped.push(i + 1);
@@ -1639,7 +1710,8 @@
 
                 slotIssues, bearsOnVoid, tight, severed, stair: g,
                 disconnected: [...disconnected], unbraced, cramped, twisted,
-                overloaded, transferred, crushed, bent,
+                overloaded, transferred, crushed, bent, endLoaded, sheared,
+                footing: footingCheck(floors[0].base),
 
                 intrudes: floors.some(f => f.intrudes > 0),
                 capacity:   cantileverCapacity(slabT),
@@ -2551,7 +2623,8 @@
         function updateReadouts(st) {
             const { P, slabT, capacity, panelLimit, maxReach, maxPanel, floors, escaped,
                     slotIssues, bearsOnVoid, tight, severed, stair, disconnected,
-                    unbraced, cramped, twisted, overloaded, transferred, crushed, bent } = st;
+                    unbraced, cramped, twisted, overloaded, transferred, crushed, bent,
+                    endLoaded, sheared, footing } = st;
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const r = floors[idx].reach;
 
@@ -2600,6 +2673,15 @@
             setMetric('val-oop', op.M.toFixed(0) + ' / ' + op.cap.toFixed(0) + ' kNm/m, e '
                       + (isFinite(op.ecc) ? op.ecc.toFixed(2) : '\u221e') + ' m vs kern ' + op.kern.toFixed(2) + ' m',
                       op.M > op.cap * CHECK_TOL);
+            const oe = floors[idx].openEnd;
+            setMetric('val-openend', isRoof || !oe.worst ? '\u2014'
+                      : oe.demand.toFixed(0) + ' / ' + oe.cap.toFixed(0) + ' kNm/m at the opening end',
+                      oe.demand > oe.cap * CHECK_TOL);
+            const sh = floors[idx].shear;
+            setMetric('val-shear', (sh.v / 1000).toFixed(2) + ' / ' + (sh.cap / 1000).toFixed(2)
+                      + ' MPa (' + sh.vEd.toFixed(0) + ' kN/m)', sh.v > sh.cap * CHECK_TOL);
+            setMetric('val-footing', footing.width.toFixed(2) + ' m strip at '
+                      + footing.bearing + ' kPa (' + footing.N.toFixed(0) + ' kN/m)', false);
             const bs = floors[idx].base;
             setMetric('val-base', (bs.sigma / 1000).toFixed(2) + ' / ' + (bs.fcd / 1000).toFixed(0)
                       + ' MPa, e ' + bs.ecc.toFixed(2) + ' m vs kern ' + bs.kern.toFixed(2) + ' m',
@@ -2647,6 +2729,11 @@
                                                      'press Auto-Fold, or add a downstand where the wall steps'));
             if (!panelOK)            broken.push(say('fold panel ' + maxPanel.toFixed(2) + ' m over the ' + panelLimit.toFixed(2) + ' m guide',
                                                      'add a fold'));
+            if (sheared.length)      unsafe.push(say('slab shears at the wall face on floor ' + sheared.join(', '),
+                                                     'thicken the slab, or pull the plate corners in'));
+            if (endLoaded.length)    broken.push(say('the strip beside a stair opening lands more on the slab than it carries on floor '
+                                                     + endLoaded.join(', '),
+                                                     'thicken the slab, or drag the stairs inward'));
             if (bent.length)         broken.push(say('unbalanced cantilevers bend the wall out of plane on floor '
                                                      + bent.join(', ') + ' past its minimum reinforcement',
                                                      'drag a wall end to re-centre the dividing line, or thicken the wall'));
