@@ -2185,14 +2185,24 @@
             const data = floorData[idx];
             const nodes = st.floors[idx].nodes;
 
-            // cantilever reach band - the exact quantity the check measures
+            /* Cantilever reach band - the exact quantity the check measures, and
+               only ever a statement about the PLATE: how much of the floor a slab
+               this thick can carry off the wall. Offsetting a folded wall by more
+               than its own segments are long gives a ring that crosses itself and
+               throws lobes far outside the building - at eight storeys the offset
+               reaches 6 m against segments of 2 to 4 m, and the guide read as a
+               fault in the geometry when nothing was outside the plate at all.
+               Clipping to the plate is not cosmetic: outside it the band means
+               nothing, and the canvas clip takes the self-crossing with it. */
             (function () {
                 const w = st.capacity + st.P.coreT / 2;
                 const { lefts, rights } = offsetPolyline(nodes, w);
                 const ring = lefts.concat(rights.slice().reverse());
+                editCtx.save();
+                strokePath(data.vertices, true);
+                editCtx.clip();
                 strokePath(ring, true);
                 editCtx.fillStyle = 'rgba(0,123,255,0.07)'; editCtx.fill();
-                editCtx.save();
                 editCtx.setLineDash([3, 3]);
                 editCtx.strokeStyle = 'rgba(0,123,255,0.35)'; editCtx.lineWidth = 1; editCtx.stroke();
                 editCtx.restore();
@@ -3554,11 +3564,29 @@
             const { P, floors, slabT } = st;
 
             // where the wall of one floor lands on the wall below, shown in the model
+            /* Where the wall of a storey lands on the wall below - drawn solid,
+               because that is the only part of the load that does not have to be
+               transferred through the slab.
+
+               clipPolygon is Sutherland-Hodgman, which is only valid for a CONVEX
+               clip polygon. At a sharp fold in a thick wall the two offset faces
+               cross and generateWallQuads hands back a bow tie, and S-H against a
+               bow tie returns a polygon that runs off along the clip boundary: at
+               eight storeys two of them reached z = 31 m and z = 22 m on an 18.45 m
+               plate, drawn as a solid blue bar sticking out of the building. Their
+               shoelace area was 1.98 m2 inside a 0.43 x 19.3 m box, which is the
+               signature - a polygon that doubles back on itself.
+
+               So: only simple quads may be clipped, and the result is trimmed to
+               the plate, which is convex and is where a bearing has to be anyway. */
             const bearings = [];
             for (let i = 1; i < numFloors; i++) {
+                const plate = floorData[i - 1].vertices;
                 for (const qA of floors[i].quads) {
+                    if (!polygonSimple(qA)) continue;
                     for (const qB of floors[i - 1].quads) {
-                        const poly = clipPolygon(qA, qB);
+                        if (!polygonSimple(qB)) continue;
+                        const poly = clipPolygon(clipPolygon(qA, qB), plate);
                         if (poly.length > 2 && polygonArea(poly) > 0.02) bearings.push({ floorIdx: i, poly });
                     }
                 }
@@ -3755,8 +3783,21 @@
             if (headHit.length)     unsafe.push(say('head hits the flight above on floor ' + headHit.join(', '),
                                                      'press Place Stairs, or set the openings ' + stair.pitch.toFixed(2)
                                                      + ' m apart'));
+            /* NOT "thicken the wall". Lx and Lz are pure geometry - the wall's
+               projected length across the plan - and a thicker wall folds less
+               tightly, because isFoldGeometryValid asks every segment to be at
+               least the wall thick. Measured at eight storeys, floor 2:
+
+                 T_c   0.43   0.60   0.90   1.20   1.50
+                 folds    6      5      4      2      3
+                 Lx   10.47   7.99   7.99   5.23   4.68
+
+               Demand falls with thickness too, so it is a trade rather than a
+               reversal - but at 1.20 m the fold solver runs out of room and three
+               floors lose their bracing outright. Naming thickness as the fix sent
+               the slider the one way that also takes the supply away. */
             if (unbraced.length)    unsafe.push(say('not enough wall across the plan on floor ' + unbraced.join(', '),
-                                                     'thicken the wall, or add folds'));
+                                                     'add folds, or deepen them \u2014 a thicker wall folds less tightly'));
             if (twisted.length)     unsafe.push(say('nothing resists twist on floor ' + twisted.join(', '),
                                                      'add a fold, or deepen the folds'));
             if (overloaded.length)  unsafe.push(say('wall over capacity on floor ' + overloaded.join(', ')
