@@ -113,7 +113,7 @@
         canvas#editorCanvas {
             display: block;
             width: 100%;
-            height: 300px;
+            height: 262px;
             background: #fff;
             border: 1px solid #eee;
             cursor: crosshair;
@@ -148,7 +148,6 @@
             font-size: 11px;
             font-weight: bold;
             letter-spacing: 1px;
-            text-transform: uppercase;
         }
 
         hr.dashed {
@@ -201,8 +200,20 @@
             margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;
             color: #666; font-size: 9.5px; line-height: 1.55;
         }
-        .metric-row { display:flex; justify-content:space-between; padding: 2px 0; }
-        .metric-row span:first-child { color:#666; }
+        /* gap and right-align: the check values are long enough to run into their
+           own labels once the column narrows */
+        .metric-row { display:flex; justify-content:space-between; gap: 10px; padding: 2px 0; }
+        .metric-row span:first-child { color:#666; flex: 1 1 auto; }
+        .metric-row span:last-child { flex: 0 1 auto; text-align: right; }
+        details.fine { margin-top: 8px; }
+        details.fine > summary {
+            cursor: pointer; list-style: none; color: #999;
+            border-top: 1px solid #eee; padding-top: 6px;
+        }
+        details.fine > summary::-webkit-details-marker { display: none; }
+        details.fine > summary::after { content: '  +'; }
+        details.fine[open] > summary::after { content: '  \2212'; }
+        details.fine > div { margin-top: 6px; }
     </style>
     <script type="importmap">
         {
@@ -234,24 +245,21 @@
                 <div class="canvas-2d-wrapper">
                     <div class="editor-header">
                         <h3>2D Geometry Editor</h3>
-                        <select id="floorIndex"></select>
+                        <select id="floorIndex" autocomplete="off"></select>
                     </div>
-                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag the black squares to aim the dividing wall, plus fold nodes, stair slots and plate corners. The two facade edges move on every floor at once.</p>
+                    <p style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">Drag: &#9632; wall ends &middot; &#9679; folds &middot; stretch ends to tilt &middot; a slot to offset it &middot; plate corners.</p>
                     <canvas id="editorCanvas"></canvas>
                     
                     <div class="btn-group">
-                        <button class="action-btn" onclick="addFold()">+ Add Fold</button>
-                        <button class="action-btn" onclick="removeFold()">- Remove Fold</button>
-                    </div>
-                    <div class="btn-group" style="margin-top:5px;">
-                        <button class="action-btn" onclick="autoPlaceStairs()">Place Stairs</button>
-                        <button class="action-btn" onclick="alignStairsToWall()">Align to Wall</button>
+                        <button class="action-btn" onclick="addFold()">+ Fold</button>
+                        <button class="action-btn" onclick="removeFold()">&minus; Fold</button>
+                        <button class="action-btn" onclick="autoPlaceStairs()">Stairs</button>
+                        <button class="action-btn" style="color:#999;" onclick="location.reload()">Reset</button>
                     </div>
                     <div class="btn-group" style="margin-top:5px;">
                         <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeWall()">Auto-Fold Floor</button>
                         <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeAll()">Auto-Fold All</button>
                     </div>
-                    <button class="action-btn" style="margin-top:5px; width:100%; color:#999;" onclick="location.reload()">Reset to Seed</button>
                 </div>
             </div>
             <div id="status-bar" class="ok">SAFE</div>
@@ -265,14 +273,14 @@
                 <div class="cluster-desc">Storeys and height. Drag the two black squares in the plan to move the dividing line.</div>
                 <div class="control-row">
                     <label>Number of Floors <span id="val-floors" class="val">3</span></label>
-                    <input type="range" id="floors" min="2" max="8" step="1" value="3">
+                    <input type="range" id="floors" autocomplete="off" min="2" max="8" step="1" value="3">
                 </div>
                 <div class="control-row">
                     <label>Floor-to-Floor Height (H) <span id="val-floorH" class="val">3.00 m</span></label>
-                    <input type="range" id="floorH" min="2.5" max="5.0" step="0.1" value="3.0">
+                    <input type="range" id="floorH" autocomplete="off" min="2.5" max="5.0" step="0.1" value="3.0">
                 </div>
                 <div class="control-row">
-                    <label style="margin-bottom:2px;"><label style="display:inline;margin:0;"><input type="checkbox" id="uniformPlate" checked style="vertical-align:middle;margin:0 4px 0 0;">Uniform plate on every floor</label><span class="val">&nbsp;</span></label>
+                    <label style="margin-bottom:2px;"><label style="display:inline;margin:0;"><input type="checkbox" id="uniformPlate" checked autocomplete="off" style="vertical-align:middle;margin:0 4px 0 0;">Uniform plate on every floor</label><span class="val">&nbsp;</span></label>
                     <div style="font-size:9px;color:#999;line-height:1.4;">Facade end edges always stay level; this also ties the side nodes together.</div>
                 </div>
                 <div class="info-box">
@@ -294,18 +302,18 @@
                 <div class="cluster-desc">Wall thickness and slab depth. Residential 2.0 kN/m&sup2; throughout.</div>
                 <div class="control-row">
                     <label>Wall Thickness (T_c) <span id="val-coreT" class="val">0.55 m</span></label>
-                    <input type="range" id="coreT" min="0.2" max="1.5" step="0.05" value="0.55">
+                    <input type="range" id="coreT" autocomplete="off" min="0.2" max="1.5" step="0.05" value="0.55">
                 </div>
                 <div class="control-row">
                     <label>Slab Thickness (T_s)
-                        <span class="val"><label style="display:inline; margin:0;"><input type="checkbox" id="slabAuto" checked style="vertical-align:middle; margin:0 3px 0 0;">auto</label> <span id="val-slabT" class="hi">0.30 m</span></span>
+                        <span class="val"><label style="display:inline; margin:0;"><input type="checkbox" id="slabAuto" checked autocomplete="off" style="vertical-align:middle; margin:0 3px 0 0;">auto</label> <span id="val-slabT" class="hi">0.30 m</span></span>
                     </label>
-                    <input type="range" id="slabT" min="0.15" max="1.0" step="0.01" value="0.30">
+                    <input type="range" id="slabT" autocomplete="off" min="0.15" max="1.0" step="0.01" value="0.30">
                 </div>
                 <div class="info-box">
                     <div class="metric-row"><span>Cantilever capacity of T_s</span><span id="val-capacity" class="val hi">&ndash;</span></div>
                     <div class="metric-row"><span>Fold panel guide <i>(detailing)</i></span><span id="val-panelLimit" class="val hi">&ndash;</span></div>
-                    <div style="margin-top:6px;">Capacity is slab bending only: <b>(12 &minus; LL) &times; T_s</b>. The fold-panel limit is the longest unstiffened stretch of free-standing wall, scaled by slenderness H/T_c.</div>
+                    <div style="margin-top:6px;">Cantilever capacity is EC2's deemed-to-satisfy <b>l/d = 7.4</b> on the effective depth &mdash; for a cantilever this is the deflection check. The fold-panel figure is a detailing guide, not a limit.</div>
                 </div>
             </div>
 
@@ -313,32 +321,27 @@
                 <div class="cluster-label">Structural Check</div>
                 <div class="cluster-desc" id="checkScope">Selected floor &mdash; the bar above reports the worst.</div>
                 <div class="info-box" style="margin-top: 0; border: none; padding: 0;">
-                    <div class="metric-row"><span>Reach &mdash; left of axis</span><span id="val-reachL" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Reach &mdash; right of axis</span><span id="val-reachR" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Reach imbalance</span><span id="val-imbalance" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Folds this floor <i>(solved)</i></span><span id="val-folds" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Longest fold panel</span><span id="val-maxPanel" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Wall inside plate</span><span id="val-contain" class="val">&ndash;</span></div>
-                    <div class="metric-row" style="border-top:1px solid #eee; margin-top:4px; padding-top:5px;"><span>Riser &times; going</span><span id="val-step" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>2s + a (Blondel 600&ndash;630)</span><span id="val-blondel" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Flight run</span><span id="val-run" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Slab slot (opening &times; width)</span><span id="val-slot" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Passage past the flight</span><span id="val-passage" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Best way round the flight</span><span id="val-bypass" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Standing room at bottom step</span><span id="val-approach" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Slab root <i>(derived)</i></span><span id="val-rootChk" class="val">&ndash;</span></div>
-                    <div class="metric-row" style="border-top:1px solid #eee; margin-top:4px; padding-top:5px;"><span>Wall density &mdash; across (X)</span><span id="val-densX" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Wall density &mdash; along (Z)</span><span id="val-densZ" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Lateral &mdash; shear and twist together</span><span id="val-combined" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Cantilever reach &mdash; worst side</span><span id="val-reachL" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Offset from the wall below</span><span id="val-transfer" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Way past the flight</span><span id="val-bypass" class="val">&ndash;</span></div>
+                    <div class="metric-row" style="border-top:1px solid #eee; margin-top:4px; padding-top:5px;"><span>Governing check</span><span id="val-gov" class="val">&ndash;</span></div>
+                    <div class="cluster-desc" style="margin-top:9px;">Reported &mdash; how it works, not what limits it</div>
+                    <div class="metric-row"><span>Bracing wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Base stress, and the kern</span><span id="val-base" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall slenderness H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Torsional eccentricity</span><span id="val-ecc" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Governing check</span><span id="val-gov" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Step per storey</span><span id="val-stairChain" class="val">&ndash;</span></div>
-                    <div class="metric-row"><span>Flight aligned to wall</span><span id="val-align" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
-                        <b>The fold is the lateral system.</b> One straight wall braces only along its own length; folding it gives wall area in both plan directions. Density is that area over the floor area it braces &mdash; a rule of thumb, not a code figure.<br><br>
-                        <b>Order:</b> Place &rarr; Auto-Fold &rarr; Align. Placing is axis-parallel, which is what pushes the wall aside; aligning first would remove the constraint that folds it. Aligning also brings each flight <i>in</i> to the wall, leaving only the slab band that carries the cantilever past the opening &mdash; running the stair hard against the wall face with no band is what would be structurally wrong.<br><br>
-                        <b>Assumed:</b> residential 2.0 kN/m&sup2;, 1.05 m stair width (Swiss practice; no published drawing gives this building's figure), 2.10 m headroom, roof slab carries no opening.<br><br>
-                        The fold panel figure is a <i>detailing</i> guide, not a buckling limit &mdash; for a wall this stocky the critical panel length is tens of metres. Slenderness H/T_c is the real measure, and it is reported because it never governs at these thicknesses.
+                        <b>Twist is what forces the fold, not shear.</b> A wall segment can only push along its own line, so a dead straight wall has no lever arm about the plan's centre and its torsional capacity is exactly zero &mdash; and Eurocode 8 makes an accidental eccentricity of 5% of the plan mandatory, so there is always a torque to carry. The lateral check solves the storey as a rigid diaphragm in three degrees of freedom, so shear and twist are weighed together on the one wall section rather than reported side by side.
+                    </div>
+                    <details class="fine">
+                        <summary>What is assumed, and what is still not checked</summary>
+                        <div>
+                        <b>Assumed, not verified against code text:</b> q_p 0.90 and c_f 1.30 for wind at &gamma; 1.5, S_d 0.107 for the lowest Swiss seismic zone, 1000 kN/m&sup2; allowable in-plane shear on the wall section (&rho;_h &asymp; 0.2% at f_yd 435 &mdash; a reinforced wall; 500 would be unreinforced), 25 kN/m&sup3; concrete, residential 2.0 kN/m&sup2;, 1.05 m stair width (Swiss practice; no published drawing gives this building's figure), 2.10 m headroom.<br><br>
+                        <b>Still not checked:</b> the concentrated reactions where the slab outboard of an opening lands on the solid slab beside it; punching at the wall ends; the foundation.
+                        </div>
+                    </details>
                     </div>
                 </div>
             </div>
@@ -357,7 +360,8 @@
            them vary from storey to storey.
 
              floorData[i] = { vertices: plate polygon, foldNodes: interior folds }
-             wallNodes    = [ anchorA, ...folds, anchorB ]   (derived, never stored)
+             wallNodes    = [ anchorA, ...folds, stretch ends, ...folds, anchorB ]
+                            (assembled by assembleWall, never stored)
            ===================================================================== */
 
         let numFloors = 3;
@@ -368,12 +372,12 @@
         const editCtx = editCanvas.getContext('2d');
 
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const P_coreT = () => parseFloat(document.getElementById('coreT').value) || 0.55;
         const distXZ = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
         /* =====================================================================
            STRUCTURAL FORMULAS - single source of truth
            ===================================================================== */
-        const SLENDERNESS_EXP = 0.30;
         const IMBALANCE_LIMIT = 0.60;
         const CHECK_TOL = 1.005;      // 0.5% - keeps an at-limit solution from failing on rounding
         const SOLVE_MARGIN = 0.97;    // the solver aims just under the limit, not at it
@@ -381,12 +385,22 @@
         // A two-family house: residential throughout. 2.0 kN/m^2 is the Swiss /
         // Eurocode residential figure, so there is nothing here to choose.
         const LIVE_LOAD = 2.0;
-        function spanDepthRatio(liveLoad) { return 12 - liveLoad; }
 
-        // Slab bending only. The glazed envelope carries nothing, so this is the
-        // whole of the cantilever check.
-        function cantileverCapacity(slabT, liveLoad) { return spanDepthRatio(liveLoad) * slabT; }
-        function requiredSlabT(reach, liveLoad) { return reach / spanDepthRatio(liveLoad); }
+        /* A CANTILEVER IS DECIDED BY DEFLECTION, NOT STRENGTH, and the ratio that
+           decides it is measured on the EFFECTIVE depth. EC2's deemed-to-satisfy
+           span/depth for a cantilever is K = 0.4 times a basic ratio of about 18.5,
+           so l/d of roughly 7.4 - not the l/h = 10 on overall thickness that used
+           to sit here as "(12 - LL) x T_s", which was an invented interpolation and
+           about 40% too generous. This IS the deflection check: satisfying the
+           ratio is what EC2 accepts in place of calculating the deflection. */
+        const CANT_L_OVER_D = 7.4;
+        const SLAB_COVER    = 0.04;   // surface to the centre of the top steel
+        function effectiveDepth(slabT) { return Math.max(0.05, slabT - SLAB_COVER); }
+        function cantileverCapacity(slabT) { return CANT_L_OVER_D * effectiveDepth(slabT); }
+        function requiredSlabT(reach) { return reach / CANT_L_OVER_D + SLAB_COVER; }
+
+        // gravity UDL on a slab, for the transfer and base-stress checks
+        function gravityUDL(slabT) { return CONCRETE_GAMMA * slabT + DEAD_EXTRA + LIVE_LOAD; }
 
         // The fold is a stiffener against out-of-plane buckling of a free-standing
         // wall, so this is a MAXIMUM unstiffened panel length, not a minimum span.
@@ -404,7 +418,6 @@
             return {
                 floorH:   parseFloat(document.getElementById('floorH').value),
                 coreT:    parseFloat(document.getElementById('coreT').value),
-                liveLoad: LIVE_LOAD,
                 slabAuto: document.getElementById('slabAuto').checked,
                 slabT:    parseFloat(document.getElementById('slabT').value)
             };
@@ -474,15 +487,109 @@
             return { start: { dir: inf[0].dir, edge: inf[0].edge }, end: { dir: inf[1].dir, edge: inf[1].edge }, plate: vertices };
         }
 
-        function getWallNodes(idx) {
+        // The wall keeps one straight stretch on the axis for the stairs, and folds
+        // only in the length either side of it. That is what the built plans show -
+        // L1 is straight where the flights are, GL and L2 kink elsewhere - and it
+        // breaks the circularity of a slot whose position depends on the wall that
+        // then has to dodge it: over the stretch the wall is straight by definition.
+        // The reserved stretch is a straight segment that can be slid along the
+        // wall, pushed sideways and tilted - all three at once by dragging either
+        // of its two ends. It stays ONE straight segment, so the wall can still
+        // never cut into the stair opening that lies against it.
+        // Each stair carries its own straight stretch of wall. Two stairs, so up to
+        // two reserved segments - which is what GL and L2 show, with L1 the case
+        // where they coincide. The wall is a single line, so two stretches that
+        // overlap along the axis have to BE the same line: they snap together.
+        function stretchOf(idx, k, runLen) {
             const d = floorData[idx];
             const [A, B] = wallAnchors(d.vertices);
             const tA = axisParam(A), tB = axisParam(B);
-            const folds = d.foldNodes
-                .filter(f => { const t = axisParam(f); return t > tA + 1e-6 && t < tB - 1e-6; })
-                .slice()
-                .sort((p, q) => axisParam(p) - axisParam(q));
-            return [A, ...folds, B];
+            const len = Math.min(runLen, Math.max(0.5, (tB - tA) - 2 * FOLD_MIN_GAP));
+            const st = d.stairs[k] || {};
+            const half = len / 2;
+            const dflt = (tA + tB) / 2 + (k === 0 ? -half : half) * 1.05;
+            const tc = clamp(st.tc !== undefined ? st.tc : dflt,
+                             tA + FOLD_MIN_GAP + half, tB - FOLD_MIN_GAP - half);
+            const sc = st.sc || 0, ang = st.ang || 0;
+            const u = axisDir(), n = axisNormal();
+            const dx = u.x * Math.cos(ang) + n.x * Math.sin(ang);
+            const dz = u.z * Math.cos(ang) + n.z * Math.sin(ang);
+            const c = axisToXZ(tc, sc);
+            const P0 = { x: c.x - dx * half, z: c.z - dz * half };
+            const P1 = { x: c.x + dx * half, z: c.z + dz * half };
+            return { tA, tB, tc, sc, ang, len, P0, P1, c, k,
+                     d: { x: dx, z: dz }, n: { x: dz, z: -dx },
+                     t0: Math.min(axisParam(P0), axisParam(P1)),
+                     t1: Math.max(axisParam(P0), axisParam(P1)) };
+        }
+
+        // Snap the two together when they come close, so an overlap is always a
+        // deliberate pair rather than two lines fighting for the same station.
+        function syncStretches(idx, runLen) {
+            const a = stretchOf(idx, 0, runLen), b = stretchOf(idx, 1, runLen);
+            if (Math.abs(a.tc - b.tc) < a.len * 0.55) {
+                const tc = (a.tc + b.tc) / 2, sc = (a.sc + b.sc) / 2, ang = (a.ang + b.ang) / 2;
+                floorData[idx].stairs.forEach(st => { st.tc = tc; st.sc = sc; st.ang = ang; });
+                return true;
+            }
+            return false;
+        }
+
+        // the reserved segments in axis order, merged when they coincide
+        function wallSegments(idx, runLen) {
+            const a = stretchOf(idx, 0, runLen), b = stretchOf(idx, 1, runLen);
+            // the roof carries no stair opening, so nothing is reserved there and
+            // the whole length is free to fold
+            if (idx >= numFloors - 1) return { tA: a.tA, tB: a.tB, segs: [] };
+            const same = Math.abs(a.tc - b.tc) < 1e-6 && Math.abs(a.sc - b.sc) < 1e-6
+                      && Math.abs(a.ang - b.ang) < 1e-6;
+            const segs = same ? [a] : [a, b].sort((p, q) => p.t0 - q.t0);
+            return { tA: a.tA, tB: a.tB, segs };
+        }
+
+        // the stretches of axis left over for folding, between and beside the
+        // reserved segments - two zones when the stairs share a stretch, three
+        // when they have moved apart
+        function foldZones(idx, runLen) {
+            const w = wallSegments(idx, runLen);
+            const zones = [];
+            let cursor = w.tA;
+            for (const sg of w.segs) { zones.push([cursor, sg.t0]); cursor = sg.t1; }
+            zones.push([cursor, w.tB]);
+            return { zones, segs: w.segs };
+        }
+
+        // anchor -> folds -> reserved segment -> folds -> ... -> anchor.
+        // Takes the fold list so the solver can assemble a candidate exactly the
+        // way the view and the checks assemble the real one.
+        function assembleWall(idx, folds) {
+            const d = floorData[idx];
+            const [A, B] = wallAnchors(d.vertices);
+            const { zones, segs } = foldZones(idx, currentRun());
+            const byT = (p, q) => axisParam(p) - axisParam(q);
+            const inZone = (f, z) => { const t = axisParam(f); return t > z[0] + 1e-6 && t < z[1] - 1e-6; };
+            const out = [A];
+            zones.forEach((z, i) => {
+                folds.filter(f => inZone(f, z)).slice().sort(byT).forEach(f => out.push(f));
+                if (segs[i]) { out.push(segs[i].P0); out.push(segs[i].P1); }
+            });
+            out.push(B);
+            return out;
+        }
+
+        function getWallNodes(idx) { return assembleWall(idx, floorData[idx].foldNodes); }
+
+        function currentRun() {
+            const floorH = parseFloat(document.getElementById('floorH').value) || 3.0;
+            const risers = Math.ceil(floorH / STAIR_RISER_MAX);
+            const riser = floorH / risers;
+            const going = clamp(STAIR_BLONDEL - 2 * riser, STAIR_GOING_MIN, STAIR_GOING_MAX);
+            const flights = Math.ceil(risers / MAX_FLIGHT_RISERS);
+            const perFlight = Math.ceil(risers / flights);
+            const landing = Math.max(STAIR_WIDTH, going * 3);
+            let run = 0;
+            for (let k = 0; k < risers - 1; k++) run += ((k + 1) % perFlight === 0) ? landing : going;
+            return run;
         }
 
         function plateHalfWidth(vertices) {
@@ -496,7 +603,7 @@
            ===================================================================== */
         const FOLD_MAX_AMP_RATIO = 0.60;
         const FOLD_MIN_ANGLE_DEG = 45;
-        const FOLD_MIN_SEG_FACTOR = 2;   // buildability floor only
+        const FOLD_MIN_SEG = 0.80;       // buildability floor on a fold panel
         const FOLD_MIN_GAP = 0.5;        // m along the axis between folds
 
         function angleAtNode(prev, node, next) {
@@ -510,7 +617,7 @@
 
         function isFoldGeometryValid(nodes, coreT) {
             for (let i = 0; i < nodes.length - 1; i++) {
-                if (distXZ(nodes[i], nodes[i + 1]) < FOLD_MIN_SEG_FACTOR * coreT) return false;
+                if (distXZ(nodes[i], nodes[i + 1]) < Math.max(FOLD_MIN_SEG, coreT)) return false;
             }
             for (let i = 1; i < nodes.length - 1; i++) {
                 if (angleAtNode(nodes[i - 1], nodes[i], nodes[i + 1]) < FOLD_MIN_ANGLE_DEG) return false;
@@ -518,16 +625,82 @@
             return true;
         }
 
-        function buildFoldCandidate(vertices, foldCount, phase, ampRatio) {
-            const [A, B] = wallAnchors(vertices);
-            const tA = axisParam(A), tB = axisParam(B);
-            const amp = clamp(ampRatio, 0, FOLD_MAX_AMP_RATIO) * plateHalfWidth(vertices);
-            const folds = [];
-            for (let i = 1; i <= foldCount; i++) {
-                const t = tA + (tB - tA) * i / (foldCount + 1);
-                folds.push(axisToXZ(t, ((i % 2 === 1) ? phase : -phase) * amp));
+        function zigzagBetween(t0, t1, n, phase, amp) {
+            const out = [];
+            for (let i = 1; i <= n; i++) {
+                const t = t0 + (t1 - t0) * i / (n + 1);
+                out.push(axisToXZ(t, ((i % 2 === 1) ? phase : -phase) * amp));
             }
-            return folds;
+            return out;
+        }
+
+        // folds are shared between the two zones in proportion to their length
+        function mergeSpans(spans) {
+            const in_ = spans.filter(b => b[1] > b[0]).sort((a, b) => a[0] - b[0]);
+            const out = [];
+            for (const b of in_) {
+                const last = out[out.length - 1];
+                if (last && b[0] <= last[1]) last[1] = Math.max(last[1], b[1]);
+                else out.push([b[0], b[1]]);
+            }
+            return out;
+        }
+
+        /* A wall standing on a slab that is open below it has to run STRAIGHT and
+           ON THE AXIS across that opening - it is the beam carrying the slab edge
+           past it. So the openings of the floor below block folding just as firmly
+           as this floor's own stair stretch does, and the wall must be pinned on
+           the axis at each end of the blocked span. Spreading folds evenly and
+           hoping is what left the two upper floors with no fold the solver would
+           accept: EVERY candidate had a fold inside a blocked span. */
+        let P_FOR_FOLDS = { floorH: 3.0 };
+        function buildFoldCandidate(vertices, foldCount, phase, ampRatio, idx, blocked) {
+            P_FOR_FOLDS = { floorH: parseFloat(document.getElementById('floorH').value) || 3.0 };
+            const amp = clamp(ampRatio, 0, FOLD_MAX_AMP_RATIO) * plateHalfWidth(vertices);
+            const { zones } = foldZones(idx, currentRun());
+            const bl = mergeSpans(blocked || []);
+
+            // cut the blocked spans out of the fold zones
+            const open = [], pins = [];
+            const usable = sp => sp[1] - sp[0] > FOLD_MIN_SEG;
+            zones.forEach(z => {
+                const parts = [];
+                let cursor = z[0];
+                for (const b of bl) {
+                    if (b[1] <= cursor || b[0] >= z[1]) continue;
+                    const lo = Math.max(b[0], cursor), hi = Math.min(b[1], z[1]);
+                    if (lo > cursor) parts.push({ open: [cursor, lo] });
+                    parts.push({ block: [lo, hi] });
+                    cursor = hi;
+                }
+                if (cursor < z[1]) parts.push({ open: [cursor, z[1]] });
+
+                parts.forEach((pt, i) => {
+                    if (pt.open) { if (usable(pt.open)) open.push(pt.open); return; }
+                    // A pin is only needed where a fold on that side could otherwise
+                    // pull a chord across the blocked span. With no foldable stretch
+                    // beside it the wall is already straight there, and a pin that
+                    // close to an anchor would just fail the minimum segment length.
+                    const side = j => parts[j] && parts[j].open && usable(parts[j].open);
+                    if (side(i - 1)) pins.push(axisToXZ(pt.block[0], 0));
+                    if (side(i + 1)) pins.push(axisToXZ(pt.block[1], 0));
+                });
+            });
+
+            const lens = open.map(z => Math.max(0, z[1] - z[0]));
+            const tot = lens.reduce((a, v) => a + v, 0);
+            if (tot < 1e-6 || foldCount <= 0) return pins;
+            // cap each zone so its panels stay a sensible length
+            const target = panelGuide(P_FOR_FOLDS.floorH) * 0.5;
+            const capOf = L => Math.max(0, Math.round(L / Math.max(target, 0.5)) - 1);
+            let left = foldCount, out = pins.slice();
+            open.forEach((z, i) => {
+                const want = i === open.length - 1 ? left : Math.round(foldCount * lens[i] / tot);
+                const n = Math.max(0, Math.min(want, capOf(lens[i]), left));
+                out = out.concat(zigzagBetween(z[0], z[1], n, i % 2 === 0 ? phase : -phase, amp));
+                left -= n;
+            });
+            return out;
         }
 
         function foldCountForSpan(pathLength, panelLimit) {
@@ -536,9 +709,23 @@
 
         const FOLD_EFFECTIVE_DEG = 10;   // a turn smaller than this stiffens nothing
 
-        function longestPanel(nodes) {
+        // Spans the programme keeps straight, so the guide must not read them as a
+        // missing fold: this floor's stair stretches, and the openings of the floor
+        // below, which the wall carries the slab past. Saying "add a fold" about
+        // either is advice the user cannot act on - pressing + Fold changes nothing.
+        function straightSpans(idx, runLen, blocked) {
+            return mergeSpans(wallSegments(idx, runLen).segs
+                .map(sg => [sg.t0, sg.t1]).concat(blocked || []));
+        }
+
+        function longestPanel(nodes, straight) {
+            const sp = straight || [];
+            const kept = t => sp.some(b => t > b[0] - 1e-6 && t < b[1] + 1e-6);
             let m = 0, acc = 0;
             for (let i = 0; i < nodes.length - 1; i++) {
+                const mt = axisParam({ x: (nodes[i].x + nodes[i + 1].x) / 2,
+                                       z: (nodes[i].z + nodes[i + 1].z) / 2 });
+                if (kept(mt)) { m = Math.max(m, acc); acc = 0; continue; }
                 acc += distXZ(nodes[i], nodes[i + 1]);
                 const last = i === nodes.length - 2;
                 const turn = last ? 180 : 180 - angleAtNode(nodes[i], nodes[i + 1], nodes[i + 2]);
@@ -560,17 +747,179 @@
         const STAIR_GOING_MAX  = 0.32;
         const STAIR_HEADROOM   = 2.10;   // clear head under the slab above
         const MAX_FLIGHT_RISERS = 18;    // beyond this a straight flight needs a landing
-        const STAIR_GAP        = 0.10;   // construction gap between wall face and flight
-        const STAIR_CLEAR      = 0.05;   // enforced gap between wall solid and slot
-        const ROOT_MOMENT_RATIO = 0.25;  // root must be at least this share of what it carries
+        // A TOLERANCE, not a second gap. The wall-face-to-opening gap is already
+        // ROOT_MIN; inflating the slot by another 0.05 m put its inner edge exactly
+        // on the wall face, so the "must clear the slot" test sat on a knife-edge
+        // and a wall straight on the axis passed or failed on rounding.
+        const STAIR_CLEAR      = 0.01;
         const STAIR_WIDTH  = 1.05;       // assumed clear width, Swiss practice for a house
-        const ROOT_MIN     = 0.40;
+        const ROOT_MIN     = 0.05;   // nominal construction gap, wall face to opening
 
         // Wall density index: cross-sectional wall area resisting one direction,
         // over the floor area it has to brace. The denominator already carries the
         // storey count and the plan area, so the target is a plain constant - it
         // needs no control of its own. Rule of thumb, not a code figure.
-        function requiredDensity(floors) { return 0.006 + 0.001 * floors; }
+        /* Lateral demand, derived rather than assumed. The wall-density index that
+           used to sit here was a rule of thumb from high-seismic practice, roughly
+           four times too strict for a house on the Swiss plateau. Replaced by an
+           actual base shear - wind on the facade or seismic from the mass, whichever
+           governs - over an allowable shear stress on the wall's own section.
+           The constants are assumed values, not verified against the code text. */
+        const WIND_QP        = 0.90;   // kN/m2 velocity pressure, Swiss plateau
+        const WIND_CF        = 1.30;   // force coefficient, windward plus leeward
+        // q_p is a characteristic value while S_d already carries the behaviour
+        // factor, so the two cannot be compared until the wind is factored.
+        const WIND_GAMMA     = 1.50;
+        const SEISMIC_SD     = 0.107;  // design spectral acceleration / g, lowest Swiss zone
+        /* Allowable average IN-PLANE shear on the wall section. 500 kN/m2 sat here
+           before, which is an UNREINFORCED value - wrong on its own terms for a
+           0.55 m structural wall in a three-storey house. For a reinforced wall the
+           in-plane shear is carried by the horizontal steel: tau = rho_h x f_yd,
+           and 0.2% at 435 MPa gives about 0.9 MPa, so 1.0 MPa is the normally
+           reinforced figure. This single constant scales every lateral capacity on
+           the page, so it is the number to argue with first. */
+        const WALL_TAU       = 1000;   // kN/m2, rho_h ~0.2% at f_yd 435
+        const CONCRETE_GAMMA = 25.0;   // kN/m3 reinforced concrete
+        const DEAD_EXTRA     = 1.50;   // kN/m2 finishes, partitions and the glazed envelope
+        const LIVE_SEISMIC   = 0.30;   // share of the live load that moves with the frame
+
+        // The seismic mass has to FOLLOW the slab, because the slab is a derived
+        // variable here - a fixed kN/m2 silently stops tracking it.
+        function floorWeight(slabT) {
+            return CONCRETE_GAMMA * slabT + DEAD_EXTRA + LIVE_SEISMIC * LIVE_LOAD;
+        }
+
+        function wallPathLength(nodes) {
+            let L = 0;
+            for (let j = 0; j < nodes.length - 1; j++) L += distXZ(nodes[j], nodes[j + 1]);
+            return L;
+        }
+
+        function lateralDemand(i, P, verts, slabT, wallLen) {
+            const storeys = Math.max(1, numFloors - i);
+            const hAbove = storeys * P.floorH;
+            const sp = getFloorSpan(verts), area = polygonArea(verts);
+            // Mass above this level: the plates AND the wall standing on them. For
+            // a house that IS one massive wall the wall is about a third of the
+            // total, and leaving it out understated the governing load case.
+            const W = (floorWeight(slabT) * area
+                     + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH) * storeys;
+            const seismic = SEISMIC_SD * W;
+            const wq = WIND_GAMMA * WIND_CF * WIND_QP;
+            const windX = wq * sp.z * hAbove;   // wind along X presses the Z-long facade
+            const windZ = wq * sp.x * hAbove;
+            const cap = WALL_TAU * Math.max(P.coreT, 0.05);
+            const Vx = Math.max(windX, seismic), Vz = Math.max(windZ, seismic);
+            return {
+                needLx: Vx / cap, needLz: Vz / cap, Vx, Vz, W, cap,
+                governs: seismic >= Math.max(windX, windZ) ? 'seismic' : 'wind'
+            };
+        }
+
+        /* ITEM 3 - CONTINUITY DOWN TO THE FOUNDATION.
+           The fold changes from storey to storey, which is the whole architectural
+           move - so the wall of a storey does not stand on the wall below it. Where
+           it is offset, the slab between them has to carry it as a transfer
+           element. Line load on the wall, times the offset, against the moment the
+           slab can carry - taken from the same cantilever reach the slab is sized
+           by, so there is one slab capacity in the file, not two.
+           The offset is taken to cantilever, which is right while the crossing
+           spacing is much larger than the offset - a fold wavelength of about 4 m
+           against an offset of about 1 m, so it holds here. It warns rather than
+           condemns for a different reason: the remedy is a LOCAL thickening or a
+           downstand where the wall steps, and this model has only one uniform slab,
+           so its slab capacity understates what a real design would do at the step.
+           The solver still minimises the offset, so Auto-Fold prefers walls that
+           stack. */
+        function wallOffset(above, below) {
+            let m = 0;
+            for (let j = 0; j < above.length - 1; j++) {
+                const a = above[j], b = above[j + 1];
+                for (let k = 0; k <= 6; k++) {
+                    const p = { x: a.x + (b.x - a.x) * k / 6, z: a.z + (b.z - a.z) * k / 6 };
+                    let d = Infinity;
+                    for (let i = 0; i < below.length - 1; i++) {
+                        d = Math.min(d, pointToSegmentDistance(p, below[i], below[i + 1]));
+                    }
+                    m = Math.max(m, d);
+                }
+            }
+            return m;
+        }
+
+        function transferCheck(P, slabT, area, wallLen, storeys, offset) {
+            const q = gravityUDL(slabT);
+            // everything the offset length of wall carries, per metre of wall
+            const W = (q * area + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH)
+                    * storeys / Math.max(wallLen, 0.1);
+            const reach = cantileverCapacity(slabT);
+            return { demand: W * offset, cap: q * reach * reach / 2, offset, W };
+        }
+
+        /* ITEM 4 - DIAPHRAGM SHEAR INTO THE WALL.
+           The storey's inertia force has to cross from the slab into the wall, and
+           the stair opening sits 0.05 m off the wall face - so over its length the
+           slab is not connected to the wall at all and the shear has to run round
+           the ends of it. Two openings of about 4.4 m on a 14 m wall is a third of
+           the collector gone. Checked per face, worse face reported. */
+        function diaphragmCheck(P, slabT, area, wallLen, slots) {
+            const storeyW = gravityUDL(slabT) * area
+                          + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH;
+            const demand = SEISMIC_SD * storeyW;         // this storey's own force
+            let lost = 0;
+            for (const side of [1, -1]) {
+                let s = 0;
+                slots.filter(sl => sl.side === side).forEach(sl => { s += sl.t1 - sl.t0; });
+                lost = Math.max(lost, s);
+            }
+            const joined = Math.max(0.1, wallLen - lost);
+            return { demand, cap: WALL_TAU * slabT * joined, joined, lost };
+        }
+
+        /* ITEM 5 - IN-PLANE BENDING AND OVERTURNING AT THE BASE.
+           A folded wall carries horizontal load like an open thin-walled section:
+           the overturning moment is resisted by vertical stress over the whole wall
+           footprint, with lever arms measured along the direction of the load. So
+           the fold is what gives it any section modulus at all in the weak
+           direction. Reported: the peak compressive stress against f_cd, and
+           whether the resultant stays inside the kern - outside it the base needs
+           tension reinforcement, which is normal for RC, not a failure. */
+        const F_CD = 20000;   // kN/m2, C30/37 at gamma_c 1.5
+        function baseStress(nodes, P, slabT, area, wallLen, storeys, V) {
+            const q = gravityUDL(slabT);
+            const N = (q * area + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH) * storeys;
+            const M = V * 0.7 * storeys * P.floorH;      // resultant at about 2/3 height
+            // second moment of the wall footprint about its own centroid, per axis
+            const pts = [];
+            for (let j = 0; j < nodes.length - 1; j++) {
+                const a = nodes[j], b = nodes[j + 1], L = distXZ(a, b);
+                const n = Math.max(2, Math.ceil(L / 0.25));
+                for (let k = 0; k < n; k++) {
+                    const f = (k + 0.5) / n;
+                    pts.push({ x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f, w: L / n });
+                }
+            }
+            const tot = pts.reduce((s2, p) => s2 + p.w, 0) || 1;
+            const cx = pts.reduce((s2, p) => s2 + p.x * p.w, 0) / tot;
+            const cz = pts.reduce((s2, p) => s2 + p.z * p.w, 0) / tot;
+            let Ix = 0, Iz = 0, ex = 0, ez = 0;
+            pts.forEach(p => {
+                Ix += P.coreT * p.w * (p.x - cx) * (p.x - cx);
+                Iz += P.coreT * p.w * (p.z - cz) * (p.z - cz);
+                ex = Math.max(ex, Math.abs(p.x - cx)); ez = Math.max(ez, Math.abs(p.z - cz));
+            });
+            const A = P.coreT * tot;
+            // load in X bends the section about the Z axis, so it uses Ix
+            const pick = (I, e) => {
+                if (I < 1e-9 || e < 1e-9) return { sigma: Infinity, kern: 0 };
+                return { sigma: N / A + M * e / I, kern: I / (A * e) };
+            };
+            const bx = pick(Ix, ex), bz = pick(Iz, ez);
+            const worst = bx.sigma >= bz.sigma ? bx : bz;
+            return { sigma: worst.sigma, fcd: F_CD, kern: worst.kern,
+                     ecc: N > 1e-9 ? M / N : Infinity, N, M,
+                     axis: bx.sigma >= bz.sigma ? 'X' : 'Z' };
+        }
 
         function projectedWall(nodes) {
             let Lx = 0, Lz = 0;
@@ -581,29 +930,139 @@
             return { Lx, Lz };
         }
 
-        // One wall means the centre of rigidity sits on the wall itself, so any
-        // offset from the centre of mass twists the plan with nothing to resist it.
-        function torsionalEccentricity(nodes, vertices) {
+        const ACCIDENTAL_ECC = 0.05;   // EC8: 5% of the plan dimension, always applied
+
+        /* THE FOLD IS THE ONLY THING RESISTING TWIST.
+           One wall means the centre of rigidity sits on the wall itself, so an
+           offset between it and the centre of mass twists the plan. A segment of
+           wall can only push along its own line, so its lever arm about that
+           centre is the PERPENDICULAR distance from the centre to that line - and
+           for a dead straight wall every segment is on the line, so the torsional
+           capacity is exactly zero. Since EC8 makes an accidental eccentricity of
+           5% of the plan mandatory, there is always a torque to carry: a straight
+           single wall cannot stand, however much shear length it has. That, and
+           not the shear length, is what forces the zigzag.
+           Reported as a check of its own, NOT combined with the direct shear. */
+        function torsionCheck(nodes, vertices, need) {
             let sx = 0, sz = 0, wx = 0, wz = 0;
+            const segs = [];
             for (let j = 0; j < nodes.length - 1; j++) {
                 const a = nodes[j], b = nodes[j + 1];
+                const L = distXZ(a, b);
+                if (L < 1e-9) continue;
                 const kx = Math.abs(b.x - a.x), kz = Math.abs(b.z - a.z);
-                const mz = (a.z + b.z) / 2, mx = (a.x + b.x) / 2;
-                sx += kx * mz; wx += kx;          // X-load: CR position along Z
-                sz += kz * mx; wz += kz;          // Z-load: CR position along X
+                segs.push({ a, L, ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
+                sx += kx * (a.z + b.z) / 2; wx += kx;   // X-load: CR position along Z
+                sz += kz * (a.x + b.x) / 2; wz += kz;   // Z-load: CR position along X
             }
-            const c = getPlateCentroid(vertices);
-            const b = getFloorSpan(vertices);
-            return {
-                underX: wx > 1e-6 ? Math.abs(sx / wx - c.z) / Math.max(b.z, 0.1) : 1,
-                underZ: wz > 1e-6 ? Math.abs(sz / wz - c.x) / Math.max(b.x, 0.1) : 1
-            };
+            const c = getPlateCentroid(vertices), b = getFloorSpan(vertices);
+            const crZ = wx > 1e-6 ? sx / wx : c.z;
+            const crX = wz > 1e-6 ? sz / wz : c.x;
+            // structural eccentricity plus the mandatory accidental one
+            const eX = Math.abs(crZ - c.z) + ACCIDENTAL_ECC * b.z;
+            const eZ = Math.abs(crX - c.x) + ACCIDENTAL_ECC * b.x;
+            let cap = 0;
+            segs.forEach(g => {
+                const d = Math.abs((crX - g.a.x) * g.uz - (crZ - g.a.z) * g.ux);
+                cap += need.cap * g.L * d;
+            });
+            const demand = Math.max(need.Vx * eX, need.Vz * eZ);
+            return { demand, cap, eX, eZ, arm: need.cap > 1e-6 ? cap / need.cap : 0 };
         }
 
+        /* COMBINED LATERAL CHECK - the one that decides.
+           Direct shear and twist draw on the SAME wall section, so reporting them
+           separately flatters the design: at the default they were 51% and 93% of
+           capacity, and a page saying SAFE to both was saying nothing about their
+           sum. This solves the storey properly instead.
+
+           Rigid diaphragm, three degrees of freedom: two translations and a
+           rotation. A wall segment resists ONLY along its own line, so its
+           extension is d.u and its force is k(d.u) with k proportional to its
+           length. Writing A = u_x, B = u_z and C = r x u (the signed lever arm
+           about the centre of mass), equilibrium is
+
+               [ SkAA SkAB SkAC ] [ qx ]   [ Vx  ]
+               [ SkAB SkBB SkBC ] [ qz ] = [ Vz  ]
+               [ SkAC SkBC SkCC ] [ qt ]   [ T/L ]
+
+           and F_j = L_j (qx A + qz B + qt C). Because both the stiffness and the
+           capacity of a segment scale with its length, the utilisation reduces to
+           |qx A + qz B + qt C| / (tau x t) - the same for every segment of a given
+           orientation and lever arm, and independent of how the wall is chopped up.
+           The structural eccentricity needs no separate calculation: the solve
+           finds the rotation the layout actually produces. Only EC8's accidental
+           5% has to be imposed, in both signs.
+           A straight wall makes the matrix rank one - every segment has the same
+           A, B and C - so there is no solution and the utilisation is infinite.
+           That is the honest answer: collinear forces cannot equilibrate a torque. */
+        function solve3(M, r) {
+            const det = m =>
+                  m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+                - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+                + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+            const D = det(M);
+            const scale = Math.max(Math.abs(M[0][0]), Math.abs(M[1][1]), Math.abs(M[2][2]), 1e-9);
+            if (Math.abs(D) < 1e-7 * scale * scale * scale) return null;   // rank deficient
+            const col = (k) => M.map((row, i) => row.map((v, j) => j === k ? r[i] : v));
+            return [det(col(0)) / D, det(col(1)) / D, det(col(2)) / D];
+        }
+
+        function lateralCheck(nodes, vertices, need) {
+            const O = getPlateCentroid(vertices), b = getFloorSpan(vertices);
+            const Lref = Math.max(b.x, b.z, 1);
+            const segs = [];
+            for (let j = 0; j < nodes.length - 1; j++) {
+                const a = nodes[j], c = nodes[j + 1];
+                const L = distXZ(a, c);
+                if (L < 1e-9) continue;
+                const A = (c.x - a.x) / L, B = (c.z - a.z) / L;
+                const rx = (a.x + c.x) / 2 - O.x, rz = (a.z + c.z) / 2 - O.z;
+                segs.push({ L, A, B, C: (rx * B - rz * A) / Lref });
+            }
+            if (!segs.length) return { use: Infinity, governs: 'no wall' };
+
+            const M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+            segs.forEach(g => {
+                const v = [g.A, g.B, g.C];
+                for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) M[i][j] += g.L * v[i] * v[j];
+            });
+
+            const cases = [];
+            for (const sgn of [1, -1]) {
+                cases.push({ n: 'X', Vx: need.Vx, Vz: 0, T: sgn * need.Vx * ACCIDENTAL_ECC * b.z });
+                cases.push({ n: 'Z', Vx: 0, Vz: need.Vz, T: sgn * need.Vz * ACCIDENTAL_ECC * b.x });
+            }
+            let use = 0, governs = 'X';
+            for (const cs of cases) {
+                const q = solve3(M, [cs.Vx, cs.Vz, cs.T / Lref]);
+                if (!q) return { use: Infinity, governs: cs.n + ' (no load path)' };
+                let worst = 0;
+                segs.forEach(g => {
+                    worst = Math.max(worst, Math.abs(q[0] * g.A + q[1] * g.B + q[2] * g.C));
+                });
+                const u = worst / Math.max(need.cap, 1e-9);
+                if (u > use) { use = u; governs = cs.n; }
+            }
+            return { use, governs };
+        }
+
+        // The centre of MASS, so it has to be the centroid of the AREA. The
+        // average of the corners is not that for an irregular plate, and the
+        // torsion demand is measured from this point.
         function getPlateCentroid(v) {
-            let x = 0, z = 0;
-            v.forEach(p => { x += p.x; z += p.z; });
-            return { x: x / v.length, z: z / v.length };
+            let a2 = 0, x = 0, z = 0;
+            for (let i = 0; i < v.length; i++) {
+                const p = v[i], q = v[(i + 1) % v.length];
+                const cr = p.x * q.z - q.x * p.z;
+                a2 += cr; x += (p.x + q.x) * cr; z += (p.z + q.z) * cr;
+            }
+            if (Math.abs(a2) < 1e-9) {
+                let sx = 0, sz = 0;
+                v.forEach(p => { sx += p.x; sz += p.z; });
+                return { x: sx / v.length, z: sz / v.length };
+            }
+            return { x: x / (3 * a2), z: z / (3 * a2) };
         }
         function getFloorSpan(v) {
             let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
@@ -617,53 +1076,19 @@
         // Riser is set by the storey, going follows from Blondel, and the slab
         // opening is only the stretch where headroom would otherwise be lost -
         // which is why it shortens as the slab gets thinner.
-        // The slab root is derived, not dialled: it has to carry the moment past
-        // the opening AND leave the wall the swing that the lateral density target
-        // demands - both are computable, so neither is a guess any more.
-        function narrowestHalfWidth(verts) {
+        // The gap between the wall face and the opening is NOMINAL. The wall is
+        // 0.55 m thick and a whole storey deep, so it spans past the opening far
+        // more readily than any strip of slab beside it could.
+
+        // how many folds the bracing demand implies, at a workable swing
+        function foldCountForDensity(P, verts, slabT) {
+            const amp = clamp(0.22 * plateHalfWidth(verts), 0.30, 1.60);
             const [A, B] = wallAnchors(verts);
-            const tA = axisParam(A), tB = axisParam(B), n = axisNormal();
-            let m = Infinity;
-            for (let k = 1; k < 8; k++) {
-                const p = axisToXZ(tA + (tB - tA) * (k / 8), 0);
-                for (const sgn of [1, -1]) {
-                    m = Math.min(m, outwardClearance(p, { x: n.x * sgn, z: n.z * sgn }, verts));
-                }
-            }
-            return isFinite(m) ? m : plateHalfWidth(verts);
+            const need = lateralDemand(0, P, verts, slabT, distXZ(A, B));
+            return clamp(Math.ceil(need.needLx / (2 * amp)), 0, 12);
         }
 
-        function deriveRoot(P, outWidth) {
-            const verts = floorData[0].vertices;
-            const half = narrowestHalfWidth(verts);
-            // A thinner wall needs MORE folds for the same shear area, not a deeper
-            // swing - so fix the target amplitude from the plan and let the fold
-            // count absorb the demand. Tying this to the panel guide instead made
-            // the root explode as the wall got thin, and killed the passage.
-            // The root must let the wall swing as far as the bracing target needs:
-            // centreline reach = root - STAIR_CLEAR, so size it from the demand.
-            const panelLimit = panelGuide(P.floorH);
-            const [A, B] = wallAnchors(verts);
-            const n = Math.max(1, foldCountForSpan(distXZ(A, B), panelLimit * SOLVE_MARGIN));
-            const LxReq = requiredDensity(numFloors) * polygonArea(verts) * numFloors / Math.max(P.coreT, 0.05);
-            const ampReq = LxReq / (2 * n);
-            const rootMax = Math.max(ROOT_MIN, half - P.coreT / 2 - STAIR_WIDTH - PASSAGE_MIN);
-            const struct = ROOT_MOMENT_RATIO * (outWidth || 0);
-            return {
-                root: clamp(Math.max(ROOT_MIN, ampReq + STAIR_CLEAR + STAIR_GAP, struct), ROOT_MIN, rootMax),
-                struct: clamp(Math.max(STAIR_GAP, struct), STAIR_GAP, rootMax)
-            };
-        }
-
-        // how many folds the bracing demand implies at that target amplitude
-        function foldCountForDensity(P, verts) {
-            const half = narrowestHalfWidth(verts);
-            const ampTarget = clamp(0.22 * half, 0.30, 1.60);
-            const LxReq = requiredDensity(numFloors) * polygonArea(verts) * numFloors / Math.max(P.coreT, 0.05);
-            return clamp(Math.ceil(LxReq / (2 * ampTarget)), 0, 12);
-        }
-
-        function stairGeometry(floorH, slabT, rootObj) {
+        function stairGeometry(floorH, slabT) {
             const risers = Math.ceil(floorH / STAIR_RISER_MAX);
             const riser = floorH / risers;
             const going = clamp(STAIR_BLONDEL - 2 * riser, STAIR_GOING_MIN, STAIR_GOING_MAX);
@@ -686,55 +1111,11 @@
             const soffit = floorH - slabT;
             const xCrit = Math.max(0, (soffit - STAIR_HEADROOM) * (run / Math.max(floorH, 0.1)));
             return {
-                risers, riser, going, run, soffit, xCrit, profile,
-                root: rootObj.root, rootStruct: rootObj.struct,
-                flights, landing: flights > 1 ? landing : 0,
+                risers, riser, going, run, soffit, xCrit, profile, flights, landing: flights > 1 ? landing : 0,
                 width: STAIR_WIDTH,
                 opening: clamp(run - xCrit, 0.60, run),
                 blondel: 2 * riser + going
             };
-        }
-
-        // align 0 = parallel to the division axis (programme placing itself, which
-        // is what forces the wall to fold). align 1 = parallel to the fold panel it
-        // sits against (the flight hugging the wall once the wall has responded).
-        function wallSegmentAt(nodes, t) {
-            for (let i = 0; i < nodes.length - 1; i++) {
-                const t0 = axisParam(nodes[i]), t1 = axisParam(nodes[i + 1]);
-                if (t >= Math.min(t0, t1) - 1e-9 && t <= Math.max(t0, t1) + 1e-9) return i;
-            }
-            return t < axisParam(nodes[0]) ? 0 : nodes.length - 2;
-        }
-
-        function stairFrame(stair, coreT, nodes, root, rootStruct) {
-            const a0 = clamp(stair.align || 0, 0, 1);
-            // axis-parallel keeps the corridor the wall needs to weave in; once the
-            // flight is aligned to a fold panel it only needs the slab band that
-            // carries the cantilever past the opening, so it can come in close
-            const innerFar  = coreT / 2 + (root || STAIR_GAP);
-            const innerNear = coreT / 2 + Math.max(STAIR_GAP, rootStruct || 0);
-            const inner = innerFar + (innerNear - innerFar) * a0;
-            const u = axisDir();
-            const oA = axisToXZ(stair.t, stair.side * inner);
-            let o = oA, d = u;
-            const a = clamp(stair.align || 0, 0, 1);
-            if (a > 0 && nodes && nodes.length > 1) {
-                const i = wallSegmentAt(nodes, stair.t);
-                const p0 = nodes[i], p1 = nodes[i + 1];
-                const t0 = axisParam(p0), t1 = axisParam(p1);
-                const f = clamp((stair.t - t0) / ((t1 - t0) || 1), 0, 1);
-                const p = { x: p0.x + (p1.x - p0.x) * f, z: p0.z + (p1.z - p0.z) * f };
-                let dx = p1.x - p0.x, dz = p1.z - p0.z;
-                const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
-                const sgn = (dx * u.x + dz * u.z) >= 0 ? 1 : -1;
-                dx *= sgn; dz *= sgn;
-                const nx = dz * stair.side, nz = -dx * stair.side;
-                const oP = { x: p.x + nx * inner, z: p.z + nz * inner };
-                o = { x: oA.x + (oP.x - oA.x) * a, z: oA.z + (oP.z - oA.z) * a };
-                d = { x: u.x + (dx - u.x) * a, z: u.z + (dz - u.z) * a };
-                const dl = Math.hypot(d.x, d.z) || 1; d = { x: d.x / dl, z: d.z / dl };
-            }
-            return { o, d, n: { x: d.z * stair.side, z: -d.x * stair.side } };
         }
 
         // The slab converges thicker after the flights or the wall move, which
@@ -743,26 +1124,33 @@
         const padOpening = (g, f) => Object.assign({}, g, { opening: Math.min(g.run, g.opening * f) });
         const SOLVE_PAD = 1.10;
 
-        function stairSlot(stair, g, coreT, nodes) {
-            const fr = stairFrame(stair, coreT, nodes, g.root, g.rootStruct);
-            const h = g.opening / 2;
-            const c0 = { x: fr.o.x - fr.d.x * h,        z: fr.o.z - fr.d.z * h };
-            const c1 = { x: fr.o.x + fr.d.x * h,        z: fr.o.z + fr.d.z * h };
-            const c2 = { x: c1.x + fr.n.x * g.width,    z: c1.z + fr.n.z * g.width };
-            const c3 = { x: c0.x + fr.n.x * g.width,    z: c0.z + fr.n.z * g.width };
+        // Axis-parallel, at the tail of the reserved stretch, one on each face. The
+        // wall is straight there, so it can never cut into the opening.
+        function stairSlot(stair, g, coreT, nodes, idx, k) {
+            const r = stretchOf(idx, k, g.run);
+            const gap = Math.max(ROOT_MIN, stair.gap || ROOT_MIN);
+            const inner = coreT / 2 + gap;
+            const nx = r.n.x * stair.side, nz = r.n.z * stair.side;
+            // the opening is the tail of the run, measured along the stretch
+            const back = Math.max(0, r.len - g.opening);
+            const a = { x: r.P0.x + r.d.x * back, z: r.P0.z + r.d.z * back };
+            const c0 = { x: a.x + nx * inner,               z: a.z + nz * inner };
+            const c1 = { x: r.P1.x + nx * inner,            z: r.P1.z + nz * inner };
+            const c2 = { x: c1.x + nx * g.width,            z: c1.z + nz * g.width };
+            const c3 = { x: c0.x + nx * g.width,            z: c0.z + nz * g.width };
             const ts = [c0, c1, c2, c3].map(axisParam);
             return {
-                poly: [c0, c1, c2, c3], outer: [c3, c2], n: fr.n, side: stair.side,
-                t0: Math.min(...ts), t1: Math.max(...ts), align: clamp(stair.align || 0, 0, 1),
-                root: g.root || 0, width: g.width
+                poly: [c0, c1, c2, c3], outer: [c3, c2],
+                n: { x: nx, z: nz }, side: stair.side,
+                t0: Math.min(...ts), t1: Math.max(...ts),
+                root: gap, width: g.width
             };
         }
 
-        // The topmost slab is the roof - a stair does not pass through it.
         function slotsFor(idx, g, coreT) {
             if (idx >= numFloors - 1) return [];
             const nodes = getWallNodes(idx);
-            return floorData[idx].stairs.map(st => stairSlot(st, g, coreT, nodes));
+            return floorData[idx].stairs.map((st, k) => stairSlot(st, g, coreT, nodes, idx, k));
         }
 
         // How far one can walk outward from the slot before leaving the plate.
@@ -871,31 +1259,34 @@
         }
 
         function computeReach(vertices, nodes, coreT, slots) {
-            let left = 0, right = 0, outboard = 0, outWidth = 0;
+            let left = 0, right = 0;
             const pts = slots && slots.length ? vertices.concat(...slots.map(sl => sl.poly)) : vertices;
             pts.forEach(pt => {
                 let d = Infinity;
                 for (let j = 0; j < nodes.length - 1; j++) d = Math.min(d, pointToSegmentDistance(pt, nodes[j], nodes[j + 1]));
                 let clear = Math.max(0, d - coreT / 2);
                 const side = axisSide(pt);
-                // Outboard of a slot the slab is severed from the wall: it spans the
-                // opening first, then cantilevers on. A span L carries the same moment
-                // as a cantilever of L/2, so the two are added.
+                /* Outboard of a slot the slab is cut off from the wall. It has no
+                   support further out, so it SPANS THE OPENING - between the solid
+                   slab at each end of it - and a span L carries the same moment as
+                   a cantilever of L/2. Its width does not enter: the moment per
+                   metre of a one-way span is qL^2/8 however wide the strip is.
+                   The old form added the width to L/2, which mixed a moment about
+                   the axis with one about the perpendicular - two different
+                   reinforcement directions - and was over-conservative.
+                   Not covered: the strip's end reactions land as concentrated
+                   loads on the solid slab beside the opening. */
                 if (slots) for (const sl of slots) {
                     if (Math.sign(side) !== sl.side) continue;
                     const t = axisParam(pt);
                     if (t < sl.t0 || t > sl.t1) continue;
-                    const outer = sl.root + sl.width;
-                    if (Math.abs(side) <= outer) continue;
-                    const width = Math.abs(side) - outer;
-                    clear = Math.max(clear, width + (sl.t1 - sl.t0) / 2);
-                    outboard = Math.max(outboard, width + (sl.t1 - sl.t0) / 2);
-                    outWidth = Math.max(outWidth, width);
+                    if (Math.abs(side) <= sl.root + sl.width) continue;
+                    clear = Math.max(clear, (sl.t1 - sl.t0) / 2);
                 }
                 if (side < 0) left = Math.max(left, clear); else right = Math.max(right, clear);
             });
             const max = Math.max(left, right);
-            return { left, right, max, outboard, outWidth, imbalance: max > 1e-6 ? Math.abs(left - right) / max : 0 };
+            return { left, right, max, imbalance: max > 1e-6 ? Math.abs(left - right) / max : 0 };
         }
 
         /* =====================================================================
@@ -1105,7 +1496,9 @@
             floorData.push({
                 vertices: PLATE.map(v => ({ x: v.x, z: v.z, edge: v.edge || null })),
                 foldNodes: [],
-                stairs: [{ t: 0, side: 1, align: 0 }, { t: 0, side: -1, align: 0 }]
+                stairs: [{ side: 1, tc: undefined, sc: 0, ang: 0, gap: undefined },
+                         { side: -1, tc: undefined, sc: 0, ang: 0, gap: undefined }],
+                stretch: undefined
             });
         }
 
@@ -1126,12 +1519,11 @@
             // The opening length depends on slab thickness, and slab thickness
             // depends on the reach the opening creates - two passes converge it.
             let slabT = P.slabAuto ? clamp(parseFloat(document.getElementById('slabT').value), 0.15, 1.0) : P.slabT;
-            let g = null, floors = [], maxReach = 0, maxPanel = 0, maxImbalance = 0, maxOutboard = 0, needT = 0;
-            let root = deriveRoot(P, 0);
+            let g = null, floors = [], maxReach = 0, maxPanel = 0, maxImbalance = 0, needT = 0;
 
             for (let pass = 0; pass < 2; pass++) {
-                g = stairGeometry(P.floorH, slabT, root);
-                floors = []; maxReach = 0; maxPanel = 0; maxImbalance = 0; maxOutboard = 0;
+                g = stairGeometry(P.floorH, slabT);
+                floors = []; maxReach = 0; maxPanel = 0; maxImbalance = 0;
                 for (let i = 0; i < numFloors; i++) {
                     const nodes = getWallNodes(i);
                     const verts = floorData[i].vertices;
@@ -1139,13 +1531,20 @@
                     const quads = generateWallQuads(nodes, P.coreT, endDirsFor(verts));
                     const reach = computeReach(verts, nodes, P.coreT, slots);
                     const proj = projectedWall(nodes);
-                    const braced = Math.max(1, numFloors - i);      // storeys this level braces
-                    const Ap = polygonArea(verts) * braced;
+                    const wallLen = wallPathLength(nodes);
+                    const need = lateralDemand(i, P, verts, slabT, wallLen);
+                    const below = i > 0 ? floors[i - 1].slots.map(s2 => [s2.t0, s2.t1]) : [];
+                    const area = polygonArea(verts), storeys = Math.max(1, numFloors - i);
+                    const off = i > 0 ? wallOffset(nodes, floors[i - 1].nodes) : 0;
                     floors.push({
-                        nodes, verts, slots, quads, reach,
-                        density: { x: proj.Lx * P.coreT / Ap, z: proj.Lz * P.coreT / Ap },
-                        ecc: torsionalEccentricity(nodes, verts),
-                        panel: longestPanel(nodes),
+                        nodes, verts, slots, quads, reach, proj, need, wallLen,
+                        tors: torsionCheck(nodes, verts, need),
+                        comb: lateralCheck(nodes, verts, need),
+                        transfer: transferCheck(P, slabT, area, wallLen, storeys, off),
+                        diaph: diaphragmCheck(P, slabT, area, wallLen, slots),
+                        base: baseStress(nodes, P, slabT, area, wallLen, storeys,
+                                         Math.max(need.Vx, need.Vz)),
+                        panel: longestPanel(nodes, straightSpans(i, g.run, below)),
                         escapes: wallEscapesPlate(nodes, verts, P.coreT),
                         slotsOutside: slots.some(sl => !slotInsidePlate(sl, verts)),
                         passage: Math.min(...slots.map(sl => slotPassage(sl, verts))),
@@ -1156,25 +1555,24 @@
                     maxReach = Math.max(maxReach, reach.max);
                     maxPanel = Math.max(maxPanel, floors[i].panel);
                     maxImbalance = Math.max(maxImbalance, reach.imbalance);
-                    maxOutboard = Math.max(maxOutboard, reach.outWidth);
                 }
-                needT = requiredSlabT(maxReach, P.liveLoad);
-                root = deriveRoot(P, maxOutboard);
+                needT = requiredSlabT(maxReach);
                 if (!P.slabAuto) break;
                 slabT = clamp(needT, 0.15, 1.0);
             }
 
-            const escaped = [], slotIssues = [], bearsOnVoid = [], tight = [], severed = [], facing = [], unbraced = [], cramped = [];
-            const densReq = requiredDensity(numFloors);
-            let worstEcc = 0;
-            let stairChain = 0;
+            const escaped = [], slotIssues = [], bearsOnVoid = [], tight = [],
+                  severed = [], unbraced = [], cramped = [], twisted = [],
+                  overloaded = [], transferred = [], crushed = [];
             const disconnected = new Set();
             for (let i = 0; i < numFloors; i++) {
                 if (floors[i].escapes) escaped.push(i + 1);
                 if (floors[i].slotsOutside) slotIssues.push(i + 1);
-                if (floors[i].facing) facing.push(i + 1);
-                if (floors[i].density.x < densReq || floors[i].density.z < densReq) unbraced.push(i + 1);
-                worstEcc = Math.max(worstEcc, floors[i].ecc.underX, floors[i].ecc.underZ);
+                if (floors[i].proj.Lx < floors[i].need.needLx || floors[i].proj.Lz < floors[i].need.needLz) unbraced.push(i + 1);
+                if (floors[i].tors.demand > floors[i].tors.cap * CHECK_TOL) twisted.push(i + 1);
+                if (floors[i].comb.use > CHECK_TOL) overloaded.push(i + 1);
+                if (floors[i].transfer.demand > floors[i].transfer.cap * CHECK_TOL) transferred.push(i + 1);
+                if (floors[i].base.sigma > floors[i].base.fcd) crushed.push(i + 1);
                 if (isFinite(floors[i].bypass) && floors[i].bypass < PASSAGE_MIN) severed.push(i + 1);
                 else if (floors[i].passage < PASSAGE_MIN) tight.push(i + 1);
                 if (isFinite(floors[i].approach) && floors[i].approach < APPROACH_MIN) cramped.push(i + 1);
@@ -1183,8 +1581,7 @@
                 if (i < numFloors - 1 && !wallClearsSlots(floors[i + 1].quads, floors[i].slots)) bearsOnVoid.push(i + 2);
                 if (i > 0 && i < numFloors - 1) {   // both levels carry a flight
                     for (let k = 0; k < 2; k++) {
-                        const step = Math.abs(floorData[i].stairs[k].t - floorData[i - 1].stairs[k].t);
-                        stairChain = Math.max(stairChain, step);
+                        const step = Math.abs(stretchOf(i, k, g.run).tc - stretchOf(i - 1, k, g.run).tc);
                         // one flight arrives where the next departs, so the openings
                         // must sit about one run apart or the stair does not join up
                         if (Math.abs(step - g.run) > g.run * 0.40) disconnected.add(i + 1);
@@ -1194,11 +1591,13 @@
 
             return {
                 P, floors, maxReach, maxPanel, maxImbalance, needT, slabT, escaped,
-                slotIssues, bearsOnVoid, tight, severed, facing, stairChain, stair: g,
-                disconnected: [...disconnected], unbraced, densReq, worstEcc, cramped,
-                rootMin: ROOT_MOMENT_RATIO * maxOutboard,
+
+                slotIssues, bearsOnVoid, tight, severed, stair: g,
+                disconnected: [...disconnected], unbraced, cramped, twisted,
+                overloaded, transferred, crushed,
+
                 intrudes: floors.some(f => f.intrudes > 0),
-                capacity:   cantileverCapacity(slabT, P.liveLoad),
+                capacity:   cantileverCapacity(slabT),
                 panelLimit: panelGuide(P.floorH)
             };
         }
@@ -1337,6 +1736,18 @@
             editCtx.lineWidth = 2.5; editCtx.stroke();
 
             // locked ends
+            (function () {   // one straight stretch per stair, merged when they coincide
+                wallSegments(idx, st.stair.run).segs.forEach(r => {
+                    strokePath([r.P0, r.P1], false);
+                    editCtx.strokeStyle = 'rgba(0,123,255,0.30)'; editCtx.lineWidth = 6; editCtx.stroke();
+                    editCtx.fillStyle = '#007BFF';
+                    [r.P0, r.P1].forEach(p => {
+                        const q = toPx(p.x, p.z);
+                        editCtx.beginPath(); editCtx.arc(q.px, q.pz, 4.5, 0, Math.PI * 2); editCtx.fill();
+                    });
+                });
+            })();
+
             editCtx.fillStyle = '#111';
             axisEnds.forEach(a => {
                 const p = toPx(a.x, a.z);
@@ -1362,19 +1773,35 @@
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const m = canvasPoint(e);
             const mp = toPx(m.x, m.z);
-            const folds = getWallNodes(idx).slice(1, -1);
-            for (let i = 0; i < folds.length; i++) {
-                const p = toPx(folds[i].x, folds[i].z);
-                if (Math.hypot(p.px - mp.px, p.pz - mp.pz) < 12) { dragType = 'fold'; dragIdx = i; return; }
+            const near = p => Math.hypot(toPx(p.x, p.z).px - mp.px, toPx(p.x, p.z).pz - mp.pz) < 12;
+
+            // The two ends of the straight stretch sit ON the wall line, so they go
+            // first or something else swallows them.
+            const runNow = currentRun();
+            for (let k = 0; k < 2; k++) {
+                const r = stretchOf(idx, k, runNow);
+                for (let e = 0; e < 2; e++) {
+                    if (near([r.P0, r.P1][e])) { dragType = 'stretch'; dragIdx = k * 2 + e; return; }
+                }
             }
+
+            // Hit-test the SOURCE data, never getWallNodes(): that list has the
+            // anchors and the stretch ends spliced into it, so indices taken from it
+            // do not line up with foldNodes - which was moving the wrong fold.
+            const d0 = floorData[idx];
+            const fz = foldZones(idx, runNow);
+            for (let i = 0; i < d0.foldNodes.length; i++) {
+                const t = axisParam(d0.foldNodes[i]);
+                const inWall = fz.zones.some(z => t > z[0] && t < z[1]);
+                if (inWall && near(d0.foldNodes[i])) { dragType = 'fold'; dragIdx = i; return; }
+            }
+
             const verts = floorData[idx].vertices;
             for (let i = 0; i < verts.length; i++) {
-                const p = toPx(verts[i].x, verts[i].z);
-                if (Math.hypot(p.px - mp.px, p.pz - mp.pz) < 12) { dragType = 'vertex'; dragIdx = i; return; }
+                if (near(verts[i])) { dragType = 'vertex'; dragIdx = i; return; }
             }
             for (let k = 0; k < 2; k++) {
-                const p = toPx(axisEnds[k].x, axisEnds[k].z);
-                if (Math.hypot(p.px - mp.px, p.pz - mp.pz) < 12) { dragType = 'anchor'; dragIdx = k; return; }
+                if (near(axisEnds[k])) { dragType = 'anchor'; dragIdx = k; return; }
             }
             const { P, g } = stairParams();
             const slots = slotsFor(idx, g, P.coreT);
@@ -1418,26 +1845,71 @@
             } else if (dragType === 'anchor') {
                 // the end stays on the envelope, and the stairs keep their place on
                 // the wall rather than sliding when the axis is re-aimed
-                const held = floorData.map(fl => fl.stairs.map(st => axisToXZ(st.t, 0)));
                 const keep = { x: axisEnds[dragIdx].x, z: axisEnds[dragIdx].z };
                 axisEnds[dragIdx] = nearestOnPolygon(target, floorData[0].vertices);
                 if (distXZ(axisEnds[0], axisEnds[1]) < MIN_DEPTH) {
                     axisEnds[dragIdx] = keep;
                     invalidFlash = 1;
-                } else {
-                    floorData.forEach((fl, i) => fl.stairs.forEach((st, k) => { st.t = axisParam(held[i][k]); }));
+                }
+            } else if (dragType === 'stretch') {
+                // hold the far end and aim the near one: one gesture slides,
+                // offsets and tilts the straight stretch together
+                stairsManual = true;
+                const g = stairParams().g;
+                const k = dragIdx >> 1, end = dragIdx & 1;
+                const r = stretchOf(idx, k, g.run);
+                const fixed = end === 0 ? r.P1 : r.P0;
+                let vx = target.x - fixed.x, vz = target.z - fixed.z;
+                const L = Math.hypot(vx, vz) || 1; vx /= L; vz /= L;
+                const sgn = end === 0 ? -1 : 1;                  // keep d pointing P0 -> P1
+                const dirx = vx * sgn, dirz = vz * sgn;
+                const cx = fixed.x + (end === 0 ? -dirx : dirx) * r.len / 2;
+                const cz = fixed.z + (end === 0 ? -dirz : dirz) * r.len / 2;
+                const u = axisDir(), nn = axisNormal();
+                const st0 = d.stairs[k];
+                const keep = { tc: st0.tc, sc: st0.sc, ang: st0.ang };
+                const keepAll = d.stairs.map(x => ({ tc: x.tc, sc: x.sc, ang: x.ang }));
+                const mid = { x: cx, z: cz };
+                st0.tc = axisParam(mid); st0.sc = axisSide(mid);
+                st0.ang = Math.atan2(dirx * nn.x + dirz * nn.z, dirx * u.x + dirz * u.z);
+                syncStretches(idx, g.run);
+                const nodes = getWallNodes(idx);
+                const bad = !isFoldGeometryValid(nodes, P_coreT())
+                         || wallEscapesPlate(nodes, d.vertices, P_coreT())
+                         || d.stairs.some((stx, j) => {
+                                const sl = stairSlot(stx, g, P_coreT(), nodes, idx, j);
+                                return !slotInsidePlate(sl, d.vertices) || slotBypass(sl, d.vertices) < PASSAGE_MIN;
+                            });
+                if (bad) {
+                    d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
+                    invalidFlash = 1;
                 }
             } else if (dragType === 'stair') {
-                // the flight slides along the wall; its side belongs to its dwelling
-                const { P, g } = stairParams();
-                const stair = d.stairs[dragIdx];
-                const keep = stair.t;
-                stair.t = axisParam(target);
-                const slot = stairSlot(stair, g, P.coreT, getWallNodes(idx));
-                if (!slotInsidePlate(slot, d.vertices)
-                    || !footprintOnPlate(slot, g, floorData[Math.max(0, idx - 1)].vertices)
-                    || slotPassage(slot, d.vertices) < PASSAGE_MIN) {
-                    stair.t = keep;
+                // along the stretch slides it; across it sets how far the flight
+                // stands off the wall face
+                stairsManual = true;
+                const g = stairParams().g;
+                const k = dragIdx;
+                const r = stretchOf(idx, k, g.run);
+                const st0 = d.stairs[k];
+                const rel = { x: target.x - r.c.x, z: target.z - r.c.z };
+                const along  = rel.x * r.d.x + rel.z * r.d.z;
+                const across = (rel.x * r.n.x + rel.z * r.n.z) * st0.side;
+                const keepAll = d.stairs.map(x => ({ tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap }));
+                const u = axisDir();
+                st0.tc = r.tc + along * (r.d.x * u.x + r.d.z * u.z);
+                st0.sc = r.sc; st0.ang = r.ang;
+                st0.gap = clamp(across - P_coreT() / 2 - g.width / 2, ROOT_MIN, 2.0);
+                syncStretches(idx, g.run);
+                const nodes = getWallNodes(idx);
+                const bad = !isFoldGeometryValid(nodes, P_coreT())
+                         || wallEscapesPlate(nodes, d.vertices, P_coreT())
+                         || d.stairs.some((stx, j) => {
+                                const sl = stairSlot(stx, g, P_coreT(), nodes, idx, j);
+                                return !slotInsidePlate(sl, d.vertices) || slotBypass(sl, d.vertices) < PASSAGE_MIN;
+                            });
+                if (bad) {
+                    d.stairs.forEach((x, j) => Object.assign(x, keepAll[j]));
                     invalidFlash = 1;
                 }
             } else {
@@ -1449,7 +1921,18 @@
                 const next = dragIdx < d.foldNodes.length - 1 ? d.foldNodes[dragIdx + 1] : null;
                 const tLo = (prev ? axisParam(prev) : tA) + FOLD_MIN_GAP;
                 const tHi = (next ? axisParam(next) : tB) - FOLD_MIN_GAP;
-                const t = tLo <= tHi ? clamp(axisParam(target), tLo, tHi) : (tLo + tHi) / 2;
+                let t = tLo <= tHi ? clamp(axisParam(target), tLo, tHi) : (tLo + tHi) / 2;
+                // The straight stretch belongs to the stairs, so a fold cannot live
+                // inside it. Push it to the nearer edge instead of letting it drop
+                // out of the wall silently, which is what used to happen.
+                for (const sg of wallSegments(idx, currentRun()).segs) {
+                    if (t > sg.t0 - FOLD_MIN_GAP && t < sg.t1 + FOLD_MIN_GAP) {
+                        const toLow = Math.abs(t - sg.t0), toHigh = Math.abs(sg.t1 - t);
+                        t = toLow <= toHigh ? sg.t0 - FOLD_MIN_GAP : sg.t1 + FOLD_MIN_GAP;
+                        t = clamp(t, tA + FOLD_MIN_GAP, tB - FOLD_MIN_GAP);
+                        invalidFlash = 1;
+                    }
+                }
                 const maxAmp = FOLD_MAX_AMP_RATIO * plateHalfWidth(d.vertices);
                 const s = clamp(axisSide(target), -maxAmp, maxAmp);
 
@@ -1486,64 +1969,114 @@
         /* =====================================================================
            FOLD EDITING
            ===================================================================== */
+        /* THE + FOLD AND - FOLD BUTTONS HAVE TO OBEY THE SAME ZONE MODEL AS THE
+           SOLVER. They did not: addFold picked the longest segment of
+           getWallNodes(), which on any floor with a stair is the RESERVED STRETCH,
+           so the new node landed inside it and assembleWall - which keeps only
+           folds that fall in a fold zone - dropped it again. removeFold then
+           spliced the middle of foldNodes, which was one of those orphans. Twelve
+           presses on floor 2 changed nothing at all, while the status bar was
+           telling the user to "add a fold". */
+
+        // where a fold may actually live: the fold zones, less the openings of the
+        // floor below, which the wall has to run straight across
+        function foldableSpans(idx) {
+            const coreT = P_coreT();
+            const gp = padOpening(stairParams().g, SOLVE_PAD);
+            const bl = mergeSpans(idx > 0
+                ? slotsFor(idx - 1, gp, coreT).map(sl => [sl.t0, sl.t1]) : []);
+            const out = [];
+            foldZones(idx, currentRun()).zones.forEach(z => {
+                let cursor = z[0];
+                for (const b of bl) {
+                    if (b[1] <= cursor || b[0] >= z[1]) continue;
+                    const lo = Math.max(b[0], cursor), hi = Math.min(b[1], z[1]);
+                    if (lo - cursor > FOLD_MIN_SEG) out.push([cursor, lo]);
+                    cursor = hi;
+                }
+                if (z[1] - cursor > FOLD_MIN_SEG) out.push([cursor, z[1]]);
+            });
+            return out;
+        }
+
+        function foldsStillFit(idx) {
+            const d = floorData[idx], coreT = P_coreT();
+            const nodes = getWallNodes(idx);
+            if (!isFoldGeometryValid(nodes, coreT)) return false;
+            if (wallEscapesPlate(nodes, d.vertices, coreT)) return false;
+            const gp = padOpening(stairParams().g, SOLVE_PAD);
+            const must = slotsFor(idx, gp, coreT)
+                .concat(idx > 0 ? slotsFor(idx - 1, gp, coreT) : []);
+            return wallClearsSlots(generateWallQuads(nodes, coreT, endDirsFor(d.vertices)), must);
+        }
+
         function addFold() {
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const d = floorData[idx];
-            const nodes = getWallNodes(idx);
-            let best = 0, bestLen = -1;
-            for (let i = 0; i < nodes.length - 1; i++) {
-                const l = distXZ(nodes[i], nodes[i + 1]);
-                if (l > bestLen) { bestLen = l; best = i; }
-            }
-            const mid = { x: (nodes[best].x + nodes[best + 1].x) / 2, z: (nodes[best].z + nodes[best + 1].z) / 2 };
+            const byT = (a, b) => axisParam(a) - axisParam(b);
+
+            // the longest unfolded gap inside a foldable span - which is where a
+            // fold would do the most for the panel guide
+            let best = null;
+            foldableSpans(idx).forEach(z => {
+                const ts = d.foldNodes.map(axisParam)
+                    .filter(t => t > z[0] && t < z[1]).sort((a, b) => a - b);
+                const marks = [z[0]].concat(ts, [z[1]]);
+                for (let i = 0; i < marks.length - 1; i++) {
+                    const len = marks[i + 1] - marks[i];
+                    if (len > 2 * FOLD_MIN_GAP && (!best || len > best.len)) {
+                        best = { len, t: (marks[i] + marks[i + 1]) / 2 };
+                    }
+                }
+            });
+            // nowhere left to fold: say so instead of doing nothing
+            if (!best) { invalidFlash = 1; refresh(); return; }
+
+            // alternate away from the nearest existing fold
             const amp = 0.3 * plateHalfWidth(d.vertices);
-            const sMid = axisSide(mid);
-            d.foldNodes.push(axisToXZ(axisParam(mid), Math.abs(sMid) < 1e-3 ? amp : -Math.sign(sMid) * amp));
-            d.foldNodes.sort((a, b) => axisParam(a) - axisParam(b));
+            let near = null, nd = Infinity;
+            d.foldNodes.forEach(f => {
+                const dt = Math.abs(axisParam(f) - best.t);
+                if (dt < nd) { nd = dt; near = f; }
+            });
+            const ns = near ? axisSide(near) : 0;
+            const side = Math.abs(ns) < 1e-3 ? amp : -Math.sign(ns) * amp;
+
+            const keep = d.foldNodes.slice();
+            d.foldNodes.push(axisToXZ(best.t, side));
+            d.foldNodes.sort(byT);
+            if (!foldsStillFit(idx)) { d.foldNodes = keep; invalidFlash = 1; }
             refresh();
         }
 
         function removeFold() {
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const d = floorData[idx];
-            if (d.foldNodes.length > 0) { d.foldNodes.splice(Math.floor(d.foldNodes.length / 2), 1); refresh(); }
+            if (!d.foldNodes.length) { invalidFlash = 1; refresh(); return; }
+            const zones = foldZones(idx, currentRun()).zones;
+            const inWall = t => zones.some(z => t > z[0] + 1e-6 && t < z[1] - 1e-6);
+
+            // 1. an orphan is in foldNodes but in no zone, so it is not in the wall
+            //    at all - clear the junk first
+            let k = d.foldNodes.findIndex(f => !inWall(axisParam(f)));
+            if (k < 0) {
+                // 2. otherwise drop the shallowest real fold - the one doing least.
+                //    A node on the axis is a PIN holding the wall straight across
+                //    the opening below, so it is not ours to remove.
+                let least = Infinity;
+                d.foldNodes.forEach((f, i) => {
+                    const a = Math.abs(axisSide(f));
+                    if (a > 1e-3 && a < least) { least = a; k = i; }
+                });
+            }
+            if (k < 0) { invalidFlash = 1; refresh(); return; }   // only pins left
+            d.foldNodes.splice(k, 1);
+            refresh();
         }
 
         // Folds are generated by the programme first: each stair needs the wall
         // pushed to the far side across its slot, which is what makes the zigzag.
         // Extra folds are then inserted only where a panel is too long to stand up.
-        function buildFoldsFromProgramme(tA, tB, slots, amp, panelLimit, minSeg) {
-            const ev = slots
-                .filter(sl => sl.t1 > tA + 0.2 && sl.t0 < tB - 0.2)
-                .map(sl => ({ t: clamp((sl.t0 + sl.t1) / 2, tA + minSeg, tB - minSeg), w: -sl.side, n: 1 }))
-                .sort((a, b) => a.t - b.t);
-            const merged = [];
-            for (const e of ev) {
-                const last = merged[merged.length - 1];
-                if (last && e.t - last.t < minSeg) {
-                    last.t = (last.t * last.n + e.t) / (last.n + 1);
-                    last.w += e.w; last.n++;
-                } else merged.push(e);
-            }
-            let f = merged.filter(m => m.w !== 0).map(m => ({ t: m.t, s: Math.sign(m.w) * amp }));
-
-            for (let guard = 0; guard < 16 && f.length < 12; guard++) {
-                const seq = [{ t: tA, s: 0 }, ...f, { t: tB, s: 0 }];
-                let worst = -1, worstLen = 0;
-                for (let i = 0; i < seq.length - 1; i++) {
-                    const l = distXZ(axisToXZ(seq[i].t, seq[i].s), axisToXZ(seq[i + 1].t, seq[i + 1].s));
-                    if (l > worstLen) { worstLen = l; worst = i; }
-                }
-                if (worstLen <= panelLimit * 0.995) break;
-                const a = seq[worst], b = seq[worst + 1];
-                const tm = (a.t + b.t) / 2;
-                if (tm - a.t < minSeg || b.t - tm < minSeg) break;
-                f.push({ t: tm, s: (a.s >= b.s ? -amp : amp) });
-                f.sort((x, y) => x.t - y.t);
-            }
-            return f.map(n => axisToXZ(n.t, n.s));
-        }
-
         function solveFolds(idx, P, g) {
             const vertices = floorData[idx].vertices;
             const [A, B] = wallAnchors(vertices);
@@ -1551,7 +2084,8 @@
             const panelLimit = panelGuide(P.floorH);
             const target = panelLimit * SOLVE_MARGIN;
             const base = foldCountForSpan(distXZ(A, B), target);
-            const nDens = foldCountForDensity(P, vertices);
+            const slabTNow = parseFloat(document.getElementById('slabT').value);
+            const nDens = foldCountForDensity(P, vertices, slabTNow);
             const endD = endDirsFor(vertices);
 
             // avoid a slightly longer slot than will be reported: the slab converges
@@ -1560,235 +2094,147 @@
             const ownSlots = slotsFor(idx, gPad, P.coreT);
             const belowSlots = idx > 0 ? slotsFor(idx - 1, gPad, P.coreT) : [];
             const mustMiss = ownSlots.concat(belowSlots);
+            // the wall of this floor stands on the slab below, so its openings are
+            // where this wall may not leave the axis
+            const blocked = belowSlots.map(s2 => [s2.t0, s2.t1]);
+            // ...and where it does not stand on the wall below, that slab has to
+            // carry it as a transfer element, so the solver has to want to stack
+            const belowNodes = idx > 0 ? getWallNodes(idx - 1) : null;
+            const areaNow = polygonArea(vertices);
 
-            const densReq = requiredDensity(numFloors);
-            const bracedArea = polygonArea(vertices) * Math.max(1, numFloors - idx);
-            const densityOf = nodes => {
-                const pr = projectedWall(nodes);
-                return { x: pr.Lx * P.coreT / bracedArea, z: pr.Lz * P.coreT / bracedArea };
-            };
 
-            const evaluate = (folds, requireCompliant, out) => {
-                const nodes = [A, ...folds, B];
+            const evaluate = (folds, requireCompliant, wantStacked, out) => {
+                const nodes = assembleWall(idx, folds);
                 if (!isFoldGeometryValid(nodes, P.coreT)) return;
                 if (wallEscapesPlate(nodes, vertices, P.coreT)) return;
                 const quads = generateWallQuads(nodes, P.coreT, endD);
                 if (!wallClearsSlots(quads, mustMiss)) return;
-                const panel = longestPanel(nodes);
+                const panel = longestPanel(nodes, straightSpans(idx, g.run, blocked));
                 if (requireCompliant && panel > panelLimit * 0.995) return;
-                const dn = densityOf(nodes);
-                if (requireCompliant && (dn.x < densReq || dn.z < densReq)) return;
+                const pr = projectedWall(nodes);
+                // demand depends on the candidate's own wall length and torsion on
+                // its own geometry, so both are measured per candidate
+                const need = lateralDemand(idx, P, vertices, slabTNow, wallPathLength(nodes));
+                const comb = lateralCheck(nodes, vertices, need);
+                const off = belowNodes ? wallOffset(nodes, belowNodes) : 0;
+                const tr = transferCheck(P, slabTNow, areaNow, wallPathLength(nodes),
+                                         Math.max(1, numFloors - idx), off);
+                const trUse = tr.demand / Math.max(tr.cap, 1e-9);
+                if (requireCompliant && (pr.Lx < need.needLx || pr.Lz < need.needLz)) return;
+                if (requireCompliant && comb.use > 1) return;
+                if (wantStacked && trUse > 1) return;
                 const r = computeReach(vertices, nodes, P.coreT, ownSlots);
                 const score = r.max * 5.0
                             + r.imbalance * 8.0
                             + Math.max(0, panel - target) * 25.0
-                            + (Math.max(0, densReq - dn.x) + Math.max(0, densReq - dn.z)) * 4000.0
-                            + folds.length * 0.8;
+                            + (Math.max(0, need.needLx - pr.Lx) + Math.max(0, need.needLz - pr.Lz)) * 120.0
+                            + Math.max(0, Math.min(comb.use, 50) - 1) * 200.0
+                            + Math.max(0, Math.min(trUse, 50) - 1) * 150.0
+                            + folds.length * 7.0;
                 if (score < out.score) { out.score = score; out.folds = folds; }
             };
 
-            const ampMax = (make) => {
-                const ok = ratio => {
-                    const nodes = [A, ...make(ratio), B];
-                    if (!isFoldGeometryValid(nodes, P.coreT)) return false;
-                    if (wallEscapesPlate(nodes, vertices, P.coreT)) return false;
-                    return wallClearsSlots(generateWallQuads(nodes, P.coreT, endD), mustMiss);
-                };
-                if (!ok(0)) return 0;                 // even a straight wall collides
-                let lo = 0, hi = FOLD_MAX_AMP_RATIO;
-                for (let k = 0; k < 11; k++) { const m = (lo + hi) / 2; if (ok(m)) lo = m; else hi = m; }
-                return lo;
-            };
+            // Amplitudes are SCANNED, not bisected from zero. The wall of an upper
+            // floor has to clear the openings below, and at zero amplitude it lies
+            // right on top of them - so the old bisection saw "even a straight wall
+            // collides", gave up on that fold count, and left two of three floors
+            // dead straight. Swinging the wall AWAY is exactly the fix, so the
+            // feasible set does not start at zero. evaluate() rejects what does not
+            // fit, which is all the filtering this needs.
+            const AMP_SCAN = [0.95, 0.80, 0.65, 0.50, 0.35, 0.20];
 
-            const half = plateHalfWidth(vertices);
-            const search = requireCompliant => {
-                const out = { score: Infinity, folds: null };
-
-                // programme-driven
-                const minSeg = FOLD_MIN_SEG_FACTOR * P.coreT;
-                const makeProg = ratio => buildFoldsFromProgramme(tA, tB, mustMiss, ratio * half, panelLimit, minSeg);
-                const aP = ampMax(makeProg);
-                if (aP > 1e-3) {
-                    for (const f of [1.0, 0.85, 0.7, 0.55, 0.4]) evaluate(makeProg(aP * f), requireCompliant, out);
-                }
-
-                // regular serpentine, as a fallback shape
-                for (const n of [...new Set([0, Math.max(0, base - 1), base, base + 1, base + 2, base + 3, base + 4, base + 5, base + 6, nDens, nDens + 1, nDens + 2])]) {
+            const search = (requireCompliant, wantStacked) => {
+                const counts = [...new Set([0, Math.max(0, base - 1), base, base + 1, base + 2,
+                                            nDens, nDens + 1, nDens + 2])]
+                               .filter(v => v >= 0).sort((a, b) => a - b);
+                const all = { score: Infinity, folds: null };
+                for (const n of counts) {
+                    const out = { score: Infinity, folds: null };
                     for (const phase of [1, -1]) {
-                        const makeZig = ratio => buildFoldCandidate(vertices, n, phase, ratio);
-                        const aZ = n === 0 ? 0 : ampMax(makeZig);
-                        if (n > 0 && aZ <= 1e-3) continue;
-                        const ratios = n === 0 ? [0] : [1.0, 0.85, 0.7, 0.55, 0.4, 0.25].map(f => aZ * f);
-                        for (const r of ratios) evaluate(makeZig(r), requireCompliant, out);
+                        const make = r => buildFoldCandidate(vertices, n, phase, r, idx, blocked);
+                        const ratios = n === 0 ? [0] : AMP_SCAN.map(f => f * FOLD_MAX_AMP_RATIO);
+                        for (const r of ratios) evaluate(make(r), requireCompliant, wantStacked, out);
                     }
+                    // compliant pass: take the fewest folds that works and stop
+                    if (requireCompliant && out.folds) return out.folds;
+                    if (out.folds && out.score < all.score) { all.score = out.score; all.folds = out.folds; }
                 }
-                return out.folds;
+                return all.folds;
             };
 
-            return search(true) || search(false) || [];
+            // Best first: compliant AND stacked on the wall below. Then compliant
+            // but stepping, which a uniform slab cannot transfer - reported. Then
+            // whatever stands at all.
+            return search(true, true) || search(true, false) || search(false, false) || [];
         }
 
         function stairParams() {
             const P = readParams();
             const slabT = parseFloat(document.getElementById('slabT').value);
-            return { P, g: stairGeometry(P.floorH, slabT, deriveRoot(P, 0)) };
+            return { P, g: stairGeometry(P.floorH, slabT) };
         }
 
         // Programme only: fit inside the plate, leave a way past, stagger the two
         // dwellings along the wall, and step about one run per storey so the
         // flights actually chain into a stair.
+        // Each stair carries its own straight stretch, so this picks one position
+        // per stair - stair 0 first, then stair 1 with stair 0 already placed.
         function placeStairsOn(i, P, gIn) {
-            if (i >= numFloors - 1) return;   // roof slab, no opening
-            // the opening grows if the slab converges thicker, so place with slack
+            if (i >= numFloors - 1) return;                // roof slab, no opening
             const g = padOpening(gIn, SOLVE_PAD);
-            const sep = gIn.opening * 0.98;   // the two slots must merely not overlap
             const verts = floorData[i].vertices;
-            const standsOn = floorData[Math.max(0, i - 1)].vertices;   // the flight rests on this
-            const nodes = getWallNodes(i);
-            const tA = axisParam(nodes[0]), tB = axisParam(nodes[nodes.length - 1]);
-            // The fold makes a bulge on one side and a niche on the other, so each
-            // dwelling is wide exactly where the other is narrow. Sending each flight
-            // to its own wide side is what separates them - no artificial penalty.
-            const wallAt = t => {
-                const i = wallSegmentAt(nodes, t);
-                const a = nodes[i], b = nodes[i + 1];
-                const ta = axisParam(a), tb = axisParam(b);
-                const f = clamp((t - ta) / ((tb - ta) || 1), 0, 1);
-                return { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f };
-            };
-            const roomAt = (t, side) => {
-                const n = axisNormal(), dir = { x: n.x * side, z: n.z * side };
-                const p = wallAt(t);
-                const q = { x: p.x + dir.x * (P.coreT / 2 + 0.02), z: p.z + dir.z * (P.coreT / 2 + 0.02) };
-                return outwardClearance(q, dir, verts);
-            };
+            const standsOn = floorData[Math.max(0, i - 1)].vertices;
+            const [A, B] = wallAnchors(verts);
+            const tA = axisParam(A), tB = axisParam(B);
+            const half = Math.min(g.run, Math.max(0.5, (tB - tA) - 2 * FOLD_MIN_GAP)) / 2;
+            const lo = tA + FOLD_MIN_GAP + half, hi = tB - FOLD_MIN_GAP - half;
+            if (hi <= lo) return;
 
-            // Both flights are chosen together. Placing them one after another sends
-            // the first to the widest spot and leaves the second nowhere to go.
-            const N = 48;
-            const scan = side => {
-                const rows = [];
+            const above = i < numFloors - 1
+                ? generateWallQuads(getWallNodes(i + 1), P.coreT, endDirsFor(floorData[i + 1].vertices)) : [];
+
+            // auto placement hands back the hand-tilted stretches too
+            floorData[i].stairs.forEach(st => { st.sc = 0; st.ang = 0; st.gap = undefined; });
+
+            floorData[i].stairs.forEach((st, k) => {
+                const below = i > 0 && floorData[i - 1].stairs[k]
+                    ? floorData[i - 1].stairs[k].tc : undefined;
+                const other = floorData[i].stairs[1 - k];
+                const keep = st.tc;
+                const N = 40;
+                let best = null, bestScore = Infinity, bestClear = null;
                 for (let j = 0; j <= N; j++) {
-                    const t = tA + (tB - tA) * (j / N);
-                    const slot = stairSlot({ t, side, align: 0 }, g, P.coreT, nodes);
-                    const stands = footprintOnPlate(slot, g, standsOn);
-                    const inside = slotInsidePlate(slot, verts) && stands;
-                    const pass = inside ? slotPassage(slot, verts) : 0;
-                    const app = inside ? approachClear(slot, g, standsOn) : 0;
-                    let room = Infinity;
-                    for (const fr of [0.15, 0.5, 0.85]) room = Math.min(room, roomAt(slot.t0 + (slot.t1 - slot.t0) * fr, side));
-                    rows.push({ t, inside, pass, room, ok: inside && pass >= PASSAGE_MIN });
-                }
-                return rows;
-            };
-            const A0 = scan(floorData[i].stairs[0].side);
-            const A1 = scan(floorData[i].stairs[1].side);
-            const belowT = i > 0 ? [floorData[i - 1].stairs[0].t, floorData[i - 1].stairs[1].t] : null;
+                    const tc = lo + (hi - lo) * (j / N);
+                    st.tc = tc;
+                    const nodes = getWallNodes(i);
+                    const slots = floorData[i].stairs.map((sx, m) => stairSlot(sx, g, P.coreT, nodes, i, m));
+                    const sl = slots[k];
+                    const inside = slotInsidePlate(sl, verts) && footprintOnPlate(sl, g, standsOn);
+                    const bypass = inside ? slotBypass(sl, verts) : 0;
+                    const pass   = inside ? slotPassage(sl, verts) : 0;
+                    const app    = inside ? approachClear(sl, g, standsOn) : 0;
+                    const clash  = above.length ? wallIntoSlots(above, [sl]) : 0;
 
-            // one flight arrives where the next departs, so a storey's step along
-            // the wall has to be about one run - checked, not merely preferred
-            const stepOff = (r, k) => belowT === null ? 0 : Math.abs(Math.abs(r.t - belowT[k]) - g.run);
-            const joins = (r, k) => stepOff(r, k) <= g.run * 0.35;
-            const cost = (r, k) => (r.inside ? 0 : 100)
-                      + Math.max(0, PASSAGE_COMFORT - r.pass) * 12
-                      - Math.min(r.room, 6) * 6                        // prefer the niche
-                      + stepOff(r, k) * 4;
-            const stepFits = (rows, t) => rows.some(r => r.ok && Math.abs(Math.abs(r.t - t) - g.run) <= g.run * 0.35);
-            const pick = requireClear => {
-                let best = null, bestS = Infinity;
-                for (const a of A0) {
-                    if (requireClear && (!a.ok || !joins(a, 0))) continue;
-                    // one-step lookahead on the ground floor, where nothing pins it yet
-                    if (requireClear && belowT === null && numFloors > 2 && !stepFits(A0, a.t)) continue;
-                    for (const b of A1) {
-                        if (requireClear && (!b.ok || !joins(b, 1))) continue;
-                        if (requireClear && belowT === null && numFloors > 2 && !stepFits(A1, b.t)) continue;
-                        // never opposite one another: that cuts the slab on both sides
-                        const apart = Math.abs(a.t - b.t) >= sep;
-                        if (requireClear && !apart) continue;
-                        const sc = cost(a, 0) + cost(b, 1) + (apart ? 0 : 60);
-                        if (sc < bestS) { bestS = sc; best = [a.t, b.t]; }
-                    }
+                    const step = below === undefined ? 0 : Math.abs(Math.abs(tc - below) - g.run);
+                    // stagger: either share the stretch outright, or clear it fully
+                    const apart = other && other.tc !== undefined ? Math.abs(tc - other.tc) : Infinity;
+                    const stagger = apart < half * 2 + FOLD_MIN_GAP && apart > half * 1.1
+                        ? (half * 2 + FOLD_MIN_GAP - apart) * 4 : 0;
+                    const score = (inside ? 0 : 200)
+                                + Math.max(0, PASSAGE_COMFORT - pass) * 10
+                                + Math.max(0, APPROACH_MIN + 0.4 - app) * 20
+                                + clash * 40
+                                + step * 3
+                                + stagger;
+                    const clear = inside && bypass >= PASSAGE_MIN && app >= APPROACH_MIN && clash <= 0.05;
+                    if (clear && (bestClear === null || score < bestClear.score)) bestClear = { tc, score };
+                    if (score < bestScore) { bestScore = score; best = tc; }
                 }
-                return best;
-            };
-            const sol = pick(true) || pick(false);
-            if (sol) {
-                floorData[i].stairs[0].t = sol[0];
-                floorData[i].stairs[1].t = sol[1];
-            }
-            floorData[i].stairs.forEach(st => { st.align = 0; });   // placing is a programme move
+                st.tc = bestClear ? bestClear.tc : (best !== null ? best : keep);
+            });
+            syncStretches(i, g.run);
         }
 
-        function alignStairsToWall() {
-            alignPass(); refresh();     // refresh so the slab thickness converges
-            alignPass(); refresh();
-            repairAlign(); refresh();
-        }
-
-        // Finishing move: swing each flight onto the fold panel it now sits against.
-        // Run it AFTER the wall has folded - aligning first would remove the very
-        // constraint that folds the wall.
-        function alignPass() {
-            const sp = stairParams(), P = sp.P;
-            // validate against a slightly longer slot: the slab may converge thicker
-            // once the flights move, which lengthens the opening
-            const g = padOpening(sp.g, SOLVE_PAD);
-            const quads = [];
-            for (let i = 0; i < numFloors; i++) {
-                quads.push(generateWallQuads(getWallNodes(i), P.coreT, endDirsFor(floorData[i].vertices)));
-            }
-            for (let i = 0; i < numFloors - 1; i++) {
-                const nodes = getWallNodes(i), verts = floorData[i].vertices;
-                for (const st of floorData[i].stairs) {
-                    // bisect against a stricter predicate than the one that reports,
-                    // so the result never lands exactly on a threshold
-                    const ok = a => {
-                        const sl = stairSlot(Object.assign({}, st, { align: a }), g, P.coreT, nodes);
-                        return slotInsidePlate(sl, verts)
-                            && footprintOnPlate(sl, g, floorData[Math.max(0, i - 1)].vertices)
-                            && slotPassage(sl, verts) >= PASSAGE_MIN + 0.03
-                            && wallIntoSlots(quads[i],     [inflatedSlot(sl, STAIR_CLEAR * 2)]) <= 1e-4
-                            && wallIntoSlots(quads[i + 1], [inflatedSlot(sl, STAIR_CLEAR * 2)]) <= 1e-4;
-                    };
-                    if (ok(1)) { st.align = 1; continue; }
-                    if (!ok(0)) { st.align = 0; continue; }
-                    let lo = 0, hi = 1;
-                    for (let k = 0; k < 10; k++) { const m = (lo + hi) / 2; if (ok(m)) lo = m; else hi = m; }
-                    // the valid set is not guaranteed to be an interval, so verify
-                    // the value actually taken instead of trusting the bisection
-                    st.align = [lo * 0.95, lo, lo * 0.8, lo * 0.5, 0].find(ok) ?? 0;
-                }
-            }
-        }
-
-        // Aligning is greedy per flight, so a pair can end up conflicting. Back the
-        // offenders off until the whole floor verifies against the reported checks.
-        function repairAlign() {
-            const { P, g } = stairParams();
-            const quads = [], nodesOf = [];
-            for (let i = 0; i < numFloors; i++) {
-                nodesOf.push(getWallNodes(i));
-                quads.push(generateWallQuads(nodesOf[i], P.coreT, endDirsFor(floorData[i].vertices)));
-            }
-            for (let guard = 0; guard < 8; guard++) {
-                let changed = false;
-                for (let i = 0; i < numFloors - 1; i++) {
-                    const verts = floorData[i].vertices;
-                    for (const st of floorData[i].stairs) {
-                        if (st.align <= 0) continue;
-                        const sl = stairSlot(st, g, P.coreT, nodesOf[i]);
-                        const bad = !slotInsidePlate(sl, verts)
-                                 || !footprintOnPlate(sl, g, floorData[Math.max(0, i - 1)].vertices)
-                                 || slotPassage(sl, verts) < PASSAGE_MIN
-                                 || !wallClearsSlots(quads[i], [sl])
-                                 || !wallClearsSlots(quads[i + 1], [sl]);
-                        if (bad) { st.align = Math.max(0, st.align - 0.2); changed = true; }
-                    }
-                }
-                if (!changed) break;
-            }
-        }
 
         function autoPlaceStairs() {
             stairsManual = false;       // asking for auto placement hands it back
@@ -1803,9 +2249,20 @@
         // solution stops being valid. Re-solving on release keeps the page
         // parametric instead of just turning red; hand-placed flights are kept.
         function resolveAll() {
-            if (!stairsManual) autoPlaceStairs();
-            optimizeAll();
-            alignStairsToWall();
+            // Placement and folding constrain each other: an upper wall has to
+            // clear the openings below, and the openings want to sit where that
+            // wall is not. One pass each way left the two upper walls with nowhere
+            // to fold at all, so alternate and refresh once at the end.
+            // refresh inside the loop as well: the auto slab thickness is derived
+            // during refresh and read back off the slider, so solving without one
+            // solves against a stale slab.
+            const step = () => {
+                const { P, g } = stairParams();
+                if (!stairsManual) for (let i = 0; i < numFloors; i++) placeStairsOn(i, P, g);
+                for (let i = 0; i < numFloors; i++) floorData[i].foldNodes = solveFolds(i, P, g);
+                refresh();
+            };
+            for (let pass = 0; pass < 3; pass++) step();
             fitCamera();
         }
 
@@ -1847,19 +2304,19 @@
 
         // Concrete, lit and shadowed for real: a soft hemisphere fill plus one sun
         // that casts shadow maps, so the slabs shade the wall and each other.
-        scene.add(new THREE.HemisphereLight(0xffffff, 0xf7f7f7, 1.12));
-        const sun = new THREE.DirectionalLight(0xffffff, 0.24);
+        scene.add(new THREE.HemisphereLight(0xffffff, 0xf4f4f4, 3.1));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.15);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
         sun.shadow.normalBias = 0.035;
         scene.add(sun);
         scene.add(sun.target);
 
-        const wallMaterial     = new THREE.MeshLambertMaterial({ color: 0xedebe8, side: THREE.DoubleSide });
-        const wallEdgeMaterial = new THREE.LineBasicMaterial({ color: 0xaeaba7 });
-        const floorMaterial    = new THREE.MeshLambertMaterial({ color: 0xe6e4e1, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
-        const floorEdgeMaterial= new THREE.LineBasicMaterial({ color: 0xc8c5c1 });
-        const bearMaterial     = new THREE.MeshLambertMaterial({ color: 0x4a90d9, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+        const wallMaterial     = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.78, side: THREE.DoubleSide });
+        const wallEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x9a9a9a });
+        const floorMaterial    = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+        const floorEdgeMaterial= new THREE.LineBasicMaterial({ color: 0xbcbcbc });
+        const bearMaterial     = new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide });
         const bearEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x2a6fb8 });
         const stairMaterial    = new THREE.LineBasicMaterial({ color: 0x007BFF });
 
@@ -1882,7 +2339,8 @@
             geo.translate(0, yB, 0);
             const group = new THREE.Group();
             const mesh = new THREE.Mesh(geo, material);
-            mesh.castShadow = true; mesh.receiveShadow = true;
+            mesh.castShadow = !material.transparent || material.opacity > 0.7;
+            mesh.receiveShadow = true;
             group.add(mesh);
             group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 1), edgeMaterial));
             return group;
@@ -1966,7 +2424,7 @@
 
         const groundPlane = (function () {
             const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
-                new THREE.MeshLambertMaterial({ color: 0xc7c4bf, side: THREE.DoubleSide }));
+                new THREE.MeshLambertMaterial({ color: 0xe4e4e4, side: THREE.DoubleSide }));
             m.rotation.x = -Math.PI / 2;
             m.position.y = -0.03;
             m.receiveShadow = true;
@@ -2046,8 +2504,8 @@
 
         function updateReadouts(st) {
             const { P, slabT, capacity, panelLimit, maxReach, maxPanel, maxImbalance, floors, escaped,
-                    slotIssues, bearsOnVoid, tight, severed, facing, stairChain, stair, rootMin, disconnected,
-                    unbraced, densReq, worstEcc, cramped } = st;
+                    slotIssues, bearsOnVoid, tight, severed, stair, disconnected,
+                    unbraced, cramped, twisted, overloaded, transferred, crushed } = st;
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const r = floors[idx].reach;
 
@@ -2063,70 +2521,102 @@
             const balanceOK    = maxImbalance <= IMBALANCE_LIMIT;
             const pass         = floors[idx].passage;
 
-            setMetric('val-reachL', r.left.toFixed(2) + ' m', r.left > capacity * CHECK_TOL);
-            setMetric('val-reachR', r.right.toFixed(2) + ' m', r.right > capacity * CHECK_TOL);
-            setMetric('val-imbalance', (r.imbalance * 100).toFixed(0) + ' %', r.imbalance > IMBALANCE_LIMIT);
-            setMetric('val-maxPanel', floors[idx].panel.toFixed(2) + ' m', floors[idx].panel > panelLimit * CHECK_TOL);
-            setMetric('val-folds', String(Math.max(0, floors[idx].nodes.length - 2)), false);
-            setMetric('val-contain', floors[idx].escapes ? 'ESCAPES' : 'contained', floors[idx].escapes);
-            setMetric('val-step', (stair.riser * 1000).toFixed(0) + ' × ' + (stair.going * 1000).toFixed(0) + ' mm', false);
-            setMetric('val-run', stair.run.toFixed(2) + ' m (' + stair.risers + ' risers'
-                      + (stair.flights > 1 ? ', ' + stair.flights + ' flights + ' + stair.landing.toFixed(2) + ' m landing' : '') + ')', false);
+            setMetric('val-reachL', Math.max(r.left, r.right).toFixed(2) + ' m / capacity ' + capacity.toFixed(2) + ' m', maxReach > capacity * CHECK_TOL);
             const isRoof = idx >= numFloors - 1;
-            setMetric('val-slot', isRoof ? 'roof — no opening' : stair.opening.toFixed(2) + ' × ' + stair.width.toFixed(2) + ' m', false);
-            setMetric('val-passage', isRoof ? '—' : pass.toFixed(2) + ' m' + (pass < PASSAGE_COMFORT && pass >= PASSAGE_MIN ? ' (tight)' : ''), !isRoof && pass < PASSAGE_MIN);
-            setMetric('val-stairChain', numFloors > 2 ? stairChain.toFixed(2) + ' m / run ' + stair.run.toFixed(2) + ' m' : 'n/a', disconnected.length > 0);
             setMetric('val-bypass', isRoof ? '—' : (isFinite(floors[idx].bypass) ? floors[idx].bypass.toFixed(2) + ' m' : '—'),
                       !isRoof && floors[idx].bypass < PASSAGE_MIN);
-            setMetric('val-approach', isRoof ? '—' : (isFinite(floors[idx].approach) ? floors[idx].approach.toFixed(2) + ' m' : '—'),
-                      !isRoof && floors[idx].approach < APPROACH_MIN);
-            setMetric('val-rootChk', stair.root.toFixed(2) + ' m (carries ' + rootMin.toFixed(2) + ')', stair.root < rootMin);
             document.getElementById('checkScope').innerHTML =
                 'Floor ' + (idx + 1) + ' of ' + numFloors + ' &mdash; the bar above reports the worst floor.';
-            const dn = floors[idx].density;
-            setMetric('val-densX', (dn.x * 100).toFixed(2) + ' % / need ' + (densReq * 100).toFixed(2) + ' %', dn.x < densReq);
-            setMetric('val-densZ', (dn.z * 100).toFixed(2) + ' % / need ' + (densReq * 100).toFixed(2) + ' %', dn.z < densReq);
+            const pj = floors[idx].proj, nd = floors[idx].need;
+            // the check tests both directions, so report whichever is worse
+            const uX = nd.needLx / Math.max(pj.Lx, 1e-6), uZ = nd.needLz / Math.max(pj.Lz, 1e-6);
+            const wrsX = uX >= uZ;
+            setMetric('val-densX',
+                (wrsX ? pj.Lx : pj.Lz).toFixed(2) + ' m / need ' + (wrsX ? nd.needLx : nd.needLz).toFixed(2)
+                + ' m (' + nd.governs + ', ' + (wrsX ? 'X' : 'Z') + ')',
+                Math.max(uX, uZ) > 1);
+            const tw = floors[idx].tors;
+            setMetric('val-twist', tw.cap.toFixed(0) + ' kNm / need ' + tw.demand.toFixed(0) + ' kNm'
+                      + (tw.cap > 1e-6 ? '' : '  (straight wall: no arm)'),
+                      tw.demand > tw.cap * CHECK_TOL);
+            const cb = floors[idx].comb;
+            setMetric('val-combined', isFinite(cb.use)
+                      ? (cb.use * 100).toFixed(0) + '% of capacity (' + cb.governs + ')'
+                      : 'no load path (' + cb.governs + ')', cb.use > CHECK_TOL);
+            const tr = floors[idx].transfer;
+            setMetric('val-transfer', idx === 0 ? 'stands on the foundation'
+                      : tr.offset.toFixed(2) + ' m offset, ' + tr.demand.toFixed(0)
+                        + ' / ' + tr.cap.toFixed(0) + ' kNm/m',
+                      tr.demand > tr.cap * CHECK_TOL);
+            const dp = floors[idx].diaph;
+            setMetric('val-diaph', dp.joined.toFixed(1) + ' m joined, ' + dp.demand.toFixed(0)
+                      + ' / ' + dp.cap.toFixed(0) + ' kN', dp.demand > dp.cap * CHECK_TOL);
+            const bs = floors[idx].base;
+            setMetric('val-base', (bs.sigma / 1000).toFixed(2) + ' / ' + (bs.fcd / 1000).toFixed(0)
+                      + ' MPa, e ' + bs.ecc.toFixed(2) + ' m vs kern ' + bs.kern.toFixed(2) + ' m',
+                      bs.sigma > bs.fcd);
             const sl = wallSlenderness(P.floorH, P.coreT);
-            setMetric('val-slender', sl.toFixed(1) + ' / limit ' + SLENDERNESS_LIMIT, sl > SLENDERNESS_LIMIT);
-            setMetric('val-ecc', (worstEcc * 100).toFixed(0) + ' % of plan', worstEcc > 0.20);
-            setMetric('val-align', isRoof ? '—' : floors[idx].slots.map(sl => (sl.align * 100).toFixed(0) + '%').join(' / '), false);
+            setMetric('val-slender', sl.toFixed(1) + ' / rule 30 (thickness, not \u03bb)', sl > SLENDERNESS_LIMIT);
 
             // Three tiers by consequence: the structure fails, the design does not
             // work, or it is merely worth knowing. Only the first turns the bar red,
             // and the bar leads with the single governing item rather than a list.
             const unsafe = [], broken = [];
 
-            if (!cantileverOK)      unsafe.push('cantilever ' + maxReach.toFixed(2) + ' m exceeds slab capacity ' + capacity.toFixed(2) + ' m');
-            if (escaped.length)     unsafe.push('wall leaves the plate on floor ' + escaped.join(', '));
-            if (st.intrudes)        unsafe.push('wall intrudes into a stair slot');
-            if (bearsOnVoid.length) unsafe.push('wall of floor ' + bearsOnVoid.join(', ') + ' bears on the slot below');
-            if (unbraced.length)    unsafe.push('wall too straight to brace floor ' + unbraced.join(', ') + ' - needs ' + (densReq * 100).toFixed(2) + '% density each way');
-            if (slotIssues.length)  unsafe.push('flight runs off the plate on floor ' + slotIssues.join(', '));
-            if (severed.length)     unsafe.push('no way past the flight on floor ' + severed.join(', ') + ' - neither side nor either end');
+            // Every message says what to change. A reading with no lever attached
+            // tells you the design is wrong without telling you what to do about it.
+            const say = (what, fix) => what + '  →  ' + fix;
 
-            if (facing.length)       broken.push('flights face each other on floor ' + facing.join(', '));
-            if (disconnected.length) broken.push('flights do not join up at floor ' + disconnected.join(', '));
-            if (cramped.length)      broken.push('little standing room at the bottom step on floor ' + cramped.join(', '));
-            if (stair.root < rootMin) broken.push('slab root ' + stair.root.toFixed(2) + ' m thin for the ' + (rootMin / ROOT_MOMENT_RATIO).toFixed(2) + ' m beyond the slot');
-            if (!panelOK)            broken.push('fold panel ' + maxPanel.toFixed(2) + ' m over the ' + panelLimit.toFixed(2) + ' m detailing guide');
-            if (!balanceOK)          broken.push('cantilevers unbalanced ' + (maxImbalance * 100).toFixed(0) + '%');
-            if (tight.length)        broken.push('tight passage on floor ' + tight.join(', '));
+            if (!cantileverOK)      unsafe.push(say('cantilever ' + maxReach.toFixed(2) + ' m over the ' + capacity.toFixed(2) + ' m the slab can carry',
+                                                     'thicken the slab, or pull the plate corners in'));
+            if (escaped.length)     unsafe.push(say('wall leaves the plate on floor ' + escaped.join(', '),
+                                                     'press Auto-Fold, or widen the plate'));
+            if (st.intrudes)        unsafe.push(say('wall cuts into a stair slot', 'press Auto-Fold on that floor'));
+            if (bearsOnVoid.length) unsafe.push(say('wall of floor ' + bearsOnVoid.join(', ') + ' lands on the opening below',
+                                                     'drag that floor\u2019s stairs along the wall'));
+            if (unbraced.length)    unsafe.push(say('not enough wall across the plan on floor ' + unbraced.join(', '),
+                                                     'thicken the wall, or add folds'));
+            if (twisted.length)     unsafe.push(say('nothing resists twist on floor ' + twisted.join(', '),
+                                                     'add a fold, or deepen the folds'));
+            if (overloaded.length)  unsafe.push(say('wall over capacity on floor ' + overloaded.join(', ')
+                                                     + ' once shear and twist act together',
+                                                     'deepen the folds, or thicken the wall'));
 
-            const more = k => k > 1 ? '   (+' + (k - 1) + ' more)' : '';
+            if (crushed.length)     unsafe.push(say('wall crushed at the base on floor ' + crushed.join(', '),
+                                                     'thicken the wall'));
+            if (slotIssues.length)  unsafe.push(say('flight runs off the plate on floor ' + slotIssues.join(', '),
+                                                     'drag the stairs inward, or lower the storey height'));
+            if (severed.length)     unsafe.push(say('no way past the flight on floor ' + severed.join(', '),
+                                                     'widen the plate, or drag the stairs along the wall'));
+
+            if (disconnected.length) broken.push(say('flights do not join up at floor ' + disconnected.join(', '),
+                                                     'press Place Stairs'));
+            if (cramped.length)      broken.push(say('no standing room at the bottom step on floor ' + cramped.join(', '),
+                                                     'drag the stairs along the wall, or lower the storey height'));
+            if (transferred.length)  broken.push(say('wall of floor ' + transferred.join(', ')
+                                                     + ' offset from the wall below by more than a uniform slab can transfer',
+                                                     'press Auto-Fold, or add a downstand where the wall steps'));
+            if (!panelOK)            broken.push(say('fold panel ' + maxPanel.toFixed(2) + ' m over the ' + panelLimit.toFixed(2) + ' m guide',
+                                                     'add a fold'));
+            if (!balanceOK)          broken.push(say('cantilevers unbalanced ' + (maxImbalance * 100).toFixed(0) + '%',
+                                                     'drag a wall end to re-centre the dividing line'));
+            if (tight.length)        broken.push(say('tight passage on floor ' + tight.join(', '),
+                                                     'widen the plate, or drag the stairs along the wall'));
+
+            const more = k => k > 1 ? '     (+' + (k - 1) + ' more)' : '';
             const bar = document.getElementById('status-bar');
             if (unsafe.length) {
                 bar.className = 'bad';
-                bar.innerText = 'UNSAFE — ' + unsafe[0].toUpperCase() + more(unsafe.length);
+                bar.innerText = 'UNSAFE — ' + unsafe[0] + more(unsafe.length);
             } else if (broken.length) {
                 bar.className = 'warn';
-                bar.innerText = 'STANDS, BUT — ' + broken[0].toUpperCase() + more(broken.length);
+                bar.innerText = 'STANDS, BUT — ' + broken[0] + more(broken.length);
             } else {
                 bar.className = 'ok';
-                bar.innerText = 'SAFE — CANTILEVER, BRACING AND STAIR CLEARANCE ALL VERIFIED';
+                bar.innerText = 'SAFE — cantilever, bracing and stair clearance all verified';
             }
-            setMetric('val-gov', unsafe.length ? unsafe[0].split(' ').slice(0, 3).join(' ')
-                               : broken.length ? broken[0].split(' ').slice(0, 3).join(' ')
-                               : 'none binding', unsafe.length > 0);
+            const lead = unsafe[0] || broken[0] || null;
+            setMetric('val-gov', lead ? lead.split('  →  ')[1] : 'nothing binding', unsafe.length > 0);
         }
 
         /* =====================================================================
@@ -2181,7 +2671,6 @@
         window.resolveAll = resolveAll;
         window.optimizeAll = optimizeAll;
         window.autoPlaceStairs = autoPlaceStairs;
-        window.alignStairsToWall = alignStairsToWall;
 
         window.addEventListener('load', () => {
             ensureCanvasSize(editCanvas);
@@ -2190,6 +2679,24 @@
             updateFloorDropdown();
             if (seedPending) {
                 seedPending = false;
+                /* Browsers restore form state across a reload, and every control
+                   here feeds the solver - so a restored value makes the seeded
+                   design depend on the last visit. Resetting only T_s was not
+                   enough: consecutive loads still landed on different walls, one
+                   amber and one UNSAFE. A study page has to open in a defined
+                   state, so put every control back to its markup default. */
+                ['floors', 'floorH', 'coreT', 'slabT'].forEach(id => {
+                    const el = document.getElementById(id);
+                    el.value = el.defaultValue;
+                });
+                ['slabAuto', 'uniformPlate'].forEach(id => {
+                    const el = document.getElementById(id);
+                    el.checked = el.defaultChecked;
+                });
+                numFloors = parseInt(document.getElementById('floors').value) || 3;
+                document.getElementById('val-floors').innerText = numFloors;
+                document.getElementById('floorIndex').value = '0';
+                updateFloorDropdown();
                 resolveAll();
                 return;                  // resolveAll refreshes and fits on its own
             }
