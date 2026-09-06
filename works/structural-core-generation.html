@@ -330,6 +330,7 @@
                     <div class="metric-row"><span>Bracing wall across the plan</span><span id="val-densX" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Twist resisted by the fold</span><span id="val-twist" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Diaphragm into the wall</span><span id="val-diaph" class="val">&ndash;</span></div>
+                    <div class="metric-row"><span>Out-of-plane from unbalanced cantilevers</span><span id="val-oop" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Base stress, and the kern</span><span id="val-base" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall slenderness H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
                     <div style="margin-top:8px;">
@@ -378,7 +379,6 @@
         /* =====================================================================
            STRUCTURAL FORMULAS - single source of truth
            ===================================================================== */
-        const IMBALANCE_LIMIT = 0.60;
         const CHECK_TOL = 1.005;      // 0.5% - keeps an at-limit solution from failing on rounding
         const SOLVE_MARGIN = 0.97;    // the solver aims just under the limit, not at it
 
@@ -921,6 +921,45 @@
                      axis: bx.sigma >= bz.sigma ? 'X' : 'Z' };
         }
 
+        /* UNBALANCED CANTILEVERS BEND THE WALL OUT OF PLANE.
+           "Cantilevers unbalanced 60%" used to sit here as a bare proportion with
+           no mechanism behind it. The mechanism is this: the slab moments arriving
+           at the wall from the two sides cancel only if the two cantilevers are
+           equal. What is left over is a moment about the horizontal axis along the
+           wall, applied at slab level - and the wall is held laterally by the slabs
+           at each floor, so it is the WEAK-AXIS bending of the wall that carries
+           it, split between the storey above and the storey below. At the roof
+           there is no wall above, so all of it goes into the storey below.
+
+           Capacity is what the code minimum vertical reinforcement gives: EC2
+           9.6.2 asks 0.2% of the section, half to each face, so one face has
+           0.001 x t per metre at f_yd, with a lever of about 0.9d. Exceed that and
+           the wall needs more than nominal steel on one face - a real design
+           consequence, and the lever is to re-centre the dividing line. The axial
+           precompression is reported as an eccentricity against the section's kern
+           t/6, which is where the far face first goes into tension. */
+        const AS_VMIN_RATIO = 0.002;    // EC2 9.6.2, split between the two faces
+        const F_YD          = 435000;   // kN/m2, B500 at gamma_s 1.15
+
+        function outOfPlaneCapacity(coreT) {
+            const asFace = AS_VMIN_RATIO * coreT / 2;              // m2 per m, one face
+            return asFace * F_YD * 0.9 * Math.max(0.05, coreT - SLAB_COVER);
+        }
+
+        function outOfPlane(P, slabT, reach, area, wallLen, i) {
+            const q = gravityUDL(slabT);
+            const aL = reach.geomLeft, aR = reach.geomRight;
+            const net = q * Math.abs(aL * aL - aR * aR) / 2;       // kNm per m of wall
+            const share = i >= numFloors - 1 ? 1 : 0.5;            // no wall above the roof
+            const M = net * share;
+            const slabs = numFloors - i, walls = Math.max(0, numFloors - 1 - i);
+            const N = (q * area * slabs
+                     + CONCRETE_GAMMA * P.coreT * wallLen * P.floorH * walls)
+                    / Math.max(wallLen, 0.1);
+            return { M, N, cap: outOfPlaneCapacity(P.coreT),
+                     ecc: N > 1e-9 ? M / N : Infinity, kern: P.coreT / 6 };
+        }
+
         function projectedWall(nodes) {
             let Lx = 0, Lz = 0;
             for (let j = 0; j < nodes.length - 1; j++) {
@@ -1259,12 +1298,13 @@
         }
 
         function computeReach(vertices, nodes, coreT, slots) {
-            let left = 0, right = 0;
+            let left = 0, right = 0, gl = 0, gr = 0;
             const pts = slots && slots.length ? vertices.concat(...slots.map(sl => sl.poly)) : vertices;
             pts.forEach(pt => {
                 let d = Infinity;
                 for (let j = 0; j < nodes.length - 1; j++) d = Math.min(d, pointToSegmentDistance(pt, nodes[j], nodes[j + 1]));
-                let clear = Math.max(0, d - coreT / 2);
+                const geom = Math.max(0, d - coreT / 2);
+                let clear = geom;
                 const side = axisSide(pt);
                 /* Outboard of a slot the slab is cut off from the wall. It has no
                    support further out, so it SPANS THE OPENING - between the solid
@@ -1283,10 +1323,14 @@
                     if (Math.abs(side) <= sl.root + sl.width) continue;
                     clear = Math.max(clear, (sl.t1 - sl.t0) / 2);
                 }
-                if (side < 0) left = Math.max(left, clear); else right = Math.max(right, clear);
+                // the TRUE perpendicular reach, kept apart from the span
+                // equivalent above: an unbalanced moment comes from the real
+                // cantilever geometry, not from an equivalent length
+                if (side < 0) { left = Math.max(left, clear); gl = Math.max(gl, geom); }
+                else          { right = Math.max(right, clear); gr = Math.max(gr, geom); }
             });
             const max = Math.max(left, right);
-            return { left, right, max, imbalance: max > 1e-6 ? Math.abs(left - right) / max : 0 };
+            return { left, right, max, geomLeft: gl, geomRight: gr };
         }
 
         /* =====================================================================
@@ -1519,11 +1563,11 @@
             // The opening length depends on slab thickness, and slab thickness
             // depends on the reach the opening creates - two passes converge it.
             let slabT = P.slabAuto ? clamp(parseFloat(document.getElementById('slabT').value), 0.15, 1.0) : P.slabT;
-            let g = null, floors = [], maxReach = 0, maxPanel = 0, maxImbalance = 0, needT = 0;
+            let g = null, floors = [], maxReach = 0, maxPanel = 0, needT = 0;
 
             for (let pass = 0; pass < 2; pass++) {
                 g = stairGeometry(P.floorH, slabT);
-                floors = []; maxReach = 0; maxPanel = 0; maxImbalance = 0;
+                floors = []; maxReach = 0; maxPanel = 0;
                 for (let i = 0; i < numFloors; i++) {
                     const nodes = getWallNodes(i);
                     const verts = floorData[i].vertices;
@@ -1544,6 +1588,7 @@
                         diaph: diaphragmCheck(P, slabT, area, wallLen, slots),
                         base: baseStress(nodes, P, slabT, area, wallLen, storeys,
                                          Math.max(need.Vx, need.Vz)),
+                        oop: outOfPlane(P, slabT, reach, area, wallLen, i),
                         panel: longestPanel(nodes, straightSpans(i, g.run, below)),
                         escapes: wallEscapesPlate(nodes, verts, P.coreT),
                         slotsOutside: slots.some(sl => !slotInsidePlate(sl, verts)),
@@ -1554,7 +1599,6 @@
                     });
                     maxReach = Math.max(maxReach, reach.max);
                     maxPanel = Math.max(maxPanel, floors[i].panel);
-                    maxImbalance = Math.max(maxImbalance, reach.imbalance);
                 }
                 needT = requiredSlabT(maxReach);
                 if (!P.slabAuto) break;
@@ -1563,7 +1607,7 @@
 
             const escaped = [], slotIssues = [], bearsOnVoid = [], tight = [],
                   severed = [], unbraced = [], cramped = [], twisted = [],
-                  overloaded = [], transferred = [], crushed = [];
+                  overloaded = [], transferred = [], crushed = [], bent = [];
             const disconnected = new Set();
             for (let i = 0; i < numFloors; i++) {
                 if (floors[i].escapes) escaped.push(i + 1);
@@ -1573,6 +1617,7 @@
                 if (floors[i].comb.use > CHECK_TOL) overloaded.push(i + 1);
                 if (floors[i].transfer.demand > floors[i].transfer.cap * CHECK_TOL) transferred.push(i + 1);
                 if (floors[i].base.sigma > floors[i].base.fcd) crushed.push(i + 1);
+                if (floors[i].oop.M > floors[i].oop.cap * CHECK_TOL) bent.push(i + 1);
                 if (isFinite(floors[i].bypass) && floors[i].bypass < PASSAGE_MIN) severed.push(i + 1);
                 else if (floors[i].passage < PASSAGE_MIN) tight.push(i + 1);
                 if (isFinite(floors[i].approach) && floors[i].approach < APPROACH_MIN) cramped.push(i + 1);
@@ -1590,11 +1635,11 @@
             }
 
             return {
-                P, floors, maxReach, maxPanel, maxImbalance, needT, slabT, escaped,
+                P, floors, maxReach, maxPanel, needT, slabT, escaped,
 
                 slotIssues, bearsOnVoid, tight, severed, stair: g,
                 disconnected: [...disconnected], unbraced, cramped, twisted,
-                overloaded, transferred, crushed,
+                overloaded, transferred, crushed, bent,
 
                 intrudes: floors.some(f => f.intrudes > 0),
                 capacity:   cantileverCapacity(slabT),
@@ -2124,8 +2169,9 @@
                 if (requireCompliant && comb.use > 1) return;
                 if (wantStacked && trUse > 1) return;
                 const r = computeReach(vertices, nodes, P.coreT, ownSlots);
+                const oopHere = outOfPlane(P, slabTNow, r, areaNow, wallPathLength(nodes), idx);
                 const score = r.max * 5.0
-                            + r.imbalance * 8.0
+                            + Math.max(0, oopHere.M / Math.max(oopHere.cap, 1e-9) - 1) * 40.0
                             + Math.max(0, panel - target) * 25.0
                             + (Math.max(0, need.needLx - pr.Lx) + Math.max(0, need.needLz - pr.Lz)) * 120.0
                             + Math.max(0, Math.min(comb.use, 50) - 1) * 200.0
@@ -2503,9 +2549,9 @@
         }
 
         function updateReadouts(st) {
-            const { P, slabT, capacity, panelLimit, maxReach, maxPanel, maxImbalance, floors, escaped,
+            const { P, slabT, capacity, panelLimit, maxReach, maxPanel, floors, escaped,
                     slotIssues, bearsOnVoid, tight, severed, stair, disconnected,
-                    unbraced, cramped, twisted, overloaded, transferred, crushed } = st;
+                    unbraced, cramped, twisted, overloaded, transferred, crushed, bent } = st;
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const r = floors[idx].reach;
 
@@ -2518,7 +2564,6 @@
 
             const cantileverOK = maxReach <= capacity * CHECK_TOL;
             const panelOK      = maxPanel <= panelLimit * CHECK_TOL;
-            const balanceOK    = maxImbalance <= IMBALANCE_LIMIT;
             const pass         = floors[idx].passage;
 
             setMetric('val-reachL', Math.max(r.left, r.right).toFixed(2) + ' m / capacity ' + capacity.toFixed(2) + ' m', maxReach > capacity * CHECK_TOL);
@@ -2551,6 +2596,10 @@
             const dp = floors[idx].diaph;
             setMetric('val-diaph', dp.joined.toFixed(1) + ' m joined, ' + dp.demand.toFixed(0)
                       + ' / ' + dp.cap.toFixed(0) + ' kN', dp.demand > dp.cap * CHECK_TOL);
+            const op = floors[idx].oop;
+            setMetric('val-oop', op.M.toFixed(0) + ' / ' + op.cap.toFixed(0) + ' kNm/m, e '
+                      + (isFinite(op.ecc) ? op.ecc.toFixed(2) : '\u221e') + ' m vs kern ' + op.kern.toFixed(2) + ' m',
+                      op.M > op.cap * CHECK_TOL);
             const bs = floors[idx].base;
             setMetric('val-base', (bs.sigma / 1000).toFixed(2) + ' / ' + (bs.fcd / 1000).toFixed(0)
                       + ' MPa, e ' + bs.ecc.toFixed(2) + ' m vs kern ' + bs.kern.toFixed(2) + ' m',
@@ -2598,8 +2647,9 @@
                                                      'press Auto-Fold, or add a downstand where the wall steps'));
             if (!panelOK)            broken.push(say('fold panel ' + maxPanel.toFixed(2) + ' m over the ' + panelLimit.toFixed(2) + ' m guide',
                                                      'add a fold'));
-            if (!balanceOK)          broken.push(say('cantilevers unbalanced ' + (maxImbalance * 100).toFixed(0) + '%',
-                                                     'drag a wall end to re-centre the dividing line'));
+            if (bent.length)         broken.push(say('unbalanced cantilevers bend the wall out of plane on floor '
+                                                     + bent.join(', ') + ' past its minimum reinforcement',
+                                                     'drag a wall end to re-centre the dividing line, or thicken the wall'));
             if (tight.length)        broken.push(say('tight passage on floor ' + tight.join(', '),
                                                      'widen the plate, or drag the stairs along the wall'));
 
