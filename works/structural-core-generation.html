@@ -617,16 +617,26 @@
         // two reserved segments - which is what GL and L2 show, with L1 the case
         // where they coincide. The wall is a single line, so two stretches that
         // overlap along the axis have to BE the same line: they snap together.
+        /* The wall runs anchor - folds - reserved stretch - folds - anchor, so what
+           is left between the stretch and an anchor is a wall segment like any
+           other and has to be buildable. FOLD_MIN_GAP (0,5 m) is shorter than the
+           0,8 m isFoldGeometryValid demands of every segment, so the last 0,3 m of
+           the old range was a band where EVERY fold layout was rejected on segment
+           length - which is why a floor whose stair sat near an end came out dead
+           straight and + Fold refused with no reason given. */
+        function stretchEndMin() { return Math.max(FOLD_MIN_GAP, FOLD_MIN_SEG, P_coreT()); }
+
         function stretchOf(idx, k, runLen) {
             const d = floorData[idx];
             const [A, B] = wallAnchors(d.vertices);
             const tA = axisParam(A), tB = axisParam(B);
-            const len = Math.min(runLen, Math.max(0.5, (tB - tA) - 2 * FOLD_MIN_GAP));
+            const end = stretchEndMin();
+            const len = Math.min(runLen, Math.max(0.5, (tB - tA) - 2 * end));
             const st = d.stairs[k] || {};
             const half = len / 2;
             const dflt = (tA + tB) / 2 + (k === 0 ? -half : half) * 1.05;
             const tc = clamp(st.tc !== undefined ? st.tc : dflt,
-                             tA + FOLD_MIN_GAP + half, tB - FOLD_MIN_GAP - half);
+                             tA + end + half, tB - end - half);
             const sc = st.sc || 0, ang = st.ang || 0;
             const u = axisDir(), n = axisNormal();
             const dx = u.x * Math.cos(ang) + n.x * Math.sin(ang);
@@ -866,6 +876,9 @@
         const STAIR_GOING_MIN  = 0.24;   // Swiss minimum tread
         const STAIR_GOING_MAX  = 0.32;
         const STAIR_HEADROOM   = 2.10;   // clear head under the slab above
+        const JOIN_TOL = 0.10;           // m slack on the floor between two flights
+        const JOIN_MAX = 3;              // landings between flights before the two
+                                         // stop reading as one stair
         const MAX_FLIGHT_RISERS = 18;    // beyond this a straight flight needs a landing
         const STAIR_SLAB       = 0.20;   // structural thickness of an open-riser flight
 
@@ -1423,7 +1436,12 @@
             const soffit = floorH - slabT;
             const xCrit = Math.max(0, (soffit - STAIR_HEADROOM) * (run / Math.max(floorH, 0.1)));
             return {
-                risers, riser, going, run, soffit, xCrit, profile, flights, landing: flights > 1 ? landing : 0,
+                risers, riser, going, run, soffit, xCrit, profile, flights, landing,
+                // One flight ends where the next begins, with a landing's worth of
+                // floor between them to arrive on and turn. Consecutive openings
+                // therefore sit a PITCH apart: a bare run apart butts them end to
+                // end with nowhere to stand, and less than a run overlaps them.
+                pitch: run + landing,
                 width: STAIR_WIDTH,
                 opening: clamp(run - xCrit, 0.60, run),
                 blondel: 2 * riser + going
@@ -1930,9 +1948,15 @@
                 if (i > 0 && i < numFloors - 1) {   // both levels carry a flight
                     for (let k = 0; k < 2; k++) {
                         const step = Math.abs(stretchOf(i, k, g.run).tc - stretchOf(i - 1, k, g.run).tc);
-                        // one flight arrives where the next departs, so the openings
-                        // must sit about one run apart or the stair does not join up
-                        if (Math.abs(step - g.run) > g.run * 0.40) disconnected.add(i + 1);
+                        // What joins two flights is the floor BETWEEN them, not the
+                        // distance between their centres. Aiming at a bare run let
+                        // the window open at 0.6 run - an overlap, which headClear
+                        // then rejected: the two checks contradicted each other.
+                        // Under a landing they overlap; past a few landings you
+                        // cross the house to find the next flight.
+                        const gap = step - g.run;
+                        if (gap < g.landing - JOIN_TOL || gap > g.landing * JOIN_MAX)
+                            disconnected.add(i + 1);
                     }
                 }
             }
@@ -2804,59 +2828,91 @@
             return wallClearsSlots(generateWallQuads(nodes, coreT, endDirsFor(d.vertices)), must);
         }
 
-        function addFold() {
-            const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
+        /* One more fold in the widest unfolded gap, with the amplitude SEARCHED
+           rather than guessed. Returns the new node list, or null if nowhere on
+           this wall will take another fold.
+
+           Two things made a single guess fail on the middle floor:
+             - the turn angle at the new node is 2 atan(p / 2a), so 0,3 x
+               half-plate in a 1 m gap gives 24 degrees against the 45 minimum;
+             - inserting a node also sharpens the angle at its NEIGHBOURS, so
+               even a well-scaled amplitude can be rejected for a fold that is
+               already there.
+           Same lesson as the solver's amplitude scan: the feasible set is not an
+           interval and one probe is not enough.
+
+           Shared with solveFolds, which spreads n nodes evenly and so cannot use
+           the wall that is left when the openings below cut it into two narrow
+           strips - this walks the strips one at a time. */
+        function foldPlus(idx, current) {
             const d = floorData[idx];
             const byT = (a, b) => axisParam(a) - axisParam(b);
+            const base = current.slice();
 
-            /* Collect every unfolded gap, try the widest first, and SEARCH for an
-               amplitude that validates rather than guessing one.
-               Two things made a single guess fail on the middle floor:
-                 - the turn angle at the new node is 2 atan(p / 2a), so 0,3 x
-                   half-plate in a 1 m gap gives 24 degrees against the 45 minimum;
-                 - inserting a node also sharpens the angle at its NEIGHBOURS, so
-                   even a well-scaled amplitude can be rejected for a fold that is
-                   already there.
-               Same lesson as the solver's amplitude scan: the feasible set is not
-               an interval and one probe is not enough. */
             const gaps = [];
             foldableSpans(idx).forEach(z => {
-                const ts = d.foldNodes.map(axisParam)
+                const ts = base.map(axisParam)
                     .filter(t => t > z[0] && t < z[1]).sort((p, q) => p - q);
                 const marks = [z[0]].concat(ts, [z[1]]);
                 for (let i = 0; i < marks.length - 1; i++) {
                     const len = marks[i + 1] - marks[i];
-                    if (len > 2 * FOLD_MIN_GAP) gaps.push({ len, t: (marks[i] + marks[i + 1]) / 2 });
+                    if (len > 2 * FOLD_MIN_GAP) gaps.push({ len, t0: marks[i], t1: marks[i + 1] });
                 }
             });
-            if (!gaps.length) { invalidFlash = 1; refresh(); return; }
+            if (!gaps.length) return null;
             gaps.sort((p, q) => q.len - p.len);
 
             const half = plateHalfWidth(d.vertices);
-            const keep = d.foldNodes.slice();
-            let placed = false;
-            for (const g of gaps) {
-                // 45 deg at the new node needs a <= p / (2 tan 22,5) = 0,6 L
-                const aMax = Math.min(0.3 * half, 0.6 * g.len);
-                let near = null, nd = Infinity;
-                keep.forEach(f => {
-                    const dt = Math.abs(axisParam(f) - g.t);
-                    if (dt < nd) { nd = dt; near = f; }
-                });
-                const ns = near ? axisSide(near) : 0;
-                const dir = Math.abs(ns) < 1e-3 ? 1 : -Math.sign(ns);
-                for (const f of [1, 0.75, 0.55, 0.4, 0.28, 0.18, 0.1]) {
-                    for (const sgn of [dir, -dir]) {
-                        d.foldNodes = keep.slice();
-                        d.foldNodes.push(axisToXZ(g.t, sgn * aMax * f));
-                        d.foldNodes.sort(byT);
-                        if (foldsStillFit(idx)) { placed = true; break; }
+            const aCap = 0.3 * half;        // the plate is only so wide
+            const outer = d.foldNodes;      // foldsStillFit reads it, so borrow it
+            let found = null;
+            try {
+                for (const g of gaps) {
+                    /* WHERE in the gap matters as much as how deep. The bend at a
+                       node is atan(p/L1) + atan(p/L2) to its two neighbours, so in
+                       a long gap a mid-span node bends the wall by about 27 deg for
+                       a 1 m offset over 8 m - under the 45 deg minimum, and refused.
+                       The amplitude cannot grow past the plate, so the node moves:
+                       one neighbour within about p of it carries the whole turn.
+                       This is why + Fold used to work on a crowded floor and fail
+                       on an empty one, which reads as random. */
+                    const spots = [(g.t0 + g.t1) / 2];
+                    for (const q of [1.0, 1.5, 2.2]) {
+                        const dq = aCap * q;
+                        if (dq < g.len / 2) spots.push(g.t0 + dq, g.t1 - dq);
                     }
-                    if (placed) break;
+                    for (const t of spots) {
+                        // 45 deg at the new node needs a <= p / (2 tan 22,5) = 0,6 L
+                        const aMax = Math.min(aCap, 1.2 * Math.min(t - g.t0, g.t1 - t));
+                        let near = null, nd = Infinity;
+                        base.forEach(f => {
+                            const dt = Math.abs(axisParam(f) - t);
+                            if (dt < nd) { nd = dt; near = f; }
+                        });
+                        const ns = near ? axisSide(near) : 0;
+                        const dir = Math.abs(ns) < 1e-3 ? 1 : -Math.sign(ns);
+                        for (const f of [1, 0.75, 0.55, 0.4, 0.28, 0.18, 0.1]) {
+                            for (const sgn of [dir, -dir]) {
+                                const trial = base.slice();
+                                trial.push(axisToXZ(t, sgn * aMax * f));
+                                trial.sort(byT);
+                                d.foldNodes = trial;
+                                if (foldsStillFit(idx)) { found = trial; break; }
+                            }
+                            if (found) break;
+                        }
+                        if (found) break;
+                    }
+                    if (found) break;
                 }
-                if (placed) break;
-            }
-            if (!placed) { d.foldNodes = keep; invalidFlash = 1; }
+            } finally { d.foldNodes = outer; }
+            return found;
+        }
+
+        function addFold() {
+            const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
+            const more = foldPlus(idx, floorData[idx].foldNodes);
+            if (more) floorData[idx].foldNodes = more; else invalidFlash = 1;
             refresh();
         }
 
@@ -2974,10 +3030,33 @@
                 return all.folds;
             };
 
+            /* The even-spacing candidate builder wants to spread n nodes over the
+               whole span, so once the openings below have cut the wall into two
+               narrow strips it can place only one - and one fold near an end is a
+               stub that braces nothing. foldPlus walks the strips instead, which
+               is how + Fold reaches the three folds that pass where the solver
+               settled for one. Only the last tier is refined: the compliant tiers
+               already satisfy bracing by construction. */
+            const refine = folds => {
+                let cur = folds, best = { score: Infinity, folds: folds };
+                evaluate(cur, false, false, best);
+                for (let k = 0; k < 4; k++) {
+                    const more = foldPlus(idx, cur);
+                    if (!more) break;
+                    const ok = { score: Infinity, folds: null };
+                    evaluate(more, true, false, ok);
+                    if (ok.folds) return ok.folds;
+                    evaluate(more, false, false, best);
+                    cur = more;
+                }
+                return best.folds || folds;
+            };
+
             // Best first: compliant AND stacked on the wall below. Then compliant
             // but stepping, which a uniform slab cannot transfer - reported. Then
-            // whatever stands at all.
-            return search(true, true) || search(true, false) || search(false, false) || [];
+            // whatever stands at all, refined fold by fold.
+            return search(true, true) || search(true, false)
+                || refine(search(false, false) || []);
         }
 
         function stairParams() {
@@ -2998,8 +3077,9 @@
             const standsOn = floorData[Math.max(0, i - 1)].vertices;
             const [A, B] = wallAnchors(verts);
             const tA = axisParam(A), tB = axisParam(B);
-            const half = Math.min(g.run, Math.max(0.5, (tB - tA) - 2 * FOLD_MIN_GAP)) / 2;
-            const lo = tA + FOLD_MIN_GAP + half, hi = tB - FOLD_MIN_GAP - half;
+            const end = stretchEndMin();
+            const half = Math.min(g.run, Math.max(0.5, (tB - tA) - 2 * end)) / 2;
+            const lo = tA + end + half, hi = tB - end - half;
             if (hi <= lo) return;
 
             const above = i < numFloors - 1
@@ -3027,7 +3107,18 @@
                     const app    = inside ? approachClear(sl, g, standsOn) : 0;
                     const clash  = above.length ? wallIntoSlots(above, [sl]) : 0;
 
-                    const step = below === undefined ? 0 : Math.abs(Math.abs(tc - below) - g.run);
+                    // aim a full pitch from the flight below; short of it the two
+                    // overlap and you hit your head, long of it is only a longer
+                    // walk - so the two sides are not weighed alike
+                    const d = below === undefined ? g.pitch : Math.abs(tc - below);
+                    const step = d < g.pitch ? (g.pitch - d) * 3 : (d - g.pitch);
+                    // A marching stair has to start at one end. Every flight above
+                    // this one still needs its own pitch of wall, so placing floor
+                    // by floor from the middle outwards dooms the upper floors
+                    // before they are reached - they end up clamped, off pitch, and
+                    // with no wall left to fold.
+                    const chain = Math.max(0, numFloors - 2 - i) * g.pitch;
+                    const march = Math.max(0, chain - Math.max(hi - tc, tc - lo));
                     // stagger: either share the stretch outright, or clear it fully
                     const apart = other && other.tc !== undefined ? Math.abs(tc - other.tc) : Infinity;
                     const stagger = apart < half * 2 + FOLD_MIN_GAP && apart > half * 1.1
@@ -3037,6 +3128,7 @@
                                 + Math.max(0, APPROACH_MIN + 0.4 - app) * 20
                                 + clash * 40
                                 + step * 3
+                                + march * 8
                                 + stagger;
                     const clear = inside && bypass >= PASSAGE_MIN && app >= APPROACH_MIN && clash <= 0.05;
                     if (clear && (bestClear === null || score < bestClear.score)) bestClear = { tc, score };
@@ -3552,7 +3644,8 @@
             if (bearsOnVoid.length) unsafe.push(say('wall of floor ' + bearsOnVoid.join(', ') + ' lands on the opening below',
                                                      'press Place Stairs, or drag the stairs below it along the wall'));
             if (headHit.length)     unsafe.push(say('head hits the flight above on floor ' + headHit.join(', '),
-                                                     'press Place Stairs, or move them a full run apart'));
+                                                     'press Place Stairs, or set the openings ' + stair.pitch.toFixed(2)
+                                                     + ' m apart'));
             if (unbraced.length)    unsafe.push(say('not enough wall across the plan on floor ' + unbraced.join(', '),
                                                      'thicken the wall, or add folds'));
             if (twisted.length)     unsafe.push(say('nothing resists twist on floor ' + twisted.join(', '),
@@ -3569,7 +3662,8 @@
                                                      'widen the plate, or drag the stairs along the wall'));
 
             if (disconnected.length) broken.push(say('flights do not join up at floor ' + disconnected.join(', '),
-                                                     'press Place Stairs'));
+                                                     'press Place Stairs, or set the openings a run plus a landing ('
+                                                     + stair.pitch.toFixed(2) + ' m) apart'));
             if (cramped.length)      broken.push(say('no standing room at the bottom step on floor ' + cramped.join(', '),
                                                      'drag the stairs along the wall, or lower the storey height'));
             if (transferred.length)  broken.push(say('wall of floor ' + transferred.join(', ')
