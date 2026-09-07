@@ -1519,24 +1519,73 @@
            single wall cannot stand, however much shear length it has. That, and
            not the shear length, is what forces the zigzag.
            Reported as a check of its own, NOT combined with the direct shear. */
-        function torsionCheck(nodes, vertices, need) {
+        /* THE CENTRE OF RIGIDITY, IN ONE PLACE, because two checks read it and
+           they must not disagree. Stiffness is taken as the wall's projected length
+           in the direction being resisted - the standard simplification for walls
+           of a single thickness.
+
+           Conditioning, measured rather than assumed: the divisor wx is the total
+           x-projection, 5 to 9 m once the wall folds, and nudging a fold node by
+           0,05 m moves crZ by 0,041 m - a gain of 0,8, comfortably stable. Only
+           when the wall stops folding does wx reach zero, and then the guard puts
+           the centre back on the centroid, which is right: a straight wall has no
+           eccentricity to speak of. What catches a straight wall is the torsional
+           CAPACITY going to zero, which is physics and not arithmetic. */
+        function rigidityCentre(nodes, vertices) {
             let sx = 0, sz = 0, wx = 0, wz = 0;
+            for (let j = 0; j < nodes.length - 1; j++) {
+                const a = nodes[j], b = nodes[j + 1];
+                if (distXZ(a, b) < 1e-9) continue;
+                const kx = Math.abs(b.x - a.x), kz = Math.abs(b.z - a.z);
+                sx += kx * (a.z + b.z) / 2; wx += kx;   // X-load: CR position along Z
+                sz += kz * (a.x + b.x) / 2; wz += kz;   // Z-load: CR position along X
+            }
+            const c = getPlateCentroid(vertices);
+            return { x: wz > 1e-6 ? sz / wz : c.x, z: wx > 1e-6 ? sx / wx : c.z, cm: c };
+        }
+
+        /* SIA 261 16.5.2.7, eq. 42 and 43. The equivalent-force method does not
+           apply the accidental eccentricity alone - it BRACKETS the planned one:
+
+               e_d,sup = 1.5 e + 0.05 b        e_d,inf = 0.5 e - 0.05 b
+
+           e being the eccentricity of the resultant of the floors above measured
+           from the centre of STIFFNESS of the floor considered, b the width
+           perpendicular to the loading. Written out, that pair is simply
+
+               e_d = e  plus or minus  (0.5 e + 0.05 b)
+
+           - the real position, shifted either way. So a solve referred to the
+           CENTROID must apply not e_d but e_d - e, the offset of the design line
+           of action from its own reference point:
+
+               T / V = +/- (0.5 e + 0.05 b)
+
+           Getting that wrong is easy and expensive in both directions. Applying
+           e_d about the centroid double-counts the eccentricity and overstates the
+           torque about fourfold; applying only 0.05 b - which this file did -
+           understates it two- to fourfold, because e reaches 5.70 m on the middle
+           floor of the default against an accidental 0.92 m. Returned as the two
+           signed shifts, so a caller cannot make either mistake. */
+        function eccentricityShift(e, b) {
+            const half = 0.5 * e + ACCIDENTAL_ECC * b;   // e_d,sup - e
+            return [half, -half];                        // e_d,inf - e is its negative
+        }
+
+        function torsionCheck(nodes, vertices, need) {
             const segs = [];
             for (let j = 0; j < nodes.length - 1; j++) {
                 const a = nodes[j], b = nodes[j + 1];
                 const L = distXZ(a, b);
                 if (L < 1e-9) continue;
-                const kx = Math.abs(b.x - a.x), kz = Math.abs(b.z - a.z);
                 segs.push({ a, L, ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
-                sx += kx * (a.z + b.z) / 2; wx += kx;   // X-load: CR position along Z
-                sz += kz * (a.x + b.x) / 2; wz += kz;   // Z-load: CR position along X
             }
-            const c = getPlateCentroid(vertices), b = getFloorSpan(vertices);
-            const crZ = wx > 1e-6 ? sx / wx : c.z;
-            const crX = wz > 1e-6 ? sz / wz : c.x;
-            // structural eccentricity plus the mandatory accidental one
-            const eX = Math.abs(crZ - c.z) + ACCIDENTAL_ECC * b.z;
-            const eZ = Math.abs(crX - c.x) + ACCIDENTAL_ECC * b.x;
+            const rc = rigidityCentre(nodes, vertices);
+            const c = rc.cm, b = getFloorSpan(vertices);
+            const crZ = rc.z, crX = rc.x;
+            // the lever the torque really acts on, about the centroid
+            const eX = Math.max(...eccentricityShift(c.z - crZ, b.z).map(Math.abs));
+            const eZ = Math.max(...eccentricityShift(c.x - crX, b.x).map(Math.abs));
             /* The two centres and each segment's lever arm are handed back so the
                plan can draw them. This is the picture that replaces a paragraph:
                straighten the wall and every arm collapses to zero in front of you.
@@ -1616,11 +1665,16 @@
                 for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) M[i][j] += g.L * v[i] * v[j];
             });
 
+            /* The eccentricity the code asks for, not just its accidental part -
+               see eccentricityShift. Four cases still: each direction shifted
+               either way, which is what eq. 42 and 43 bracket. This solve is
+               referred to the centroid, so the SHIFT is what it takes, not e_d. */
+            const rc = rigidityCentre(nodes, vertices);
             const cases = [];
-            for (const sgn of [1, -1]) {
-                cases.push({ n: 'X', Vx: need.Vx, Vz: 0, T: sgn * need.Vx * ACCIDENTAL_ECC * b.z });
-                cases.push({ n: 'Z', Vx: 0, Vz: need.Vz, T: sgn * need.Vz * ACCIDENTAL_ECC * b.x });
-            }
+            eccentricityShift(O.z - rc.z, b.z).forEach(e =>
+                cases.push({ n: 'X', Vx: need.Vx, Vz: 0, T: need.Vx * e }));
+            eccentricityShift(O.x - rc.x, b.x).forEach(e =>
+                cases.push({ n: 'Z', Vx: 0, Vz: need.Vz, T: need.Vz * e }));
             /* The per-segment utilisation is kept, not just the maximum: it is the
                only number in the file that says WHERE on the wall the work is
                happening, so the plan can draw it and the reader can see which fold
