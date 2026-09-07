@@ -1038,8 +1038,8 @@
         // factor, so the two cannot be compared until the wind is factored.
         const WIND_GAMMA     = 1.50;
         /* Design spectral value, checked out rather than assumed:
-             a_gd = 0,60 m/s2 for zone Z1, the lowest Swiss zone (SIA 261 16.2.1.2)
-             S    = 1,4 for ground class C
+             a_gd = 0,60 m/s2 for zone Z1a (SIA 261 16.2.1.2)
+             S    = 1,4 for ground class C - assumed, see the notes
              q    = 2,0 - SIA 262 Table 14 gives q = 2,0 for a NON-DUCTILE
                     structure reinforced with ductility class B steel, which is the
                     normal Swiss bar. Non-ductile is the right row here: 4.3.9.4.1
@@ -1100,8 +1100,25 @@
            1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the
            seismic ones G + 0.3Q, and bearing G + Q.
 
+           SITE, PINNED. The seismic zone is not assumed: BAFU's "Erdbebenzonen
+           SIA 261" map (WMS layer ch.bafu.gefahren-gefaehrdungszonen) returns
+           Erdbebenzone_SIA_261 = 'Z1a' at the site, LV95 E 2687033 N 1245879,
+           Witikon. That matters because SIA 261:2020 rewrote chapter 16: the old
+           three zones became five, Z1a to Z3b, at a_gd 0.60 / 0.75 / 1.00 / ... -
+           so "Z1", which this file used to say, is a name that no longer exists,
+           and Zurich's lowland spans Z1a AND Z1b. Had it come back Z1b every
+           lateral demand here would have been 25% low, and seismic governs
+           everything. It came back Z1a, so a_gd 0.60 m/s2 stands and only the
+           zone's name was stale.
+
+           The ground class did NOT resolve: BAFU's Baugrundklassen map has no
+           coverage at Witikon, which is ordinary - those maps exist for selected
+           areas only and the class is otherwise established by site
+           investigation. So S = 1.4 for class C remains an assumption, and an
+           unavoidable one.
+
            Seismic, also checked out: S_d = a_gd × S × 2.5 / q = 0.107 g, from a_gd
-           0.60 m/s² for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and q
+           0.60 m/s² for zone <b>Z1a</b> (SIA 261 16.2.1.2), S 1.4 for ground class C, and q
            = 2.0 — SIA 262 Table 14 for a non-ductile structure with class B steel,
            which is the right row because 4.3.9.4.1 starts the ductile-wall rules at
            h_w/l_w > 2 and this wall is –.
@@ -1456,7 +1473,18 @@
             return { Lx, Lz };
         }
 
-        const ACCIDENTAL_ECC = 0.05;   // EC8: 5% of the plan dimension, always applied
+        /* 5% of the plan dimension, applied whatever the geometry: even if the two
+           centres coincided exactly, the real mass distribution, the real
+           stiffnesses and the rotational component of the ground motion are all
+           uncertain, so a torque has to be carried. It is the reason the wall is
+           not straight - a straight wall's torsional lever arm is exactly zero.
+
+           Labelled "accidental" on the plan rather than "EC8". EC8 is where the 5%
+           can be cited from, but every other seismic figure here is SIA 261, and
+           the SIA clause and figure for the accidental eccentricity were not
+           obtained. Naming the rule rather than a standard is the honest label
+           until that is looked up. */
+        const ACCIDENTAL_ECC = 0.05;
 
         /* THE FOLD IS THE ONLY THING RESISTING TWIST.
            One wall means the centre of rigidity sits on the wall itself, so an
@@ -2550,12 +2578,19 @@
                 wallSegments(idx, st.stair.run).segs.forEach(r => {
                     // ticks across the poche at each end, instead of a fat second
                     // colour laid over the wall - the stretch is a NOTE on the wall
+                    /* On dark poche a blue tick disappears, so each tick is drawn
+                       twice: a white one to cut the fill, the blue one over it. Same
+                       trick a drawing uses for a dimension line over a hatch. */
                     editCtx.save();
-                    editCtx.strokeStyle = 'rgba(0,123,255,0.85)'; editCtx.lineWidth = 1.2;
                     [r.P0, r.P1].forEach(pt => {
-                        const t = st.P.coreT * 0.95;
-                        strokePath([{ x: pt.x + r.n.x * t, z: pt.z + r.n.z * t },
-                                    { x: pt.x - r.n.x * t, z: pt.z - r.n.z * t }], false);
+                        const t = st.P.coreT * 1.5;
+                        const seg = [{ x: pt.x + r.n.x * t, z: pt.z + r.n.z * t },
+                                     { x: pt.x - r.n.x * t, z: pt.z - r.n.z * t }];
+                        strokePath(seg, false);
+                        editCtx.strokeStyle = 'rgba(255,255,255,0.9)'; editCtx.lineWidth = 3.2;
+                        editCtx.stroke();
+                        strokePath(seg, false);
+                        editCtx.strokeStyle = '#007BFF'; editCtx.lineWidth = 1.3;
                         editCtx.stroke();
                     });
                     editCtx.restore();
@@ -2603,7 +2638,7 @@
                    belongs on the ring, not in a list of eleven other swatches. */
                 editCtx.font = '8px Helvetica';
                 editCtx.fillStyle = 'rgba(211,47,47,' + (0.85 * dim) + ')';
-                editCtx.fillText('5% e \u2014 EC8', cm.px + rAcc + 5, cm.pz - 2);
+                editCtx.fillText('5% e \u2014 accidental', cm.px + rAcc + 5, cm.pz - 2);
                 editCtx.restore();
             })();
 
@@ -2627,27 +2662,25 @@
             (function () {
                 const half = splitPlateByWall(data.vertices, nodes);
                 if (!half) return;
-                const c = getPlateCentroid(data.vertices);
-                const nrm = axisNormal();
-                const put = (val, sgn) => {
-                    // far enough out to clear the poche and the stair slots, which
-                    // both sit on the axis; the plate is widest here so there is room
-                    const off = 0.62 * plateHalfWidth(data.vertices) * sgn;
-                    const q = toPx(c.x + nrm.x * off, c.z + nrm.z * off);
-                    const txt = val.toFixed(1) + ' m\u00b2';
-                    editCtx.font = '9px Helvetica';
-                    const w = editCtx.measureText(txt).width;
-                    editCtx.fillStyle = 'rgba(255,255,255,0.85)';
-                    editCtx.fillRect(q.px - w / 2 - 3, q.pz - 8, w + 6, 13);
-                    editCtx.fillStyle = '#777';
-                    editCtx.fillText(txt, q.px - w / 2, q.pz + 2);
-                };
-                /* Which loop lies on which side: half.a is the loop that leaves the
-                   far anchor over the NEXT boundary vertex, so probe that vertex. */
-                const probe = half.firstVertex;
-                const sgn = probe ? Math.sign(axisSide(probe) || 1) : 1;
-                put(half.a, sgn);
-                put(half.b, -sgn);
+                /* In the corner, not on the plan. Laid over the drawing these two
+                   figures fell on the poche and the stair slots, which both sit on
+                   the axis - and at this scale the plate is only about 110 px wide,
+                   so there was never room between the wall and the envelope. The
+                   left figure is the left side on screen, which needs no legend
+                   because the drawing is right there. */
+                const s0 = Math.sign(axisSide(half.firstVertex) || 1);
+                const left  = s0 < 0 ? half.a : half.b;
+                const right = s0 < 0 ? half.b : half.a;
+                const x1 = editCanvas.width - 8, y1 = editCanvas.height - 8;
+                editCtx.save();
+                editCtx.textAlign = 'right';
+                editCtx.font = '10px Helvetica';
+                editCtx.fillStyle = '#777';
+                editCtx.fillText(left.toFixed(1) + ' / ' + right.toFixed(1) + ' m\u00b2', x1, y1);
+                editCtx.font = '8px Helvetica';
+                editCtx.fillStyle = '#bbb';
+                editCtx.fillText('EACH SIDE OF THE WALL', x1, y1 - 11);
+                editCtx.restore();
             })();
 
             if (refuseNote && invalidFlash > 0) {
