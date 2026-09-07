@@ -913,9 +913,22 @@
             const lens = open.map(z => Math.max(0, z[1] - z[0]));
             const tot = lens.reduce((a, v) => a + v, 0);
             if (tot < 1e-6 || foldCount <= 0) return pins;
-            // cap each zone so its panels stay a sensible length
-            const target = panelGuide(P_FOR_FOLDS.floorH) * 0.5;
-            const capOf = L => Math.max(0, Math.round(L / Math.max(target, 0.5)) - 1);
+            /* THE CAP WAS A DETAILING GUIDE DOING A STRUCTURAL JOB. It used to be
+               half the fold-panel guide - about 2.49 m at the default - which on a
+               6.14 m foldable span allows exactly ONE node. Every fold count the
+               solver asked for, 0 through 9, came back as the same single zigzag,
+               so the whole search collapsed to one candidate and Auto-Fold All
+               changed nothing at all: same wall, same utilisation to three decimals.
+               And the page says of that guide, in its own words, that it is "a
+               detailing guide, not a limit".
+
+               The real limit is buildability: every segment must still be
+               FOLD_MIN_SEG long, and no thinner than the wall, so a span of L takes
+               at most L/max(FOLD_MIN_SEG, t) - 1 nodes. The preference for long
+               panels survives where it belongs, as the score's own penalty on
+               anything past the guide. */
+            const capOf = L => Math.max(0,
+                Math.floor(L / Math.max(FOLD_MIN_SEG, P_coreT())) - 1);
             let left = foldCount, out = pins.slice();
             open.forEach((z, i) => {
                 const want = i === open.length - 1 ? left : Math.round(foldCount * lens[i] / tot);
@@ -2268,6 +2281,19 @@
                         nodes, verts, slots, quads, reach, proj, need, wallLen,
                         tors: torsionCheck(nodes, verts, need),
                         comb: lateralCheck(nodes, verts, need),
+                        /* Is this floor beyond every lever the page offers? Cheap
+                           to establish for the one that is analytic: re-run the
+                           combined check at the thickest wall the slider allows. If
+                           it is still over there, no thickness reaches it, and the
+                           fold layout is not going to close a gap that size either
+                           - what is actually wrong is the number of storeys. */
+                        beyondReach: (function () {
+                            const tMax = parseFloat(document.getElementById('coreT').max) || 1.5;
+                            if (P.coreT >= tMax - 1e-6) return false;
+                            const thick = Object.assign({}, P, { coreT: tMax });
+                            const nd = lateralDemand(i, thick, verts, slabT, wallPathLength(nodes));
+                            return lateralCheck(nodes, verts, nd).use > CHECK_TOL;
+                        })(),
                         transfer: transferCheck(P, slabT, area, wallLen, storeys, off),
                         diaph: diaphragmCheck(P, slabT, area, wallLen, slots),
                         base: baseStress(nodes, P, slabT, area, wallLen, storeys,
@@ -4359,9 +4385,23 @@
             if (overloaded.length) {
                 const why = unbraced.some(f => covered.has(f)) ? ' \u2014 too little wall across the plan'
                           : twisted.some(f => covered.has(f)) ? ' \u2014 no lever to resist twist' : '';
+                /* Name a lever that reaches, or say that none does. Advice that
+                   cannot be taken is worse than no advice, and on the floors marked
+                   beyondReach neither folding nor the thickest wall on the slider
+                   closes the gap. */
+                const stuck = overloaded.filter(f => floors[f - 1].beyondReach);
+                const tMax = parseFloat(document.getElementById('coreT').max) || 1.5;
+                // do not offer a thicker wall to someone already at the last notch
+                const thicken = P.coreT < tMax - 1e-6
+                    ? '; thicken the wall only as far as it still folds' : '';
+                const fix = !stuck.length
+                    ? 'add folds, or deepen them' + thicken
+                    : stuck.length === overloaded.length
+                    ? 'nothing on these sliders reaches it \u2014 this is more storeys than one wall carries'
+                    : 'floor ' + stuck.join(', ') + (stuck.length > 1 ? ' are' : ' is')
+                      + ' past every slider; elsewhere add folds, or deepen them';
                 unsafe.push(say('wall over capacity on floor ' + overloaded.join(', ')
-                                + ' once shear and twist act together' + why,
-                                'add folds, or deepen them \u2014 a thicker wall folds less tightly'));
+                                + ' once shear and twist act together' + why, fix));
             }
             if (shortWall.length)   unsafe.push(say('not enough wall across the plan on floor ' + shortWall.join(', '),
                                                      'add folds, or deepen them \u2014 a thicker wall folds less tightly'));
