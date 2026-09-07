@@ -67,7 +67,7 @@
         #simContainer {
             display: block;
             width: 100%;
-            height: 420px;
+            height: 560px;
             background: transparent;
             cursor: grab;
             position: relative;
@@ -123,10 +123,17 @@
             color: #333;
             letter-spacing: 0.5px;
         }
+        /* THE FRAME HAS TO MATCH THE DRAWING. The plate is 18.45 x 9.18 m - two to
+           one, portrait - and this box was 302 x 262, landscape. The fit was
+           height-limited at about 12 px/m with half the width unused, which put the
+           wall at 6 px and a tread at 4: no styling survives that, and it is why
+           the wall had to be a line rather than poche and a flight a dashed box.
+           At 560 the fit is 28 px/m - wall 12 px, tread 7 - and the plan can be
+           drawn as a plan. */
         canvas#editorCanvas {
             display: block;
             width: 100%;
-            height: 262px;
+            height: 560px;
             background: #fff;
             border: 1px solid #eee;
             cursor: crosshair;
@@ -231,6 +238,7 @@
             gap: 5px; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
             color: #aaa; pointer-events: none;
         }
+        #defl-key[hidden] { display: none; }
         #defl-key i {
             display: inline-block; width: 14px; height: 2px;
             background: linear-gradient(to right, #0e7c86 55%, #b26a00 55%);
@@ -389,24 +397,10 @@
                     <div style="margin-top:8px;">
                         <b>Twist is what forces the fold, not shear.</b> Straighten the wall and the lever goes to zero.
                     </div>
-                    <details class="fine">
-                        <summary>What is assumed, and what is still not checked</summary>
-                        <div>
-                        <b>From prSIA 262:2024, with clause numbers in the source:</b> &gamma;_C 1.5 and &gamma;_S 1.15 (2.4.2.6); &tau;_cd = 0.3&radic;f_ck/&gamma;_C = 1.10 MPa and f_sd = 435 MPa (2.4.2.4&ndash;5); f_cd = 20.0 MPa for C 30/37 (Table 8); k_c = 0.55 for a shear panel (4.2.1.7); the compression field taken at 30&deg;, the normal-case minimum (4.3.3.3.3); slab shear without links from eq. 35; wall reinforcement 0.6% vertical and 25% of that horizontal (5.5.4.3, 5.5.4.11), which is what gives the wall's <b>1.13 MPa</b> in-plane shear.<br><br>
-                        <b>The slab follows SIA 262 eq. 103:</b> the tip deflection of the cracked cantilever under the quasi-permanent load, against a/250, with E_cm = k_E&middot;&#8731;f_cm at k_E = 10 000 for alluvial gravel (3.1.2.3.3) and a creep coefficient of 2.5 (&beta;_fc = 2.7 from Table 4; the rest of eq. 13 is read off Figure 2). Bending resistance is A_s = &rho;d at a lever of 0.9d with &rho; = 1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the seismic ones G + 0.3Q, and bearing G + Q.<br><br>
-                        <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is <span id="val-hwlw">&ndash;</span>.<br><br>
-                        <b>Measured off the published plans and the architect's credits:</b> gross floor area <b>420 m&sup2;</b> (Kerez, <i>Credits 1993&ndash;2024</i>) over the three storeys the plans show, so 140 m&sup2; each. The plate is an <b>octagon</b> &mdash; end edge at 0.568 of the full width, straight taper to full width at 0.40 of the length, parallel sides from 0.40 to 0.60, identical on GL, L1 and L2 to within 2% &mdash; which at that area gives <b>18.45 &times; 9.18 m</b>. The stair is 18 treads at 0.0139 of the plate length = 0.256 m, so 19 risers of 0.187 m over a <b>3.55 m</b> storey, a run of <b>4.61 m</b>, and a width of 0.0941 of the plate width = <b>0.86 m</b>. Take the three-storey reading as forced rather than chosen: over four storeys the same tread comes out 0.216 m, which nobody would build. VKF 16-15 cl. 3.2.2 al. 3 places <i>no</i> requirement on a stair inside a dwelling unit, so 0.86 m is this building's figure and not a code minimum &mdash; the 1.2 m escape-route width (cl. 2.4.5 al. 3) applies to a stair serving more than one unit, which this is not.<br><br>
-                        <b>Wind is computed and never governs.</b> Seismic exceeds it by <span id="val-windmargin">&ndash;</span> at the narrowest floor of the design on screen, and it has governed on every combination of storeys and height tried. That is why q_p 0.90 and c_f 1.30 (SIA 261, not obtained) are left as they are &mdash; but read the margin, not a promise: it is nearer two than five, so wind coefficients twice the assumed ones would start to decide.<br><br>
-                        <b>Loads and stair geometry, looked up rather than picked:</b> reinforced concrete <b>25 kN/m&sup3;</b> (SIA 261, Wichten); imposed load <b>2.0 kN/m&sup2;</b> for category A1 <i>Wohnfl&auml;chen</i> (SIA 261), of which <b>&psi;<sub>2</sub> = 0.3</b> goes into the seismic mass (SIA 260 Table 1); wind reference <b>q<sub>p0</sub> = 0.90 kN/m&sup2;</b> for the Zurich plateau (SIA 261 Annex E).<br><br>
-                        The stair follows <b>bfu Fachdokumentation 2.007</b>, the column for the <i>private interior</i> &mdash; the one that applies to a stair inside a dwelling, where SIA 500 governs barrier-free buildings and SN 640 075 the public outdoor realm: <b>2s + a = 63 cm</b>, going <b>26&ndash;29 cm</b>, riser <b>17&ndash;19 cm</b>, clear height <b>2.10 m</b>, and for a single-family house a width of at least <b>0.90 m</b>. The going band in this file was 24&ndash;32 cm, wider than that at both ends and never looked up; it is the bfu band now. Worth seeing what the loose band was hiding: the tread measured off the plans is <b>0.256 m</b> and the width <b>0.86 m</b>, so Kerez's stair sits a few millimetres under the recommendation on both counts &mdash; which it may, because bfu recommends and VKF 16-15 cl. 3.2.2 al. 3 requires nothing whatever of a stair inside a dwelling.<br><br>
-                        <b>Still assumed &mdash; two things, and only two:</b> the wind force coefficient <b>c<sub>f</sub> = 1.30</b>, which is in SIA 261's own tables and was not obtained; and <b>1.5 kN/m&sup2;</b> for finishes, partitions and the glazed envelope, which is a designer's allowance that no standard prescribes. The wind margin above is what guards the first. The reference pressure is also used unscaled: the norm applies a height factor, q_p = q_p0 &times; c_h, and Witikon is suburb at about 11 m &mdash; rougher terrain than the open land the reference is defined in, so c_h there is below 1 and leaving it out is conservative.<br><br>
-                        <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through.<br><br>
-                        <b>The two centres are an aid, not a result:</b> the cross is on the wall, the circle is the centre of mass, and the red arm between them is the lever the earthquake pulls on &mdash; a straight wall's arm is exactly zero, because one line of wall can only push along itself. But the centre of rigidity is an elastic construct paired here with plastic capacities: read it as a diagnosis of the geometry, not a number to design to.<br><br>
-                        <b>Checked, and never close:</b> the slab's diaphragm shear into the wall, and ordinary one-way shear at the wall face &mdash; the latter against the concrete alone, and it is what stands in for the punching check that does not apply. Both are required and both are reported here rather than in the column, because across 60 combinations of storeys, height and wall thickness the worst case seen was <b>7.5%</b> of the diaphragm's capacity and <b>50%</b> of the slab's. On a house this size they cannot decide anything.<br><br>
-                        <b>Not modelled at all:</b> the foundation. Nothing below the wall's own base section is drawn, checked or assumed &mdash; the base stress against f_cd is a check on the WALL, not on what carries it.<br><br>
-                        <b>Still not checked:</b> crack width, and the wall's construction joints. Long-term deflection <i>is</i> calculated &mdash; eq. 103 carries the creep coefficient of 2.5 above, and no span/depth shortcut is used anywhere; the old wording here said otherwise and was left over from before that arrived. Second-order effects are not checked either, which the <i>Wall H/T_c</i> row says at the point it matters rather than repeating here.
-                        </div>
-                    </details>
+                    <!-- The static provenance is a source comment now. The two LIVE
+                         figures stay here, because they are the two that move with the
+                         design, and reporting them is what stopped them going stale. -->
+                    <div class="fine" style="margin-top:8px;">h_w/l_w <b id="val-hwlw">&ndash;</b> &middot; seismic over wind <b id="val-windmargin">&ndash;</b><br>Constants, clause references and what is <i>not</i> checked: in the source, under <b>WHAT IS ASSUMED</b>.</div>
                     </div>
                 </div>
             </div>
@@ -1086,6 +1080,123 @@
                        is squat, so they do not apply. The ratio is REPORTED,
                        not typed - it sat in the prose as 9/14 = 0,64 and went
                        stale the moment the plate was measured               */
+        /* =====================================================================
+           WHAT IS ASSUMED, AND WHAT IS STILL NOT CHECKED
+
+           This was a <details> drawer in the page. It is here instead: the
+           interface should not have to carry seven thousand characters of
+           provenance, but the provenance must not be lost either - the study's
+           credit rests on it, and it stays greppable, reviewable and diffable
+           right beside the constants it accounts for. The page keeps one line
+           pointing here.
+           =====================================================================
+
+           What is assumed, and what is still not checked
+
+           From prSIA 262:2024, with clause numbers in the source: γ_C 1.5 and γ_S
+           1.15 (2.4.2.6); τ_cd = 0.3√f_ck/γ_C = 1.10 MPa and f_sd = 435 MPa
+           (2.4.2.4–5); f_cd = 20.0 MPa for C 30/37 (Table 8); k_c = 0.55 for a shear
+           panel (4.2.1.7); the compression field taken at 30°, the normal-case
+           minimum (4.3.3.3.3); slab shear without links from eq. 35; wall
+           reinforcement 0.6% vertical and 25% of that horizontal (5.5.4.3,
+           5.5.4.11), which is what gives the wall's 1.13 MPa in-plane shear.
+
+           The slab follows SIA 262 eq. 103: the tip deflection of the cracked
+           cantilever under the quasi-permanent load, against a/250, with E_cm =
+           k_E·∛f_cm at k_E = 10 000 for alluvial gravel (3.1.2.3.3) and a creep
+           coefficient of 2.5 (β_fc = 2.7 from Table 4; the rest of eq. 13 is read
+           off Figure 2). Bending resistance is A_s = ρd at a lever of 0.9d with ρ =
+           1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the
+           seismic ones G + 0.3Q, and bearing G + Q.
+
+           Seismic, also checked out: S_d = a_gd × S × 2.5 / q = 0.107 g, from a_gd
+           0.60 m/s² for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and q
+           = 2.0 — SIA 262 Table 14 for a non-ductile structure with class B steel,
+           which is the right row because 4.3.9.4.1 starts the ductile-wall rules at
+           h_w/l_w > 2 and this wall is –.
+
+           Measured off the published plans and the architect's credits: gross floor
+           area 420 m² (Kerez, Credits 1993–2024) over the three storeys the plans
+           show, so 140 m² each. The plate is an octagon — end edge at 0.568 of the
+           full width, straight taper to full width at 0.40 of the length, parallel
+           sides from 0.40 to 0.60, identical on GL, L1 and L2 to within 2% — which
+           at that area gives 18.45 × 9.18 m. The stair is 18 treads at 0.0139 of the
+           plate length = 0.256 m, so 19 risers of 0.187 m over a 3.55 m storey, a
+           run of 4.61 m, and a width of 0.0941 of the plate width = 0.86 m. Take the
+           three-storey reading as forced rather than chosen: over four storeys the
+           same tread comes out 0.216 m, which nobody would build. VKF 16-15 cl.
+           3.2.2 al. 3 places no requirement on a stair inside a dwelling unit, so
+           0.86 m is this building's figure and not a code minimum — the 1.2 m
+           escape-route width (cl. 2.4.5 al. 3) applies to a stair serving more than
+           one unit, which this is not.
+
+           Wind is computed and never governs. Seismic exceeds it by – at the
+           narrowest floor of the design on screen, and it has governed on every
+           combination of storeys and height tried. That is why q_p 0.90 and c_f 1.30
+           (SIA 261, not obtained) are left as they are — but read the margin, not a
+           promise: it is nearer two than five, so wind coefficients twice the
+           assumed ones would start to decide.
+
+           Loads and stair geometry, looked up rather than picked: reinforced
+           concrete 25 kN/m³ (SIA 261, Wichten); imposed load 2.0 kN/m² for category
+           A1 Wohnflächen (SIA 261), of which ψ2 = 0.3 goes into the seismic mass
+           (SIA 260 Table 1); wind reference qp0 = 0.90 kN/m² for the Zurich plateau
+           (SIA 261 Annex E).
+
+           The stair follows bfu Fachdokumentation 2.007, the column for the private
+           interior — the one that applies to a stair inside a dwelling, where SIA
+           500 governs barrier-free buildings and SN 640 075 the public outdoor
+           realm: 2s + a = 63 cm, going 26–29 cm, riser 17–19 cm, clear height 2.10
+           m, and for a single-family house a width of at least 0.90 m. The going
+           band in this file was 24–32 cm, wider than that at both ends and never
+           looked up; it is the bfu band now. Worth seeing what the loose band was
+           hiding: the tread measured off the plans is 0.256 m and the width 0.86 m,
+           so Kerez's stair sits a few millimetres under the recommendation on both
+           counts — which it may, because bfu recommends and VKF 16-15 cl. 3.2.2 al.
+           3 requires nothing whatever of a stair inside a dwelling.
+
+           Still assumed — two things, and only two: the wind force coefficient cf =
+           1.30, which is in SIA 261's own tables and was not obtained; and 1.5 kN/m²
+           for finishes, partitions and the glazed envelope, which is a designer's
+           allowance that no standard prescribes. The wind margin above is what
+           guards the first. The reference pressure is also used unscaled: the norm
+           applies a height factor, q_p = q_p0 × c_h, and Witikon is suburb at about
+           11 m — rougher terrain than the open land the reference is defined in, so
+           c_h there is below 1 and leaving it out is conservative.
+
+           Punching does not apply at the wall ends in this geometry, which is why it
+           is not checked: the wall runs edge to edge, so its ends sit on the façade
+           with no slab beyond them and there is no isolated support to punch
+           through.
+
+           The two centres are an aid, not a result: the cross is on the wall, the
+           circle is the centre of mass, and the red arm between them is the lever
+           the earthquake pulls on — a straight wall's arm is exactly zero, because
+           one line of wall can only push along itself. But the centre of rigidity is
+           an elastic construct paired here with plastic capacities: read it as a
+           diagnosis of the geometry, not a number to design to.
+
+           Checked, and never close: the slab's diaphragm shear into the wall, and
+           ordinary one-way shear at the wall face — the latter against the concrete
+           alone, and it is what stands in for the punching check that does not
+           apply. Both are required and both are reported here rather than in the
+           column, because across 60 combinations of storeys, height and wall
+           thickness the worst case seen was 7.5% of the diaphragm's capacity and 50%
+           of the slab's. On a house this size they cannot decide anything.
+
+           Not modelled at all: the foundation. Nothing below the wall's own base
+           section is drawn, checked or assumed — the base stress against f_cd is a
+           check on the WALL, not on what carries it.
+
+           Still not checked: crack width, and the wall's construction joints. Long-
+           term deflection is calculated — eq. 103 carries the creep coefficient of
+           2.5 above, and no span/depth shortcut is used anywhere; the old wording
+           here said otherwise and was left over from before that arrived. Second-
+           order effects are not checked either, which the Wall H/T_c row says at the
+           point it matters rather than repeating here.
+
+           ===================================================================== */
+
         const F_CK    = 30000;         // kN/m2, C 30/37
         const GAMMA_C = 1.5, GAMMA_S = 1.15;
         const F_CD    = 20000;         // kN/m2, Table 8
@@ -2187,7 +2298,7 @@
             const pad = 22;
             const s = Math.min((editCanvas.width - pad * 2) / Math.max(maxX - minX, 0.001),
                                (editCanvas.height - pad * 2) / Math.max(maxZ - minZ, 0.001));
-            editView.scale = clamp(s, 3, 24);
+            editView.scale = clamp(s, 3, 40);   // 24 used to cap the fit short
             editView.cx = editCanvas.width / 2 - ((minX + maxX) / 2) * editView.scale;
             editView.cz = editCanvas.height / 2 - ((minZ + maxZ) / 2) * editView.scale;
         }
@@ -2279,28 +2390,36 @@
                fault in the geometry when nothing was outside the plate at all.
                Clipping to the plate is not cosmetic: outside it the band means
                nothing, and the canvas clip takes the self-crossing with it. */
+            /* Reach: the LINE the slab cannot carry past, not a wash over the plan.
+               Filled, it was the largest mark in the drawing and the least
+               important one - it made the plate read as a coloured shape rather
+               than an outline. When the line falls outside the plate everywhere,
+               nothing is drawn, which is exactly what "all of it is within reach"
+               should look like. */
             (function () {
                 const w = st.capacity + st.P.coreT / 2;
                 const { lefts, rights } = offsetPolyline(nodes, w);
-                const ring = lefts.concat(rights.slice().reverse());
                 editCtx.save();
                 strokePath(data.vertices, true);
                 editCtx.clip();
-                strokePath(ring, true);
-                editCtx.fillStyle = 'rgba(0,123,255,0.07)'; editCtx.fill();
-                editCtx.setLineDash([3, 3]);
-                editCtx.strokeStyle = 'rgba(0,123,255,0.35)'; editCtx.lineWidth = 1; editCtx.stroke();
+                editCtx.setLineDash([4, 4]);
+                editCtx.strokeStyle = 'rgba(0,123,255,0.45)'; editCtx.lineWidth = 1;
+                [lefts, rights].forEach(side => { strokePath(side, false); editCtx.stroke(); });
                 editCtx.restore();
             })();
 
-            // current plate
+            /* THREE WEIGHTS, AND THE WALL IS THE HEAVY ONE. The plate used to be
+               drawn at 1.5 px in near-black while the wall was a blue line, which
+               put the envelope above the subject. The plate is the envelope: one
+               thin grey line. Its corners are small open squares, because that is
+               what they are - points on a boundary, not data. */
             strokePath(data.vertices, true);
-            editCtx.fillStyle = 'rgba(0,0,0,0.02)'; editCtx.fill();
-            editCtx.strokeStyle = '#111'; editCtx.lineWidth = 1.5; editCtx.stroke();
-            editCtx.fillStyle = '#fff';
+            editCtx.strokeStyle = '#9a9a9a'; editCtx.lineWidth = 1; editCtx.stroke();
             data.vertices.forEach(v => {
                 const p = toPx(v.x, v.z);
-                editCtx.beginPath(); editCtx.arc(p.px, p.pz, 2.5, 0, Math.PI * 2); editCtx.fill(); editCtx.stroke();
+                editCtx.fillStyle = '#fff'; editCtx.strokeStyle = '#777'; editCtx.lineWidth = 1;
+                editCtx.fillRect(p.px - 2.5, p.pz - 2.5, 5, 5);
+                editCtx.strokeRect(p.px - 2.5, p.pz - 2.5, 5, 5);
             });
 
             // two stair slots, one per dwelling, parallel to the division axis
@@ -2365,33 +2484,48 @@
                into it - so the plan says which fold is working, which is the thing
                the side column cannot say. Uniform blue when the check has no
                answer, and red while an edit is being refused. */
+            /* POCHE. A cut concrete wall is filled in plan, not drawn as a line -
+               and at 28 px/m a 0.43 m wall is 12 px, wide enough to be one. The
+               utilisation that used to ride on line WIDTH now rides on the fill,
+               which is better: the area is already proportional to the wall, so the
+               tint says how hard that piece is working without the weight lying
+               about how thick it is. Uniform dark when the check has no answer, red
+               while an edit is being refused. */
             (function () {
                 const per = st.floors[idx].comb.perSeg || {};
-                const dim = hlKey && hlKey !== 'lateral' ? 0.45 : 1;
-                for (let j = 0; j < nodes.length - 1; j++) {
+                const dim = hlKey && hlKey !== 'lateral' ? 0.5 : 1;
+                const quads = st.floors[idx].quads || [];
+                quads.forEach((q, j) => {
                     const u = per[j];
-                    strokePath([nodes[j], nodes[j + 1]], false);
-                    if (invalidFlash > 0) {
-                        editCtx.strokeStyle = '#d32f2f'; editCtx.lineWidth = 2.5;
-                    } else if (u === undefined) {
-                        editCtx.strokeStyle = 'rgba(0,123,255,' + (0.9 * dim) + ')';
-                        editCtx.lineWidth = 2.5;
-                    } else {
-                        const k = clamp(u, 0, 1.2);
-                        // blue at rest, warming through amber, red past the limit
-                        const col = u > 1 ? [211, 47, 47] : u > 0.85 ? [178, 106, 0] : [0, 123, 255];
-                        editCtx.strokeStyle = 'rgba(' + col.join(',') + ',' + ((0.35 + 0.6 * k) * dim) + ')';
-                        editCtx.lineWidth = 1.6 + 3.4 * k;
-                    }
-                    editCtx.stroke();
-                }
+                    let col;
+                    if (invalidFlash > 0)        col = [211, 47, 47];
+                    else if (u === undefined)    col = [34, 34, 34];
+                    else if (u > 1)              col = [211, 47, 47];
+                    else if (u > 0.85)           col = [178, 106, 0];
+                    else                         col = [34, 34, 34];
+                    const a = u === undefined ? 0.88 : 0.62 + 0.34 * clamp(u, 0, 1.1);
+                    strokePath(q, true);
+                    editCtx.fillStyle = 'rgba(' + col.join(',') + ',' + (a * dim) + ')';
+                    editCtx.fill();
+                    editCtx.strokeStyle = 'rgba(' + col.join(',') + ',' + Math.min(1, a * dim + 0.1) + ')';
+                    editCtx.lineWidth = 0.8; editCtx.stroke();
+                });
             })();
 
             // locked ends
             (function () {   // one straight stretch per stair, merged when they coincide
                 wallSegments(idx, st.stair.run).segs.forEach(r => {
-                    strokePath([r.P0, r.P1], false);
-                    editCtx.strokeStyle = 'rgba(0,123,255,0.30)'; editCtx.lineWidth = 6; editCtx.stroke();
+                    // ticks across the poche at each end, instead of a fat second
+                    // colour laid over the wall - the stretch is a NOTE on the wall
+                    editCtx.save();
+                    editCtx.strokeStyle = 'rgba(0,123,255,0.85)'; editCtx.lineWidth = 1.2;
+                    [r.P0, r.P1].forEach(pt => {
+                        const t = st.P.coreT * 0.95;
+                        strokePath([{ x: pt.x + r.n.x * t, z: pt.z + r.n.z * t },
+                                    { x: pt.x - r.n.x * t, z: pt.z - r.n.z * t }], false);
+                        editCtx.stroke();
+                    });
+                    editCtx.restore();
                     editCtx.fillStyle = '#007BFF';
                     [r.P0, r.P1].forEach(p => {
                         const q = toPx(p.x, p.z);
@@ -2451,6 +2585,40 @@
                 const p = toPx(nodes[i].x, nodes[i].z);
                 editCtx.beginPath(); editCtx.arc(p.px, p.pz, 3, 0, Math.PI * 2); editCtx.fill();
             }
+
+            /* A SCALE, because a plan without one is a diagram. The bar is a whole
+               number of metres chosen to land near 70 px at the current fit, so it
+               stays a sane length as the plate is dragged, and the overall
+               dimensions beside it are where the measuring done off the published
+               plans finally shows up in the interface. */
+            (function () {
+                const span = axisParam(wallAnchors(data.vertices)[1])
+                           - axisParam(wallAnchors(data.vertices)[0]);
+                let across = 0;
+                data.vertices.forEach(a => data.vertices.forEach(b => {
+                    across = Math.max(across, Math.abs(axisSide(a) - axisSide(b)));
+                }));
+                const want = 100 / editView.scale;   // aim near 100 px, so the bar
+                                                     // usually lands on 5 m
+                const step = [1, 2, 5, 10, 20].reduce((p, q) =>
+                    Math.abs(q - want) < Math.abs(p - want) ? q : p, 1);
+                const L = step * editView.scale;
+                const x0 = 14, y0 = editCanvas.height - 16;
+                editCtx.save();
+                editCtx.strokeStyle = '#999'; editCtx.lineWidth = 1;
+                editCtx.beginPath();
+                editCtx.moveTo(x0, y0); editCtx.lineTo(x0 + L, y0);
+                [x0, x0 + L / 2, x0 + L].forEach(x => {
+                    editCtx.moveTo(x, y0 - 3); editCtx.lineTo(x, y0 + 3);
+                });
+                editCtx.stroke();
+                editCtx.fillStyle = '#999'; editCtx.font = '9px Helvetica';
+                editCtx.fillText(step + ' m', x0 + L + 8, y0 + 3);
+                editCtx.fillStyle = '#bbb';
+                editCtx.fillText(span.toFixed(2) + ' \u00d7 ' + across.toFixed(2) + ' m',
+                                 x0, y0 - 10);
+                editCtx.restore();
+            })();
 
             if (refuseNote && invalidFlash > 0) {
                 editCtx.font = 'bold 10px Helvetica';
@@ -3541,16 +3709,10 @@
         const bearMaterial     = shared(new THREE.MeshLambertMaterial({ color: 0x2f7fd0, side: THREE.DoubleSide }));
         const bearEdgeMaterial = shared(new THREE.LineBasicMaterial({ color: 0x2a6fb8 }));
         const stairMaterial    = shared(new THREE.LineBasicMaterial({ color: 0x007BFF }));
-        /* In CONCRETE the flight is the one thing lighter than the building - and
-           it has to be drawn THROUGH it. Once the slabs are opaque they occlude
-           every flight below the top one, so the white wireframe would simply be
-           invisible; depthTest off draws it over the solid instead, which is the
-           ordinary way an architect lays a wireframe over a massing. depthWrite
-           off as well, or it would then occlude the concrete in turn. */
-        const overlay = c => shared(new THREE.LineBasicMaterial(
-            Object.assign({ depthTest: false, depthWrite: false }, c)));
-        const stairWhite      = overlay({ color: 0xffffff });
-        const stairWhiteGhost = overlay({ color: 0xffffff, transparent: true, opacity: 0.4 });
+        // In CONCRETE the flight is concrete too - one step lighter than the slab
+        // it opens, so it reads without being a different material.
+        const stairConcrete = shared(new THREE.MeshLambertMaterial({ color: 0xa8a49d, side: THREE.DoubleSide }));
+        const stairEdge     = shared(new THREE.LineBasicMaterial({ color: 0x6e6b66 }));
         /* The flights were reading as blue lines running out through the massing.
            Measured first: all 164 points of every flight sit inside the plate and
            inside their own storey, so nothing actually pokes out - the slabs are
@@ -3640,6 +3802,54 @@
                 m = m1; h = h1;
             }
             return new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat || stairMaterial);
+        }
+
+        /* THE FLIGHT AS CONCRETE, NOT AS A WIREFRAME OVER IT.
+           The wireframe had to be drawn with depthTest off, because opaque slabs
+           occlude every flight below the top one - and that read as though the
+           building itself were transparent: white zigzags on the outside faces at
+           every level. The answer is not a different colour, it is a real object.
+
+           The step silhouette is traced in the flight's own (along, up) plane and
+           extruded across its width, so it is one geometry per flight with steps on
+           top and a straight soffit under them - which is what an in-situ flight
+           is. It is then lit, shadowed and occluded like every other surface, and
+           the x-ray question disappears. */
+        function stairSolid(slot, g, yFloor, mat) {
+            const c0 = slot.poly[0], c1 = slot.poly[1];
+            let dx = c1.x - c0.x, dz = c1.z - c0.z;
+            const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+            const n = slot.n, top = c1;
+            const sx = top.x - dx * g.run, sz = top.z - dz * g.run;
+
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 0);
+            let m = 0, h = 0;
+            for (const seg of g.profile) {                  // up the steps
+                if (seg.dh > 0) { h += seg.dh; shape.lineTo(m, h); }
+                if (seg.dm > 0) { m += seg.dm; shape.lineTo(m, h); }
+            }
+            const rise = h, run = Math.max(m, 0.01);
+            // back along the soffit, parallel to the pitch and STAIR_SLAB under it
+            const drop = STAIR_SLAB * Math.hypot(run, rise) / run;
+            shape.lineTo(run, rise - drop);
+            shape.lineTo(0, -drop);
+            shape.closePath();
+
+            const geo = new THREE.ExtrudeGeometry(shape,
+                { depth: g.width, bevelEnabled: false, curveSegments: 1 });
+            geo.applyMatrix4(new THREE.Matrix4().makeBasis(
+                new THREE.Vector3(dx, 0, dz),        // along the flight
+                new THREE.Vector3(0, 1, 0),          // up
+                new THREE.Vector3(n.x, 0, n.z)));    // across it
+            geo.translate(sx, yFloor, sz);
+
+            const group = new THREE.Group();
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            group.add(mesh);
+            group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), stairEdge));
+            return group;
         }
 
         function clearGroup(group) {
@@ -3793,12 +4003,10 @@
             // flights: the one in storey i rises to the top of slab i
             const shown = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             for (let i = 0; i < numFloors; i++) {
-                const mat = asBuilt ? (i === shown ? stairWhite : stairWhiteGhost)
-                                    : (i === shown ? stairMaterial : stairGhostMaterial);
                 floors[i].slots.forEach(sl => {
-                    const w = stairWireframe(sl, st.stair, i * P.floorH, mat);
-                    if (asBuilt) w.renderOrder = 10;        // over the concrete
-                    modelGroup.add(w);
+                    if (asBuilt) { modelGroup.add(stairSolid(sl, st.stair, i * P.floorH, stairConcrete)); return; }
+                    const mat = i === shown ? stairMaterial : stairGhostMaterial;
+                    modelGroup.add(stairWireframe(sl, st.stair, i * P.floorH, mat));
                 });
             }
 
@@ -4205,20 +4413,25 @@
                 parseFloat(document.getElementById('coreT').value).toFixed(2) + ' m';
             document.getElementById('floorIndex').value = '0';
             updateFloorDropdown();
+            applyViewMode();
             resolveAll();                // refreshes and fits on its own
         }
         window.resetDesign = resetDesign;
 
+        function applyViewMode() {
+            document.querySelectorAll('#view-mode button').forEach(b =>
+                b.classList.toggle('on', b.dataset.mode === viewMode));
+            document.getElementById('defl-key').hidden = (viewMode === 'concrete');
+        }
+
         function setViewMode(mode) {
-            if (mode === viewMode) return;
+            if (mode === viewMode) { applyViewMode(); return; }
             viewMode = mode;
             renderer.shadowMap.enabled = (viewMode === 'concrete');
             sharedMaterials.forEach(m => { m.needsUpdate = true; });
             storeyMatCache.forEach(m => { m.needsUpdate = true; });
             groundPlane.material.needsUpdate = true;
-            document.querySelectorAll('#view-mode button').forEach(b =>
-                b.classList.toggle('on', b.dataset.mode === viewMode));
-            document.getElementById('defl-key').hidden = (viewMode === 'concrete');
+            applyViewMode();
             refresh();
         }
         window.setViewMode = setViewMode;
