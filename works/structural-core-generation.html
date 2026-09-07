@@ -2151,40 +2151,12 @@
                     let d2x = pNext.x - p.x, d2z = pNext.z - p.z;
                     const l2 = Math.hypot(d2x, d2z) || 1; d2x /= l2; d2z /= l2;
                     const n1x = -d1z, n1z = d1x, n2x = -d2z, n2z = d2x;
-                    /* CHAMFER THE ACUTE CORNERS. Mitring two faces at an angle t
-                       puts the outer point (w)/sin(t/2) from the node, so at the
-                       45 deg floor it reaches 2.6 w - on a 0.43 m wall that is a
-                       0.55 m spike off a 0.215 m face, and it got sharper once the
-                       fold-count cap came off and the solver started packing folds.
-
-                       A knife edge is not a thing you build: formwork cannot hold
-                       it, cover cannot be kept at it, and the tip spalls. Every
-                       exposed concrete edge is chamfered 20 to 50 mm and an acute
-                       one much more, so the chamfer is what would exist.
-
-                       It bites only where BOTH the wall is thick and the corner
-                       sharp, which is what makes the projection large: the tip may
-                       stand at most min(w, 0.20 m) beyond the face. A 90 deg corner
-                       is never touched at any thickness. Pulled back along its own
-                       bisector rather than cut flat, so there is still one point per
-                       node and every consumer of this function keeps working - the
-                       wall simply thins at the tip, which is what a chamfer does,
-                       and it makes the footprint smaller, never larger. */
-                    const nose = Math.min(w, 0.20);
-                    const blunt = q => {
-                        if (!q) return q;
-                        const dx = q.x - p.x, dz = q.z - p.z;
-                        const d = Math.hypot(dx, dz);
-                        const lim = w + nose;
-                        if (d <= lim || d < 1e-9) return q;
-                        return { x: p.x + dx / d * lim, z: p.z + dz / d * lim };
-                    };
-                    lefts.push(blunt(intersectLines(
+                    lefts.push(intersectLines(
                         pPrev.x + n1x * w, pPrev.z + n1z * w, p.x + n1x * w, p.z + n1z * w,
-                        p.x + n2x * w, p.z + n2z * w, pNext.x + n2x * w, pNext.z + n2z * w)));
-                    rights.push(blunt(intersectLines(
+                        p.x + n2x * w, p.z + n2z * w, pNext.x + n2x * w, pNext.z + n2z * w));
+                    rights.push(intersectLines(
                         pPrev.x - n1x * w, pPrev.z - n1z * w, p.x - n1x * w, p.z - n1z * w,
-                        p.x - n2x * w, p.z - n2z * w, pNext.x - n2x * w, pNext.z - n2z * w)));
+                        p.x - n2x * w, p.z - n2z * w, pNext.x - n2x * w, pNext.z - n2z * w));
                 }
             }
             return { lefts, rights };
