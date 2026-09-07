@@ -67,7 +67,7 @@
         #simContainer {
             display: block;
             width: 100%;
-            height: 560px;
+            height: 420px;
             background: transparent;
             cursor: grab;
             position: relative;
@@ -123,17 +123,15 @@
             color: #333;
             letter-spacing: 0.5px;
         }
-        /* THE FRAME HAS TO MATCH THE DRAWING. The plate is 18.45 x 9.18 m - two to
-           one, portrait - and this box was 302 x 262, landscape. The fit was
-           height-limited at about 12 px/m with half the width unused, which put the
-           wall at 6 px and a tread at 4: no styling survives that, and it is why
-           the wall had to be a line rather than poche and a flight a dashed box.
-           At 560 the fit is 28 px/m - wall 12 px, tread 7 - and the plan can be
-           drawn as a plan. */
+        /* 262 px, as it was. At 560 the plan drew beautifully - 28 px/m, a 12 px
+           wall - but it pushed the status bar and every control below the fold, and
+           a study you have to scroll to read is a worse trade than a delicate
+           drawing. Poche survives at 12 px/m: the wall lands about 5 px, thin but
+           still a filled band rather than a line, and the hierarchy holds. */
         canvas#editorCanvas {
             display: block;
             width: 100%;
-            height: 560px;
+            height: 262px;
             background: #fff;
             border: 1px solid #eee;
             cursor: crosshair;
@@ -225,12 +223,6 @@
         .metric-row.shows > span:first-child::after { content: ' \203A'; color: #ccc; }
         .metric-row.sub > span:first-child { padding-left: 8px; color: #999; }
         .metric-row.folded, .group-label.folded { display: none; }
-        #moreChecks {
-            display: flex; justify-content: space-between; align-items: center; gap: 8px;
-            margin: 7px 0 2px; padding: 5px 7px; border: 1px dashed #ddd; cursor: pointer;
-            font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #999;
-        }
-        #moreChecks:hover { border-color: #999; color: #111; }
 
         /* the one thing the legend held about the 3D view that cannot be guessed */
         #defl-key {
@@ -388,7 +380,6 @@
                     <div class="metric-row shows" data-hl="transfer"><span>Slab under the wall above</span><span id="val-transfer" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall bent out of plane</span><span id="val-oop" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall crushing at the base</span><span id="val-base" class="val">&ndash;</span></div>
-                    <div id="moreChecks" hidden><span></span><span>&#8964;</span></div>
 
                     <div class="group-label">What the design implies</div>
                     <div class="metric-row"><span>Slab reinforcement the reach needs</span><span id="val-steel" class="val">&ndash;</span></div>
@@ -1878,6 +1869,48 @@
             return t > E && t < 1 - E && u > E && u < 1 - E;
         }
 
+        /* WHAT THE WALL ACTUALLY DOES: it divides the house in two. So the figure
+           worth printing on the plan is not a scale bar - which says how big the
+           drawing is, and never changes - but the floor each dwelling gets, which
+           changes every time the wall is folded.
+
+           The wall runs from one point on the boundary to another, so the boundary
+           and the wall together close exactly two loops: the wall path, then the
+           boundary from its far anchor back to its near one, once each way round.
+           Taken to the wall's CENTRELINE, the ordinary convention for a party
+           wall, so the two areas sum to the plate. */
+        function splitPlateByWall(verts, nodes) {
+            const n = verts.length;
+            if (n < 3 || nodes.length < 2) return null;
+            const edgeOf = q => {
+                let best = -1, bd = Infinity;
+                for (let i = 0; i < n; i++) {
+                    const d = pointToSegmentDistance(q, verts[i], verts[(i + 1) % n]);
+                    if (d < bd) { bd = d; best = i; }
+                }
+                return bd < 0.25 ? best : -1;
+            };
+            const A = nodes[0], B = nodes[nodes.length - 1];
+            const ea = edgeOf(A), eb = edgeOf(B);
+            if (ea < 0 || eb < 0 || ea === eb) return null;
+
+            const ring = (from, to, step) => {        // boundary vertices, in order
+                const out = [];
+                for (let k = 1; k <= n; k++) {
+                    const i = ((from + step * k) % n + n) % n;
+                    out.push(verts[i]);
+                    if (i === to) break;
+                }
+                return out;
+            };
+            const fwd = ring(eb, ea, 1);              // leaving B over vertex eb+1
+            const bwd = ring(eb + 1, (ea + 1) % n, -1);
+            const a1 = polygonArea(nodes.concat(fwd));
+            const a2 = polygonArea(nodes.concat(bwd));
+            if (!isFinite(a1) || !isFinite(a2)) return null;
+            return { a: a1, b: a2, firstVertex: fwd[0] };
+        }
+
         function polygonArea(poly) {
             let area = 0;
             for (let i = 0; i < poly.length; i++) {
@@ -2586,38 +2619,35 @@
                 editCtx.beginPath(); editCtx.arc(p.px, p.pz, 3, 0, Math.PI * 2); editCtx.fill();
             }
 
-            /* A SCALE, because a plan without one is a diagram. The bar is a whole
-               number of metres chosen to land near 70 px at the current fit, so it
-               stays a sane length as the plate is dragged, and the overall
-               dimensions beside it are where the measuring done off the published
-               plans finally shows up in the interface. */
+            /* THE FLOOR EACH DWELLING GETS, one figure on each side of the wall.
+               A scale bar was the first idea and the wrong one: it says how big the
+               drawing is, which is fixed, while this says what the WALL does, which
+               is the subject and which changes every time it is folded. Taken to
+               the wall centreline, so the two areas sum to the plate. */
             (function () {
-                const span = axisParam(wallAnchors(data.vertices)[1])
-                           - axisParam(wallAnchors(data.vertices)[0]);
-                let across = 0;
-                data.vertices.forEach(a => data.vertices.forEach(b => {
-                    across = Math.max(across, Math.abs(axisSide(a) - axisSide(b)));
-                }));
-                const want = 100 / editView.scale;   // aim near 100 px, so the bar
-                                                     // usually lands on 5 m
-                const step = [1, 2, 5, 10, 20].reduce((p, q) =>
-                    Math.abs(q - want) < Math.abs(p - want) ? q : p, 1);
-                const L = step * editView.scale;
-                const x0 = 14, y0 = editCanvas.height - 16;
-                editCtx.save();
-                editCtx.strokeStyle = '#999'; editCtx.lineWidth = 1;
-                editCtx.beginPath();
-                editCtx.moveTo(x0, y0); editCtx.lineTo(x0 + L, y0);
-                [x0, x0 + L / 2, x0 + L].forEach(x => {
-                    editCtx.moveTo(x, y0 - 3); editCtx.lineTo(x, y0 + 3);
-                });
-                editCtx.stroke();
-                editCtx.fillStyle = '#999'; editCtx.font = '9px Helvetica';
-                editCtx.fillText(step + ' m', x0 + L + 8, y0 + 3);
-                editCtx.fillStyle = '#bbb';
-                editCtx.fillText(span.toFixed(2) + ' \u00d7 ' + across.toFixed(2) + ' m',
-                                 x0, y0 - 10);
-                editCtx.restore();
+                const half = splitPlateByWall(data.vertices, nodes);
+                if (!half) return;
+                const c = getPlateCentroid(data.vertices);
+                const nrm = axisNormal();
+                const put = (val, sgn) => {
+                    // far enough out to clear the poche and the stair slots, which
+                    // both sit on the axis; the plate is widest here so there is room
+                    const off = 0.62 * plateHalfWidth(data.vertices) * sgn;
+                    const q = toPx(c.x + nrm.x * off, c.z + nrm.z * off);
+                    const txt = val.toFixed(1) + ' m\u00b2';
+                    editCtx.font = '9px Helvetica';
+                    const w = editCtx.measureText(txt).width;
+                    editCtx.fillStyle = 'rgba(255,255,255,0.85)';
+                    editCtx.fillRect(q.px - w / 2 - 3, q.pz - 8, w + 6, 13);
+                    editCtx.fillStyle = '#777';
+                    editCtx.fillText(txt, q.px - w / 2, q.pz + 2);
+                };
+                /* Which loop lies on which side: half.a is the loop that leaves the
+                   far anchor over the NEXT boundary vertex, so probe that vertex. */
+                const probe = half.firstVertex;
+                const sgn = probe ? Math.sign(axisSide(probe) || 1) : 1;
+                put(half.a, sgn);
+                put(half.b, -sgn);
             })();
 
             if (refuseNote && invalidFlash > 0) {
@@ -4032,42 +4062,18 @@
            denominators go to zero, while the combined check handles the same case
            at 14.9. So they appear as the BREAKDOWN of the row that decides, only
            when you open it. */
-        let checksOpen = false;
+        /* SIX CHECKS, ALL OF THEM VISIBLE. They were folded to the ones at or over
+           85% of capacity, with a count for the rest - but six is not thirteen, and
+           at six a reader would rather see the whole set and its margins than be
+           told how many are hidden. The two sub rows are still tied to their own
+           row, because they are the breakdown of the lateral check and not checks
+           of their own. */
         function foldChecks() {
             const box = document.getElementById('checkList');
-            const rows = [...box.querySelectorAll('.metric-row')].filter(r => r.id !== 'govRow');
             const lateralOpen = box.querySelector('[data-hl="lateral"]').classList.contains('on');
-            let hidden = 0, clear = 0;
-            rows.forEach(r => {
-                if (r.classList.contains('sub')) { r.classList.toggle('folded', !lateralOpen); return; }
-                const u = parseFloat(r.dataset.u);
-                const quiet = isFinite(u) && u <= 0.85 && !r.classList.contains('on');
-                if (quiet) clear++;
-                const fold = quiet && !checksOpen;
-                r.classList.toggle('folded', fold);
-                if (fold) hidden++;
-            });
-            // a heading with every row folded away is worse than no heading
-            box.querySelectorAll('.group-label').forEach(g => {
-                let any = false;
-                for (let n = g.nextElementSibling; n; n = n.nextElementSibling) {
-                    if (n.classList.contains('group-label')) break;
-                    if (n.classList.contains('metric-row') && n.id !== 'govRow'
-                        && !n.classList.contains('folded')) { any = true; break; }
-                }
-                g.classList.toggle('folded', !any);
-            });
-            const more = document.getElementById('moreChecks');
-            more.hidden = clear === 0;
-            more.firstElementChild.innerText = checksOpen
-                ? 'hide the ' + clear + ' clear'
-                : hidden + (hidden === 1 ? ' more check \u00b7 clear'
-                                         : ' more checks \u00b7 all clear');
-            more.lastElementChild.innerHTML = checksOpen ? '&#8963;' : '&#8964;';
+            box.querySelectorAll('.metric-row.sub').forEach(r =>
+                r.classList.toggle('folded', !lateralOpen));
         }
-        document.getElementById('moreChecks').addEventListener('click', () => {
-            checksOpen = !checksOpen; foldChecks();
-        });
 
         /* Every setter tolerates a missing element, so retiring a check is a
            one-line markup edit and never a runtime error. */
