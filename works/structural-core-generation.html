@@ -2162,11 +2162,79 @@
             return { lefts, rights };
         }
 
+        const CHAMFER_NOSE = 0.20;   // m the tip may stand beyond the wall face
+
+        /* CHAMFER AT ONE NODE, and nothing else touched.
+           Mitring two faces at an interior angle t puts the outer point w/sin(t/2)
+           from the node: at the 45 deg floor that is 2.6 w, a 0.55 m spike off a
+           0.215 m face on the measured wall. A knife edge is not built - formwork
+           will not hold it, cover cannot be kept at it, the tip spalls - so every
+           exposed concrete edge is chamfered, an acute one considerably.
+
+           The first attempt pulled the mitre point back along its bisector, and
+           that was wrong twice over: the clamp fired on distance so it moved BOTH
+           faces, and with one point per node moving a point tilts the whole face
+           line, so the wall changed THICKNESS along the entire segment rather than
+           losing a sliver at the tip. This does not touch offsetPolyline at all.
+           The true mitre stands, both face lines keep their exact position, and the
+           tip is cut off afterwards: pIn and pOut sit ON the two face lines, so the
+           faces are only shortened, and M is the middle of the cut. */
+        function chamferAt(prev, node, next, w, nose, leftPt, rightPt) {
+            if (!leftPt || !rightPt) return null;
+            /* the outer point is the one whose direction from the node leads AWAY
+               from its two neighbours; the other is the concave corner */
+            const mid = { x: (prev.x + next.x) / 2, z: (prev.z + next.z) / 2 };
+            const away = q => (mid.x - node.x) * (q.x - node.x) + (mid.z - node.z) * (q.z - node.z) < 0;
+            const side = away(leftPt) ? 'left' : away(rightPt) ? 'right' : null;
+            if (!side) return null;
+            const tip = side === 'left' ? leftPt : rightPt;
+
+            const dt = distXZ(tip, node);            // the true mitre reach, w/sin(t/2)
+            const dm = Math.min(dt, w + nose);
+            if (dm >= dt - 1e-4) return null;        // the turn is already blunt
+
+            const ux = (tip.x - node.x) / dt, uz = (tip.z - node.z) / dt;
+            let d1x = node.x - prev.x, d1z = node.z - prev.z;
+            const l1 = Math.hypot(d1x, d1z); if (l1 < 1e-9) return null;
+            d1x /= l1; d1z /= l1;
+            let d2x = next.x - node.x, d2z = next.z - node.z;
+            const l2 = Math.hypot(d2x, d2z); if (l2 < 1e-9) return null;
+            d2x /= l2; d2z /= l2;
+            const a1 = d1x * ux + d1z * uz, a2 = d2x * ux + d2z * uz;
+            if (a1 < 1e-4 || a2 > -1e-4) return null;
+            /* pIn and pOut stay ON their own face lines, so the faces are only
+               shortened and the wall keeps its thickness everywhere */
+            const cIn = (dt - dm) / a1, cOut = (dm - dt) / a2;
+            if (cIn > l1 * 0.45 || cOut > l2 * 0.45) return null;   // would eat the segment
+            return {
+                side, M: { x: node.x + ux * dm, z: node.z + uz * dm },
+                pIn:  { x: tip.x - d1x * cIn,  z: tip.z - d1z * cIn  },
+                pOut: { x: tip.x + d2x * cOut, z: tip.z + d2z * cOut }
+            };
+        }
+
         function generateWallQuads(nodes, thickness, endDirs) {
-            const { lefts, rights } = offsetPolyline(nodes, thickness / 2, endDirs);
+            const w = thickness / 2;
+            const { lefts, rights } = offsetPolyline(nodes, w, endDirs);
+            // one chamfer per interior node, or null where the turn is gentle
+            const ch = nodes.map((n, j) => (j === 0 || j === nodes.length - 1) ? null
+                : chamferAt(nodes[j - 1], n, nodes[j + 1], w, CHAMFER_NOSE,
+                            lefts[j], rights[j]));
             const quads = [];
             for (let i = 0; i < nodes.length - 1; i++) {
-                quads.push(ensureCCW([lefts[i], rights[i], rights[i + 1], lefts[i + 1]]));
+                const a = ch[i], b = ch[i + 1];
+                /* Each quad takes the half of the cut on its own side and both take
+                   M, so the two meeting at a node still share an edge and the
+                   footprint stays watertight. A chamfered end turns the 4-gon into a
+                   5-gon, both ends into a 6-gon - which every consumer of these
+                   polygons already handles. */
+                const start = !a ? [lefts[i], rights[i]]
+                            : a.side === 'left' ? [a.pOut, a.M, rights[i]]
+                                                : [lefts[i], a.M, a.pOut];
+                const end = !b ? [rights[i + 1], lefts[i + 1]]
+                          : b.side === 'left' ? [rights[i + 1], b.M, b.pIn]
+                                              : [b.pIn, b.M, lefts[i + 1]];
+                quads.push(ensureCCW(start.concat(end)));
             }
             return quads;
         }
