@@ -183,17 +183,29 @@
             display: flex;
             gap: 0;
         }
+        /* FOUR COLUMNS. Measured before it was built: the three clusters are
+           equalised by flex, so the tallest set the strip - and that was Structural
+           Check at 424 px against Massing's 167. Split across two columns its two
+           halves come to 170 and 229 px, so RC at 251 becomes the tallest instead
+           and the strip drops from 424 to about 251 - the page from 1047 px to
+           roughly 874, against a 766 px viewport.
+
+           The widths are deliberately uneven. Massing measures 167 px tall at 236,
+           211, 170 AND 155 px wide - it never wanted the width - so it gives some
+           back to the three columns that do. Gutters halve too, or four columns of
+           48 px would eat 144 px of the 780. */
         .cluster {
-            flex: 1;
+            flex: 1.05;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            padding-right: 24px;
-            margin-right: 24px;
+            padding-right: 14px;
+            margin-right: 14px;
             border-right: 1px solid #ddd;
             min-width: 0;
         }
         .cluster:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+        .cluster:first-child { flex: 0.85; }
         .cluster-label {
             margin-top: 0; font-size: 8.5px; font-weight: bold;
             text-transform: uppercase; letter-spacing: 0.8px; color: #111;
@@ -385,7 +397,13 @@
                     <div class="metric-row"><span>Wall bent out of plane</span><span id="val-oop" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall crushing at the base</span><span id="val-base" class="val">&ndash;</span></div>
 
-                    <div class="group-label">What the design implies</div>
+                </div>
+            </div>
+
+            <div class="cluster">
+                <div class="cluster-label">What the design implies</div>
+                <div class="cluster-desc">Not pass or fail &mdash; what follows from it.</div>
+                <div class="info-box" id="implyList" style="margin-top: 0; border: none; padding: 0;">
                     <div class="metric-row"><span>Slab reinforcement the reach needs</span><span id="val-steel" class="val">&ndash;</span></div>
                     <div class="metric-row"><span>Wall H/T_c</span><span id="val-slender" class="val">&ndash;</span></div>
                     <div class="metric-row" id="govRow" style="border-top:1px solid #eee; margin-top:6px; padding-top:6px;"><span>What to change</span><span id="val-gov" class="val">&ndash;</span></div>
