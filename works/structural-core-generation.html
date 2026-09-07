@@ -131,12 +131,12 @@
         canvas#editorCanvas {
             display: block;
             width: 100%;
-            height: 262px;
+            height: 286px;
             background: #fff;
             border: 1px solid #eee;
             cursor: crosshair;
             touch-action: none;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .btn-group { display: flex; gap: 5px; margin-top: auto; }
@@ -146,13 +146,17 @@
         }
         select.wide { width: 100%; margin-top: 5px; }
 
+        /* Six controls under the plan, and every pixel they give back goes to the
+           drawing above - which is the thing being read. 4 px of padding on 8 px
+           type still leaves an 18 px target, comfortably clickable, and hands the
+           canvas about 24 px. */
         button.action-btn {
-            flex: 1; padding: 8px; background: transparent; color: #111; border: 1px solid #ccc;
-            font-size: 9px; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s;
+            flex: 1; padding: 4px 6px; background: transparent; color: #111; border: 1px solid #ccc;
+            font-size: 8px; font-weight: bold; line-height: 1.25;
+            text-transform: uppercase; letter-spacing: 0.4px; cursor: pointer; transition: 0.2s;
         }
         button.action-btn:hover { background: #f4f4f4; border-color: #999;}
-        button.primary-btn { border-color: #111; margin-top: 5px; width: 100%; }
+        button.primary-btn { border-color: #111; margin-top: 4px; width: 100%; }
         button.primary-btn:hover { background: #111; color: #fff; }
 
         #status-bar.ok   { color: #007BFF; }
@@ -2633,12 +2637,6 @@
                 editCtx.moveTo(cr.px, cr.pz - 4); editCtx.lineTo(cr.px, cr.pz + 4);
                 editCtx.strokeStyle = 'rgba(211,47,47,' + (0.9 * dim) + ')';
                 editCtx.lineWidth = 1.4; editCtx.stroke();
-                /* The one thing the old legend held about this plan that cannot be
-                   read off it: the ring is a CODE requirement, not a result. It
-                   belongs on the ring, not in a list of eleven other swatches. */
-                editCtx.font = '8px Helvetica';
-                editCtx.fillStyle = 'rgba(211,47,47,' + (0.85 * dim) + ')';
-                editCtx.fillText('5% e \u2014 accidental', cm.px + rAcc + 5, cm.pz - 2);
                 editCtx.restore();
             })();
 
