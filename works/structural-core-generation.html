@@ -396,12 +396,13 @@
                         <b>The slab follows SIA 262 eq. 103:</b> the tip deflection of the cracked cantilever under the quasi-permanent load, against a/250, with E_cm = k_E&middot;&#8731;f_cm at k_E = 10 000 for alluvial gravel (3.1.2.3.3) and a creep coefficient of 2.5 (&beta;_fc = 2.7 from Table 4; the rest of eq. 13 is read off Figure 2). Bending resistance is A_s = &rho;d at a lever of 0.9d with &rho; = 1.0% stated. Every gravity strength check now carries 1.35G + 1.5Q, the seismic ones G + 0.3Q, and bearing G + Q.<br><br>
                         <b>Seismic, also checked out:</b> S_d = a_gd &times; S &times; 2.5 / q = 0.107 g, from a_gd 0.60 m/s&sup2; for zone Z1 (SIA 261 16.2.1.2), S 1.4 for ground class C, and <b>q = 2.0</b> &mdash; SIA 262 Table 14 for a <i>non-ductile</i> structure with class B steel, which is the right row because 4.3.9.4.1 starts the ductile-wall rules at h_w/l_w &gt; 2 and this wall is <span id="val-hwlw">&ndash;</span>.<br><br>
                         <b>Measured off the published plans and the architect's credits:</b> gross floor area <b>420 m&sup2;</b> (Kerez, <i>Credits 1993&ndash;2024</i>) over the three storeys the plans show, so 140 m&sup2; each. The plate is an <b>octagon</b> &mdash; end edge at 0.568 of the full width, straight taper to full width at 0.40 of the length, parallel sides from 0.40 to 0.60, identical on GL, L1 and L2 to within 2% &mdash; which at that area gives <b>18.45 &times; 9.18 m</b>. The stair is 18 treads at 0.0139 of the plate length = 0.256 m, so 19 risers of 0.187 m over a <b>3.55 m</b> storey, a run of <b>4.61 m</b>, and a width of 0.0941 of the plate width = <b>0.86 m</b>. Take the three-storey reading as forced rather than chosen: over four storeys the same tread comes out 0.216 m, which nobody would build. VKF 16-15 cl. 3.2.2 al. 3 places <i>no</i> requirement on a stair inside a dwelling unit, so 0.86 m is this building's figure and not a code minimum &mdash; the 1.2 m escape-route width (cl. 2.4.5 al. 3) applies to a stair serving more than one unit, which this is not.<br><br>
-                        <b>Still assumed:</b> q_p 0.90 and c_f 1.30 for wind (SIA 261, not obtained &mdash; but seismic governs by about five times here, so they change no answer); 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 2.10 m headroom.<br><br>
-                        <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through. Ordinary one-way shear at the wall face is checked instead, against the concrete alone.<br><br>
-                        <b>The two centres are an aid, not a result:</b> the cross sits on the wall, the circle is the centre of mass, and the red arm between them is the lever the earthquake pulls on &mdash; a straight wall has an arm of exactly zero, because one line of wall can only push along itself. But the centre of rigidity is an elastic construct being paired with plastic capacities, so read it as a diagnosis of the geometry rather than a number to design to.<br><br>
-                        <b>Checked, and never close:</b> the slab's diaphragm shear into the wall, and one-way shear at the wall face. Both are required checks and both are reported here rather than in the column, because across 60 combinations of storeys, height and wall thickness the worst case seen was <b>7.5%</b> of the diaphragm's capacity and <b>50%</b> of the slab's. On a house this size they cannot decide anything.<br><br>
+                        <b>Wind is computed and never governs.</b> Seismic exceeds it by <span id="val-windmargin">&ndash;</span> at the narrowest floor of the design on screen, and it has governed on every combination of storeys and height tried. That is why q_p 0.90 and c_f 1.30 (SIA 261, not obtained) are left as they are &mdash; but read the margin, not a promise: it is nearer two than five, so wind coefficients twice the assumed ones would start to decide.<br><br>
+                        <b>Still assumed:</b> 25 kN/m&sup3; concrete; 1.5 kN/m&sup2; for finishes, partitions and the glazed envelope; residential 2.0 kN/m&sup2; with 0.3 of it in the seismic mass; 2.10 m headroom.<br><br>
+                        <b>Punching does not apply at the wall ends</b> in this geometry, which is why it is not checked: the wall runs edge to edge, so its ends sit on the fa&ccedil;ade with no slab beyond them and there is no isolated support to punch through.<br><br>
+                        <b>The two centres are an aid, not a result:</b> the cross is on the wall, the circle is the centre of mass, and the red arm between them is the lever the earthquake pulls on &mdash; a straight wall's arm is exactly zero, because one line of wall can only push along itself. But the centre of rigidity is an elastic construct paired here with plastic capacities: read it as a diagnosis of the geometry, not a number to design to.<br><br>
+                        <b>Checked, and never close:</b> the slab's diaphragm shear into the wall, and ordinary one-way shear at the wall face &mdash; the latter against the concrete alone, and it is what stands in for the punching check that does not apply. Both are required and both are reported here rather than in the column, because across 60 combinations of storeys, height and wall thickness the worst case seen was <b>7.5%</b> of the diaphragm's capacity and <b>50%</b> of the slab's. On a house this size they cannot decide anything.<br><br>
                         <b>Not modelled at all:</b> the foundation. Nothing below the wall's own base section is drawn, checked or assumed &mdash; the base stress against f_cd is a check on the WALL, not on what carries it.<br><br>
-                        <b>Still not checked:</b> crack width and long-term deflection by calculation rather than by the span/depth ratio; the wall's construction joints.
+                        <b>Still not checked:</b> crack width, and the wall's construction joints. Long-term deflection <i>is</i> calculated &mdash; eq. 103 carries the creep coefficient of 2.5 above, and no span/depth shortcut is used anywhere; the old wording here said otherwise and was left over from before that arrived. Second-order effects are not checked either, which the <i>Wall H/T_c</i> row says at the point it matters rather than repeating here.
                         </div>
                     </details>
                     </div>
@@ -1119,6 +1120,7 @@
             const Vx = Math.max(windX, seismic), Vz = Math.max(windZ, seismic);
             return {
                 needLx: Vx / cap, needLz: Vz / cap, Vx, Vz, W, cap,
+                seismic, wind: Math.max(windX, windZ),
                 governs: seismic >= Math.max(windX, windZ) ? 'seismic' : 'wind'
             };
         }
@@ -4072,6 +4074,15 @@
             const [hwA, hwB] = wallAnchors(floorData[0].vertices);
             document.getElementById('val-hwlw').innerText =
                 (numFloors * P.floorH / Math.max(distXZ(hwA, hwB), 0.01)).toFixed(2);
+            /* The seismic-over-wind margin, REPORTED. It used to sit in the notes as
+               "about five times", which was true of a 14 m plate and not of the
+               18.45 m one measured off the plans - the same way h_w/l_w went stale.
+               It is the justification for leaving the wind coefficients unsourced,
+               so it is the last number that should be typed by hand. */
+            const margin = Math.min(...floors.map(f =>
+                f.need.seismic / Math.max(f.need.wind, 1e-6)));
+            document.getElementById('val-windmargin').innerText =
+                isFinite(margin) ? margin.toFixed(1) + '\u00d7' : '\u2014';
             foldChecks();
         }
 
