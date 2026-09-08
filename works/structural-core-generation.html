@@ -2510,11 +2510,30 @@
         }
         let stairsManual = false;   // set once a flight has been placed by hand
 
+        /* EVERY LINE WAS DRAWN AT HALF RESOLUTION. A canvas has two sizes: the CSS
+           box it occupies and the pixel buffer behind it. This set the buffer to the
+           CSS size, so on a 2x display the browser stretched each drawn pixel over
+           2x2 screen pixels - the whole plan arrived soft, and so did the model,
+           which had no setPixelRatio either.
+
+           The buffer is now css x dpr and the context is scaled by dpr, so every
+           drawing routine keeps working in CSS pixels and none of them had to
+           change - only the six places that read the canvas size for layout, which
+           now read the CSS size that editCssW/H carry. dpr is capped at 2: past
+           that the buffer grows fourfold for a difference nobody can see. */
+        let editCssW = 0, editCssH = 0;
         function ensureCanvasSize(canvas) {
             const rect = canvas.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
             const w = Math.floor(rect.width), h = Math.floor(rect.height);
-            if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; return true; }
-            return false;
+            const bw = Math.floor(w * dpr), bh = Math.floor(h * dpr);
+            const changed = canvas.width !== bw || canvas.height !== bh;
+            if (changed) { canvas.width = bw; canvas.height = bh; }
+            editCssW = w; editCssH = h;
+            // resizing resets the context, and drawEditor calls this every frame,
+            // so the transform is (re)applied here rather than once at startup
+            canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+            return changed;
         }
 
         // Locked to the union of every visible floor: comparing folds between
@@ -2528,11 +2547,11 @@
             });
             if (!isFinite(minX)) return;
             const pad = 22;
-            const s = Math.min((editCanvas.width - pad * 2) / Math.max(maxX - minX, 0.001),
-                               (editCanvas.height - pad * 2) / Math.max(maxZ - minZ, 0.001));
+            const s = Math.min((editCssW - pad * 2) / Math.max(maxX - minX, 0.001),
+                               (editCssH - pad * 2) / Math.max(maxZ - minZ, 0.001));
             editView.scale = clamp(s, 3, 40);   // 24 used to cap the fit short
-            editView.cx = editCanvas.width / 2 - ((minX + maxX) / 2) * editView.scale;
-            editView.cz = editCanvas.height / 2 - ((minZ + maxZ) / 2) * editView.scale;
+            editView.cx = editCssW / 2 - ((minX + maxX) / 2) * editView.scale;
+            editView.cz = editCssH / 2 - ((minZ + maxZ) / 2) * editView.scale;
         }
 
         function toPx(x, z)   { return { px: editView.cx + x * editView.scale, pz: editView.cz + z * editView.scale }; }
@@ -2549,7 +2568,7 @@
 
         function drawEditor(st) {
             ensureCanvasSize(editCanvas);
-            editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+            editCtx.clearRect(0, 0, editCssW, editCssH);
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
 
             // ghost floors
@@ -2836,7 +2855,7 @@
                 const s0 = Math.sign(axisSide(half.firstVertex) || 1);
                 const left  = s0 < 0 ? half.a : half.b;
                 const right = s0 < 0 ? half.b : half.a;
-                const x1 = editCanvas.width - 8, y1 = editCanvas.height - 8;
+                const x1 = editCssW - 8, y1 = editCssH - 8;
                 editCtx.save();
                 editCtx.textAlign = 'right';
                 editCtx.font = '10px Helvetica';
@@ -2851,7 +2870,7 @@
             if (refuseNote && invalidFlash > 0) {
                 editCtx.font = 'bold 10px Helvetica';
                 editCtx.fillStyle = 'rgba(211,47,47,0.95)';
-                editCtx.fillText(refuseNote, 8, editCanvas.height - 8);
+                editCtx.fillText(refuseNote, 8, editCssH - 8);
             }
             if (invalidFlash > 0) {
                 invalidFlash--;
@@ -3018,9 +3037,9 @@
         }
 
         function canvasPoint(e) {
+            // CSS pixels, which is what the scaled context draws in
             const rect = editCanvas.getBoundingClientRect();
-            return fromPx((e.clientX - rect.left) * (editCanvas.width / rect.width),
-                          (e.clientY - rect.top) * (editCanvas.height / rect.height));
+            return fromPx(e.clientX - rect.left, e.clientY - rect.top);
         }
 
         editCanvas.addEventListener('pointerdown', e => {
@@ -3846,6 +3865,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.shadowMap.enabled = false;         // FORCES opens without them
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(simContainer.clientWidth, simContainer.clientHeight);
         simContainer.appendChild(renderer.domElement);
 
@@ -4585,6 +4605,7 @@
         });
 
         window.addEventListener('resize', () => {
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             renderer.setSize(simContainer.clientWidth, Math.max(simContainer.clientHeight, 1));
             fitCamera();
             ensureCanvasSize(editCanvas);
