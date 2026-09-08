@@ -5,28 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Axonometric Structural System (Accurate Forces & Clean Wireframe)</title>
     <style>
+        * { font-family: Helvetica, Arial, sans-serif !important; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body {
-            font-family: 'Helvetica Neue', Helvetica ;
             background-color: #f4f4f4;
             color: #111;
-            margin: 0;
-            padding: 0 24px 24px;
+            padding: 10px 30px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            align-items: center;
         }
+
+        /* Compact single-line study bar (matches the other studies, e.g. gridshell 05) */
         .study-bar {
-            max-width: 1100px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 14px 0 8px 0;
-            border-bottom: 1px solid #111;
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            box-sizing: border-box;
+            max-width: 1040px; width: 100%; margin: 0 auto;
+            padding: 4px 0 8px 0; border-bottom: 1px solid #111;
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; box-sizing: border-box; flex-shrink: 0;
         }
         .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
         .study-bar a:hover { color:#d32f2f; }
@@ -37,36 +33,21 @@
         .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
         .study-bar .titleline .sub { color:#666; font-weight:normal; }
 
+        /* 3D canvas fills the space between the bar and the controls — no page scroll */
         .canvas-container {
-            width: 100%;
-            max-width: 1100px;
-            height: 460px;
-            margin: 16px auto 0;
-            border-bottom: 1px dashed #aaa;
-            padding-bottom: 15px;
-            position: relative;
-            background: #ffffff;
-            border: 1px solid #eaeaea;
+            max-width: 1040px; width: 100%; margin: 8px auto 0;
+            border-bottom: 1px dashed #aaa; padding-bottom: 10px;
+            position: relative; flex: 1 1 auto; min-height: 0;
+            display: flex; flex-direction: column;
         }
-        
+
         #simContainer {
-            width: 100%;
-            height: 100%;
-            cursor: grab;
-            position: relative;
-            overflow: hidden;
+            width: 100%; flex: 1 1 auto; min-height: 0;
+            background: #fdfdfd; border: 1px solid #eaeaea;
+            position: relative; overflow: hidden;
+            cursor: grab; touch-action: none;
         }
         #simContainer:active { cursor: grabbing; }
-
-        #status-text {
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            margin-top: -1 px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #1976d2;
-        }
 
         #loading {
             position: absolute;
@@ -80,57 +61,58 @@
             z-index: 10;
         }
 
-        /* Improved 3-Column Layout with Aligned Headings */
+        /* Bottom controls — flex columns with left-rule dividers */
         .controls-container {
             display: flex;
             justify-content: space-between;
             align-items: stretch;
             width: 100%;
-            max-width: 1100px;
-            margin: 14px auto 0;
-            padding-top: 12px;
-            border-top: 1px dashed #aaa;
+            max-width: 1040px;
+            margin: 8px auto 0;
             font-size: 11px;
-            line-height: 1.5;
-            gap: 25px;
+            line-height: 1.35;
+            flex-shrink: 0;
+            gap: 18px;
         }
-        .column { 
+        .column {
+            flex: 1;
+            padding: 0 15px;
+            border-left: 1px solid #ccc;
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
-        .column-elements { 
-            flex: 1.6; 
+        .column:first-child { border-left: none; padding-left: 0; }
+        .column-sim .sim-section { margin-top: 0; padding-top: 0; border-top: none; }
+        /* live support-share readout — shown only in the Load-path view, but its row
+           height is always reserved (visibility toggle, not display) so switching the
+           view never resizes the 3D canvas. */
+        .sim-readout {
+            font-size: 9px; color: #555; line-height: 1.4; min-height: 2.4em;
+            margin: 9px 0 3px; padding: 5px 8px;
+            background: #f5f5f2; border-left: 2px solid #bbb;
         }
-        .column-behaviour { 
-            flex: 2.2; 
-        }
-        .column-options { 
-            flex: 1; 
-            border-left: 1px solid #ddd;
-            padding-left: 20px;
-        }
+        .sim-readout b, .sim-readout .ro-warn { color: #c0392b; font-weight: 700; }
 
         .column h3 {
-            margin: 0 0 10px 0;
-            font-size: 8.5px;
+            margin: 0 0 6px 0;
+            font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.5px;
             color: #333;
-            border-bottom: 1px solid #333;
-            padding-bottom: 4px;
         }
 
-        /* Styled Box Only Around Behaviour Content */
-        #behaviour-content {
-            background: #fafafa; 
-            padding: 16px 18px; 
-            border-radius: 8px; 
-            border: 1px solid #e5e5e5;
-            min-height: 105px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        /* Snowdon flat sliders */
+        input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; background: transparent; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%;
+            background: #111; cursor: pointer; margin-top: -5px;
         }
-        
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 2px; cursor: pointer; background: #ccc; }
+        input[type="range"]::-moz-range-thumb { height: 12px; width: 12px; border: none; border-radius: 50%; background: #111; cursor: pointer; }
+        input[type="range"]::-moz-range-track { width: 100%; height: 2px; background: #ccc; }
+
         .toggle {
             display: flex;
             align-items: center;
@@ -151,90 +133,91 @@
             color: #444;
             font-size: 10.5px;
         }
-        
-        .element-list li { 
-            margin-bottom: 6px; 
-            padding: 7px 12px;
-            background: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 6px;
+
+        .element-list li {
+            margin-bottom: 3px;
             position: relative;
             cursor: pointer;
-            transition: all 0.2s ease;
             font-weight: 500;
         }
-        .element-list li:hover {
-            background: #edf5ff;
-            border-color: #caddf8;
-            color: #1976d2;
-        }
-        
-        .element-list li::before {
-            content: "•";
-            color: #1976d2;
-            font-weight: bold;
-            display: inline-block; 
-            width: 1em;
-            margin-left: -0.5em;
-            padding-right: 4px;
-        }
+        .element-list li:hover { color: #1976d2; }
 
-        /* Center Behaviour Panel Styles */
-        .behaviour-title {
-            font-weight: bold;
-            font-size: 13px;
-            color: #111;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #eaeaea;
-            padding-bottom: 6px;
-        }
-        .behaviour-body {
-            font-size: 11.5px;
-            line-height: 1.6;
-            color: #444;
-        }
-        .placeholder-text {
-            color: #888;
-            font-style: italic;
-            margin: 0;
-            line-height: 1.6;
-        }
-        
-        .keyword-blue { color: #34495e; font-weight: bold; }
-        .keyword-yellow { color: #b8960b; font-weight: bold; }
-        .keyword-green { color: #27ae60; font-weight: bold; }
-        .keyword-purple { color: #8e44ad; font-weight: bold; }
 
-        /* Text-Only Red Number Badge */
-        .number-badge {
-            color: #e74c3c;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            font-size: 20px;
-            font-weight: 900;
-            pointer-events: none;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.95), 0 0 2px rgba(255, 255, 255, 1);
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            white-space: nowrap;
-            opacity: 0;
-            transform: scale(0.85);
-            transition: opacity 0.25s ease, transform 0.25s ease;
-        }
-
-        .number-badge.visible {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .axis-info {
+        /* --- principal-stress scale — lives in the View column, under the radios,
+               shown only while Stress-field view is active --- */
+        .fea-colorbar {
+            display: none;   /* toggled to 'flex' by setDeepBeamVisibility() */
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 6px;
             margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed #ccc;
-            font-size: 10px;
-            color: #666;
-            font-family: monospace;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
         }
+        .fea-title { font-size: 9px; font-weight: 700; color: #333; }
+        .fea-end { font-size: 8.5px; font-family: monospace; font-weight: 600; color: #333; }
+        .fea-note { font-size: 8px; color: #888; flex-basis: 100%; }
+        .fea-gradient-bar {
+            width: 120px;
+            height: 9px;
+            border: 1px solid #888;
+            /* compression (blue) left -> ~0 (white, ~83%) -> tension (red) right */
+            background: linear-gradient(to right,
+                #2166ac 0%, #3f76b3 20%, #6f9bc9 42%, #b0c6e0 66%, #e2e9f2 79%,
+                #f7f7f7 83%, #fae6e2 85%, #f2c9c2 88%, #e79c92 92%, #d25b4e 96%, #b2182b 100%);
+        }
+
+        .sim-section { margin-top: 0; padding-top: 0; border-top: none; }
+        .sim-btn {
+            width: 100%;
+            padding: 5px 8px;
+            margin-bottom: 8px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            color: #333;
+            background: #fff;
+            border: 1px solid #999;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            transition: all 0.15s ease;
+        }
+        .sim-btn:hover { background: #eee; }
+        .sim-btn { display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-ico { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        #cutCableBtn { color: #d32f2f; border-color: #d32f2f; }
+        #cutCableBtn:hover { background: #d32f2f; color: #fff; }
+        .sim-btn.restored { color: #27ae60; border-color: #27ae60; }
+        .sim-btn.restored:hover { background: #27ae60; color: #fff; }
+        .slider-row { margin-bottom: 8px; }
+        .slider-row .slabel { display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; color: #333; margin-bottom: 2px; gap: 8px; }
+        .slider-row .slabel .val { font-family: monospace; color: #555; font-weight: normal; white-space: nowrap; }
+        .slider-row input[type=range] { width: 100%; }
+        .slider-note { font-size: 9px; color: #999; line-height: 1.3; margin-top: 2px; }
+
+        /* --- element list: plain text, click a row to isolate that member in 3D --- */
+        .element-list li .li-head { display: block; padding: 3px 0 3px 14px; position: relative; }
+        .element-list li .li-head::before { content: "\25B8"; position: absolute; left: 2px; color: #bbb; transition: color .15s; }
+        .element-list li:hover .li-head::before { color: #6fa0d8; }
+        .element-list li.open .li-head::before { content: "\25BC"; color: #1976d2; }
+        .element-list li.open > .li-head { color: #1976d2; }
+        .element-list li .li-head .li-role { font-weight: normal; font-size: 8px; color: #9aa0a6; letter-spacing: 0; }
+        .element-list li:hover .li-head .li-role { color: #7ba7dd; }
+
+        .viewmode { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 12px; }
+        .viewmode label { display: flex; align-items: center; gap: 7px; font-size: 9.5px; color: #333; cursor: pointer; }
+
+        /* load-mode icon buttons (no radios) */
+        .mode-btns { display: flex; gap: 6px; margin: 0 0 10px; }
+        .mode-btn {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 7px 4px; background: #fff; border: 1px solid #bbb; cursor: pointer;
+            font: inherit; font-size: 9px; font-weight: bold; letter-spacing: 0.3px;
+            text-transform: uppercase; color: #555; transition: 0.15s;
+        }
+        .mode-btn:hover { background: #f2f2f2; border-color: #888; }
+        .mode-btn.active { background: #111; border-color: #111; color: #fff; }
+        .mode-btn .mode-ico { width: 34px; height: 34px; flex: none; stroke: currentColor; stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
     </style>
     <script type="importmap">
         {
@@ -251,57 +234,103 @@
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
             <span class="idx">04</span>
-            <span class="titleline"><b>Maison &agrave; Bordeaux &mdash; Structural Elements</b><span class="sep">&mdash;</span><span class="sub">Structural Logic and Behaviour</span></span>
+            <span class="titleline"><b>Maison &agrave; Bordeaux: The Balanced Box</b><span class="sep">&mdash;</span><span class="sub">A concrete box held up like a bridge &mdash; two supports and a cable-tied beam &mdash; Rem Koolhaas (OMA) &amp; Cecil Balmond (Arup), 1998</span></span>
         </span>
     </div>
 
     <div class="canvas-container">
-        <div id="loading">Loading True 3D Geometry...</div>
-        <div id="simContainer"></div>
-        <div id="status-text">Interactive View - Drag to Rotate & Pan / Scroll to Zoom</div>
+        <div id="simContainer">
+            <div id="loading">Loading True 3D Geometry...</div>
+        </div>
     </div>
 
-    <!-- Improved 3-Column Controls Container with Horizontally Aligned Headings -->
     <div class="controls-container">
-        <!-- Column 1: Structural Elements -->
+        <!-- Column 1: Structural elements (click to expand + isolate in 3D) -->
         <div class="column column-elements">
-            <h3>Structural Elements (Hover for Info)</h3>
+            <h3>Structural Elements &mdash; click to inspect</h3>
             <ul class="element-list">
-                <li data-badge="1">1. Concrete Box (Deep Beam / Wall Girder)</li>
-                <li data-badge="2">2. Steel I-Beam</li>
-                <li data-badge="3">3. Steel Cylinder</li>
-                <li data-badge="4">4. Tension Cable & Stabilizing Rock</li>
-                <li data-badge="5">5. L-Shaped Brace</li>
+                <li data-el="1"><span class="li-head">1 &nbsp; Concrete box &nbsp;<span class="li-role">four walls acting as one deep beam</span></span></li>
+                <li data-el="2"><span class="li-head">2 &nbsp; Steel I-beam &nbsp;<span class="li-role">roof beam over the cylinder; the cable ties its far end down</span></span></li>
+                <li data-el="3"><span class="li-head">3 &nbsp; Stair cylinder &nbsp;<span class="li-role">off-centre compression support; the pivot</span></span></li>
+                <li data-el="4"><span class="li-head">4 &nbsp; Tension cable &amp; counterweight &nbsp;<span class="li-role">pretensioned tie to a buried weight; stops the beam end lifting</span></span></li>
+                <li data-el="5"><span class="li-head">5 &nbsp; L-shaped brace &nbsp;<span class="li-role">the courtyard gravity support; also braces against roll</span></span></li>
             </ul>
         </div>
 
-        <!-- Column 2: Structural Behaviour (Heading outside the styled card) -->
-        <div class="column column-behaviour">
-            <h3>Structural Behaviour</h3>
-            <div id="behaviour-content">
-                <p class="placeholder-text">Hover over an element on the left to inspect its structural behaviour.</p>
+        <!-- Column 2: View mode -->
+        <div class="column column-view">
+            <h3>View</h3>
+            <div class="viewmode">
+                <label><input type="radio" name="viewMode" id="vmPlain"> Solid (plain &mdash; no force lines)</label>
+                <label><input type="radio" name="viewMode" id="vmLoad" checked> Load path (colour by force)</label>
+                <label><input type="radio" name="viewMode" id="vmStress"> Stress field (&sigma;&#8321;/&sigma;&#8323; + strut-and-tie)</label>
+            </div>
+            <div id="feaColorBar" class="fea-colorbar">
+                <span class="fea-title">&sigma; (MPa)</span>
+                <span class="fea-end">&minus;30 comp.</span>
+                <div class="fea-gradient-bar"></div>
+                <span class="fea-end">+6 tens.</span>
+                <span class="fea-note">non-linear &middot; f<sub>ctm</sub>&asymp;3 crack / f'<sub>c</sub>&asymp;30 crush</span>
             </div>
         </div>
 
-        <!-- Column 3: Display Options -->
-        <div class="column column-options">
-            <h3>Display Options</h3>
-            <label class="toggle">
-                <input type="checkbox" id="showForces" checked>
-                Force Arrows
-            </label>
-            <label class="toggle">
-                <input type="checkbox" id="showElements" checked>
-                Structural Elements
-            </label>
+        <!-- Column 3: Equilibrium Simulator -->
+        <div class="column column-sim">
+            <h3>Equilibrium Simulator</h3>
+            <div id="simSection" class="sim-section">
+                <button id="resetSimBtn" class="sim-btn"><span>&#8635; Normal day &mdash; reset</span></button>
+
+                <div class="mode-btns">
+                    <button id="lmCrowdBtn" class="mode-btn active" type="button">
+                        <svg class="mode-ico" viewBox="0 0 64 64" aria-hidden="true">
+                            <circle cx="20" cy="14" r="7"/>
+                            <path d="M11 42 q0 -19 9 -19 q9 0 9 19 z"/>
+                            <rect x="23" y="9" width="11" height="9" rx="1.5"/>
+                            <line x1="15" y1="42" x2="13" y2="57"/><line x1="25" y1="42" x2="27" y2="57"/>
+                            <circle cx="45" cy="15" r="6"/>
+                            <path d="M39 45 l6 -21 l6 21 z"/>
+                            <line x1="51" y1="8" x2="57" y2="52"/><path d="M52 52 q5 7 10 0"/>
+                        </svg>
+                        <span>Tourists &amp; maid</span>
+                    </button>
+                    <button id="lmWineBtn" class="mode-btn" type="button">
+                        <svg class="mode-ico" viewBox="0 0 64 64" aria-hidden="true">
+                            <ellipse cx="32" cy="16" rx="15" ry="5"/>
+                            <path d="M17 16 q-5 16 0 32 q15 7 30 0 q5 -16 0 -32"/>
+                            <path d="M14 27 h36 M14 37 h36"/>
+                        </svg>
+                        <span>Wine flood</span>
+                    </button>
+                </div>
+
+                <p id="simReadout" class="sim-readout">Cylinder 61% &middot; courtyard wall 39% &middot; tie pretensioned</p>
+
+                <div id="crowdCtl">
+                    <div class="slider-row">
+                        <div class="slabel"><span>Crowd size</span><span class="val" id="crowdNLabel">0 people</span></div>
+                        <input type="range" id="crowdNSlider" min="0" max="240" step="4" value="0">
+                    </div>
+                    <div class="slider-note">&bull; Click on the roof to send the crowd there.</div>
+                </div>
+
+                <div id="wineCtl" hidden>
+                    <button id="winePlayBtn" class="sim-btn"><span>Pour the wine</span></button>
+                    <div class="slider-row">
+                        <div class="slabel"><span>Fill level</span><span class="val" id="wineLabel">0%</span></div>
+                        <input type="range" id="wineSlider" min="0" max="100" step="1" value="0">
+                    </div>
+                </div>
+
+                <button id="cutCableBtn" class="sim-btn"><svg class="btn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg><span>Cut tension cable</span></button>
+            </div>
         </div>
+
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
         import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
         const objData = `
@@ -1528,26 +1557,19 @@ vt 14.8151 11.7213
 vt 14.8151 412.931
 f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 214/472/56 
         `;
-
         const scene = new THREE.Scene();
         const container = document.getElementById('simContainer');
 
         const aspect = container.clientWidth / container.clientHeight;
         const d = 20;
         const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
-        camera.position.set(50, 50, 50); 
+        camera.position.set(50, 50, 50);
         camera.lookAt(scene.position);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));   // crisp lines on HiDPI
         renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(renderer.domElement);
-
-        const labelRenderer = new CSS2DRenderer();
-        labelRenderer.setSize(container.clientWidth, container.clientHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0px';
-        labelRenderer.domElement.style.pointerEvents = 'none'; 
-        container.appendChild(labelRenderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -1557,222 +1579,1936 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         const modelGroup = new THREE.Group();
         scene.add(modelGroup);
-        
+
         const forceGroup = new THREE.Group();
-        
-        const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x34495e, linewidth: 1 });
+
+        const defaultWireframeMaterial = new THREE.LineBasicMaterial({ color: 0x34495e, linewidth: 1 });
+        const forceMaterials = {
+            Mesh1: new THREE.LineBasicMaterial({ color: 0x16a085, linewidth: 1.5 }), // L-Frame: Compression + Torsion (Teal)
+            Mesh2: new THREE.LineBasicMaterial({ color: 0xe74c3c, linewidth: 2 }),   // Tension Cable & Rock (Red)
+            Mesh3: new THREE.LineBasicMaterial({ color: 0xe67e22, linewidth: 1.2 }), // Roof Rocker Beam (Amber)
+            Mesh4: new THREE.LineBasicMaterial({ color: 0xbdc3c7, linewidth: 1 }),   // Ground Plane (Gray)
+            Mesh5: new THREE.LineBasicMaterial({ color: 0x2980b9, linewidth: 1.5 }), // Cylinder Fulcrum (Blue)
+            Mesh6: new THREE.LineBasicMaterial({ color: 0xf39c12, linewidth: 1.2 })  // Concrete Deep Beam Box (Amber)
+        };
+
+        const meshWireframes = {};
+        const meshObjects = {};
 
         const loader = new OBJLoader();
         const object = loader.parse(objData);
-        
+
         object.traverse(function (child) {
             if (child.isMesh) {
-                child.material.visible = false; 
+                child.material.visible = false;
 
                 let geometry = child.geometry;
-                const posAttr = geometry.attributes.position;
+                let posAttr = geometry.attributes.position;
+
+                // Concrete box: drop the horizontal top (y≈5.65) and bottom (y≈2.45) slabs
+                // so it reads as a HOLLOW deep-beam tube — the four perimeter walls only.
+                if (child.name.includes('Mesh6')) {
+                    const src = posAttr.array, keep = [];
+                    for (let t = 0; t + 8 < src.length; t += 9) {
+                        const ylo = src[t + 1] < 2.55 && src[t + 4] < 2.55 && src[t + 7] < 2.55;
+                        const yhi = src[t + 1] > 5.55 && src[t + 4] > 5.55 && src[t + 7] > 5.55;
+                        if (ylo || yhi) continue;
+                        for (let j = 0; j < 9; j++) keep.push(src[t + j]);
+                    }
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(keep, 3));
+                    geometry.deleteAttribute('normal');
+                    geometry.deleteAttribute('uv');
+                    posAttr = geometry.attributes.position;
+                }
+
+                // stretch the OBJ cylinder (Mesh5) down so its base sits on the
+                // sunken courtyard floor (y = -2.7). Mutating posAttr here feeds both the
+                // solid mesh (child.geometry) and the edge overlay (shares this attribute).
+                if (child.name.includes('Mesh5')) {
+                    const a = posAttr.array;
+                    let minY = Infinity;
+                    for (let i = 1; i < a.length; i += 3) if (a[i] < minY) minY = a[i];
+                    for (let i = 1; i < a.length; i += 3) if (a[i] < minY + 0.05) a[i] = -2.70;
+                    posAttr.needsUpdate = true;
+                }
+
                 let cleanGeo = new THREE.BufferGeometry();
                 cleanGeo.setAttribute('position', posAttr);
 
                 cleanGeo = BufferGeometryUtils.mergeVertices(cleanGeo, 1e-4);
                 cleanGeo.computeVertexNormals();
 
-                let threshold = 5; 
+                let threshold = 5;
                 if (child.name.includes('Mesh2') || child.name.includes('Mesh5')) {
-                    threshold = 10; 
+                    threshold = 10;
                 }
                 const edgesGeometry = new THREE.EdgesGeometry(cleanGeo, threshold);
-                const wireframe = new THREE.LineSegments(edgesGeometry, wireframeMaterial);
+                const wireframe = new THREE.LineSegments(edgesGeometry, defaultWireframeMaterial);
                 child.add(wireframe);
+
+                // Identify mesh key (Mesh1 to Mesh6)
+                let meshKey = 'Mesh1';
+                for (let k = 1; k <= 6; k++) {
+                    if (child.name.includes('Mesh' + k)) {
+                        meshKey = 'Mesh' + k;
+                        break;
+                    }
+                }
+                child.name = meshKey;
+                meshObjects[meshKey] = child;
+                meshWireframes[meshKey] = wireframe;
             }
         });
+
+        // Hide flat default ground plane (Mesh4) to replace with true stepped site
+        if (meshWireframes['Mesh4']) {
+            meshWireframes['Mesh4'].visible = false;
+        }
+
+        // (the cylinder now reaches y = -2.7 by stretching Mesh5 itself in the
+        //  traverse above — one object, one style, no seam.)
+
+        // --- Authentic Stepped Site Model (Matching Exactly Bordeaux.dae: group_3 ID43, ID477, ID481) ---
+        // Upper Ground Surface: Y = 0.000, X in [0.000, 34.824], Z in [-24.767, 0.000]
+        // Sunken Courtyard Surface: Y = -2.700, X in [0.000, 34.824], Z in [-50.035, -24.767]
+        // Transverse step at Z = -24.767 connecting Y = 0.000 down to Y = -2.700
+        const steppedSiteGroup = new THREE.Group();
+        const siteLineMat = new THREE.LineBasicMaterial({ color: 0x64748b, linewidth: 1.2 });
+        const siteWallMat = new THREE.LineBasicMaterial({ color: 0x475569, linewidth: 1.5 });
+        const siteFloorMat = new THREE.MeshBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false });
+
+        function addSiteLine(points, mat = siteLineMat) {
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            steppedSiteGroup.add(new THREE.Line(geo, mat));
+        }
+
+        const X0 = 0.000, X1 = 34.8236;
+        const Z0 = 0.000, Z_STEP = -24.7674, Z_FRONT = -50.0348;
+        const Y_GROUND = 0.000, Y_SUNKEN = -2.700;
+
+        // 1. Upper Ground Perimeter Lines (Y = 0.000, Z in [-24.767, 0.000])
+        addSiteLine([
+            new THREE.Vector3(X0, Y_GROUND, Z_STEP),
+            new THREE.Vector3(X0, Y_GROUND, Z0),
+            new THREE.Vector3(X1, Y_GROUND, Z0),
+            new THREE.Vector3(X1, Y_GROUND, Z_STEP)
+        ], siteLineMat);
+
+        // 2. Exact Line Segments from SketchUp DAE ID477 (Sunken Courtyard Pit)
+        // Top step edge: [34.824, 0, -24.767] -> [0, 0, -24.767]
+        addSiteLine([
+            new THREE.Vector3(X1, Y_GROUND, Z_STEP),
+            new THREE.Vector3(X0, Y_GROUND, Z_STEP)
+        ], siteWallMat);
+
+        // Bottom step edge: [34.824, -2.7, -24.767] -> [0, -2.7, -24.767]
+        addSiteLine([
+            new THREE.Vector3(X1, Y_SUNKEN, Z_STEP),
+            new THREE.Vector3(X0, Y_SUNKEN, Z_STEP)
+        ], siteWallMat);
+
+        // Left vertical edge at step: [0, 0, -24.767] -> [0, -2.7, -24.767]
+        addSiteLine([
+            new THREE.Vector3(X0, Y_GROUND, Z_STEP),
+            new THREE.Vector3(X0, Y_SUNKEN, Z_STEP)
+        ], siteWallMat);
+
+        // Right vertical edge at step: [34.824, 0, -24.767] -> [34.824, -2.7, -24.767]
+        addSiteLine([
+            new THREE.Vector3(X1, Y_GROUND, Z_STEP),
+            new THREE.Vector3(X1, Y_SUNKEN, Z_STEP)
+        ], siteWallMat);
+
+        // Left sunken bottom edge: [0, -2.7, -24.767] -> [0, -2.7, -50.035]
+        addSiteLine([
+            new THREE.Vector3(X0, Y_SUNKEN, Z_STEP),
+            new THREE.Vector3(X0, Y_SUNKEN, Z_FRONT)
+        ], siteLineMat);
+
+        // Right sunken bottom edge: [34.824, -2.7, -24.767] -> [34.824, -2.7, -50.035]
+        addSiteLine([
+            new THREE.Vector3(X1, Y_SUNKEN, Z_STEP),
+            new THREE.Vector3(X1, Y_SUNKEN, Z_FRONT)
+        ], siteLineMat);
+
+        // Front sunken bottom edge: [0, -2.7, -50.035] -> [34.824, -2.7, -50.035]
+        addSiteLine([
+            new THREE.Vector3(X0, Y_SUNKEN, Z_FRONT),
+            new THREE.Vector3(X1, Y_SUNKEN, Z_FRONT)
+        ], siteLineMat);
+
+        // Front-left vertical edge: [0, -2.7, -50.035] -> [0, 0, -50.035]
+        addSiteLine([
+            new THREE.Vector3(X0, Y_SUNKEN, Z_FRONT),
+            new THREE.Vector3(X0, Y_GROUND, Z_FRONT)
+        ], siteWallMat);
+
+        // Front-right vertical edge: [34.824, -2.7, -50.035] -> [34.824, 0, -50.035]
+        addSiteLine([
+            new THREE.Vector3(X1, Y_SUNKEN, Z_FRONT),
+            new THREE.Vector3(X1, Y_GROUND, Z_FRONT)
+        ], siteWallMat);
+
+        // Surrounding ground upper perimeter lines along sunken court:
+        addSiteLine([
+            new THREE.Vector3(X0, Y_GROUND, Z_STEP),
+            new THREE.Vector3(X0, Y_GROUND, Z_FRONT),
+            new THREE.Vector3(X1, Y_GROUND, Z_FRONT),
+            new THREE.Vector3(X1, Y_GROUND, Z_STEP)
+        ], siteLineMat);
+
+        // 3. Exact Line Segments from SketchUp DAE ID481 (Portico Wall Step)
+        addSiteLine([
+            new THREE.Vector3(26.5974, Y_GROUND, -23.2622),
+            new THREE.Vector3(26.5974, Y_SUNKEN, -23.2622),
+            new THREE.Vector3(26.1927, Y_SUNKEN, -23.2622)
+        ], siteLineMat);
+        addSiteLine([
+            new THREE.Vector3(26.5974, Y_SUNKEN, -22.8622),
+            new THREE.Vector3(26.5974, Y_SUNKEN, -23.2622)
+        ], siteLineMat);
+        addSiteLine([
+            new THREE.Vector3(26.1927, Y_SUNKEN, -22.8622),
+            new THREE.Vector3(26.1927, Y_SUNKEN, -23.2622)
+        ], siteLineMat);
+
+        // 4. Ground Planes (Upper Ground at Y = 0.000, Sunken Courtyard Floor at Y = -2.700, and Vertical Step Face)
+        // Upper Ground Surface Plane (Y = 0.000, Z in [-24.767, 0.000])
+        const upperLenZ = Math.abs(Z_STEP - Z0);
+        const upperCenterZ = (Z_STEP + Z0) / 2;
+        const upperGeo = new THREE.PlaneGeometry(X1 - X0, upperLenZ);
+        upperGeo.rotateX(-Math.PI / 2);
+        upperGeo.translate((X0 + X1) / 2, Y_GROUND - 0.005, upperCenterZ);
+        steppedSiteGroup.add(new THREE.Mesh(upperGeo, siteFloorMat));
+
+        // Lower Sunken Courtyard Surface Plane (Y = -2.700, Z in [-50.035, -24.767])
+        const lowerLenZ = Math.abs(Z_FRONT - Z_STEP);
+        const lowerCenterZ = (Z_FRONT + Z_STEP) / 2;
+        const lowerGeo = new THREE.PlaneGeometry(X1 - X0, lowerLenZ);
+        lowerGeo.rotateX(-Math.PI / 2);
+        lowerGeo.translate((X0 + X1) / 2, Y_SUNKEN + 0.005, lowerCenterZ);
+        steppedSiteGroup.add(new THREE.Mesh(lowerGeo, siteFloorMat));
+
+        // Vertical Step Retaining Face at Z = -24.767 (connecting Y = 0.000 down to Y = -2.700)
+        const stepFaceGeo = new THREE.PlaneGeometry(X1 - X0, Math.abs(Y_GROUND - Y_SUNKEN));
+        stepFaceGeo.translate((X0 + X1) / 2, (Y_GROUND + Y_SUNKEN) / 2, Z_STEP);
+        steppedSiteGroup.add(new THREE.Mesh(stepFaceGeo, siteFloorMat));
+
+        object.add(steppedSiteGroup);
+
+        // --- Seesaw Pivot Assembly for Overturning Simulation ---
+        // Fulcrum is at the top of the central cylinder: x = 11.55, y = 5.65, z = -19.5
+        const PIVOT_X = 11.55;
+        const PIVOT_Y = 5.65;
+        const PIVOT_Z = -19.5;
+
+        const seesawGroup = new THREE.Group();
+        seesawGroup.position.set(PIVOT_X, PIVOT_Y, PIVOT_Z);
+        object.add(seesawGroup);
+
+        // Relocate Mesh6 (Concrete Box) and Mesh3 (Roof I-Beam) into seesawGroup
+        if (meshObjects['Mesh6']) {
+            seesawGroup.add(meshObjects['Mesh6']);
+            meshObjects['Mesh6'].position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        }
+        if (meshObjects['Mesh3']) {
+            seesawGroup.add(meshObjects['Mesh3']);
+            meshObjects['Mesh3'].position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        }
+
+        const boxLoadsGroup = new THREE.Group();
+        boxLoadsGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        seesawGroup.add(boxLoadsGroup);
+
+        // generalised live load: liveLoadX/Z = plan centroid, liveLoadP = magnitude (P_LIVE_REF units)
+        const P_LIVE_REF = 0.55;
+        let liveLoadP = 0.0;
+        let loadMode = 'crowd';                 // 'crowd' | 'wine'
+        let crowdCount = 0;
+        let wineLevel = 0, wineRunning = false, wineFrame = 0, crowdFrame = 0;
+
+        // --- Crowd: a flock of tourists that walk (steering) toward wherever the mouse
+        //     points on the box roof. Count is the only slider; position is the pointer. ---
+        const CROWD_REF = 70;      // people that equal one P_LIVE_REF (a full 240 ≈ 3.4x)
+        const CROWD_MAX = 240;
+        const ROOF_Y = 5.65;       // top of the concrete box
+        const BOX_X0 = 5.4, BOX_X1 = 29.3, BOX_Z0 = -24.5, BOX_Z1 = -14.2;
+        const YAXIS = new THREE.Vector3(0, 1, 0);
+
+        const crowdGroup = new THREE.Group();
+        crowdGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        seesawGroup.add(crowdGroup);
+
+        // soft dimensional shading for the voxel figures (the wireframe / FEA / solid
+        // members all use MeshBasicMaterial and ignore lights, so this is safe)
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f96, 1.10));
+        const _sun = new THREE.DirectionalLight(0xffffff, 0.85);
+        _sun.position.set(30, 60, 18);
+        scene.add(_sun);
+
+        // ---- voxel "pixel tourist": a stocky parametric mannequin holding a camera to the
+        //      face; original homage to the loud-tourist archetype (Duane Hanson), not a copy.
+        const CS = 0.82;   // ~2.09-unit mannequin -> ~1.7 m adults on the 3.2 m storey / 24.5 m box
+        const PAL_A = {
+            shoe:0x7a6a52, sock:0xf4f4f4, legs:0x2a7fc0, calf:0xe7b592,
+            torso:0x1c2f4a, collar:0x24406a, skin:0xe7b592, cap:0xf2f2f2,
+            bag:0xb0342f, cam:0x161616, lens:0x0a0a0a, glass:0x20242a, stache:0x6a5038,
+            acc1:0xff5aa0, acc2:0x2fbf6b, acc3:0xffd23f, shorts:true, curly:false
+        };
+        const PAL_B = {
+            shoe:0x2f6fb0, sock:0xe7b592, legs:0xe23a54, calf:0xe23a54,
+            torso:0x2bb3d6, collar:0xffffff, skin:0xe7b592, cap:null,
+            bag:0xffd23f, cam:0x161616, lens:0x0a0a0a, glass:0x20242a, stache:0x3a2a1a,
+            acc1:0xffffff, acc2:0xdfe9ee, acc3:0xffffff, shorts:false, curly:true
+        };
+        const SHIRTS_A = [0x1c2f4a, 0x0e5a3d, 0x7a1f2b, 0x33406b, 0x4a2a5a, 0x8a5a12];
+        const SHIRTS_B = [0x2bb3d6, 0xe94f8a, 0x63b95a, 0xf2a03d, 0x9b6bd6, 0xd94141];
+
+        function touristParts(p) {
+            const legH = p.shorts ? 0.28 : 0.50;
+            const core = [
+                [-0.12, 0.10, 0.03, 0.24, 0.13, 0.34, p.shoe], [ 0.12, 0.10, 0.03, 0.24, 0.13, 0.34, p.shoe],
+                [-0.12, 0.23, 0, 0.17, 0.12, 0.17, p.sock], [ 0.12, 0.23, 0, 0.17, 0.12, 0.17, p.sock],
+            ];
+            if (p.shorts) { core.push([-0.13, 0.40, 0, 0.18, 0.22, 0.18, p.calf], [ 0.13, 0.40, 0, 0.18, 0.22, 0.18, p.calf]); }
+            const hipY = 0.30 + legH + 0.11;
+            core.push(
+                [-0.14, 0.30 + legH / 2, 0, 0.29, legH, 0.28, p.legs], [ 0.14, 0.30 + legH / 2, 0, 0.29, legH, 0.28, p.legs],
+                [ 0.0, hipY,        0.02, 0.68, 0.26, 0.46, p.legs],
+                [ 0.0, hipY - 0.02, -0.10, 0.58, 0.24, 0.26, p.legs],
+                [ 0.0, hipY + 0.30, 0.08, 0.80, 0.50, 0.58, p.torso],   // huge round belly
+                [ 0.0, hipY + 0.12, 0.24, 0.66, 0.26, 0.30, p.torso],   // overhang
+                [ 0.0, hipY + 0.64, 0.0, 0.62, 0.20, 0.40, p.torso],
+                [-0.40, hipY + 0.50, 0.02, 0.17, 0.36, 0.18, p.skin], [ 0.40, hipY + 0.50, 0.02, 0.17, 0.36, 0.18, p.skin],
+                [ 0.0, hipY + 0.78, 0.0, 0.22, 0.10, 0.22, p.skin],
+                [ 0.0, hipY + 0.82, 0.08, 0.28, 0.10, 0.12, p.skin],
+                [ 0.0, hipY + 0.96, 0.0, 0.33, 0.31, 0.33, p.skin]
+            );
+            const headY = hipY + 0.96;
+            if (p.cap) { core.push([0.0, headY + 0.18, 0, 0.37, 0.13, 0.37, p.cap], [0.0, headY + 0.11, 0.25, 0.33, 0.05, 0.16, p.cap]); }
+            const mid = [
+                [0.40, headY - 0.86, 0.10, 0.12, 0.46, 0.36, p.bag],
+                [-0.28, headY - 0.30, 0.14, 0.13, 0.40, 0.15, p.skin], [ 0.28, headY - 0.30, 0.14, 0.13, 0.40, 0.15, p.skin],
+                [ 0.0, headY - 0.02, 0.32, 0.26, 0.16, 0.13, p.cam],
+                [ 0.0, headY - 0.02, 0.42, 0.08, 0.08, 0.07, p.lens]
+            ];
+            const fine = [
+                [0.0, headY + 0.03, 0.18, 0.24, 0.05, 0.05, p.glass],
+                [0.0, headY - 0.05, 0.18, 0.13, 0.035, 0.04, p.stache],
+                [-0.13, headY - 0.04, 0.28, 0.10, 0.10, 0.10, p.skin], [ 0.13, headY - 0.04, 0.28, 0.10, 0.10, 0.10, p.skin],
+                [0.0, headY - 0.22, 0.17, 0.42, 0.07, 0.05, p.collar],
+                [-0.20, hipY + 0.30, 0.34, 0.09, 0.09, 0.02, p.acc1], [ 0.18, hipY + 0.14, 0.35, 0.09, 0.09, 0.02, p.acc2],
+                [ 0.02, hipY + 0.40, 0.34, 0.09, 0.09, 0.02, p.acc3], [-0.08, hipY + 0.06, 0.35, 0.08, 0.08, 0.02, p.acc2],
+                [ 0.24, hipY + 0.42, 0.33, 0.08, 0.08, 0.02, p.acc1], [-0.26, hipY + 0.50, 0.32, 0.07, 0.07, 0.02, p.acc3]
+            ];
+            if (p.curly) for (const [ax, ay, az] of [[-0.19,0.10,0.05],[0.19,0.10,0.05],[-0.15,0.19,-0.11],[0.15,0.19,-0.11],[0,0.22,-0.15],[-0.11,0.02,-0.15],[0.11,0.02,-0.15],[0,0.24,0.02]])
+                fine.push([ax, headY + ay, az, 0.14, 0.14, 0.14, p.stache]);
+            return core.concat(mid, fine);
+        }
+
+        function voxelizeMerge(boxes, S) {
+            const geos = [];
+            const proto = new THREE.BoxGeometry(S * 0.94, S * 0.94, S * 0.94);
+            for (const b of boxes) {
+                const [cx, cy, cz, w, h, d] = b, col = new THREE.Color(b[6]);
+                const nx = Math.max(1, Math.round(w / S)), ny = Math.max(1, Math.round(h / S)), nz = Math.max(1, Math.round(d / S));
+                const hollow = (nx > 2 && ny > 2 && nz > 2);
+                for (let ix = 0; ix < nx; ix++) for (let iy = 0; iy < ny; iy++) for (let iz = 0; iz < nz; iz++) {
+                    if (hollow && ix > 0 && ix < nx - 1 && iy > 0 && iy < ny - 1 && iz > 0 && iz < nz - 1) continue;
+                    const g = proto.clone();
+                    g.translate(cx - w / 2 + (ix + 0.5) * w / nx, cy - h / 2 + (iy + 0.5) * h / ny, cz - d / 2 + (iz + 0.5) * d / nz);
+                    const a = new Float32Array(g.attributes.position.count * 3);
+                    for (let k = 0; k < g.attributes.position.count; k++) { a[k * 3] = col.r; a[k * 3 + 1] = col.g; a[k * 3 + 2] = col.b; }
+                    g.setAttribute('color', new THREE.Float32BufferAttribute(a, 3));
+                    geos.push(g);
+                }
+            }
+            proto.dispose();
+            const m = BufferGeometryUtils.mergeGeometries(geos, false);
+            geos.forEach(g => g.dispose());
+            return m;
+        }
+        const TOURIST_S = 0.074;   // "Detailed" voxel size
+        function buildTourist(pal) { return voxelizeMerge(touristParts(pal), TOURIST_S); }
+
+        const matVox = new THREE.MeshLambertMaterial({ vertexColors: true });
+        const NB = SHIRTS_A.length;
+        const crowd = [];          // crowd[v*NB + s] = one InstancedMesh (archetype x shirt colour)
+        for (let v = 0; v < 2; v++) {
+            const base = v ? PAL_B : PAL_A, shirts = v ? SHIRTS_B : SHIRTS_A;
+            for (let s = 0; s < NB; s++) {
+                const im = new THREE.InstancedMesh(buildTourist(Object.assign({}, base, { torso: shirts[s] })), matVox, CROWD_MAX);
+                im.count = 0; im.frustumCulled = false;
+                crowdGroup.add(im); crowd.push(im);
+            }
+        }
+
+        // transparent roof plane (tilts with the box) that the pointer ray hits
+        const roofPlane = new THREE.Mesh(new THREE.PlaneGeometry(70, 70),
+            new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+        roofPlane.rotation.x = -Math.PI / 2;
+        roofPlane.position.set(17, ROOF_Y + 0.85, -19.3);
+        crowdGroup.add(roofPlane);
+
+        const targetRing = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.78, 22),
+            new THREE.MeshBasicMaterial({ color: 0xd32f2f, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+        targetRing.rotation.x = -Math.PI / 2;
+        targetRing.visible = false;
+        crowdGroup.add(targetRing);
+
+        // ---- the maid with a mop (the house caretaker) — chases the crowd off the roof
+        const MC = {
+            skin:0xe7b592, hair:0xa5603a, glass:0x20242a, blouse:0xf4f4f4, dot:0x161616,
+            apron:0x7a2f38, skirt:0x5a4a34, sandal:0x141414, handle:0xd6dade, band:0x2a7fc0, mop:0xece2d0
+        };
+        function voxelMaidParts() {
+            const M = MC;
+            return [
+                [-0.13, 0.05, 0.03, 0.26, 0.08, 0.36, M.sandal], [ 0.13, 0.05, 0.03, 0.26, 0.08, 0.36, M.sandal],
+                [-0.13, 0.22, 0, 0.19, 0.20, 0.19, M.skin], [ 0.13, 0.22, 0, 0.19, 0.20, 0.19, M.skin],
+                [ 0.0, 0.40, 0, 0.52, 0.12, 0.38, M.skirt], [ 0.0, 0.54, 0, 0.62, 0.18, 0.46, M.skirt],
+                [ 0.0, 0.74, 0, 0.60, 0.20, 0.44, M.skirt], [ 0.0, 0.94, 0, 0.54, 0.14, 0.36, M.skirt],
+                [ 0.0, 1.10, 0.04, 0.58, 0.34, 0.42, M.blouse], [ 0.0, 1.02, 0.20, 0.44, 0.24, 0.20, M.blouse],
+                [ 0.0, 1.32, 0, 0.46, 0.14, 0.28, M.blouse],
+                [ 0.0, 1.06, 0.22, 0.40, 0.72, 0.05, M.apron], [ 0.0, 1.30, 0.19, 0.13, 0.22, 0.04, M.apron],
+                [-0.32, 1.12, 0.06, 0.16, 0.30, 0.18, M.blouse], [ 0.32, 1.12, 0.06, 0.16, 0.30, 0.18, M.blouse],
+                [-0.18, 0.92, 0.24, 0.12, 0.26, 0.13, M.skin], [ 0.18, 0.86, 0.24, 0.12, 0.26, 0.13, M.skin],
+                [-0.07, 1.02, 0.32, 0.11, 0.10, 0.11, M.skin], [ 0.07, 0.92, 0.32, 0.11, 0.10, 0.11, M.skin],
+                [ 0.0, 1.44, 0, 0.18, 0.10, 0.18, M.skin], [ 0.0, 1.48, 0.08, 0.22, 0.09, 0.11, M.skin],
+                [ 0.0, 1.60, 0, 0.30, 0.28, 0.30, M.skin], [ 0.0, 1.62, 0.16, 0.22, 0.05, 0.04, M.glass],
+                ...[[-0.18,0.11,0.05],[0.18,0.11,0.05],[-0.15,0.20,-0.11],[0.15,0.20,-0.11],[0,0.22,-0.14],[-0.11,0.02,-0.15],[0.11,0.02,-0.15],[0,0.23,0.04]]
+                    .map(([ax,ay,az]) => [ax, 1.60 + ay, az, 0.15, 0.15, 0.15, M.hair]),
+                [-0.14, 1.20, 0.24, 0.05, 0.05, 0.02, M.dot], [ 0.12, 1.08, 0.25, 0.05, 0.05, 0.02, M.dot],
+                [ 0.18, 1.24, 0.24, 0.05, 0.05, 0.02, M.dot], [-0.20, 1.10, 0.24, 0.05, 0.05, 0.02, M.dot],
+                [ 0.04, 1.28, 0.24, 0.05, 0.05, 0.02, M.dot],
+                [ 0.0, 0.62, 0.35, 0.05, 1.08, 0.05, M.handle], [ 0.0, 1.18, 0.35, 0.06, 0.07, 0.06, M.handle],
+                [ 0.0, 0.14, 0.35, 0.10, 0.12, 0.10, M.band], [ 0.0, 0.05, 0.37, 0.30, 0.10, 0.26, M.mop],
+                [ 0.0, 0.02, 0.47, 0.22, 0.06, 0.17, M.mop]
+            ];
+        }
+        const maidMesh = new THREE.Mesh(voxelizeMerge(voxelMaidParts(), 0.070), matVox);
+        maidMesh.scale.set(1.12 * CS, 1.06 * CS, 1.12 * CS);
+        maidMesh.frustumCulled = false;
+        maidMesh.visible = false;
+        crowdGroup.add(maidMesh);
+        const maidPos = new THREE.Vector2(BOX_X1 - 1.5, BOX_Z0 + 1.5);
+        const maidVel = new THREE.Vector2();
+        // the maid always comes with the tourists (no separate toggle) — `on` tracks crowd mode
+        const MD = { on: true, speed: 1.7, scareR: 4.3, scareF: 20, hd: 0, ph: 0 };
+        function stepMaid(dt) {
+            const show = MD.on && loadMode === 'crowd' && crowdCount > 0;
+            maidMesh.visible = show;
+            if (!show) return;
+            const cx = crowdCentroid.x, cz = crowdCentroid.y;
+            const vx0 = cx - maidPos.x, vz0 = cz - maidPos.y;
+            const d0 = Math.hypot(vx0, vz0) || 1e-4;
+            // she keeps a stand-off: her goal is `standoff` metres short of the crowd centre
+            const standoff = MD.scareR * 1.15;   // she waits OUTSIDE her own scare ring
+            const gx = cx - (vx0 / d0) * standoff, gz = cz - (vz0 / d0) * standoff;
+            let dx = gx - maidPos.x, dz = gz - maidPos.y;
+            const d = Math.hypot(dx, dz) || 1e-4;
+            const ease = Math.min(1, d / 0.6);           // slow into the goal so she doesn't jitter
+            maidVel.x += (dx / d) * 7 * ease * dt;
+            maidVel.y += (dz / d) * 7 * ease * dt;
+            maidVel.multiplyScalar(Math.exp(-3 * dt));
+            const sp = maidVel.length();
+            if (sp > MD.speed) maidVel.multiplyScalar(MD.speed / sp);
+            maidPos.x = THREE.MathUtils.clamp(maidPos.x + maidVel.x * dt, BOX_X0, BOX_X1);
+            maidPos.y = THREE.MathUtils.clamp(maidPos.y + maidVel.y * dt, BOX_Z0, BOX_Z1);
+            MD.hd = Math.atan2(cx - maidPos.x, cz - maidPos.y);   // face the crowd, watching them
+            MD.ph += (1 + sp * 3) * dt;
+            maidMesh.position.set(maidPos.x, ROOF_Y + 0.03 + Math.abs(Math.sin(MD.ph)) * 0.04, maidPos.y);
+            maidMesh.rotation.y = MD.hd + Math.sin(MD.ph * 0.5) * 0.08;
+        }
+
+        const people = [];
+        function rollLook(p) {
+            p.bucket = (Math.random() < 0.5 ? 0 : NB) + (Math.random() * NB | 0);
+            p.h = 0.90 + Math.random() * 0.26;
+            p.g = 1.00 + Math.pow(Math.random(), 0.65) * 0.58;   // all overweight
+        }
+        for (let i = 0; i < CROWD_MAX; i++) {
+            const a = i * 2.399963, u = Math.sqrt((i + 0.5) / CROWD_MAX);
+            const p = { x: 17 + Math.cos(a) * u * 3, z: -19.3 + Math.sin(a) * u * 3,
+                        uox: Math.cos(a) * u, uoz: Math.sin(a) * u,
+                        vx: 0, vz: 0, ph: Math.random() * 6.28, hd: Math.random() * 6.28, hop: 0 };
+            rollLook(p);
+            people.push(p);
+        }
+        const crowdTarget = new THREE.Vector2(22.0, -19.3);
+        const crowdCentroid = new THREE.Vector2(22.0, -19.3);
+        const _pm = new THREE.Matrix4(), _pq = new THREE.Quaternion(), _pv = new THREE.Vector3(1, 1, 1), _pp = new THREE.Vector3();
+        const _bcount = new Int32Array(2 * NB);
+
+        function stepCrowd(dt) {
+            const n = Math.min(CROWD_MAX, Math.round(crowdCount));
+            if (!n) { crowd.forEach(im => im.count = 0); crowdCentroid.set(crowdTarget.x, crowdTarget.y); return; }
+            _bcount.fill(0);
+            const R = 0.7 + Math.sqrt(n) * 0.20;
+            const stride = n > 50 ? 3 : 1;
+            const scareR2 = MD.scareR * MD.scareR, maidOn = MD.on;
+            let sx = 0, sz = 0;
+            for (let i = 0; i < n; i++) {
+                const p = people[i];
+                const gx = THREE.MathUtils.clamp(crowdTarget.x + p.uox * R, BOX_X0, BOX_X1);
+                const gz = THREE.MathUtils.clamp(crowdTarget.y + p.uoz * R, BOX_Z0, BOX_Z1);
+                let dx = gx - p.x, dz = gz - p.z;
+                const d = Math.hypot(dx, dz) || 1e-4;
+                const want = Math.min(d, 1.0) / d;
+                dx *= want; dz *= want;
+                let px = 0, pz = 0;
+                for (let j = 0; j < n; j += stride) {
+                    if (j === i) continue;
+                    const q = people[j];
+                    const ox = p.x - q.x, oz = p.z - q.z, od = ox * ox + oz * oz;
+                    if (od < 0.45 && od > 1e-5) { const inv = 0.45 / od - 1; px += ox * inv; pz += oz * inv; }
+                }
+                let acx = dx * 7.0 + THREE.MathUtils.clamp(px, -10, 10) * 2.4;
+                let acz = dz * 7.0 + THREE.MathUtils.clamp(pz, -10, 10) * 2.4;
+                let scaredNow = 0;
+                if (maidOn) {
+                    const mx = p.x - maidPos.x, mz = p.z - maidPos.y, md2 = mx * mx + mz * mz;
+                    if (md2 < scareR2) {
+                        const md = Math.sqrt(md2) || 0.1;
+                        const f = MD.scareF * Math.pow(1 - md / MD.scareR, 1.4) / (md + 0.35);
+                        acx += mx * f; acz += mz * f; scaredNow = 1;
+                    }
+                }
+                const drag = Math.exp(-4.0 * dt);
+                p.vx = (p.vx + acx * dt) * drag;
+                p.vz = (p.vz + acz * dt) * drag;
+                const sp = Math.hypot(p.vx, p.vz);
+                const capV = scaredNow ? 4.6 : 2.4;
+                if (sp > capV) { p.vx *= capV / sp; p.vz *= capV / sp; }
+                p.x = THREE.MathUtils.clamp(p.x + p.vx * dt, BOX_X0, BOX_X1);
+                p.z = THREE.MathUtils.clamp(p.z + p.vz * dt, BOX_Z0, BOX_Z1);
+                if (sp > 0.08) p.hd = Math.atan2(p.vx, p.vz);
+                p.ph += (0.5 + sp * 3.2) * dt;
+
+                // hop over the roof I-beam (Mesh3 runs N–S at x ≈ 11.57) when walking across it
+                if (p.hop > 0) {
+                    p.hop -= dt / 0.55;
+                    if (p.hop <= 0) p.hop = -0.45;                 // brief landing cooldown
+                } else if (p.hop < 0) {
+                    p.hop = Math.min(0, p.hop + dt);
+                } else if (Math.abs(p.x - 11.57) < 0.6 && Math.abs(p.vx) > 0.25) {
+                    p.hop = 1.0;
+                    p.vx *= 1.7;                                   // a little launch so they clear it
+                }
+                const hopY = p.hop > 0 ? Math.sin(Math.PI * (1 - p.hop)) * 1.2 : 0;
+
+                const bob = Math.abs(Math.sin(p.ph)) * 0.10 * Math.min(1, sp * 2);
+                _pp.set(p.x, ROOF_Y + 0.03 + (bob + hopY) * CS, p.z);
+                _pq.setFromAxisAngle(YAXIS, p.hd);
+                _pv.set(p.g * CS, p.h * CS, p.g * CS);
+                _pm.compose(_pp, _pq, _pv);
+                const bkt = p.bucket;
+                crowd[bkt].setMatrixAt(_bcount[bkt]++, _pm);
+                sx += p.x; sz += p.z;
+            }
+            for (let k = 0; k < crowd.length; k++) { crowd[k].count = _bcount[k]; crowd[k].instanceMatrix.needsUpdate = true; }
+            crowdCentroid.set(sx / n, sz / n);
+        }
+
+        // CLICK on the roof to send the crowd there (a plain click, not an orbit drag),
+        // so the mouse is free to reach the controls.
+        targetRing.position.set(crowdTarget.x, ROOF_Y + 0.9, crowdTarget.y);
+        const _rayc = new THREE.Raycaster();
+        const _ndc = new THREE.Vector2();
+        let _downX = 0, _downY = 0, _downT = 0;
+        renderer.domElement.addEventListener('pointerdown', (e) => { _downX = e.clientX; _downY = e.clientY; _downT = performance.now(); });
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (loadMode !== 'crowd') return;
+            if (Math.hypot(e.clientX - _downX, e.clientY - _downY) > 5) return;   // it was an orbit drag
+            if (performance.now() - _downT > 600) return;                        // long press — ignore
+            const rect = renderer.domElement.getBoundingClientRect();
+            _ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+            _rayc.setFromCamera(_ndc, camera);
+            const hit = _rayc.intersectObject(roofPlane, false)[0];
+            if (!hit) return;
+            const lp = crowdGroup.worldToLocal(hit.point.clone());
+            crowdTarget.set(THREE.MathUtils.clamp(lp.x, BOX_X0, BOX_X1), THREE.MathUtils.clamp(lp.z, BOX_Z0, BOX_Z1));
+            targetRing.position.set(crowdTarget.x, ROOF_Y + 0.9, crowdTarget.y);
+            targetRing.visible = crowdCount > 0;
+        });
+
+        // --- Wine: a shallow-water (height-field) slosh sim on the box floor.
+        //     The mesh stays axis-aligned; the box tilt enters the sim as a floor slope,
+        //     so the fluid genuinely runs downhill and its moving centroid drives the
+        //     overturning feedback. ---
+        const WINE_GAIN = 4.2;                      // a full box of wine vs P_LIVE_REF
+        const WINE_MAXD = 3.0;                      // max fluid depth (box interior ~3.2)
+        const WX0 = 5.054, WX1 = 29.59, WZ0 = -24.767, WZ1 = -13.918;
+        const WNX = 48, WNZ = 22;
+        const wh = new Float32Array(WNX * WNZ);     // surface height above the floor
+        const wv = new Float32Array(WNX * WNZ);     // vertical velocity
+        const wcx = [], wcz = [];
+        for (let ix = 0; ix < WNX; ix++) wcx.push(WX0 + (ix + 0.5) / WNX * (WX1 - WX0));
+        for (let iz = 0; iz < WNZ; iz++) wcz.push(WZ0 + (iz + 0.5) / WNZ * (WZ1 - WZ0));
+
+        const wineGeo = new THREE.PlaneGeometry(WX1 - WX0, WZ1 - WZ0, WNX - 1, WNZ - 1);
+        wineGeo.rotateX(-Math.PI / 2);
+        wineGeo.translate((WX0 + WX1) / 2, 2.45, (WZ0 + WZ1) / 2);
+        const wineSurf = new THREE.Mesh(wineGeo,
+            new THREE.MeshBasicMaterial({ color: 0x6b1a2e, transparent: true, opacity: 0.62, side: THREE.DoubleSide, depthWrite: false }));
+        wineSurf.visible = false;
+        wineSurf.frustumCulled = false;
+        // the wine rides INSIDE the box shell — parent it to the seesaw so it tilts /
+        // twists / sinks rigidly with the concrete box and can never leave it.
+        const wineGroup = new THREE.Group();
+        wineGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        seesawGroup.add(wineGroup);
+        wineGroup.add(wineSurf);
+
+        let wineVol = 0;   // current total (in depth-units summed over cells)
+
+        // --- fluid SIDE WALLS: a skirt from the box floor up to the wavy top surface,
+        //     so the wine reads as a body of liquid, not a floating sheet ---
+        const perim = [];
+        for (let ix = 0; ix < WNX; ix++) perim.push(ix);                          // near z edge
+        for (let iz = 1; iz < WNZ; iz++) perim.push(iz * WNX + (WNX - 1));         // far x edge
+        for (let ix = WNX - 2; ix >= 0; ix--) perim.push((WNZ - 1) * WNX + ix);    // far z edge
+        for (let iz = WNZ - 2; iz >= 1; iz--) perim.push(iz * WNX + 0);            // near x edge
+        const PC = perim.length;
+        const wallPos = new Float32Array(PC * 2 * 3);
+        for (let k = 0; k < PC; k++) {
+            const i = perim[k], ix = i % WNX, iz = (i / WNX) | 0;
+            const x = wcx[ix], z = wcz[iz];
+            wallPos[k * 6] = x;     wallPos[k * 6 + 1] = 2.45; wallPos[k * 6 + 2] = z;   // bottom (fixed)
+            wallPos[k * 6 + 3] = x; wallPos[k * 6 + 4] = 2.45; wallPos[k * 6 + 5] = z;   // top (per frame)
+        }
+        const wallIdx = [];
+        for (let k = 0; k < PC; k++) {
+            const a = k * 2, b = ((k + 1) % PC) * 2;
+            wallIdx.push(a, a + 1, b + 1, a, b + 1, b);
+        }
+        const wineWallGeo = new THREE.BufferGeometry();
+        wineWallGeo.setAttribute('position', new THREE.BufferAttribute(wallPos, 3));
+        wineWallGeo.setIndex(wallIdx);
+        const wineWall = new THREE.Mesh(wineWallGeo,
+            new THREE.MeshBasicMaterial({ color: 0x5a1526, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false }));
+        wineWall.visible = false; wineWall.frustumCulled = false;
+        wineGroup.add(wineWall);
+
+        // --- FIVE realistic oak WINE BARRELS (barrique, ~0.95 m long, ~0.69 m bilge)
+        //     bobbing on the surface; click one (or the wine) for ripples. ---
+        function makeBarrel() {
+            const g = new THREE.Group();
+            const L = 0.95, rBilge = 0.345, rHead = 0.285;
+            const stave = new THREE.MeshLambertMaterial({ color: 0x6e4326 });
+            const headM = new THREE.MeshLambertMaterial({ color: 0x7c5133 });
+            const iron  = new THREE.MeshLambertMaterial({ color: 0x2e2a26 });
+            const prof = [], N = 12;
+            for (let i = 0; i <= N; i++) {
+                const t = i / N, y = -L / 2 + t * L;
+                const r = rHead + (rBilge - rHead) * Math.pow(Math.sin(t * Math.PI), 0.65);
+                prof.push(new THREE.Vector2(Math.max(r, 0.02), y));
+            }
+            g.add(new THREE.Mesh(new THREE.LatheGeometry(prof, 22).rotateZ(Math.PI / 2), stave));
+            for (const sx of [-1, 1]) {
+                const cap = new THREE.Mesh(new THREE.CircleGeometry(rHead * 0.97, 22), headM);
+                cap.rotation.y = sx * Math.PI / 2;
+                cap.position.x = sx * (L / 2 - 0.008);
+                g.add(cap);
+            }
+            for (const [hx, hr, hw] of [[L * 0.44, 0.315, 0.045], [L * 0.16, 0.348, 0.055],
+                                       [-L * 0.16, 0.348, 0.055], [-L * 0.44, 0.315, 0.045]]) {
+                const hoop = new THREE.Mesh(new THREE.CylinderGeometry(hr, hr, hw, 22).rotateZ(Math.PI / 2), iron);
+                hoop.position.x = hx;
+                g.add(hoop);
+            }
+            g.visible = false;
+            return g;
+        }
+        const BARREL_HOME = [ [9, -21.5], [14.5, -17.2], [18, -21], [22.5, -17.4], [26, -20.6] ];
+        const barrels = [], barrelStates = [];
+        for (const [bx, bz] of BARREL_HOME) {
+            const b = makeBarrel();
+            wineGroup.add(b);
+            barrels.push(b);
+            barrelStates.push({ x: bx, z: bz, vx: 0, vz: 0, spin: Math.random() * 6.28 });
+        }
+
+        function sampleWH(x, z) {
+            const fx = THREE.MathUtils.clamp((x - WX0) / (WX1 - WX0) * WNX - 0.5, 0, WNX - 1.001);
+            const fz = THREE.MathUtils.clamp((z - WZ0) / (WZ1 - WZ0) * WNZ - 0.5, 0, WNZ - 1.001);
+            const ix = fx | 0, iz = fz | 0, tx = fx - ix, tz = fz - iz;
+            const h00 = wh[iz * WNX + ix], h10 = wh[iz * WNX + ix + 1];
+            const h01 = wh[(iz + 1) * WNX + ix], h11 = wh[(iz + 1) * WNX + ix + 1];
+            return (h00 * (1 - tx) + h10 * tx) * (1 - tz) + (h01 * (1 - tx) + h11 * tx) * tz;
+        }
+
+        // inject a circular "poke" into the velocity field → outgoing ripples (waves only, no foam)
+        function wineWave(x, z, amp) {
+            for (let iz = 0; iz < WNZ; iz++) for (let ix = 0; ix < WNX; ix++) {
+                const dx = wcx[ix] - x, dz = wcz[iz] - z, d2 = dx * dx + dz * dz;
+                if (d2 < 10) wv[iz * WNX + ix] -= amp * Math.exp(-d2 / 3.2);
+            }
+        }
+
+        function stepBarrels(dt) {
+            const show = loadMode === 'wine' && (wineLevel > 0.02 || wineVol > 1);
+            for (let n = 0; n < barrels.length; n++) {
+                const b = barrels[n], s = barrelStates[n];
+                b.visible = show;
+                if (!show) continue;
+                const h = sampleWH(s.x, s.z);
+                const gx = (sampleWH(s.x + 0.7, s.z) - sampleWH(s.x - 0.7, s.z)) / 1.4;
+                const gz = (sampleWH(s.x, s.z + 0.7) - sampleWH(s.x, s.z - 0.7)) / 1.4;
+                // separation so the five don't stack on the same spot
+                let sepx = 0, sepz = 0;
+                for (let m = 0; m < barrelStates.length; m++) {
+                    if (m === n) continue;
+                    const ox = s.x - barrelStates[m].x, oz = s.z - barrelStates[m].z;
+                    const d2 = ox * ox + oz * oz;
+                    if (d2 < 1.6 && d2 > 1e-4) { const inv = (1.6 / d2 - 1); sepx += ox * inv; sepz += oz * inv; }
+                }
+                s.vx = (s.vx - gx * 11 * dt + sepx * 2.0 * dt) * Math.exp(-1.7 * dt);
+                s.vz = (s.vz - gz * 11 * dt + sepz * 2.0 * dt) * Math.exp(-1.7 * dt);
+                s.x = THREE.MathUtils.clamp(s.x + s.vx * dt, WX0 + 0.8, WX1 - 0.8);
+                s.z = THREE.MathUtils.clamp(s.z + s.vz * dt, WZ0 + 0.9, WZ1 - 0.9);
+                b.position.set(s.x, 2.45 + h + 0.12, s.z);   // ~60% submerged
+                b.rotation.z = THREE.MathUtils.clamp(-gx * 2.4, -0.45, 0.45);
+                b.rotation.x = THREE.MathUtils.clamp(gz * 2.4, -0.45, 0.45);
+                s.spin += s.vx * 0.4 * dt;
+                b.rotation.y = s.spin;
+            }
+        }
+
+        function resetBarrels() {
+            for (let n = 0; n < barrelStates.length; n++) {
+                barrelStates[n].x = BARREL_HOME[n][0];
+                barrelStates[n].z = BARREL_HOME[n][1];
+                barrelStates[n].vx = 0; barrelStates[n].vz = 0;
+            }
+        }
+
+        // click a barrel (bigger poke) or the wine surface (smaller) → ripples
+        let _wDownX = 0, _wDownY = 0, _wDownT = 0;
+        renderer.domElement.addEventListener('pointerdown', (e) => { _wDownX = e.clientX; _wDownY = e.clientY; _wDownT = performance.now(); });
+        renderer.domElement.addEventListener('pointerup', (e) => {
+            if (loadMode !== 'wine') return;
+            if (Math.hypot(e.clientX - _wDownX, e.clientY - _wDownY) > 5) return;
+            if (performance.now() - _wDownT > 600) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            _ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+            _rayc.setFromCamera(_ndc, camera);
+            let hitBarrel = -1, hit = null;
+            for (let n = 0; n < barrels.length; n++) {
+                const h = _rayc.intersectObject(barrels[n], true)[0];
+                if (h && (!hit || h.distance < hit.distance)) { hit = h; hitBarrel = n; }
+            }
+            if (!hit) hit = _rayc.intersectObject(wineSurf, false)[0];
+            if (!hit) return;
+            const lp = wineGroup.worldToLocal(hit.point.clone());
+            wineWave(lp.x, lp.z, hitBarrel >= 0 ? 8.5 : 5.0);
+            if (hitBarrel >= 0) {
+                barrelStates[hitBarrel].vx += (Math.random() - 0.5) * 5;
+                barrelStates[hitBarrel].vz += (Math.random() - 0.5) * 5;
+            }
+        });
+
+        function initWine() {
+            const lvl = wineLevel * WINE_MAXD;
+            for (let i = 0; i < wh.length; i++) { wh[i] = lvl; wv[i] = 0; }
+        }
+
+        function stepWine(dt) {
+            const step = Math.min(dt, 0.033);
+            const targetSum = wineLevel * WINE_MAXD * WNX * WNZ;
+            // floor slope from the box tilt (exaggerated), plus a small constant west bias:
+            // the deep beam already deflects downward at the unsupported rocker end under the
+            // fluid weight, so the pool creeps west and the slosh feedback can build.
+            const tlt = (typeof currentTilt !== 'undefined' ? currentTilt : 0);
+            // the wine mesh already tilts with the box (it's parented to the seesaw), so
+            // this is only the EXTRA downhill pooling of the fluid relative to the shell.
+            // once the cable is cut the pool runs west harder → centroid crosses the
+            // fulcrum → the overturn goes runaway (still clamped inside the parapet).
+            const slopeX = -tlt * (isCableCut ? 2.6 : 1.3);
+            const rockX = (typeof seesawGroup !== 'undefined' ? seesawGroup.rotation.x : 0) * 1.5;
+            const xc = (WX0 + WX1) / 2, zc = (WZ0 + WZ1) / 2;
+            const meanLvl = wineLevel * WINE_MAXD;
+            const C2 = 26.0, RELAX = 3.2, DAMP = Math.exp(-1.4 * step);
+            let sum = 0, mx = 0, mz = 0, maxv = 0;
+            for (let iz = 0; iz < WNZ; iz++) {
+                for (let ix = 0; ix < WNX; ix++) {
+                    const i = iz * WNX + ix;
+                    const l = wh[ix > 0 ? i - 1 : i], r = wh[ix < WNX - 1 ? i + 1 : i];
+                    const u = wh[iz > 0 ? i - WNX : i], d = wh[iz < WNZ - 1 ? i + WNX : i];
+                    const lap = l + r + u + d - 4 * wh[i];
+                    let tgt = meanLvl + slopeX * (wcx[ix] - xc) + rockX * (wcz[iz] - zc);   // tilted equilibrium surface
+                    tgt = tgt < 0 ? 0 : (tgt > WINE_MAXD ? WINE_MAXD : tgt);
+                    wv[i] += (C2 * lap - RELAX * (wh[i] - tgt)) * step;
+                    wv[i] *= DAMP;
+                    wh[i] += wv[i] * step;
+                    if (wh[i] < 0) { wh[i] = 0; if (wv[i] < 0) wv[i] = 0; }
+                    else if (wh[i] > 3.15) { wh[i] = 3.15; if (wv[i] > 0) wv[i] = 0; }   // can't slop over the parapet
+                    sum += wh[i]; mx += wh[i] * wcx[ix]; mz += wh[i] * wcz[iz];
+                    const av = Math.abs(wv[i]);
+                    if (av > maxv) maxv = av;
+                }
+            }
+            // conserve volume toward the target fill
+            const corr = (targetSum - sum) / (WNX * WNZ);
+            for (let i = 0; i < wh.length; i++) { wh[i] = Math.max(0, wh[i] + corr); }
+
+            // update the surface mesh
+            const pos = wineGeo.attributes.position;
+            for (let iz = 0; iz < WNZ; iz++)
+                for (let ix = 0; ix < WNX; ix++)
+                    pos.setY(iz * WNX + ix, 2.45 + wh[iz * WNX + ix]);
+            pos.needsUpdate = true;
+            wineGeo.computeVertexNormals();
+            wineSurf.visible = wineLevel > 0.003 || sum > 1;
+
+            // drag the side-wall tops up to the same wavy surface
+            const wp = wineWallGeo.attributes.position;
+            for (let k = 0; k < PC; k++) wp.setY(k * 2 + 1, 2.45 + wh[perim[k]]);
+            wp.needsUpdate = true;
+            wineWall.visible = wineSurf.visible;
+
+            wineVol = sum;
+
+            // feed the structural model: real fluid mass + centroid
+            if (sum > 1e-3) {
+                liveLoadP = P_LIVE_REF * (sum / (WINE_MAXD * WNX * WNZ)) * WINE_GAIN;
+                liveLoadX = mx / sum;
+                liveLoadZ = mz / sum;
+            } else {
+                liveLoadP = 0;
+            }
+        }
+
+        let liveLoadX = 22.0;      // plan centroid of the live load
+        let liveLoadZ = -19.345;
+
+        function refreshLoad() {
+            if (loadMode === 'wine') {
+                crowd.forEach(im => im.count = 0);
+                targetRing.visible = false;
+                maidMesh.visible = false;
+                // liveLoadP/X/Z are set by stepWine() each frame
+            } else {
+                liveLoadP = P_LIVE_REF * (crowdCount / CROWD_REF);
+                liveLoadX = crowdCentroid.x;      // centroid of the walking flock
+                liveLoadZ = crowdCentroid.y;
+                wineSurf.visible = false;
+                wineWall.visible = false;
+                barrels.forEach(b => b.visible = false);
+                // crowd instances + centroid are advanced every frame by stepCrowd()
+            }
+        }
 
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         object.position.set(-center.x, -center.y, -center.z);
         modelGroup.add(object);
 
-        // --- Number Badges for Elements (Text-only Red Numbers) ---
-        const badgeElements = {};
+        // (item 1: floating 3D number badges removed — the accordion list carries the numbers)
 
-        function createBadge(numStr, x, y, z) {
-            const div = document.createElement('div');
-            div.className = 'number-badge';
-            div.textContent = numStr;
-            const label = new CSS2DObject(div);
-            label.position.set(x, y, z);
-            object.add(label);
-            badgeElements[numStr] = div;
-        }
-
-        // 1. Concrete Box
-        createBadge("1", 3, 4.0, -14.2);
-        // 2. Steel I-Beam
-        createBadge("2", 11.55, 6.5, -29.5);
-        // 3. Steel Cylinder
-        createBadge("3", 11.55, 4.5, -20.0);
-        // 4. Tension Cable & Stabilizing Rock
-        createBadge("4", 11.55, 4.5, -28.0);
-        // 5. L-Shaped Brace
-        createBadge("5", 26.6, 2.0, -9.5);
-
-        // --- Checkbox Logic for "Structural Elements" ---
-        const showElementsCb = document.getElementById('showElements');
-        let alwaysShowElements = showElementsCb.checked;
-
-        function updateAllBadgesVisibility() {
-            Object.values(badgeElements).forEach(div => {
-                if (alwaysShowElements) {
-                    div.classList.add('visible');
-                } else {
-                    div.classList.remove('visible');
-                }
-            });
-        }
-
-        // ตั้งค่าการแสดงผลตัวเลขเริ่มต้นเมื่อโหลดหน้าเว็บตามค่า Checkbox
-        updateAllBadgesVisibility();
-
-        showElementsCb.addEventListener('change', (e) => {
-            alwaysShowElements = e.target.checked;
-            updateAllBadgesVisibility();
-        });
-
-        // --- Structural Behaviour Data for Center Panel ---
-        const behaviourData = {
-            "1": {
-                title: "Concrete Box Behavior (Concrete Box as Deep Beam)",
-                mechanism: 'The entire concrete box has downward arrows representing its own weight (<span class="keyword-yellow">Dead Load</span>).',
-                works: 'The four solid concrete walls aren\'t just room dividers — the box itself acts as a <span class="keyword-blue">"Deep Beam"</span>, a form with very high inherent rigidity. This lets it hold its shape and cantilever out in mid-air without sagging or breaking at mid-span.'
-            },
-            "2": {
-                title: "Steel I-Beam & Tension Cable System",
-                mechanism: 'At the very top of the roof, a steel I-beam runs diagonally across; one end is tied to a tension cable hanging straight down.',
-                works: 'The front concrete box is extremely heavy and cantilevers outward, creating an <span class="keyword-purple">Overturning Moment</span>. Engineers use the roof-level steel beam as a rocker beam to counteract and hold it back.'
-            },
-            "3": {
-                title: "Steel Tube / Concealed Stairs (Compression Core)",
-                mechanism: 'A cylindrical steel tube at the center of the building, concealing a spiral staircase inside.',
-                works: 'Acts as the main <span class="keyword-yellow">Compression Member</span> — like the "pivot point" of the rocker beam — carrying most of the vertical load from the concrete box above and transferring it down to the foundation.'
-            },
-            "5": {
-                title: "Steel I-Beam & Tension Cable System",
-                mechanism: 'A tension cable drops straight down to a weighted stabilizing rock below.',
-                works: 'The cable anchors the far end of the roof beam to an underground anchor base, holding it down to keep the concrete box from tipping over due to the <span class="keyword-purple">Overturning Moment</span>.'
-            },
-            "6": {
-                title: "L-Shaped Brace",
-                mechanism: 'An L-shaped bracing structure beneath the concrete box.',
-                works: 'Acts as a support structure that distributes <span class="keyword-green">Torsion</span> and helps stabilize the large concrete box laterally, preventing it from swaying or twisting.'
-            }
+        // Each row in the Structural Elements list just isolates one member in 3D.
+        const elMap = {
+            "1": { meshes: ["Mesh6"] },
+            "2": { meshes: ["Mesh3"] },
+            "3": { meshes: ["Mesh5"] },
+            "4": { meshes: ["Mesh2"] },
+            "5": { meshes: ["Mesh1"] }
         };
+        const faintMat = new THREE.LineBasicMaterial({ color: 0xd7dbe0, transparent: true, opacity: 0.14 });
+        let isolated = null;
 
-        const behaviourContent = document.getElementById('behaviour-content');
+        function isolateElement(id) { isolated = id; applyMemberStyle(); }
+        function clearIsolate() { isolated = null; applyMemberStyle(); }
 
-        // Hover Event Listener for Element List Items
-        const listItems = document.querySelectorAll('.element-list li[data-badge]');
+        const listItems = document.querySelectorAll('.element-list li[data-el]');
         listItems.forEach(li => {
-            const badgeId = li.getAttribute('data-badge');
-            li.addEventListener('mouseenter', () => {
-                if (!alwaysShowElements && badgeElements[badgeId]) {
-                    badgeElements[badgeId].classList.add('visible');
-                }
-                if (behaviourData[badgeId]) {
-                    const data = behaviourData[badgeId];
-                    behaviourContent.innerHTML = `
-                        <div class="behaviour-title">${data.title}</div>
-                        <div class="behaviour-body">
-                            <strong>Mechanism shown:</strong> ${data.mechanism}<br><br>
-                            <strong>How it works:</strong> ${data.works}
-                        </div>
-                    `;
-                }
-            });
-            li.addEventListener('mouseleave', () => {
-                if (!alwaysShowElements && badgeElements[badgeId]) {
-                    badgeElements[badgeId].classList.remove('visible');
-                }
-                behaviourContent.innerHTML = '<p class="placeholder-text">Hover over an element on the left to inspect its structural behaviour.</p>';
+            const id = li.dataset.el;
+            li.querySelector('.li-head').addEventListener('click', () => {
+                const wasOpen = li.classList.contains('open');
+                listItems.forEach(o => o.classList.remove('open'));
+                if (wasOpen) { clearIsolate(); }
+                else { li.classList.add('open'); isolateElement(id); }
             });
         });
 
+        // --- Force Arrows & Load Groups ---
         object.add(forceGroup);
-        const greenColor = 0x009e60; // CAD Green
+        const tensionColor = 0xe74c3c;
+        const compColor = 0x2980b9;
+        const deadLoadColor = 0xe67e22;
 
-        function createNumberedArrow(dir, origin, length, colorHex, headL, headW, numStr) {
+        const boxLoadArrows = [];
+        let cylinderArrow = null;
+        let tensionArrow = null;
+        let lframeArrowN = null;
+        let lframeArrowS = null;
+        const ARROW_BASE = { cyl: 4.2, lfN: 3.8, lfS: 4.8, cable: 6.4 };
+
+        function createNumberedArrow(dir, origin, length, colorHex, headL, headW, numStr, parent = forceGroup) {
             const arrow = new THREE.ArrowHelper(dir, origin, length, colorHex, headL, headW);
-            forceGroup.add(arrow);
+            parent.add(arrow);
+            return arrow;
         }
 
         function addDistributedLoad(startX, endX, y, z, numArrows, arrowLength, colorHex, addGLabel, prefixId) {
-            const lineMaterial = new THREE.LineBasicMaterial({ color: colorHex });
-            const points = [];
-            points.push(new THREE.Vector3(startX, y, z));
+            const lineMaterial = new THREE.LineBasicMaterial({ color: colorHex, linewidth: 2 });
+            const points = [
+                new THREE.Vector3(startX, y, z),
+                new THREE.Vector3(endX, y, z)
+            ];
+
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(lineGeo, lineMaterial);
+            boxLoadsGroup.add(line);
 
             const dir = new THREE.Vector3(0, -1, 0);
             const step = (endX - startX) / (numArrows - 1);
 
-            let endLineX = endX;
-            if(addGLabel) {
-                endLineX += step; 
-                points.push(new THREE.Vector3(endLineX, y, z));
-            } else {
-                points.push(new THREE.Vector3(endX, y, z));
-            }
-            
-            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(lineGeo, lineMaterial);
-            forceGroup.add(line);
-
             for (let i = 0; i < numArrows; i++) {
                 const x = startX + (i * step);
                 const origin = new THREE.Vector3(x, y, z);
-                createNumberedArrow(dir, origin, arrowLength, colorHex, 0.6, 0.4, prefixId + '.' + (i+1));
-            }
-
-            if (addGLabel) {
-                const origin = new THREE.Vector3(endLineX, y, z);
-                const arrow = new THREE.ArrowHelper(dir, origin, arrowLength, colorHex, 0.6, 0.4);
-                forceGroup.add(arrow);
+                const arrow = new THREE.ArrowHelper(dir, origin, arrowLength, colorHex, 0.85, 0.55);
+                boxLoadsGroup.add(arrow);
+                boxLoadArrows.push(arrow);
             }
         }
 
-        // 1. Upward Arrows
+        // 1. Upward reaction arrows (compression at the supports) — on the support axes.
+        //    cylinder: Mesh5 centre ~(11.30, -20.08).  courtyard wall: Mesh1 at x~26.40,
+        //    split into a NORTH-edge and a SOUTH-edge reaction (z = -24.77 / -13.92).
         const upDir = new THREE.Vector3(0, 1, 0);
-        createNumberedArrow(upDir, new THREE.Vector3(11.55, -4, -20), 4, greenColor, 1.2, 0.8, "1");
-        createNumberedArrow(upDir, new THREE.Vector3(26.6, -4, -11.3), 4, greenColor, 1.2, 0.8, "2"); 
-        createNumberedArrow(upDir, new THREE.Vector3(26.6, -6.7, -23.0), 4, greenColor, 1.2, 0.8, "3"); 
+        cylinderArrow = createNumberedArrow(upDir, new THREE.Vector3(11.30, -1.8, -20.08), ARROW_BASE.cyl, compColor, 1.2, 0.75, "1");
+        lframeArrowN  = createNumberedArrow(upDir, new THREE.Vector3(26.40, -1.0, -24.77), ARROW_BASE.lfN, compColor, 1.1, 0.65, "2");
+        lframeArrowS  = createNumberedArrow(upDir, new THREE.Vector3(26.40, -3.2, -13.92), ARROW_BASE.lfS, compColor, 1.1, 0.65, "3");
 
-        // 2. Downward Point Load
+        // 2. Downward tension pull of the tie — on the tie member (Mesh2 ~ x 11.6, z -28),
+        //    running down toward the buried counterweight.
         const downDir = new THREE.Vector3(0, -1, 0);
-        createNumberedArrow(downDir, new THREE.Vector3(11.55, 6, -28.08), 4.14, greenColor, 1.2, 0.8, "4"); 
+        tensionArrow = createNumberedArrow(downDir, new THREE.Vector3(11.60, 6.0, -28.08), ARROW_BASE.cable, tensionColor, 1.2, 0.75, "4");
 
-        // 3. Distributed Loads
-        addDistributedLoad(6.0, 25.0, 9.15, -14.2, 6, 3.5, greenColor, true, "5"); 
-        addDistributedLoad(6.0, 28.8, 9.15, -24.5, 7, 3.5, greenColor, false, "6"); 
+        // 3. Distributed Dead Loads on the Concrete Box Cantilevers (Gravity self-weight w)
+        // 3 bold resultant self-weight arrows per edge (was a dense 8-arrow grid)
+        // self-weight "rain" — a row of short down-arrows along each long wall
+        addDistributedLoad(6.5, 28.0, 6.95, -13.92, 7, 1.5, deadLoadColor, false, "5");
+        addDistributedLoad(6.5, 28.0, 6.95, -24.77, 7, 1.5, deadLoadColor, false, "6");
 
-        // UI Controls
-        const showForcesCb = document.getElementById('showForces');
-        showForcesCb.addEventListener('change', (e) => {
-            forceGroup.visible = e.target.checked;
+        // --- Finite Element Analysis: von Mises Stress Field (Rainbow Spectrum & Triangular Mesh) ---
+        const deepBeamStressGroup = new THREE.Group();
+        deepBeamStressGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        seesawGroup.add(deepBeamStressGroup); // Rotates with seesawGroup naturally
+
+        // Authentic Rem Koolhaas Openings for Maison à Bordeaux Upper Concrete Box
+        // Extracted directly from uploaded SketchUp 3D model (Bordeaux.dae / group_5):
+        // 1. South Facade (Z ≈ -13.92): 19 precise circular portholes (r = 0.162m, diameter = 0.324m)
+        // 2. North Facade (Z ≈ -24.77): 16 precise circular portholes (r = 0.162m, diameter = 0.324m)
+        // 3. West Cantilever End Wall (X = 5.05): ONE iconic giant circular oculus (y = 4.22, z = -21.06, r = 1.024m)
+        const southPortholes = [
+            { x: 6.229, y: 4.611, r: 0.162 }, // ID221
+            { x: 6.945, y: 3.637, r: 0.162 }, // ID229
+            { x: 7.542, y: 3.257, r: 0.162 }, // ID237
+            { x: 9.908, y: 4.021, r: 0.162 }, // ID245
+            { x: 11.673, y: 3.250, r: 0.162 }, // ID253
+            { x: 12.704, y: 3.250, r: 0.162 }, // ID261
+            { x: 12.865, y: 4.610, r: 0.162 }, // ID269
+            { x: 15.861, y: 4.610, r: 0.162 }, // ID277
+            { x: 16.017, y: 3.260, r: 0.162 }, // ID285
+            { x: 16.740, y: 3.260, r: 0.162 }, // ID293
+            { x: 18.416, y: 4.609, r: 0.162 }, // ID301
+            { x: 19.100, y: 3.460, r: 0.162 }, // ID317
+            { x: 19.260, y: 4.609, r: 0.162 }, // ID309
+            { x: 22.091, y: 3.463, r: 0.162 }, // ID325
+            { x: 23.155, y: 4.618, r: 0.162 }, // ID333
+            { x: 24.044, y: 4.020, r: 0.162 }, // ID341
+            { x: 25.102, y: 3.252, r: 0.162 }, // ID349
+            { x: 25.687, y: 4.026, r: 0.162 }, // ID357
+            { x: 28.453, y: 4.026, r: 0.162 }  // ID365
+        ];
+
+        const northPortholes = [
+            { x: 6.625, y: 4.024, r: 0.162 }, // ID205
+            { x: 6.625, y: 3.193, r: 0.162 }, // ID213
+            { x: 7.854, y: 3.882, r: 0.162 }, // ID197
+            { x: 8.784, y: 4.543, r: 0.162 }, // ID181
+            { x: 8.930, y: 3.884, r: 0.162 }, // ID189
+            { x: 9.882, y: 4.540, r: 0.162 }, // ID173
+            { x: 11.534, y: 3.878, r: 0.162 }, // ID165
+            { x: 12.851, y: 3.878, r: 0.162 }, // ID157
+            { x: 13.943, y: 4.400, r: 0.162 }, // ID149
+            { x: 16.919, y: 3.885, r: 0.162 }, // ID141
+            { x: 17.648, y: 4.541, r: 0.162 }, // ID133
+            { x: 18.427, y: 3.884, r: 0.162 }, // ID125
+            { x: 21.272, y: 3.884, r: 0.162 }, // ID117
+            { x: 23.759, y: 3.521, r: 0.162 }, // ID101
+            { x: 23.759, y: 4.238, r: 0.162 }, // ID109
+            { x: 28.616, y: 3.881, r: 0.162 }  // ID93
+        ];
+
+        // West Cantilever End: Giant iconic round oculus window (Bordeaux.dae / group_5 ID77 & ID85)
+        const westPortholes = [
+            { y: 4.219, z: -21.057, r: 1.024 }
+        ];
+
+        // Helper: Create 3D architectural porthole assembly (frame ring + dark tinted glass + rim line)
+        function createPortholeWindow(x, y, z, r, normalAxis = 'z') {
+            const group = new THREE.Group();
+
+            // Dark metallic frame ring
+            const ringThickness = (r > 0.6) ? 0.06 : 0.035;
+            const ringGeo = new THREE.RingGeometry(r - ringThickness, r + ringThickness, 36);
+            const frameMat = new THREE.MeshBasicMaterial({ color: 0x1a202c, side: THREE.DoubleSide });
+            const ringMesh = new THREE.Mesh(ringGeo, frameMat);
+            group.add(ringMesh);
+
+            // Translucent tinted glass
+            const glassGeo = new THREE.CircleGeometry(r - ringThickness, 36);
+            const glassMat = new THREE.MeshBasicMaterial({
+                color: 0x9aa3a8,
+                transparent: true,
+                opacity: 0.38,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+            group.add(glassMesh);
+
+            // Crisp black circular rim line
+            const circlePoints = [];
+            for (let k = 0; k <= 36; k++) {
+                const th = (k / 36) * Math.PI * 2;
+                circlePoints.push(new THREE.Vector3(Math.cos(th) * r, Math.sin(th) * r, 0));
+            }
+            const circleGeo = new THREE.BufferGeometry().setFromPoints(circlePoints);
+            const rimMat = new THREE.LineBasicMaterial({ color: 0x0a1420, linewidth: 2 });
+            group.add(new THREE.Line(circleGeo, rimMat));
+
+            if (normalAxis === 'x') {
+                group.rotateY(Math.PI / 2);
+                group.position.set(x, y, z);
+            } else {
+                group.position.set(x, y, z);
+            }
+            return group;
+        }
+
+        // Standalone porthole windows on the concrete box — visible in EVERY view
+        // (the Stress-field FEA membranes draw their own copies, so this hides then).
+        const portholeGroup = new THREE.Group();
+        portholeGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        for (const p of southPortholes) portholeGroup.add(createPortholeWindow(p.x, p.y, -13.900, p.r, 'z'));
+        for (const p of northPortholes) portholeGroup.add(createPortholeWindow(p.x, p.y, -24.790, p.r, 'z'));
+        for (const p of westPortholes)  portholeGroup.add(createPortholeWindow(5.030, p.y, p.z, p.r, 'x'));
+        seesawGroup.add(portholeGroup);
+
+        // ------------------------------------------------------------------
+        // item 6: PRINCIPAL-STRESS field for the RC deep-beam box (plane stress, MPa)
+        // von Mises is a ductile-metal yield check and is the wrong criterion for
+        // reinforced concrete, which is governed by tension cracking / compression
+        // crushing. We build the in-plane stress tensor (sigma_a along the wall axis,
+        // sigma_b vertical, tau in-plane) from the same Balmond load-path assumptions,
+        // then report the two principal stresses and the s1 direction:
+        //   avg = (sa+sb)/2 ; R = hypot((sa-sb)/2, tau)
+        //   s1 = avg + R (max, tension +)   s3 = avg - R (min, compression -)
+        //   theta = 0.5*atan2(2*tau, sa-sb)  (angle of s1 from the wall axis)
+        // Magnitudes are illustrative, scaled to a plausible RC service range.
+        // ------------------------------------------------------------------
+        const clamp01 = v => Math.max(0, Math.min(1, v));
+        const SIGMA_SCALE = 0.42;      // "visual units" -> ~MPa
+        const SIG_MIN = -30;           // compression end of the colour scale (f'c)
+        const SIG_MAX = 6;             // tension end (well past f_ctm ~ 3)
+
+        // Live-load moment/shear increment on the deep beam at station x, scaled by the
+        // current live-load magnitude (crowd size or wine level).
+        function liveLoadMoment(x) {
+            let dM = 0, dV = 0;
+            if (typeof liveLoadX === 'undefined') return { dM, dV };
+            if (liveLoadX <= 11.55) {
+                if (x >= liveLoadX && x <= 11.55) { dM = -120.0 * (x - liveLoadX) / 6.5; dV = -25.0; }
+                else if (x > 11.55 && x <= 26.40) { dM = -120.0 * (11.55 - liveLoadX) / 6.5 * (26.40 - x) / (26.40 - 11.55); }
+            } else if (liveLoadX <= 26.40 && x > 11.55 && x <= 26.40) {
+                const L = 26.40 - 11.55, a = liveLoadX - 11.55, b = 26.40 - liveLoadX;
+                dM = (x <= liveLoadX) ? 80.0 * (b / L) * (x - 11.55) / L : 80.0 * (a / L) * (26.40 - x) / L;
+            }
+            const s = (typeof liveLoadP !== 'undefined') ? liveLoadP / P_LIVE_REF : 1;
+            return { dM: dM * s, dV: dV * s };
+        }
+
+        // Kirsch: tangential-stress multiplier around a circular hole in a uniaxial field.
+        //   k(r/dist -> 1 at the edge)  = 1 - 2*cos(2*theta)   ->  +3 at theta=90deg (spring line),
+        //                                                          -1 at theta=0    (poles, compression relief)
+        //   k(dist -> infinity)         = 1
+        // Blends the edge ratio to 1 with (r/dist)^2 so it decays away from the hole.
+        function kirsch(r, dist, th) {
+            const ratio = Math.min(1, Math.pow(r / dist, 2));
+            return 1.0 - 2.0 * Math.cos(2.0 * th) * ratio;
+        }
+
+        // Bredt closed-tube torsion: a circulating shear flow  q = T / (2*A0)  driven by
+        // the same net torque that rolls the box (boxTorque()). BUT the box is a tube
+        // CLOSED at the west transverse diaphragm and OPEN (glazed) at the courtyard end,
+        // so the circulating flow can only develop toward the closed end — it tapers to a
+        // small residual (C-section frame action) approaching the open east end.
+        const TBOX_A0 = 3.2 * 10.85;     // wall height x box z-depth  (enclosed area, m^2)
+        const TBOX_Q0 = 1.7;             // dead-load torsion-box baseline (asymmetric supports)
+        const TBOX_GAIN = 165;           // live torque -> visual shear units
+        function bredtShear(x) {
+            const T = (typeof boxTorque === 'function') ? boxTorque() : 0;
+            const q = TBOX_Q0 + (T / (2.0 * TBOX_A0)) * TBOX_GAIN;
+            const closed = (typeof x === 'number')
+                ? THREE.MathUtils.clamp((29.0 - x) / (29.0 - 20.0), 0.15, 1.0)   // 1 near the west diaphragm -> 0.15 at the open east end
+                : 1.0;
+            return q * closed;
+        }
+
+        function calcPrincipal(x, y, z) {
+            let sa, sb, tau; // sa: wall-axis normal, sb: vertical normal, tau: in-plane shear
+
+            if (Math.abs(x - 5.054) < 0.20) {
+                // West end transverse diaphragm (z-y plane; axis = z)
+                const dZ = (z - (-19.345)) / 5.425;
+                sa = 5.0 * dZ;
+                sb = -1.2;
+                // parabolic diaphragm shear + circulating torsion-box shear (this end IS the closure)
+                tau = 4.0 * Math.max(0.0, 1.0 - dZ * dZ) + bredtShear(5.054);
+                for (const h of westPortholes) {
+                    const dist = Math.hypot(z - h.z, y - h.y);
+                    if (dist >= h.r && dist < h.r * 2.4) {
+                        const th = Math.atan2(y - h.y, z - h.z);
+                        sa *= kirsch(h.r, dist, th);   // -1..+3 : shows the compressive relief lobe too
+                        tau *= 1.0 + 0.6 * Math.pow(h.r / dist, 2);
+                    }
+                }
+            } else {
+                const isSouthWall = (z > -19.0);
+                const eta = (y - 4.05) / 1.60;
+
+                let M = 0, V = 0;
+                if (x <= 11.55) {
+                    const u = clamp01((x - 5.054) / 6.50);
+                    M = -32.0 * u * u; V = -16.0 * u;
+                } else if (x <= 26.40) {
+                    const s = (x - 11.55) / 14.85;
+                    M = -32.0 * Math.pow(1.0 - s, 2) - 8.0 * s * s + 24.0 * Math.sin(s * Math.PI);
+                    V = 20.0 * (1.0 - 2.0 * s);
+                } else {
+                    const w = clamp01((x - 26.40) / 3.19);
+                    M = -8.0 * Math.pow(1.0 - w, 2); V = -8.0 * (1.0 - w);
+                }
+                const ll = liveLoadMoment(x);
+                M += ll.dM; V += ll.dV;
+
+                const deepFiber = Math.sign(eta) * Math.pow(Math.abs(eta), 1.3);
+                sa = -M * deepFiber;
+
+                // keep the hole factor whose deviation from 1 is largest (can be < 0: relief lobe)
+                let kHole = 1.0;
+                for (const h of (isSouthWall ? southPortholes : northPortholes)) {
+                    const dist = Math.hypot(x - h.x, y - h.y);
+                    if (dist >= h.r && dist < h.r * 2.4) {
+                        const th = Math.atan2(y - h.y, x - h.x);
+                        const k = kirsch(h.r, dist, th);
+                        if (Math.abs(k - 1) > Math.abs(kHole - 1)) kHole = k;
+                    }
+                }
+                sa *= kHole;
+
+                sb = -1.2;
+                // vertical COMPRESSION fans up from each bearing — the box sits ON the
+                // cylinder (a column) and ON the courtyard wall; both are in compression.
+                const dPost = Math.hypot(x - 11.55, y - 2.45);
+                sb -= (isSouthWall ? 20.0 : 26.0) * Math.exp(-Math.pow(dPost / 1.35, 2));
+                const dShelf = Math.hypot(x - 26.40, y - 2.45);
+                sb -= 24.0 * Math.exp(-Math.pow(dShelf / 1.15, 2));
+
+                const shearDepth = Math.max(0.0, 1.0 - eta * eta);
+                // beam shear (from V) + circulating torsion-box shear, opposite sign on
+                // the two longitudinal walls so the flow circulates around the section;
+                // bredtShear(x) tapers it toward the open (glazed) east end
+                const circSign = isSouthWall ? 1.0 : -1.0;
+                tau = 1.5 * (V / 1.60) * shearDepth * Math.min(1.5, Math.abs(kHole)) + circSign * bredtShear(x);
+
+                if (x > 11.55 && x < 16.5) {
+                    const strutDist = Math.abs((5.2 - 2.45) * x - (16.0 - 11.55) * y + (16.0 * 2.45 - 5.2 * 11.55)) / Math.hypot(5.2 - 2.45, 16.0 - 11.55);
+                    if (strutDist < 1.0) {
+                        const sf = (1.0 - strutDist) * 6.0;
+                        sa -= sf * 0.6; sb -= sf * 0.8;
+                    }
+                }
+            }
+
+            sa *= SIGMA_SCALE; sb *= SIGMA_SCALE; tau *= SIGMA_SCALE;
+
+            const avg = 0.5 * (sa + sb);
+            const R = Math.hypot(0.5 * (sa - sb), tau);
+            const s1 = avg + R;
+            const s3 = avg - R;
+            const theta = 0.5 * Math.atan2(2.0 * tau, sa - sb);
+            const gov = (Math.abs(s3) >= Math.abs(s1)) ? s3 : s1;
+            return { s1, s3, theta, gov };
+        }
+
+        // Back-compat shim for the membrane builders: signed governing principal stress (MPa)
+        function calculateVonMisesStress(x, y, z) {
+            return calcPrincipal(x, y, z).gov;
+        }
+
+        // item 3: vivid diverging map — thin white at 0, saturated red (tension) / blue
+        // (compression) ends. Non-linear (^0.6) so small stresses still tint, then
+        // quantised into bands like a standard FEA contour plot. Physics unchanged.
+        const SIG_GAMMA = 0.6;
+        const SIG_BANDS = 10;
+        const SIG_END_T = [0.792, 0.094, 0.169];   // #b2182b  tension
+        const SIG_END_C = [0.129, 0.400, 0.674];   // #2166ac  compression
+        const SIG_WHITE = [0.969, 0.969, 0.969];
+        function getFEAvonMisesColor(sigma) {
+            const c = new THREE.Color();
+            const neg = sigma < 0;
+            const raw = clamp01(Math.abs(sigma) / (neg ? -SIG_MIN : SIG_MAX));
+            let t = Math.pow(raw, SIG_GAMMA);
+            t = Math.round(t * SIG_BANDS) / SIG_BANDS;
+            const e = neg ? SIG_END_C : SIG_END_T;
+            c.setRGB(
+                SIG_WHITE[0] + (e[0] - SIG_WHITE[0]) * t,
+                SIG_WHITE[1] + (e[1] - SIG_WHITE[1]) * t,
+                SIG_WHITE[2] + (e[2] - SIG_WHITE[2]) * t
+            );
+            return c;
+        }
+
+        // Create FEA Membrane with triangular finite element mesh overlay & window openings
+        function createFEAMembrane(zPos) {
+            const group = new THREE.Group();
+            const isSouth = (zPos > -19.0);
+            const portholes = isSouth ? southPortholes : northPortholes;
+
+            const nx = 144;
+            const ny = 32;
+            const xMin = 5.054;
+            const xMax = 29.590;
+            const yMin = 2.450;
+            const yMax = 5.650;
+
+            const positions = [];
+            const colors = [];
+            const indices = [];
+
+            for (let j = 0; j <= ny; j++) {
+                const y = yMin + (j / ny) * (yMax - yMin);
+                for (let i = 0; i <= nx; i++) {
+                    const x = xMin + (i / nx) * (xMax - xMin);
+
+                    const vM = calculateVonMisesStress(x, y, zPos);
+                    const col = getFEAvonMisesColor(vM);
+
+                    positions.push(x, y, zPos);
+                    colors.push(col.r, col.g, col.b);
+                }
+            }
+
+            function isInsideOpening(cx, cy) {
+                for (let p of portholes) {
+                    if (Math.hypot(cx - p.x, cy - p.y) < p.r) return true;
+                }
+                return false;
+            }
+
+            for (let j = 0; j < ny; j++) {
+                for (let i = 0; i < nx; i++) {
+                    const a = j * (nx + 1) + i;
+                    const b = j * (nx + 1) + (i + 1);
+                    const c = (j + 1) * (nx + 1) + i;
+                    const d = (j + 1) * (nx + 1) + (i + 1);
+
+                    const pax = positions[a * 3], pay = positions[a * 3 + 1];
+                    const pbx = positions[b * 3], pby = positions[b * 3 + 1];
+                    const pcx = positions[c * 3], pcy = positions[c * 3 + 1];
+                    const pdx = positions[d * 3], pdy = positions[d * 3 + 1];
+
+                    // Triangular FEA element 1 (a, b, c)
+                    const c1x = (pax + pbx + pcx) / 3;
+                    const c1y = (pay + pby + pcy) / 3;
+                    if (!isInsideOpening(c1x, c1y)) {
+                        indices.push(a, b, c);
+                    }
+
+                    // Triangular FEA element 2 (b, d, c)
+                    const c2x = (pbx + pdx + pcx) / 3;
+                    const c2y = (pby + pdy + pcy) / 3;
+                    if (!isInsideOpening(c2x, c2y)) {
+                        indices.push(b, d, c);
+                    }
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geo.setIndex(indices);
+            geo.computeVertexNormals();
+
+            // 1. Shaded Colored Surface
+            const mat = new THREE.MeshBasicMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.97,
+                depthWrite: false
+            });
+            group.add(new THREE.Mesh(geo, mat));
+
+            // 2. Triangular Finite Element Wireframe Lines (FEA mesh lines)
+            const wireGeo = new THREE.WireframeGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({
+                color: 0x0a1420,
+                transparent: true,
+                opacity: 0.28,
+                depthWrite: false
+            });
+            group.add(new THREE.LineSegments(wireGeo, wireMat));
+
+            // 3. Add 3D Porthole Window Assemblies (Frame + Tinted Glass + Circular Rim)
+            for (let p of portholes) {
+                group.add(createPortholeWindow(p.x, p.y, zPos, p.r, 'z'));
+            }
+
+            return { group, geo, zPos, nx, ny, xMin, xMax, yMin, yMax };
+        }
+
+        // Create FEA Transverse End Wall Membrane (YZ Plane) with West Giant Oculus
+        function createFEAEndMembrane(xPos) {
+            const group = new THREE.Group();
+            const nz = 64;
+            const ny = 32;
+            const zMin = -24.767;
+            const zMax = -13.918;
+            const yMin = 2.450;
+            const yMax = 5.650;
+
+            const positions = [];
+            const colors = [];
+            const indices = [];
+
+            for (let j = 0; j <= ny; j++) {
+                const y = yMin + (j / ny) * (yMax - yMin);
+                for (let k = 0; k <= nz; k++) {
+                    const z = zMin + (k / nz) * (zMax - zMin);
+
+                    const vM = calculateVonMisesStress(xPos, y, z);
+                    const col = getFEAvonMisesColor(vM);
+
+                    positions.push(xPos, y, z);
+                    colors.push(col.r, col.g, col.b);
+                }
+            }
+
+            function isInsideWestOpening(cy, cz) {
+                for (let p of westPortholes) {
+                    if (Math.hypot(cz - p.z, cy - p.y) < p.r) return true;
+                }
+                return false;
+            }
+
+            for (let j = 0; j < ny; j++) {
+                for (let k = 0; k < nz; k++) {
+                    const a = j * (nz + 1) + k;
+                    const b = j * (nz + 1) + (k + 1);
+                    const c = (j + 1) * (nz + 1) + k;
+                    const d = (j + 1) * (nz + 1) + (k + 1);
+
+                    const pay = positions[a * 3 + 1], paz = positions[a * 3 + 2];
+                    const pby = positions[b * 3 + 1], pbz = positions[b * 3 + 2];
+                    const pcy = positions[c * 3 + 1], pcz = positions[c * 3 + 2];
+                    const pdy = positions[d * 3 + 1], pdz = positions[d * 3 + 2];
+
+                    const c1y = (pay + pby + pcy) / 3, c1z = (paz + pbz + pcz) / 3;
+                    if (!isInsideWestOpening(c1y, c1z)) {
+                        indices.push(a, b, c);
+                    }
+
+                    const c2y = (pby + pdy + pcy) / 3, c2z = (pbz + pdz + pcz) / 3;
+                    if (!isInsideWestOpening(c2y, c2z)) {
+                        indices.push(b, d, c);
+                    }
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geo.setIndex(indices);
+            geo.computeVertexNormals();
+
+            // 1. Shaded Colored Surface
+            const mat = new THREE.MeshBasicMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.97,
+                depthWrite: false
+            });
+            group.add(new THREE.Mesh(geo, mat));
+
+            // 2. Triangular Finite Element Wireframe Lines (FEA mesh lines)
+            const wireGeo = new THREE.WireframeGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({
+                color: 0x0a1420,
+                transparent: true,
+                opacity: 0.28,
+                depthWrite: false
+            });
+            group.add(new THREE.LineSegments(wireGeo, wireMat));
+
+            // 3. Add West Giant Oculus (facing X axis)
+            for (let p of westPortholes) {
+                group.add(createPortholeWindow(xPos, p.y, p.z, p.r, 'x'));
+            }
+
+            return { group, geo, xPos, nz, ny, zMin, zMax, yMin, yMax, isEndWall: true };
+        }
+
+        // Add South, North, and West FEA Wall Membranes (Concrete Deep Beam Box with Window Openings)
+        // Note: East end (X = 29.59) is glass, not structural concrete, so it has no FEA stress membrane
+        const feaSouth = createFEAMembrane(-13.918); // South facade (Z = -13.92) with 19 portholes
+        const feaNorth = createFEAMembrane(-24.767); // North facade (Z = -24.77) with 16 portholes
+        const feaWest = createFEAEndMembrane(5.054);  // West cantilever concrete end wall with Giant Oculus
+
+        deepBeamStressGroup.add(feaSouth.group);
+        deepBeamStressGroup.add(feaNorth.group);
+        deepBeamStressGroup.add(feaWest.group);
+
+        const feaMembranes = [feaSouth, feaNorth, feaWest];
+
+        // item 6: principal-direction trajectory overlay (strut-and-tie picture).
+        // Two families of short bars: tension ties (red, along s1) and compression
+        // struts (blue, along s3). Rebuilt whenever the load moves.
+        const trajTension = new THREE.LineSegments(new THREE.BufferGeometry(),
+            new THREE.LineBasicMaterial({ color: 0xc0392b, transparent: true, opacity: 0.9 }));
+        const trajComp = new THREE.LineSegments(new THREE.BufferGeometry(),
+            new THREE.LineBasicMaterial({ color: 0x1f4e9c, transparent: true, opacity: 0.9 }));
+        deepBeamStressGroup.add(trajTension);
+        deepBeamStressGroup.add(trajComp);
+
+        function holeAt(x, y, list) {
+            for (const p of list) if (Math.hypot(x - p.x, y - p.y) < p.r * 1.15) return true;
+            return false;
+        }
+
+        function rebuildTrajectories() {
+            const tP = [], cP = [];
+            const seg = (arr, cx, cy, cz, ux, uy, uz, half) => {
+                arr.push(cx - ux * half, cy - uy * half, cz - uz * half,
+                         cx + ux * half, cy + uy * half, cz + uz * half);
+            };
+            // longitudinal walls (x-y plane)
+            for (const zPos of [-13.918, -24.767]) {
+                const holes = (zPos > -19.0) ? southPortholes : northPortholes;
+                for (let ix = 0; ix <= 18; ix++) {
+                    const x = 5.7 + ix * (28.8 - 5.7) / 18;
+                    for (let iy = 0; iy <= 4; iy++) {
+                        const y = 2.80 + iy * (5.30 - 2.80) / 4;
+                        if (holeAt(x, y, holes)) continue;
+                        const p = calcPrincipal(x, y, zPos);
+                        if (p.s1 > 0.4) {
+                            const h = THREE.MathUtils.clamp(p.s1 * 0.05, 0.12, 0.60);
+                            seg(tP, x, y, zPos, Math.cos(p.theta), Math.sin(p.theta), 0, h);
+                        }
+                        if (p.s3 < -0.4) {
+                            const a = p.theta + Math.PI / 2;
+                            const h = THREE.MathUtils.clamp(-p.s3 * 0.04, 0.12, 0.60);
+                            seg(cP, x, y, zPos, Math.cos(a), Math.sin(a), 0, h);
+                        }
+                    }
+                }
+            }
+            // west end wall (z-y plane; axis = z)
+            const xW = 5.054;
+            for (let iz = 0; iz <= 10; iz++) {
+                const z = -24.2 + iz * (-14.5 - (-24.2)) / 10;
+                for (let iy = 0; iy <= 4; iy++) {
+                    const y = 2.80 + iy * (5.30 - 2.80) / 4;
+                    const p = calcPrincipal(xW, y, z);
+                    if (p.s1 > 0.4) {
+                        const h = THREE.MathUtils.clamp(p.s1 * 0.05, 0.12, 0.60);
+                        seg(tP, xW, y, z, 0, Math.sin(p.theta), Math.cos(p.theta), h);
+                    }
+                    if (p.s3 < -0.4) {
+                        const a = p.theta + Math.PI / 2;
+                        const h = THREE.MathUtils.clamp(-p.s3 * 0.04, 0.12, 0.60);
+                        seg(cP, xW, y, z, 0, Math.sin(a), Math.cos(a), h);
+                    }
+                }
+            }
+            trajTension.geometry.dispose();
+            trajTension.geometry = new THREE.BufferGeometry();
+            trajTension.geometry.setAttribute('position', new THREE.Float32BufferAttribute(tP, 3));
+            trajComp.geometry.dispose();
+            trajComp.geometry = new THREE.BufferGeometry();
+            trajComp.geometry.setAttribute('position', new THREE.Float32BufferAttribute(cP, 3));
+        }
+        rebuildTrajectories();
+
+        function updateFEAMembranes() {
+            for (let fea of feaMembranes) {
+                const colors = fea.geo.attributes.color.array;
+                let idx = 0;
+                if (fea.isEndWall) {
+                    for (let j = 0; j <= fea.ny; j++) {
+                        const y = fea.yMin + (j / fea.ny) * (fea.yMax - fea.yMin);
+                        for (let k = 0; k <= fea.nz; k++) {
+                            const z = fea.zMin + (k / fea.nz) * (fea.zMax - fea.zMin);
+                            const vM = calculateVonMisesStress(fea.xPos, y, z);
+                            const col = getFEAvonMisesColor(vM);
+                            colors[idx++] = col.r;
+                            colors[idx++] = col.g;
+                            colors[idx++] = col.b;
+                        }
+                    }
+                } else {
+                    for (let j = 0; j <= fea.ny; j++) {
+                        const y = fea.yMin + (j / fea.ny) * (fea.yMax - fea.yMin);
+                        for (let i = 0; i <= fea.nx; i++) {
+                            const x = fea.xMin + (i / fea.nx) * (fea.xMax - fea.xMin);
+                            const vM = calculateVonMisesStress(x, y, fea.zPos);
+                            const col = getFEAvonMisesColor(vM);
+                            colors[idx++] = col.r;
+                            colors[idx++] = col.g;
+                            colors[idx++] = col.b;
+                        }
+                    }
+                }
+                fea.geo.attributes.color.needsUpdate = true;
+            }
+            rebuildTrajectories();
+        }
+
+        // The box is a deep beam on TWO gravity supports: the stair cylinder (x = X_S1)
+        // and the courtyard support wall (x = X_S2); self-weight W at X_CG, live load P
+        // at px. shareReactions returns the SIGNED support reactions — a negative value
+        // means that support has lifted off (a bearing can't pull down).
+        const W_BOX = 1.0, X_CG = 17.3, X_S1 = 11.55, X_S2 = 26.40;
+        function shareReactions(px) {
+            const P = (typeof liveLoadP !== 'undefined') ? liveLoadP : 0;
+            const RL = (W_BOX * (X_CG - X_S1) + P * (px - X_S1)) / (X_S2 - X_S1);   // courtyard wall
+            const RC = W_BOX + P - RL;                                             // cylinder
+            return { RL, RC };
+        }
+        const REACT_BASE = shareReactions(20.0);   // empty-building baseline (both positive)
+
+        // PITCH about the long axis: the box stays level while BOTH supports push up.
+        // When a support's reaction runs toward zero the box see-saws about the OTHER
+        // one. Signed: + = west end drops (courtyard wall RL lost), - = east end drops
+        // (cylinder RC lost, e.g. a load out on the glazed east overhang). The tie-down
+        // does NOT act on this axis — only the deep-beam back-span does.
+        let lastNet = 0;
+        function momentBalance() {
+            const { RL, RC } = shareReactions(liveLoadX);
+            const span = X_S2 - X_S1;
+            const pitchW = Math.max(0, 0.18 - RL) * span;         // courtyard wall unloading -> pitch WEST (+)
+            const pitchE = Math.max(0, 0.18 - RC) * span * 0.6;   // cylinder unloading -> pitch EAST (-)
+            return { RL, RC, net: pitchW - pitchE };
+        }
+
+        // one-line support-share readout under the simulator controls (Load-path view)
+        function writeReadout(RL, RC) {
+            const el = document.getElementById('simReadout');
+            if (!el) return;
+            if (isCableCut) {
+                el.innerHTML = '<b>Tension cable cut</b> &mdash; the beam end and box roll are unrestrained';
+                return;
+            }
+            let s;
+            if (RL <= 0)      s = '<b>Courtyard wall lifted off</b> &mdash; box pitching west';
+            else if (RC <= 0) s = '<b>Cylinder lifted off</b> &mdash; box pitching east';
+            else {
+                // vertical share is carried by the two gravity supports...
+                const pC = Math.round(100 * RC / (RL + RC));
+                s = `Cylinder ${pC}% &middot; courtyard wall ${100 - pC}%`;
+                // ...and the pretensioned tie always holds the roof beam's far end down;
+                // its pull rises with the load's Z-eccentricity (torsion on the box).
+                const kT = 1.0 + Math.abs(boxTorque()) * 0.5;
+                s += (kT > 1.08)
+                    ? ` &middot; tie pull &times;${Math.min(kT, 2.6).toFixed(1)}`
+                    : ' &middot; tie pretensioned';
+            }
+            el.innerHTML = s;
+        }
+
+        function updateForceArrowsDynamic() {
+            const { RL, RC } = shareReactions(liveLoadX);
+            // a support that has lifted off (reaction <= 0) collapses its up-arrows
+            const kC = RC <= 0 ? 0.04 : THREE.MathUtils.clamp(RC / REACT_BASE.RC, 0.30, 2.2);
+            const kL = RL <= 0 ? 0.04 : THREE.MathUtils.clamp(RL / REACT_BASE.RL, 0.30, 2.2);
+            if (cylinderArrow) cylinderArrow.setLength(ARROW_BASE.cyl * kC, 1.2, 0.75);
+
+            // split the courtyard-wall reaction between its two ends by the load's Z eccentricity
+            const ecc = THREE.MathUtils.clamp((liveLoadZ - (-19.345)) / 5.4, -1, 1); // + = south
+            const fS = 1.0 + 0.7 * ecc, fN = 1.0 - 0.7 * ecc;
+            if (lframeArrowN) lframeArrowN.setLength(ARROW_BASE.lfN * kL * fN, 1.1, 0.65);
+            if (lframeArrowS) lframeArrowS.setLength(ARROW_BASE.lfS * kL * fS, 1.1, 0.65);
+
+            // the tie carries the box's Z-eccentric (torsional) demand — not the west lever
+            const kT = THREE.MathUtils.clamp(1.0 + Math.abs(boxTorque()) * 0.5, 0.3, 2.6);
+            if (tensionArrow) {
+                tensionArrow.setLength(ARROW_BASE.cable * kT, 1.2 * Math.min(kT, 1.4), 0.3 * Math.min(kT, 1.4));
+                tensionArrow.setColor(new THREE.Color(kT > 1.4 ? 0xff2a2a : 0xe74c3c));
+            }
+
+            lastNet = momentBalance().net;   // drives the pitch in animate()
+            writeReadout(RL, RC);
+        }
+
+        // East courtyard facade: glass window wall (the courtyard end is glazed, not concrete)
+        const glassGroup = new THREE.Group();
+        const glassGeo = new THREE.PlaneGeometry(10.85, 3.20);
+        glassGeo.rotateY(Math.PI / 2); // Orient facing X axis
+        glassGeo.translate(29.59, 4.05, -19.345);
+        const glassMat = new THREE.MeshBasicMaterial({
+            color: 0xa9b1b6,
+            transparent: true,
+            opacity: 0.30,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+        glassGroup.add(glassMesh);
+
+        // Glass mullion frame lines (4 sliding panes)
+        const mullionMat = new THREE.LineBasicMaterial({ color: 0x2c3e50, transparent: true, opacity: 0.55 });
+        for (let mz of [-24.767, -22.056, -19.345, -16.634, -13.918]) {
+            const mGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(29.59, 2.45, mz),
+                new THREE.Vector3(29.59, 5.65, mz)
+            ]);
+            glassGroup.add(new THREE.Line(mGeo, mullionMat));
+        }
+        const hRailGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(29.59, 2.45, -24.767),
+            new THREE.Vector3(29.59, 2.45, -13.918),
+            new THREE.Vector3(29.59, 5.65, -13.918),
+            new THREE.Vector3(29.59, 5.65, -24.767),
+            new THREE.Vector3(29.59, 2.45, -24.767)
+        ]);
+        glassGroup.add(new THREE.Line(hRailGeo, mullionMat));
+
+        glassGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
+        seesawGroup.add(glassGroup);
+
+        // (item 3: pink top-surface load-vector grid removed — it duplicated the amber
+        //  distributed-load arrows shown in Load-path mode)
+
+        // Subtle Neutral Axis (N.A.) dashed guide line along Y = 4.05
+        for (let z of [-13.918, -24.767]) {
+            const naGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(5.054, 4.05, z),
+                new THREE.Vector3(29.590, 4.05, z)
+            ]);
+            const naMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.75 });
+            const naLine = new THREE.Line(naGeo, naMat);
+            naLine.computeLineDistances();
+            deepBeamStressGroup.add(naLine);
+        }
+
+        // FEA colour-scale bar visibility follows the "Stress field" view mode
+        const feaColorBar = document.getElementById('feaColorBar');
+        function setDeepBeamVisibility(visible) {
+            deepBeamStressGroup.visible = visible;
+            portholeGroup.visible = !visible;   // FEA membranes carry the portholes in Stress view
+            if (feaColorBar) feaColorBar.style.display = visible ? 'flex' : 'none';
+        }
+
+        // --- Interactive Simulation: Cable Cut & Equilibrium ---
+        let isCableCut = false;
+        let currentTilt = 0.0;
+        let currentTwist = 0.0;   // torsional roll about the box's long (X) axis
+
+        // Torsional moment on the box from the live load's Z-eccentricity off the spine.
+        // Weighted by X-position: strongest near the free cantilever, resisted near the
+        // L-frame (which provides the torsional restraint). Illustrative units.
+        function boxTorque() {
+            if (typeof liveLoadP === 'undefined' || !liveLoadP) return 0;
+            const eccZ = liveLoadZ - (-19.345);                       // m off the spine
+            const w = THREE.MathUtils.clamp((26.40 - liveLoadX) / 20.0, 0.15, 1.35);
+            return liveLoadP * eccZ * w;
+        }
+
+        const cutCableBtn = document.getElementById('cutCableBtn');
+
+        // View radio — Solid (plain) / Load path / Stress field
+        const vmPlain = document.getElementById('vmPlain');
+        const vmLoad = document.getElementById('vmLoad');
+        const vmStress = document.getElementById('vmStress');
+        function currentMode() { return vmStress.checked ? 'stress' : (vmPlain.checked ? 'plain' : 'load'); }
+        function applyViewMode() {
+            const m = currentMode();
+            const showForces = (m === 'load');
+            // "Solid (plain — no force lines)" means exactly that: every force graphic
+            // (reaction arrows, self-weight rain, tie pull, the live readout) lives in
+            // the Load-path view, where the simulator runs live.
+            forceGroup.visible = showForces;
+            boxLoadsGroup.visible = showForces;
+            if (tensionArrow) tensionArrow.visible = showForces && !isCableCut;
+            document.getElementById('simReadout').style.visibility = showForces ? '' : 'hidden';
+            setDeepBeamVisibility(m === 'stress');
+            applyMemberStyle();
+        }
+        [vmPlain, vmLoad, vmStress].forEach(r => r.addEventListener('change', applyViewMode));
+
+        // item 2: Crowd + Wine controls
+        const lmCrowdBtn = document.getElementById('lmCrowdBtn');
+        const lmWineBtn = document.getElementById('lmWineBtn');
+        const crowdCtl = document.getElementById('crowdCtl');
+        const wineCtl = document.getElementById('wineCtl');
+        const crowdNSlider = document.getElementById('crowdNSlider');
+        const crowdNLabel = document.getElementById('crowdNLabel');
+        const winePlayBtn = document.getElementById('winePlayBtn');
+        const wineSlider = document.getElementById('wineSlider');
+        const wineLabel = document.getElementById('wineLabel');
+
+        function pushLoad(rebuildFEA) {
+            refreshLoad();
+            if (rebuildFEA && currentMode() === 'stress') updateFEAMembranes();
+            updateForceArrowsDynamic();
+            reallocParticles();
+        }
+
+        crowdNSlider.addEventListener('input', (e) => {
+            crowdCount = parseInt(e.target.value, 10);
+            crowdNLabel.textContent = `${crowdCount} people`;
+            targetRing.visible = (loadMode === 'crowd' && crowdCount > 0);
+            pushLoad(true);
         });
 
-        window.addEventListener('resize', () => {
-            const aspect = container.clientWidth / container.clientHeight;
+        wineSlider.addEventListener('input', (e) => {
+            wineRunning = false;
+            winePlayBtn.innerHTML = '<span>Pour the wine</span>';
+            wineLevel = parseInt(e.target.value, 10) / 100;
+            wineLabel.textContent = `${Math.round(wineLevel * 100)}%`;
+            pushLoad(true);
+        });
+        winePlayBtn.addEventListener('click', () => {
+            wineRunning = !wineRunning;
+            winePlayBtn.innerHTML = `<span>${wineRunning ? 'Pause' : 'Pour the wine'}</span>`;
+        });
+
+        function applyLoadMode() {
+            crowdCtl.hidden = (loadMode !== 'crowd');
+            wineCtl.hidden = (loadMode !== 'wine');
+            lmCrowdBtn.classList.toggle('active', loadMode === 'crowd');
+            lmWineBtn.classList.toggle('active', loadMode === 'wine');
+            MD.on = (loadMode === 'crowd');   // maid rides along with the tourists
+            if (loadMode === 'wine') { initWine(); }
+            else { wineRunning = false; winePlayBtn.innerHTML = '<span>Pour the wine</span>'; }
+            applyMemberStyle();          // glass tint on / off
+            pushLoad(true);
+        }
+        lmCrowdBtn.addEventListener('click', () => { loadMode = 'crowd'; applyLoadMode(); });
+        lmWineBtn.addEventListener('click', () => { loadMode = 'wine'; applyLoadMode(); });
+
+        cutCableBtn.addEventListener('click', () => {
+            isCableCut = !isCableCut;
+            if (isCableCut) {
+                cutCableBtn.querySelector('span').textContent = 'Restore tension cable';
+                cutCableBtn.classList.add('restored');
+                if (tensionArrow) tensionArrow.visible = false;
+                if (meshWireframes['Mesh2']) {
+                    meshWireframes['Mesh2'].material = new THREE.LineDashedMaterial({
+                        color: 0xff3333,
+                        dashSize: 0.6,
+                        gapSize: 0.4
+                    });
+                    meshWireframes['Mesh2'].computeLineDistances();
+                }
+            } else {
+                cutCableBtn.querySelector('span').textContent = 'Cut tension cable';
+                cutCableBtn.classList.remove('restored');
+                if (tensionArrow) tensionArrow.visible = (currentMode() === 'load');
+                applyMemberStyle();
+            }
+            updateForceArrowsDynamic();
+            reallocParticles();
+        });
+
+        // Reset — clear the whole simulation back to the plain, unloaded building
+        function resetSimulator() {
+            if (isCableCut) cutCableBtn.click();          // restore the cable
+            crowdNSlider.value = 0;
+            crowdCount = 0;
+            crowdNLabel.textContent = '0 people';
+            targetRing.visible = false;
+            wineRunning = false;
+            winePlayBtn.innerHTML = '<span>Pour the wine</span>';
+            wineSlider.value = 0;
+            wineLevel = 0;
+            wineLabel.textContent = '0%';
+            if (loadMode === 'wine') initWine();
+            resetBarrels();
+            liveLoadP = 0;
+            pushLoad(true);
+        }
+        document.getElementById('resetSimBtn').addEventListener('click', resetSimulator);
+
+        // members render SOLID by default; ticking "colour by force type" switches them
+        // to the coloured wireframe. The concrete box fades to a faint wireframe in
+        // Stress-field view so the FEA field reads clean.
+        const SOLID_MAT = {
+            Mesh1: { color: 0x9aa2ab, opacity: 0.95 }, // L-frame — steel grey
+            Mesh3: { color: 0xd93025, opacity: 0.98 }, // I-beam — red
+            Mesh5: { color: 0x9aa2ab, opacity: 0.95 }, // cylinder — steel grey
+            Mesh6: { color: 0xded9cf, opacity: 0.30 }  // concrete box — translucent, core reads through
+        };
+        const SOLID_KEYS = ['Mesh1', 'Mesh3', 'Mesh5', 'Mesh6'];
+        const solidEdgeMat = new THREE.LineBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.5 });
+        const isolateEdgeMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+
+        function styleOne(k, kind) {
+            // kind: 'solid' | 'wire' | 'faint'
+            const mesh = meshObjects[k], wf = meshWireframes[k];
+            if (!mesh || !wf) return;
+            if (isCableCut && k === 'Mesh2') return; // keep the cut-cable dashed look
+            if (kind === 'solid' && SOLID_KEYS.includes(k)) {
+                if (!mesh.material.isMeshBasicMaterial) {
+                    mesh.material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+                }
+                mesh.material.color.setHex(SOLID_MAT[k].color);
+                mesh.material.opacity = SOLID_MAT[k].opacity;
+                mesh.material.depthWrite = SOLID_MAT[k].opacity > 0.6;
+                mesh.material.visible = true;
+                wf.visible = true;
+                wf.material = solidEdgeMat;
+            } else {
+                mesh.material.visible = false;
+                wf.visible = true;
+                wf.material = (kind === 'faint')
+                    ? faintMat
+                    : (currentMode() === 'load' && forceMaterials[k] ? forceMaterials[k] : defaultWireframeMaterial);
+            }
+        }
+
+        function applyMemberStyle() {
+            const mode = currentMode();
+            const byForce = (mode === 'load');   // Load-path view = colour members by force type
+            const keep = isolated ? new Set(elMap[isolated].meshes) : null;
+
+            // decoration that is not a list element: show it only when nothing is
+            // isolated (portholes belong to the box, so keep them for element 1)
+            const inStress = (mode === 'stress');
+            portholeGroup.visible = !inStress && (!keep || isolated === '1');
+            glassGroup.visible = !keep;
+            steppedSiteGroup.visible = !keep;
+
+            Object.keys(meshWireframes).forEach(k => {
+                if (k === 'Mesh4') return;
+                if (keep) {
+                    styleOne(k, keep.has(k) ? 'solid' : 'faint');
+                    if (keep.has(k)) meshWireframes[k].material = isolateEdgeMat;
+                    return;
+                }
+                let kind = 'solid';
+                if (byForce) kind = 'wire';
+                else if (k === 'Mesh6' && mode === 'stress') kind = 'faint'; // box recedes so the FEA field pops
+                styleOne(k, kind);
+            });
+
+            // glassy box in Wine mode so the sloshing fluid reads through it
+            if (!keep && !byForce && mode !== 'stress' && loadMode === 'wine' && meshObjects['Mesh6']) {
+                const m = meshObjects['Mesh6'].material;
+                m.color.setHex(0xc4cace);
+                m.opacity = 0.14;
+                m.depthWrite = false;
+                m.visible = true;
+                meshWireframes['Mesh6'].material = new THREE.LineBasicMaterial({ color: 0x9aa1a6, transparent: true, opacity: 0.7 });
+            }
+        }
+
+        applyMemberStyle();
+
+        // Load-path view carries the story with the colour-by-force wireframe members
+        // + the amber self-weight arrows + the reaction arrows. No separate flow diagram.
+        // Stubs kept because animate() / pushLoad() / the cut-cable handler call them.
+        function updateRoute() {}
+        function updateParticles() {}
+        function reallocParticles() {}
+
+        function resizeRenderer() {
+            const w = container.clientWidth, h = container.clientHeight;
+            if (!w || !h) return;
+            const aspect = w / h;
             camera.left = -d * aspect;
             camera.right = d * aspect;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            labelRenderer.setSize(container.clientWidth, container.clientHeight);
-        });
+            renderer.setSize(w, h);
+        }
+        window.addEventListener('resize', resizeRenderer);
+        // the canvas container is flex-sized; make sure we pick up its resolved size
+        resizeRenderer();
+        requestAnimationFrame(resizeRenderer);
+        new ResizeObserver(resizeRenderer).observe(container);
+
+        const _clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
-            controls.update(); 
+            controls.update();
+            const dt = Math.min(_clock.getDelta(), 0.05);
+
+            // crowd: walk toward the pointer target (fleeing the maid), feed the moving centroid to the model
+            if (loadMode === 'crowd') {
+                stepMaid(dt);
+                stepCrowd(dt);
+                refreshLoad();
+                updateForceArrowsDynamic();
+                if (currentMode() === 'stress' && (crowdFrame++ & 7) === 0) updateFEAMembranes();
+                reallocParticles();
+            }
+
+            // wine flood — shallow-water slosh; the box tilt is a floor slope in the sim,
+            // so the fluid runs downhill and its moving centroid drives the overturn feedback.
+            if (loadMode === 'wine') {
+                if (wineRunning && wineLevel < 1) {
+                    wineLevel = Math.min(1, wineLevel + 0.0012);
+                    wineSlider.value = Math.round(wineLevel * 100);
+                    wineLabel.textContent = `${Math.round(wineLevel * 100)}%`;
+                    if (wineLevel >= 1) { wineRunning = false; winePlayBtn.innerHTML = '<span>Pour the wine</span>'; }
+                }
+                stepWine(dt);
+                stepBarrels(dt);
+                updateForceArrowsDynamic();
+                if ((wineFrame++ & 7) === 0 && currentMode() === 'stress') updateFEAMembranes();
+                reallocParticles();
+            }
+
+            // PITCH about the long axis — signed: + west end down, - east end down.
+            // Only once a gravity support unloads (momentBalance.net). Tie-independent.
+            const targetTilt = THREE.MathUtils.clamp(0.11 * lastNet, -0.40, 0.40)
+                // wine mode: the deep beam visibly sags under the fluid weight FIRST,
+                // so the pool follows the box down (surface never leads the tilt).
+                + (loadMode === 'wine' ? THREE.MathUtils.clamp(0.10 * wineLevel * wineLevel, 0, 0.14) : 0);
+            currentTilt += (targetTilt - currentTilt) * 0.06;
+
+            // ROLL about the long axis. Intact, the pretensioned tie + the full-depth
+            // courtyard wall make the box torsionally stiff — a Z-eccentric crowd barely
+            // leans it (gain 0.004, cap ~1.1 deg). Cut the tie and that restraint is gone
+            // at the west end (only the cylinder point there): the gain jumps ~14x and the
+            // box keels hard toward the loaded edge.
+            const rollGain = isCableCut ? 0.055 : 0.004;
+            const rollCap  = isCableCut ? 0.45  : 0.02;
+            const targetTwist = THREE.MathUtils.clamp(boxTorque() * rollGain, -rollCap, rollCap);
+            currentTwist += (targetTwist - currentTwist) * 0.06;
+
+            seesawGroup.rotation.z = currentTilt;                     // pitch (+ west end down, - east end down)
+            seesawGroup.rotation.x = currentTwist;                    // roll about the long axis
+            seesawGroup.position.y = PIVOT_Y - Math.abs(currentTilt) * 1.5 + Math.abs(currentTwist) * 0.6;  // pitch sinks / roll lifts
+
+            updateRoute();
+            updateParticles();
+
             renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
         }
-        
+
+        // initial state
+        applyLoadMode();
+        applyViewMode();
+        updateForceArrowsDynamic();
+
         animate();
     </script>
 </body>
