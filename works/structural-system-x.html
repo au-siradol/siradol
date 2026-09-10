@@ -3,27 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axonometric Structural System (Mixed Load Paths)</title>
+    <title>Architecture Office — A Misleading Load Path</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #111;
-            margin: 0;
-            padding: 0 24px 24px;
+            background-color: #f4f4f4; color: #111; margin: 0; padding: 0 24px 24px;
         }
         .study-bar {
-            max-width: 1100px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 14px 0 8px 0;
-            border-bottom: 1px solid #111;
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            box-sizing: border-box;
+            max-width: 1100px; width: 100%; margin: 0 auto;
+            padding: 14px 0 8px 0; border-bottom: 1px solid #111;
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; box-sizing: border-box;
         }
         .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
         .study-bar a:hover { color:#1976d2; }
@@ -35,129 +25,56 @@
         .study-bar .titleline .sub { color:#666; font-weight:normal; }
 
         .canvas-container {
-            max-width: 1100px;
-            margin: 16px auto 0;
-            border-bottom: 1px dashed #aaa;
-            padding-bottom: 15px;
-            position: relative;
+            max-width: 1100px; margin: 16px auto 0;
+            border-bottom: 1px dashed #aaa; padding-bottom: 15px; position: relative;
         }
-        canvas { 
-            display: block; 
-            width: 100%; 
-            background: #ffffff; 
-            border: 1px solid #eaeaea;
+        canvas#simCanvas {
+            display: block; width: 100%; aspect-ratio: 110 / 62; height: auto;
+            background: #ffffff; border: 1px solid #eaeaea;
+            cursor: grab; touch-action: none;
+        }
+        canvas#simCanvas.dragging { cursor: grabbing; }
+        canvas.scalebar { position: absolute; right: 10px; bottom: 24px; pointer-events: none; }
+        .reading-switch { display: inline-flex; gap: 12px; }
+        .reading-switch button {
+            border: 1px solid #111; background: #fff; cursor: pointer; box-sizing: border-box;
+            width: 78px; min-height: 53px; padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            font: inherit; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #111;
+        }
+        .reading-switch button.active { background: #111; color: #fff; }
+        .view-hint {
+            position: absolute; bottom: 22px; left: 10px;
+            font-size: 9px; color: #bbb; letter-spacing: 0.4px;
         }
 
-        #status-text {
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .info-text { color: #1976d2; }
-        .danger-text { color: #d32f2f; }
-
-        /* ---- compact horizontal control strip ---- */
         .controls-strip {
-            max-width: 1100px;
-            margin: 14px auto 0;
-            padding-top: 12px;
-            border-top: 1px dashed #aaa;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            font-size: 11px;
-            line-height: 1.5;
+            max-width: 1100px; margin: 14px auto 0; padding-top: 12px;
+            border-top: 1px dashed #aaa; display: flex; flex-direction: column;
+            gap: 18px; font-size: 11px; line-height: 1.5;
         }
-        .strip-row { display: flex; align-items: flex-start; gap: 0; }
-        .strip-row.halves .cluster { flex: 1 1 0; }
-        .strip-row.full .cluster { flex: 1 1 auto; }
-
+        .strip-row { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; }
         .cluster {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-right: 24px;
-            margin-right: 24px;
-            border-right: 1px solid #ccc;
-            min-width: 0;
+            display: flex; flex-direction: column; gap: 8px;
+            padding-right: 24px; margin-right: 24px; border-right: 1px solid #ccc;
+            min-width: 0; flex: 1 1 260px;
         }
         .cluster:last-child { border-right: none; padding-right: 0; margin-right: 0; }
-        .cluster-desc {
-            font-size: 9.5px;
-            color: #999;
-            line-height: 1.4;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .cluster-label {
-            margin-top: 0; font-size: 8.5px; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 0.8px; color: #333;
-            border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 2px;
-        }
-        .cluster-fields { display: flex; flex-wrap: wrap; gap: 12px 16px; }
+        .cluster-fields { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
 
-        .field { width: 100px; flex: none; }
-        .field.wide { width: 180px; }
-        .field label {
-            display: flex; justify-content: space-between; align-items: baseline;
-            font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; color: #777;
-            margin-bottom: 3px; white-space: nowrap; overflow: hidden;
+        .reading-switch button svg { width: 12px; height: 12px; vertical-align: -2px; margin-right: 5px; }
+        button.glass {
+            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; width: 78px; min-height: 53px; padding: 4px 0; border: 1px solid #111;
+            box-sizing: border-box; background: #fff; color: #111; cursor: pointer; font: inherit; line-height: 1;
         }
-        .field .val { font-family: monospace; color: #111; font-weight: bold; font-size: 9.5px; flex: none; margin-left: 4px; }
-
-        .control-row { margin-bottom: 12px; }
-        label { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .val { font-family: monospace; color: #555; font-weight: bold;}
-
-        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
-        input[type="range"]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px; 
+        button.glass .lbl {
+            font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px;
+            color: #c4c4c4; transition: color .35s ease;
         }
-        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
-        select { width: 100%; padding: 4px; font-family: inherit; font-size: 11px; background: transparent; border: 1px solid #999; border-radius: 0; }
-        
-        .hidden { display: none !important; }
-        
-        .auto-calc-box {
-            background: #fdfdfd;
-            border: 1px solid #ddd;
-            padding: 7px 8px;
-            border-radius: 4px;
-            width: 100%;
-            font-size: 9.5px;
-        }
-        .auto-calc-box label {
-            margin-bottom: 0;
-            color: #333;
-            font-weight: bold;
-            font-size: 9.5px;
-        }
-        .auto-calc-box .val {
-            color: #111;
-            font-size: 9.5px;
-        }
-        .warning-box {
-            background: #ffebee;
-            border-color: #ef9a9a;
-        }
-        .warning-box label {
-            color: #c62828;
-        }
-
-        .floor-control-group {
-            background: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 8px;
-            border-radius: 4px;
-            width: 100%;
-            font-size: 9.5px;
-        }
-        .floor-control-group .control-row { margin-bottom: 6px; }
-        .floor-control-group .control-row:last-child { margin-bottom: 0; }
+        button.glass .lbl.on { color: #111; }
+        button.glass .hg { width: 15px; height: 15px; display: block; }
+        button.glass:hover { background: #fafafa; }
     </style>
 </head>
 <body>
@@ -166,630 +83,866 @@
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
             <span class="idx">02</span>
-            <span class="titleline"><b>Axonometric Structural System</b><span class="sep">&mdash;</span><span class="sub">Mixed Load Paths: Interlaced Tension &amp; Compression</span></span>
+            <span class="titleline"><b>Architecture Office</b><span class="sep">&mdash;</span><span class="sub">Pascal Flammer &middot; measured off the 1:200 set</span></span>
         </span>
     </div>
 
     <div class="canvas-container">
-        <canvas id="simCanvas" width="1100" height="560"></canvas>
-        <div id="status-text" class="info-text">Rendering Structural System...</div>
+        <canvas id="simCanvas" width="1100" height="620"></canvas>
+        <div class="view-hint">drag to orbit &middot; wheel to zoom &middot; shift-drag to pan &middot; double-click to reset</div>
     </div>
 
     <div class="controls-strip">
-        <div class="strip-row full">
+        <div class="strip-row">
             <div class="cluster">
-                <div class="cluster-label">Floor Plate &amp; Spacing</div>
-                <div class="cluster-desc">Storey count, height, plan size and max column span.</div>
                 <div class="cluster-fields">
-                    <div class="field">
-                        <label>Floors <span id="val-numFloors" class="val">3</span></label>
-                        <input type="range" id="numFloors" min="1" max="6" step="1" value="3">
-                    </div>
-                    <div class="field">
-                        <label>Height <span id="val-floorHeight" class="val">4.5m</span></label>
-                        <input type="range" id="floorHeight" min="3.0" max="6.0" step="0.5" value="4.5">
-                    </div>
-                    <div class="field">
-                        <label>Width X <span id="val-plateWidth" class="val">25.0m</span></label>
-                        <input type="range" id="plateWidth" min="10" max="50" step="1" value="25">
-                    </div>
-                    <div class="field">
-                        <label>Depth Z <span id="val-plateDepth" class="val">15.0m</span></label>
-                        <input type="range" id="plateDepth" min="10" max="50" step="1" value="15">
-                    </div>
-                    <div class="field">
-                        <label>Max Span <span id="val-maxSpan" class="val">8.0m</span></label>
-                        <input type="range" id="maxSpan" min="4" max="15" step="1" value="8">
-                    </div>
-                    <div class="field" style="width:220px;">
-                        <div class="auto-calc-box" id="slabThickBox">
-                            <label>Max Slab Thickness <span id="val-slabThick" class="val">0.83 m</span></label>
-                            <label style="margin-top:4px; font-weight:normal; color:#555;">Edge Slab Thickness <span id="val-edgeThick" class="val">0.20 m</span></label>
+                    <div class="field" style="width:auto;">
+                        <div class="reading-switch" id="mode">
+                            <button data-m="asbuilt" class="active" type="button">As built</button>
+                            <button data-m="xray" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="14" r="3.5"/><circle cx="17.5" cy="14" r="3.5"/><path d="M10 13.5c1-1 3-1 4 0M3 11l2.5-4.5h2M21 11l-2.5-4.5h-2"/></svg>X-ray</button>
                         </div>
                     </div>
-                    <div id="clearanceWarning" class="field hidden" style="width:260px;">
-                        <div class="auto-calc-box warning-box">
-                            <label>LOW CLEARANCE WARNING</label>
-                            <p style="color:#c62828; font-size:9.5px; margin-top:4px; margin-bottom:0;">
-                                Clearance (<span id="val-clearance" class="val" style="color:#c62828"></span>) is below 2.5 m.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="strip-row halves">
-            <div class="cluster">
-                <div class="cluster-label">Hollow Concrete Core</div>
-                <div class="cluster-desc">Core footprint as a percentage of the floor plate.</div>
-                <div class="cluster-fields">
-                    <div class="field">
-                        <label>Width % <span id="val-coreWidthPct" class="val">20%</span></label>
-                        <input type="range" id="coreWidthPct" min="5" max="50" step="5" value="20">
-                    </div>
-                    <div class="field">
-                        <label>Depth % <span id="val-coreDepthPct" class="val">20%</span></label>
-                        <input type="range" id="coreDepthPct" min="5" max="50" step="5" value="20">
-                    </div>
-                    <div class="field" style="width:100%;">
-                        <div class="auto-calc-box" style="background: #fafafa;">
-                            <label style="color:#333;">Core Wall Thickness <span class="val">0.30 m</span></label>
-                            <p style="color:#777; font-size:9.5px; margin-top:4px; margin-bottom:0; font-weight:normal;">Hollow concrete tube spanning all floors.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="cluster">
-                <div class="cluster-label">Perimeter Supports</div>
-                <div class="cluster-desc">Per-floor support strategy, assigned top to bottom.</div>
-                <div class="cluster-fields">
-                    <div class="field wide">
-                        <label>Corner Support</label>
-                        <select id="cornerSupport" onchange="updateSimulation()">
-                            <option value="compression">Compression at Corners</option>
-                            <option value="tension">Tension at Corners</option>
-                        </select>
-                    </div>
-                    <div class="field" style="width:100%;">
-                        <div id="floorSupportControls" class="floor-control-group">
-                            <!-- Dynamically populated via JS -->
-                        </div>
-                    </div>
-                    <div id="colSizeContainer" class="field hidden" style="width:100%;">
-                        <div class="auto-calc-box">
-                            <label>Column Section Size <span id="val-colSize" class="val">0.60 x 0.60 m</span></label>
-                            <label style="margin-top:4px; font-weight:normal; color:#555;">Active Compression Columns <span id="val-colCount" class="val">0</span></label>
-                        </div>
-                    </div>
-                    <div id="tensionInfoContainer" class="field hidden" style="width:100%;">
-                        <div class="auto-calc-box" style="border-color: #666;">
-                            <label style="color: #333;">Tension Mode Active</label>
-                            <p style="color:#555; font-size:9.5px; margin-top:4px; margin-bottom:0;">Cables tie back directly to core at top level.</p>
-                            <label style="margin-top:4px; font-weight:normal; color:#333;">Active Suspension Cables <span id="val-tensionCount" class="val">0</span></label>
-                        </div>
-                    </div>
-                    <div id="failureInfoContainer" class="field hidden" style="width:100%;">
-                        <div class="auto-calc-box warning-box">
-                            <label>STRUCTURAL FAILURE</label>
-                            <p style="color:#c62828; font-size:9.5px; margin-top:4px; margin-bottom:0;">One or more floors lack support — cantilever exceeds limits.</p>
-                        </div>
+                    <div class="field" style="width:auto;">
+                        <button class="glass" id="glassBtn" type="button" title="the shadow keeps turning from one reading to the other — click to hold it" aria-label="pause or resume the shadow">
+                            <span class="lbl top">Greek</span>
+                            <svg class="hg" viewBox="0 0 24 24">
+                                <path d="M6 3h12M6 21h12M6 3 12 12 6 21M18 3 12 12 18 21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                <path class="sand" d="M8.5 6h7L12 11.5z" fill="currentColor"/>
+                            </svg>
+                            <span class="lbl bot">Dom-ino</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+
+        /* ============================================================
+           MEASURED CONSTANTS  (A4 @300dpi, group scale 300/72 -> units
+           are PostScript points, plotted at 1:200. The stair fixes the
+           scale: going 0.279, riser 0.179, 2R+G = 0.637.)
+           ============================================================ */
+        const REAL = {
+            numFloors: 3, numBelow: 0,
+            floorHeight: 3.04, plateWidth: 22.18, plateDepth: 11.64,
+            slabThick: 0.237, postSize: 0.22,
+            roofEdge: 0.423, roofRise: 0.720,
+            coreLen: 12.21, coreDep: 1.744, coreWall: 0.271,
+            going: 0.279, riser: 0.179, wallThick: 0.227, wallRun: 4.06
+        };
+        // Ground posts mid-side, first floor at the corners, top floor mid-side
+        // again, so no post lands on the one below it. Ground bears; everything
+        // above is hung, with the mid-points of the long sides kept as the one
+        // real compression prop among the disguised posts.
+        function floorsFor(n) {
+            const out = [];
+            for (let i = 0; i < n; i++) out.push({ pos: i % 2 ? 'corner' : 'mid', role: i === 0 ? 'strut' : 'tie' });
+            return out;
+        }
+        const PROP_KIND = 'long';
+
+        const sub  = (a,b) => ({ x:a.x-b.x, y:a.y-b.y, z:a.z-b.z });
+        const cross= (a,b) => ({ x:a.y*b.z-a.z*b.y, y:a.z*b.x-a.x*b.z, z:a.x*b.y-a.y*b.x });
+        const dot  = (a,b) => a.x*b.x + a.y*b.y + a.z*b.z;
+        const norm = a => { const l = Math.hypot(a.x,a.y,a.z) || 1; return { x:a.x/l, y:a.y/l, z:a.z/l }; };
+
+        function postsAt(pos, p) {
+            const W = p.plateWidth, D = p.plateDepth, h = p.postSize / 2;
+            if (pos === 'corner') return [
+                { x:-W/2+h, z:-D/2+h, k:'corner' }, { x: W/2-h, z:-D/2+h, k:'corner' },
+                { x: W/2-h, z: D/2-h, k:'corner' }, { x:-W/2+h, z: D/2-h, k:'corner' }];
+            return [
+                { x:0, z:-D/2+h, k:'long' }, { x:0, z:D/2-h, k:'long' },
+                { x:-W/2+h, z:0, k:'short' }, { x:W/2-h, z:0, k:'short' }];
+        }
+        function realRole(floor, post) {
+            if (floor.role !== 'tie') return floor.role;
+            return post.k === PROP_KIND ? 'strut' : 'tie';
+        }
+
+        /* ============================================================
+           GEOMETRY  — unchanged: produces flat triangles with a face
+           normal, plus annotation lines for the X-ray force diagram.
+           ============================================================ */
+        const C = { mode: 'asbuilt' };
+
+        function build(p, risers) {
+            const tris = [], lines = [];
+            const xray = C.mode === 'xray';
+            const W = p.plateWidth, D = p.plateDepth, fh = p.floorHeight, S = p.postSize;
+            const cl = Math.min(p.coreLen, W - 1), cd = Math.min(p.coreDep, D - 1);
+            const cwall = Math.min(p.coreWall, cd/2 - 0.05);
+            const topY = p.numFloors * fh, botY = -p.numBelow * fh;
+
+            function quad(a, b, c, d, ref, tint) {
+                const n = norm(cross(sub(b, a), sub(c, a)));
+                let two = true;
+                if (ref) { two = false; if (dot(n, sub(a, ref)) < 0) { n.x=-n.x; n.y=-n.y; n.z=-n.z; } }
+                tris.push({ p:[a,b,c], n, two, tint });
+                tris.push({ p:[a,c,d], n, two, tint });
+            }
+            function box(cx, cy, cz, w, h, d, tint) {
+                const r = { x:cx, y:cy+h/2, z:cz };
+                const A={x:cx-w/2,y:cy,z:cz-d/2}, B={x:cx+w/2,y:cy,z:cz-d/2},
+                      G={x:cx+w/2,y:cy,z:cz+d/2}, H={x:cx-w/2,y:cy,z:cz+d/2},
+                      E={x:cx-w/2,y:cy+h,z:cz-d/2},F={x:cx+w/2,y:cy+h,z:cz-d/2},
+                      I={x:cx+w/2,y:cy+h,z:cz+d/2}, J={x:cx-w/2,y:cy+h,z:cz+d/2};
+                quad(A,H,J,E,r,tint); quad(B,G,I,F,r,tint); quad(A,B,F,E,r,tint);
+                quad(H,G,I,J,r,tint); quad(E,F,I,J,r,tint); quad(A,B,G,H,r,tint);
+            }
+            function wall(x1, z1, x2, z2, y0, y1, t, tint) {
+                const dx = x2-x1, dz = z2-z1, L = Math.hypot(dx, dz) || 1;
+                const nx = -dz/L*t/2, nz = dx/L*t/2;
+                const A={x:x1+nx,y:y0,z:z1+nz}, B={x:x2+nx,y:y0,z:z2+nz},
+                      Cq={x:x2-nx,y:y0,z:z2-nz}, Dq={x:x1-nx,y:y0,z:z1-nz};
+                const E={x:A.x,y:y1,z:A.z}, F={x:B.x,y:y1,z:B.z},
+                      G={x:Cq.x,y:y1,z:Cq.z}, H={x:Dq.x,y:y1,z:Dq.z};
+                const r = { x:(x1+x2)/2, y:(y0+y1)/2, z:(z1+z2)/2 };
+                quad(A,B,F,E,r,tint); quad(B,Cq,G,F,r,tint); quad(Cq,Dq,H,G,r,tint);
+                quad(Dq,A,E,H,r,tint); quad(E,F,G,H,r,tint); quad(A,B,Cq,Dq,r,tint);
+            }
+            const line = (a,b,color,w,arrow,dashed) => lines.push({a,b,color,w,arrow:!!arrow,dashed:!!dashed});
+
+            // slabs, cut open over the core on every level - except the middle of the
+            // second floor, where the landing between the two stair flights stays solid
+            const flight0 = Math.min((risers - 1) * REAL.going, cl/2 - 0.05);
+            const hz = cd/2 - cwall;                     // clear between the core walls
+            function slab(y, cut) {
+                const yb = y - p.slabThick;
+                const strip = (x0,x1,z0,z1) => {
+                    if (x1 - x0 < 1e-3 || z1 - z0 < 1e-3) return;
+                    box((x0+x1)/2, yb, (z0+z1)/2, x1-x0, p.slabThick, z1-z0, 'slab');
+                };
+                if (!cut) { strip(-W/2, W/2, -D/2, D/2); return; }     // solid plate
+                strip(-W/2, W/2, -D/2, -hz);
+                strip(-W/2, W/2,  hz, D/2);
+                strip(-W/2, -cl/2, -hz, hz);
+                strip( cl/2,  W/2, -hz, hz);
+                if (cut === 'landing') strip(-cl/2 + flight0, cl/2 - flight0, -hz, hz);
+            }
+            // ground floor (and any basement) stays solid over the core; the second
+            // floor keeps its central landing; higher floors are cut fully open
+            for (let i = -p.numBelow; i < p.numFloors; i++)
+                slab(i*fh, i <= 0 ? false : (i === 1 ? 'landing' : true));
+
+            // Core: two long walls, open at the short ends. Read off the three plans:
+            //   floor 1  - both walls solid (the storey-1 opening was pulled back).
+            //   floor 2  - both walls solid, no openings (the stair only passes).
+            //   floor 3  - both walls solid to full height with 0.80 m x 2.0 m door
+            //              openings near the middle: two in the front wall (each side
+            //              of the foyer), one in the back wall (the through door).
+            const y0c = botY - p.slabThick;
+            const s1 = 0, s2 = fh, s3 = 2 * fh, doorH = 2.0;
+            const notch = (a, b, holes) => {   // solid x-spans of [a,b] with holes removed
+                const out = []; let x = a;
+                holes.slice().sort((p, q) => p[0] - q[0]).forEach(([h0, h1]) => {
+                    if (h0 > x) out.push([x, h0]);
+                    x = Math.max(x, h1);
+                });
+                if (b > x) out.push([x, b]);
+                return out;
+            };
+            function coreWall(zc, front) {
+                const spans = (y0, y1) => {
+                    const ym = (y0 + y1) / 2;
+                    if (p.numFloors >= 3 && ym > s3 && ym < s3 + doorH)      // storey 3 doors
+                        return notch(-cl/2, cl/2, front ? [[-1.30, -0.50], [0.50, 1.30]] : [[0.50, 1.30]]);
+                    return [[-cl/2, cl/2]];
+                };
+                const ys = [...new Set([y0c, s1, s2, s3, s3 + doorH, topY])]
+                    .filter(v => v <= topY + 1e-6).sort((a, b) => a - b);
+                for (let k = 0; k < ys.length - 1; k++) {
+                    const ya = ys[k], yb = ys[k+1];
+                    if (yb - ya < 1e-4) continue;
+                    for (const [x0, x1] of spans(ya, yb))
+                        if (x1 - x0 > 1e-4) box((x0 + x1)/2, ya, zc, x1 - x0, yb - ya, cwall, 'core');
+                }
+            }
+            coreWall( cd/2 - cwall/2, true);    // front wall (+z)
+            coreWall(-cd/2 + cwall/2, false);   // back wall (-z)
+
+            // Two stairs. A climbs the whole height as one run travelling left across
+            // the core: a flight at the right end, the landing in the middle, then a
+            // flight at the left end. B is a single flight at the left end from the
+            // ground to the second floor, the same way up as A's upper flight, so it
+            // sits directly beneath it. 4.48 + 3.25 + 4.48 = 12.21 m, the core length.
+            if (p.showStairs) {
+                const clear = cd/2 - cwall;
+                const flight = Math.min((risers - 1) * REAL.going, cl/2 - 0.05);
+                const run = (x0, dir, base) => {
+                    for (let r = 1; r <= risers; r++) {
+                        const y0 = base + (r-1)*fh/risers, y1 = base + r*fh/risers;
+                        const xa = x0 + dir*(r-1)*flight/risers, xb = x0 + dir*r*flight/risers;
+                        box((xa+xb)/2, y1 - 0.04*fh, 0, Math.abs(xb-xa), 0.04*fh, 2*clear, 'stair');
+                        box(xa, y0, 0, 0.03, y1-y0, 2*clear, 'stair');
+                    }
+                };
+                for (let lvl = -p.numBelow; lvl <= p.numFloors - 2; lvl++) {
+                    const atRight = (((lvl % 2) + 2) % 2) === 0;
+                    run(atRight ? cl/2 : -cl/2 + flight, -1, lvl * fh);      // stair A
+                }
+                if (p.numFloors >= 2) run(-cl/2 + flight, -1, 0);            // stair B
+            }
+
+            // Roof: a slab with a FLAT SOFFIT thickest in the middle, both ways. The
+            // top surface is lift(x,z); the crest reaches full crown height out to the
+            // four mid-side posts and drops to the eave only at the corners. Locked to
+            // the measured wedge - the soffit and fascia are solid here, the top
+            // surface is built in three.js as a smooth mesh.
+            const soff = topY - p.roofEdge;
+            const lift = (x, z) => topY + p.roofRise * (1 - Math.abs(2*x/W) * Math.abs(2*z/D));
+            {
+                const above = { x:0, y:topY + 60, z:0 };
+                const midpt = { x:0, y:soff + p.roofEdge/2, z:0 };
+                const S0 = (x,z) => ({ x, y:soff, z });
+                quad(S0(-W/2,-D/2), S0(W/2,-D/2), S0(W/2,D/2), S0(-W/2,D/2), above, 'roof');   // soffit
+                const NX = 16, NZ = 10;
+                for (let i = 0; i < NX; i++) {
+                    const xa = -W/2 + i*W/NX, xb = -W/2 + (i+1)*W/NX;
+                    for (let j = 0; j < NZ; j++) {
+                        const za = -D/2 + j*D/NZ, zb = -D/2 + (j+1)*D/NZ;
+                        const A={x:xa,y:lift(xa,za),z:za}, B={x:xb,y:lift(xb,za),z:za},
+                              Cc={x:xb,y:lift(xb,zb),z:zb}, Dd={x:xa,y:lift(xa,zb),z:zb};
+                        if (j === 0)     quad(S0(xa,za), S0(xb,za), B, A, midpt, 'roof');
+                        if (j === NZ-1)  quad(Dd, Cc, S0(xb,zb), S0(xa,zb), midpt, 'roof');
+                        if (i === 0)     quad(S0(xa,zb), S0(xa,za), A, Dd, midpt, 'roof');
+                        if (i === NX-1)  quad(Cc, B, S0(xb,za), S0(xb,zb), midpt, 'roof');
+                    }
+                }
+                // top-floor partitions, 45 deg in from each corner. They run all the way
+                // to the core (no gap, no vertical seam); a 1.0 m wide x 2.0 m tall door
+                // is cut just short of the core end.
+                const wr = Math.min(REAL.wallRun, W/2 - 0.6, D/2 - 0.6);
+                const baseY = topY - fh - p.slabThick, headY = topY - fh + 2.0, dW = 1.0;
+                const reach = Math.SQRT2 * (D/2 - cd/2);            // corner -> core face along 45 deg
+                [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(c => {
+                    const ux = -c[0]/Math.SQRT2, uz = -c[1]/Math.SQRT2;
+                    const Ax = c[0]*W/2, Az = c[1]*D/2;
+                    const Bx = Ax + ux*wr, Bz = Az + uz*wr;
+                    const bdx = Bx + ux*dW, bdz = Bz + uz*dW;
+                    const Cx = Ax + ux*reach, Cz = Az + uz*reach;
+                    wall(Ax, Az, Bx, Bz, baseY, soff, REAL.wallThick, 'wall');       // measured wall
+                    wall(Bx, Bz, bdx, bdz, headY, soff, REAL.wallThick, 'wall');     // lintel over the 1 m door
+                    if (wr + dW < reach - 0.05)
+                        wall(bdx, bdz, Cx, Cz, baseY, soff, REAL.wallThick, 'wall'); // door -> core, full height
+                });
+            }
+
+            // four posts a floor
+            p.floors.forEach((f, idx) => {
+                const y1 = (idx+1)*fh;
+                postsAt(f.pos, p).forEach(q => {
+                    const role = realRole(f, q);
+                    // sits between the plate below and the one above, buried 20 mm into
+                    // each so its outline stays in the open storey, not on the plates
+                    // top-floor posts stop at the roof soffit, not one storey up
+                    const pB = idx*fh - 0.02;
+                    const pT = (idx === p.numFloors - 1 ? soff : (idx+1)*fh - p.slabThick) + 0.02;
+                    box(q.x, pB, q.z, S, pT - pB, S,
+                        !xray ? 'post' : (role === 'strut' ? 'strut' : 'tieghost'));
+                    if (!xray) return;
+                    if (role === 'strut') {
+                        line({x:q.x,y:y1,z:q.z}, {x:q.x,y:y1-fh*0.55,z:q.z}, 'rgba(211,47,47,0.95)', 2, true);
+                    } else {
+                        const head = topY - (idx === p.floors.length - 1 ? p.slabThick/2 : p.slabThick);
+                        if (head > y1 + 1e-6) line({x:q.x,y:y1,z:q.z}, {x:q.x,y:head,z:q.z}, 'rgba(13,71,161,0.9)', 1.6, false, true);
+                        line({x:q.x,y:y1-fh*0.5,z:q.z}, {x:q.x,y:y1,z:q.z}, 'rgba(25,118,210,0.95)', 2, true);
+                        const ax = q.x < -0.01 ? -cl/2 : (q.x > 0.01 ? cl/2 : 0);
+                        const az = q.z < -0.01 ? -cd/2 : (q.z > 0.01 ? cd/2 : 0);
+                        line({x:q.x,y:head,z:q.z}, {x:ax,y:head,z:az}, 'rgba(230,81,0,0.95)', 2, true);
+                    }
+                });
+            });
+
+            if (p.reveal) {
+                const seen = {};
+                p.floors.forEach(f => postsAt(f.pos, p).forEach(q => { seen[q.x.toFixed(3)+','+q.z.toFixed(3)] = q; }));
+                Object.values(seen).forEach(q => {
+                    line({x:q.x,y:0,z:q.z}, {x:q.x,y:topY,z:q.z}, 'rgba(0,0,0,0.22)', 1, false, true);
+                    p.floors.forEach((f, idx) => {
+                        const here = postsAt(f.pos, p).some(o => Math.abs(o.x-q.x)<1e-6 && Math.abs(o.z-q.z)<1e-6);
+                        const y0 = idx*fh, y1 = (idx+1)*fh, o = S*1.6;
+                        if (here) line({x:q.x+o,y:y0,z:q.z}, {x:q.x+o,y:y1,z:q.z},
+                                       realRole(f,q)==='strut' ? 'rgba(20,120,40,0.95)' : 'rgba(20,90,180,0.95)', 2.6);
+                        else line({x:q.x+o-0.4,y:(y0+y1)/2,z:q.z}, {x:q.x+o+0.4,y:(y0+y1)/2,z:q.z},
+                                  'rgba(211,47,47,0.98)', 2.2);
+                    });
+                });
+            }
+
+            return { tris, lines, topY, W, D, cl, cd, lift };
+        }
+
+        /* ============================================================
+           THREE.JS RENDER
+           ============================================================ */
         const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        const statusText = document.getElementById('status-text');
+        const wrap = canvas.parentElement;
+        const scaleCv = document.createElement('canvas');
+        scaleCv.className = 'scalebar';
+        wrap.appendChild(scaleCv);
+        const sctx = scaleCv.getContext('2d');
 
-        const numFloorsSlider = document.getElementById('numFloors');
-        
-        function renderFloorControls() {
-            const numFloors = parseInt(numFloorsSlider.value);
-            const container = document.getElementById('floorSupportControls');
-            
-            let oldVals = [];
-            const existingSelects = container.querySelectorAll('select');
-            existingSelects.forEach(s => oldVals.push(s.value));
+        const VIEW0 = { yaw: -32, pitch: 26, zoom: 1 };
+        const panW = new THREE.Vector3();                 // pan as a world offset, not screen px
+        const panBasisR = new THREE.Vector3(1, 0, 0), panBasisU = new THREE.Vector3(0, 1, 0);
+        let panWpp = 0.05;
+        const V = Object.assign({}, VIEW0);
+        let cw = 1100, ch = 620, dpr = 1;
 
-            let html = '';
-            for(let i = numFloors; i >= 1; i--) {
-                let defaultVal = (i === numFloors) ? 'tension' : 'compression';
-                let val = oldVals[numFloors - i] || defaultVal; 
-                
-                html += `
-                    <div class="control-row">
-                        <label style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-                            <span>Floor ${i}</span>
-                            <select id="support_f${i}" style="width:65%;" onchange="updateSimulation()">
-                                <option value="compression" ${val==='compression'?'selected':''}>Compression (Column)</option>
-                                <option value="tension" ${val==='tension'?'selected':''}>Tension (Cable)</option>
-                                <option value="none" ${val==='none'?'selected':''}>None (Cantilever)</option>
-                            </select>
-                        </label>
-                    </div>
-                `;
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setClearColor(0x000000, 0);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 8000);   // axonometric — parallel projection
+        camera.up.set(0, 1, 0);
+
+        // strong key + gentle sky fill + a floor of ambient, so an up-facing plate
+        // reads as grey rather than washing out to pure white against the page
+        scene.add(new THREE.HemisphereLight(0xffffff, 0xdedede, 1.15));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.9);
+        scene.add(sun); scene.add(sun.target);
+        const SUN_DIR = new THREE.Vector3(-0.5, 0.92, 0.42).normalize();
+
+        const MAT = {
+            card:  new THREE.MeshLambertMaterial({ color: 0xf8f8f6, side: THREE.DoubleSide }),
+            cardD: new THREE.MeshLambertMaterial({ color: 0xf5f5f2, side: THREE.DoubleSide }),
+            ghost: new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.10, side: THREE.DoubleSide, depthWrite: false }),
+            ghostS:new THREE.MeshLambertMaterial({ color: 0xef9a9a, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }),
+            edge:  new THREE.LineBasicMaterial({ color: 0x1c1c1c }),
+            edgeX: new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.4 }),
+            ground:new THREE.MeshStandardMaterial({ color: 0xc4c4c4, roughness: 0.98, metalness: 0, side: THREE.DoubleSide })
+        };
+
+        let modelG = new THREE.Group();
+        scene.add(modelG);
+        let fitR = 20;
+        const fitC = new THREE.Vector3();
+
+        function clearGroup(g) {
+            g.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+            while (g.children.length) g.remove(g.children[0]);
+        }
+        function parseCol(s) {
+            const m = String(s).match(/rgba?\(([^)]+)\)/);
+            if (!m) return { hex: 0x333333, a: 1 };
+            const q = m[1].split(',').map(x => parseFloat(x));
+            return { hex: (Math.round(q[0])<<16) | (Math.round(q[1])<<8) | Math.round(q[2]), a: q[3] == null ? 1 : q[3] };
+        }
+        function triGeom(ts) {
+            const pos = new Float32Array(ts.length * 9), nor = new Float32Array(ts.length * 9);
+            let k = 0;
+            for (const t of ts) for (const v of t.p) {
+                pos[k] = v.x; pos[k+1] = v.y; pos[k+2] = v.z;
+                nor[k] = t.n.x; nor[k+1] = t.n.y; nor[k+2] = t.n.z; k += 3;
             }
-            container.innerHTML = html;
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+            return g;
+        }
+        const V3 = o => new THREE.Vector3(o.x, o.y, o.z);
+
+        const EDGE_THR = { slab: 1, core: 1, post: 1, stair: 1, wall: 1, strut: 1, tieghost: 1, roof: 26 };
+
+        function renderScene(p, risers) {
+            clearGroup(modelG);
+            const B = build(p, risers);
+            const xray = C.mode === 'xray';
+
+            // ---- solids, grouped by tint, each with its crease outline
+            const byTint = {};
+            for (const t of B.tris) (byTint[t.tint] || (byTint[t.tint] = [])).push(t);
+            for (const tint in byTint) {
+                const geom = triGeom(byTint[tint]);
+                let mat = null;
+                if (!xray)                 mat = (tint === 'roof' || tint === 'wall') ? MAT.cardD : MAT.card;
+                else if (tint === 'strut') mat = MAT.ghostS;
+                else if (tint === 'tieghost') mat = null;              // envelope shown as outline only
+                else                       mat = MAT.ghost;
+                if (mat) {
+                    const mesh = new THREE.Mesh(geom, mat);
+                    mesh.material.shadowSide = THREE.BackSide;
+                    modelG.add(mesh);
+                }
+                if (tint === 'slab' || tint === 'core' || tint === 'wall') continue;   // no outline on plates, core or partitions
+                const el = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(geom, EDGE_THR[tint] || 1),
+                    xray ? MAT.edgeX : MAT.edge);
+                modelG.add(el);
+            }
+
+            // ---- slab outlines: the outer rectangle only, no core-hole rim
+            {
+                const em = xray ? MAT.edgeX : MAT.edge;
+                for (let i = -p.numBelow; i < p.numFloors; i++) {
+                    const y = i * p.floorHeight;
+                    const c = [[-B.W/2,-B.D/2],[B.W/2,-B.D/2],[B.W/2,B.D/2],[-B.W/2,B.D/2]];
+                    const pts = [];
+                    for (let k = 0; k < 4; k++) {
+                        const a = c[k], b = c[(k+1)%4];
+                        pts.push(a[0], y, a[1], b[0], y, b[1]);
+                        pts.push(a[0], y - p.slabThick, a[1], b[0], y - p.slabThick, b[1]);
+                    }
+                    modelG.add(new THREE.LineSegments(
+                        new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)), em));
+                }
+            }
+
+            // ---- roof top: a smooth mesh so the wedge is not faceted
+            {
+                const g = new THREE.PlaneGeometry(B.W, B.D, 30, 20);
+                g.rotateX(-Math.PI / 2);
+                const pos = g.attributes.position;
+                for (let i = 0; i < pos.count; i++) pos.setY(i, B.lift(pos.getX(i), pos.getZ(i)));
+                pos.needsUpdate = true;
+                g.computeVertexNormals();
+                const mesh = new THREE.Mesh(g, xray ? MAT.ghost : MAT.cardD);
+                modelG.add(mesh);
+                modelG.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 44), xray ? MAT.edgeX : MAT.edge));
+
+                const yc = B.topY + p.roofRise, W = B.W, D = B.D;
+                const cm = new THREE.LineBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: xray ? 0.55 : 0.9 });
+                const vm = new THREE.LineBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: 0.20 });
+                const seg = (a, b, m) => modelG.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([a, b]), m));
+                seg(new THREE.Vector3(-W/2, yc, 0), new THREE.Vector3(W/2, yc, 0), cm);
+                seg(new THREE.Vector3(0, yc, -D/2), new THREE.Vector3(0, yc, D/2), cm);
+                [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(c =>
+                    seg(new THREE.Vector3(0, yc, 0), new THREE.Vector3(c[0]*W/2, B.topY, c[1]*D/2), vm));
+            }
+
+            // ---- annotation lines (force diagram, reveal, reading overlays)
+            const groups = {};
+            for (const l of B.lines) {
+                if (l.arrow) { addArrow(l); continue; }
+                const { hex, a } = parseCol(l.color);
+                const key = hex + '|' + (l.dashed ? 1 : 0) + '|' + a.toFixed(2);
+                (groups[key] || (groups[key] = { hex, a, dashed: l.dashed, pts: [] })).pts
+                    .push(l.a.x, l.a.y, l.a.z, l.b.x, l.b.y, l.b.z);
+            }
+            for (const key in groups) {
+                const gr = groups[key];
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(gr.pts, 3));
+                const mat = gr.dashed
+                    ? new THREE.LineDashedMaterial({ color: gr.hex, transparent: true, opacity: gr.a, dashSize: 0.3, gapSize: 0.22 })
+                    : new THREE.LineBasicMaterial({ color: gr.hex, transparent: true, opacity: gr.a });
+                const ls = new THREE.LineSegments(geo, mat);
+                if (gr.dashed) ls.computeLineDistances();
+                modelG.add(ls);
+            }
+
+            // (the temple / Dom-ino readings are no longer drawn as lines on the
+            // building — the hourglass throws them as tree shadows instead)
+
+            // ---- ground (as-built only) - a real shadow-catching disc
+            if (!xray) {
+                const gr = Math.max(B.W, B.D) * 0.85;
+                // sit the ground plane a clear step below the lowest floor plate
+                const gy = -p.numBelow * p.floorHeight - p.slabThick + 0.002;   // flush under the lowest plate
+                const gm = new THREE.Mesh(new THREE.CircleGeometry(gr, 72), MAT.ground);
+                gm.rotation.x = -Math.PI / 2;
+                gm.position.y = gy;
+                modelG.add(gm);
+            }
+
+            // ---- camera fit from the model's own bounds (rotation invariant)
+            let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
+            for (const t of B.tris) for (const v of t.p) {
+                if (v.x<mnx) mnx=v.x; if (v.x>mxx) mxx=v.x;
+                if (v.y<mny) mny=v.y; if (v.y>mxy) mxy=v.y;
+                if (v.z<mnz) mnz=v.z; if (v.z>mxz) mxz=v.z;
+            }
+            fitC.set((mnx+mxx)/2, (mny+mxy)/2, (mnz+mxz)/2);
+            fitR = 0.5 * Math.hypot(mxx-mnx, mxy-mny, mxz-mnz) || 20;
         }
 
-        numFloorsSlider.addEventListener('input', (e) => {
-            renderFloorControls();
-            updateSimulation();
+        function addArrow(l) {
+            const { hex, a } = parseCol(l.color);
+            const from = V3(l.a), to = V3(l.b);
+            const d = to.clone().sub(from), len = d.length();
+            if (len < 1e-4) return;
+            d.normalize();
+            const head = Math.min(0.55, len * 0.42);
+            const ah = new THREE.ArrowHelper(d, from, len, hex, head, head * 0.55);
+            ah.line.material.transparent = true; ah.line.material.opacity = a;
+            ah.cone.material.transparent = true; ah.cone.material.opacity = a;
+            modelG.add(ah);
+        }
+
+        let scalePxPerM = 20;
+        function applyCam() {
+            const asp = cw / Math.max(ch, 1);
+            const ya = V.yaw * Math.PI/180, pa = V.pitch * Math.PI/180;
+            const dir = new THREE.Vector3(Math.cos(pa)*Math.sin(ya), Math.sin(pa), Math.cos(pa)*Math.cos(ya));
+            const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize();
+            const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+
+            // parallel projection: frustum half-size fits the model's bounding sphere
+            const R = fitR * 1.12 / V.zoom;
+            let halfH, halfW;
+            if (asp >= 1) { halfH = R; halfW = R * asp; }
+            else          { halfW = R; halfH = R / asp; }
+            const wpp = (2 * halfH) / Math.max(ch, 1);      // world / px — constant across the whole view
+            scalePxPerM = 1 / wpp;
+            panBasisR.copy(right); panBasisU.copy(up); panWpp = wpp;
+
+            camera.left = -halfW; camera.right = halfW;
+            camera.top = halfH;   camera.bottom = -halfH;
+
+            const D = fitR * 8;                             // stand-off (does not affect size in ortho)
+            const tgt = fitC.clone().add(panW);
+            camera.position.copy(tgt).addScaledVector(dir, D);
+            camera.near = 0.01;
+            camera.far = D + fitR * 12;
+            camera.lookAt(tgt);
+            camera.updateProjectionMatrix();
+
+            sun.position.copy(fitC).addScaledVector(SUN_DIR, fitR * 3);
+            sun.target.position.copy(fitC);
+        }
+
+        function drawScaleBar() {
+            const len = 5 * scalePxPerM;
+            scaleCv.width = 160 * dpr; scaleCv.height = 30 * dpr;
+            scaleCv.style.width = '160px'; scaleCv.style.height = '30px';
+            sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            sctx.clearRect(0, 0, 160, 30);
+            if (!isFinite(len) || len < 10 || len > 150) return;
+            const x0 = 150 - len, y0 = 16;
+            sctx.strokeStyle = '#111'; sctx.lineWidth = 1;
+            sctx.beginPath();
+            sctx.moveTo(x0, y0); sctx.lineTo(x0+len, y0);
+            sctx.moveTo(x0, y0-4); sctx.lineTo(x0, y0+4);
+            sctx.moveTo(x0+len, y0-4); sctx.lineTo(x0+len, y0+4);
+            sctx.moveTo(x0+len/2, y0-3); sctx.lineTo(x0+len/2, y0+3);
+            sctx.stroke();
+            sctx.fillStyle = '#666'; sctx.font = '9px Helvetica, Arial, sans-serif';
+            sctx.fillText('0', x0-3, y0+14); sctx.fillText('5 m', x0+len-8, y0+14);
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+            drawScaleBar();
+        }
+
+        function resize() {
+            dpr = Math.min(2, window.devicePixelRatio || 1);
+            const r = canvas.getBoundingClientRect();
+            cw = Math.max(1, Math.round(r.width));
+            ch = Math.max(1, Math.round(r.height));
+            renderer.setPixelRatio(dpr);
+            renderer.setSize(cw, ch, false);
+            applyCam(); render();
+        }
+        if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+        else window.addEventListener('resize', resize);
+
+        // ---- orbit / zoom / pan
+        let drag = null;
+        canvas.addEventListener('pointerdown', e => {
+            canvas.setPointerCapture(e.pointerId);
+            drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 1 || e.button === 2 };
+            canvas.classList.add('dragging');
+        });
+        canvas.addEventListener('pointermove', e => {
+            if (!drag) return;
+            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+            drag.x = e.clientX; drag.y = e.clientY;
+            if (drag.pan) {
+                panW.addScaledVector(panBasisR, dx * panWpp).addScaledVector(panBasisU, dy * panWpp);
+            } else {
+                V.yaw = (V.yaw + dx * 0.45) % 360;
+                V.pitch = Math.max(-89, Math.min(89, V.pitch + dy * 0.35));
+            }
+            applyCam(); render();
+        });
+        const endDrag = () => { if (drag) { drag = null; canvas.classList.remove('dragging'); } };
+        canvas.addEventListener('pointerup', endDrag);
+        canvas.addEventListener('pointercancel', endDrag);
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            V.zoom = Math.max(0.25, Math.min(9, V.zoom * Math.exp(-e.deltaY * 0.0016)));
+            applyCam(); render();
+        }, { passive: false });
+        canvas.addEventListener('dblclick', () => { Object.assign(V, VIEW0); panW.set(0, 0, 0); applyCam(); render(); });
+
+        // ---- mode switch. "As built" doubles as the recentre — it also snaps the
+        // orbit / zoom / pan back to the default view. The trees and whatever the
+        // hourglass is showing are left alone.
+        const modeSwitch = document.getElementById('mode');
+        modeSwitch.querySelectorAll('button').forEach(b =>
+            b.addEventListener('click', () => {
+                C.mode = b.dataset.m;
+                modeSwitch.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+                if (b.dataset.m === 'asbuilt') { Object.assign(V, VIEW0); panW.set(0, 0, 0); }
+                update();
+            }));
+
+        // the whole model is locked to the measured drawings; the reading is
+        // whatever the hourglass is currently showing (see the glass handler)
+        let reading = 'none';
+
+        function readParams() {
+            const p = {};
+            ['numFloors','numBelow','floorHeight','plateWidth','plateDepth','slabThick',
+             'postSize','roofEdge','roofRise','coreLen','coreDep','coreWall'].forEach(k => p[k] = REAL[k]);
+            p.reveal = false;
+            p.showStairs = true;
+            p.floors = floorsFor(p.numFloors);
+            return p;
+        }
+
+        /* ============================================================
+           THE GARDEN — white leafless trees a few metres off the front
+           facade. The longer you look at a reading, the more its shadow
+           leaves realism: it crawls across the grass to the wall and
+           stands up — an uneven colonnade for the temple, the building's
+           own few even piloti for Dom-ino. Never exact, never in step.
+           ============================================================ */
+        const FRONT_Z = REAL.plateDepth / 2;                 // +Z face of the building
+        const GARDEN_GAP = 5.0;                              // trees stand this far off it
+        const GROUND_Y = -REAL.slabThick + 0.002;
+        const H_ = REAL.postSize / 2;
+        const DOMINO_FRONT_X = [-REAL.plateWidth/2 + H_, 0, REAL.plateWidth/2 - H_];
+        // the seven peristyle column lines across the long face (the old temple overlay)
+        const TEMPLE_LINES = Array.from({ length: 7 }, (_, i) => -REAL.plateWidth/2 + i * REAL.plateWidth/6);
+
+        const rng = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+        // Hockney's non-naturalistic trunks — one bright viridian hero, the rest
+        // plum / mauve / teal / terracotta, one flat colour per tree
+        const BARK = [0x1a8f6f, 0x7a3b6b, 0x8e5aa0, 0x2f6f5e, 0xb5623a, 0x1a8f6f];
+        const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: 0x7d6f86, transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
+        // a faint sheet across the front of the building — a screen for the shadows to land on
+        const SCREEN_MAT = new THREE.MeshBasicMaterial({ color: 0xdadada, transparent: true, opacity: 0.30, depthWrite: false, side: THREE.DoubleSide });
+        const YUP_ = new THREE.Vector3(0, 1, 0);
+        const groveG = new THREE.Group();  scene.add(groveG);
+        const shadowG = new THREE.Group(); scene.add(shadowG);
+
+        // scattered, uneven — x spans (a little past) the facade, z stepped back
+        const TREES = [
+            [-10.5, 3.8, 6.6, 11], [-7.6, 5.3, 5.6, 23], [-5.0, 3.3, 7.1, 37],
+            [-2.3, 5.6, 6.0, 41], [ 0.4, 3.5, 6.4, 52], [ 3.0, 5.4, 5.3, 64],
+            [ 5.6, 3.6, 6.9, 77], [ 8.3, 5.1, 5.8, 88], [ 10.8, 3.9, 6.3, 95],
+        ].map(([x, back, h, seed], i) => {
+            const nearLine = TEMPLE_LINES.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a);
+            return {
+                x, z: FRONT_Z + GARDEN_GAP + back, h, seed,
+                colX: 0, isDom: false,
+                lineX: nearLine + (rng(seed * 3 + 1)() - 0.5) * 0.7,   // near the peristyle line, not on it
+                uoff: rng(seed * 11 + 3)() * 0.22,                     // a small head-start spread
+                goff: rng(seed * 19 + 7)() * 0.30,                     // grows a beat after its neighbour
+                taper: 0.06 + rng(seed * 13 + 5)() * 0.13,             // tip width as a fraction of the base
+                bark: i === 0 ? 0x1a8f6f : BARK[rng(seed * 17 + 9)() * BARK.length | 0],
+                cur: { raise: 0, x },                                  // animated state
+            };
+        });
+        // for Dom-ino, only the tree nearest each real front-face post throws a
+        // shadow — three of them, landing exactly on the column
+        DOMINO_FRONT_X.forEach(cx => {
+            let best = null, bd = 1e9;
+            TREES.forEach(t => { const d = Math.abs(t.x - cx); if (d < bd) { bd = d; best = t; } });
+            if (best) { best.isDom = true; best.colX = cx; }
         });
 
-        const basicInputs = ['floorHeight', 'plateWidth', 'plateDepth', 'maxSpan', 'coreWidthPct', 'coreDepthPct'];
-        basicInputs.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) {
-                el.addEventListener('input', updateSimulation);
-                el.addEventListener('change', updateSimulation);
+        function limb_(parent, from, to, r0, r1, mat) {
+            const d = new THREE.Vector3().subVectors(to, from);
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, d.length(), 6), mat);
+            m.position.copy(from).addScaledVector(d, 0.5);
+            m.quaternion.setFromUnitVectors(YUP_, d.clone().normalize());
+            parent.add(m);
+        }
+        TREES.forEach(t => {
+            const r = rng(t.seed);
+            const bmat = new THREE.MeshLambertMaterial({ color: t.bark });
+            const g = new THREE.Group(); g.position.set(t.x, GROUND_Y, t.z); groveG.add(g);
+            const top = new THREE.Vector3((r() - 0.5) * 0.8, t.h, (r() - 0.5) * 0.7);
+            limb_(g, new THREE.Vector3(0, 0, 0), top, 0.16, 0.05, bmat);
+            const nb = 2 + (r() * 3 | 0);
+            for (let i = 0; i < nb; i++) {
+                const b = top.clone().multiplyScalar(0.4 + r() * 0.5);
+                const a = r() * 6.28, rr = 0.7 + r() * 1.1;
+                const e = b.clone().add(new THREE.Vector3(Math.cos(a) * rr, 0.7 + r() * 1.4, Math.sin(a) * rr));
+                limb_(g, b, e, 0.045, 0.02, bmat);
+                if (r() > 0.5) {
+                    const e2 = e.clone().add(new THREE.Vector3(Math.cos(a + 0.7) * 0.6, 0.5 + r() * 0.9, Math.sin(a + 0.7) * 0.6));
+                    limb_(g, e, e2, 0.022, 0.012, bmat);
+                }
             }
+            const disc = new THREE.Mesh(new THREE.CircleGeometry(0.5, 16),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.10, depthWrite: false }));
+            disc.rotation.x = -Math.PI / 2; disc.position.y = 0.015; g.add(disc);
+            g.scale.set(1, 0, 1); g.visible = false;                    // starts underground, asleep
         });
 
-        renderFloorControls();
+        const sstep_ = (a, b, x) => { x = Math.max(0, Math.min(1, (x - a) / (b - a))); return x * x * (3 - 2 * x); };
+        const lerp_  = (a, b, t) => a + (b - a) * t;
 
-        function updateSimulation() {
-            const numFloors = parseInt(document.getElementById('numFloors').value);
-            const floorHeight = parseFloat(document.getElementById('floorHeight').value);
-            const plateWidth = parseFloat(document.getElementById('plateWidth').value);
-            const plateDepth = parseFloat(document.getElementById('plateDepth').value);
-            const maxSpan = parseFloat(document.getElementById('maxSpan').value);
-            const coreWidthPct = parseFloat(document.getElementById('coreWidthPct').value);
-            const coreDepthPct = parseFloat(document.getElementById('coreDepthPct').value);
-            const cornerSupport = document.getElementById('cornerSupport').value;
-
-            let floorSupports = [];
-            for(let i=1; i<=numFloors; i++) {
-                floorSupports.push(document.getElementById(`support_f${i}`).value);
-            }
-            
-            const hasCompression = floorSupports.includes('compression');
-            const hasTension = floorSupports.includes('tension');
-            const hasNone = floorSupports.includes('none');
-
-            document.getElementById('val-numFloors').innerText = numFloors;
-            document.getElementById('val-floorHeight').innerText = floorHeight.toFixed(1) + " m";
-            document.getElementById('val-plateWidth').innerText = plateWidth.toFixed(1) + " m";
-            document.getElementById('val-plateDepth').innerText = plateDepth.toFixed(1) + " m";
-            document.getElementById('val-maxSpan').innerText = maxSpan.toFixed(1) + " m";
-            document.getElementById('val-coreWidthPct').innerText = coreWidthPct + "%";
-            document.getElementById('val-coreDepthPct').innerText = coreDepthPct + "%";
-
-            const spanCountX = Math.ceil(plateWidth / maxSpan);
-            const spanCountZ = Math.ceil(plateDepth / maxSpan);
-            
-            const compColsCount = (spanCountX + 1) * 2 + (spanCountZ - 1) * 2;
-            const tensColsCount = spanCountX * 2 + spanCountZ * 2;
-
-            const spanX = (plateWidth - (plateWidth * coreWidthPct / 100)) / 2;
-            const spanZ = (plateDepth - (plateDepth * coreDepthPct / 100)) / 2;
-            const absoluteMaxSpan = Math.max(spanX, spanZ);
-            let slabThick = Math.max(0.3, absoluteMaxSpan / 10); 
-            
-            document.getElementById('val-slabThick').innerText = slabThick.toFixed(2) + " m";
-            document.getElementById('val-edgeThick').innerText = "0.20 m";
-
-            let clearance = floorHeight - slabThick;
-            let isClearanceLow = clearance < 2.5;
-
-            if (isClearanceLow) {
-                document.getElementById('clearanceWarning').classList.remove('hidden');
-                document.getElementById('val-clearance').innerText = clearance.toFixed(2) + " m";
-                document.getElementById('slabThickBox').classList.add('warning-box');
-            } else {
-                document.getElementById('clearanceWarning').classList.add('hidden');
-                document.getElementById('slabThickBox').classList.remove('warning-box');
-            }
-
-            let isFailedGlobal = false;
-            let colDim = 0.2;
-
-            if (hasCompression) {
-                document.getElementById('colSizeContainer').classList.remove('hidden');
-                const tribAreaPerCol = (plateWidth * plateDepth) / compColsCount;
-
-                // Efficient preliminary RC column sizing:
-                // axial load = assumed floor load x tributary area x number of
-                // floors actually carried in compression (not just total floors,
-                // since tension/cantilever levels don't load this column stack).
-                const numCompFloors = floorSupports.filter(s => s === 'compression').length;
-                const floorLoadKPa = 12;        // kN/m^2, typical factored slab load (dead + live + finishes)
-                const allowStressKPa = 7000;    // kN/m^2, preliminary allowable stress for a reinforced concrete column
-                const axialLoadKN = floorLoadKPa * tribAreaPerCol * numCompFloors;
-                const requiredAreaM2 = axialLoadKN / allowStressKPa;
-
-                colDim = Math.sqrt(requiredAreaM2);
-                colDim = Math.min(1.5, Math.max(0.25, colDim));
-                colDim = Math.round(colDim / 0.05) * 0.05; // round to a buildable 50mm increment
-
-                document.getElementById('val-colSize').innerText = colDim.toFixed(2) + " x " + colDim.toFixed(2) + " m";
-                document.getElementById('val-colCount').innerText = compColsCount;
-            } else {
-                document.getElementById('colSizeContainer').classList.add('hidden');
-            }
-
-            if (hasTension) {
-                document.getElementById('tensionInfoContainer').classList.remove('hidden');
-                document.getElementById('val-tensionCount').innerText = tensColsCount;
-            } else {
-                document.getElementById('tensionInfoContainer').classList.add('hidden');
-            }
-
-            if (hasNone && absoluteMaxSpan > 5) {
-                isFailedGlobal = true;
-                document.getElementById('failureInfoContainer').classList.remove('hidden');
-                document.getElementById('slabThickBox').classList.add('warning-box');
-                statusText.innerText = "Status: STRUCTURAL FAILURE on unsupported levels.";
-                statusText.className = "danger-text";
-            } else {
-                document.getElementById('failureInfoContainer').classList.add('hidden');
-                statusText.innerText = "Status: Safe. Structural load paths successfully mapped.";
-                statusText.className = "info-text";
-            }
-
-            drawBuilding({
-                numFloors, floorHeight, plateWidth, plateDepth, coreWidthPct, coreDepthPct, 
-                floorSupports, hasCompression, hasTension, cornerSupport,
-                slabThick, colDim, spanCountX, spanCountZ, absoluteMaxSpan
-            });
+        // a flat blade that narrows to a near-point at the top — a tree, loosely
+        function spireGeom(wBot, wTop, H) {
+            const hb = wBot / 2, ht = wTop / 2, y0 = -H / 2, y1 = H / 2;
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+                -hb, y0, 0,   hb, y0, 0,   ht, y1, 0,
+                -hb, y0, 0,   ht, y1, 0,  -ht, y1, 0,
+            ]), 3));
+            return g;
         }
 
-        const angleX = Math.PI / 6;
-        const angleZ = Math.PI / 6;
-        const edgeThick = 0.2; 
+        // each tree carries an animated { raise 0..1, x }. buildGroveShadows just
+        // draws whatever those currently are — the tween below moves them.
+        function buildGroveShadows() {
+            clearGroup(shadowG);
+            if (C.mode === 'xray' || grown <= 0.001) return;   // no garden in X-ray / while asleep
+            const mat = SHADOW_MAT;
+            const H0 = REAL.numFloors * REAL.floorHeight;        // up to the third floor
 
-        function drawBuilding(p) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let renderQueue = []; 
+            // the faint screen across the front of the building
+            SCREEN_MAT.opacity = 0.30 * Math.min(1, grown);
+            const scr = new THREE.Mesh(new THREE.PlaneGeometry(REAL.plateWidth + 0.6, H0), SCREEN_MAT);
+            scr.position.set(0, GROUND_Y + H0 / 2, FRONT_Z + 0.02);
+            shadowG.add(scr);
 
-            const coreH = p.numFloors * p.floorHeight;
-
-            // Camera fit is computed AFTER all geometry is queued (see below),
-            // from the actual rendered points, so the whole building always
-            // fits the canvas no matter how its dimensions are adjusted.
-            function rawXY(pt) {
-                const px = (pt.x - pt.z) * Math.cos(angleX);
-                const py = -pt.y + (pt.x + pt.z) * Math.sin(angleZ);
-                return { px, py };
-            }
-
-            let scale = 1, offsetX = 0, offsetY = 0;
-
-            function project(pt) {
-                const { px, py } = rawXY(pt);
-                return { x: px * scale + offsetX, y: py * scale + offsetY };
-            }
-
-            const wfFill = "rgba(255, 255, 255, 0.4)"; 
-            const wfStroke = "#222222"; 
-            const wfLineWidth = 1.2;
-
-            function addQuad(p1, p2, p3, p4, fill, stroke, lineWidth=wfLineWidth) {
-                let cx = (p1.x + p2.x + p3.x + p4.x)/4;
-                let cy = (p1.y + p2.y + p3.y + p4.y)/4;
-                let cz = (p1.z + p2.z + p3.z + p4.z)/4;
-                let depth = cx + cz + (cy * 2.5); 
-                renderQueue.push({ pts: [p1, p2, p3, p4], fill, stroke, lineWidth, depth });
-            }
-
-            function addLine(p1, p2, color, width, isArrow, isDashed=false) {
-                let cx = (p1.x + p2.x)/2, cy = (p1.y + p2.y)/2, cz = (p1.z + p2.z)/2;
-                let depth = cx + cz + (cy * 2.5) + 0.1; 
-                renderQueue.push({ p1, p2, color, width, isArrow, isDashed, depth });
-            }
-
-            function addBoxFaces(cx, cy, cz, w, h, d, fill = wfFill, stroke = wfStroke) {
-                const p1 = {x:cx-w/2, y:cy, z:cz-d/2}; const p2 = {x:cx+w/2, y:cy, z:cz-d/2};
-                const p3 = {x:cx+w/2, y:cy, z:cz+d/2}; const p4 = {x:cx-w/2, y:cy, z:cz+d/2};
-                const p5 = {x:cx-w/2, y:cy+h, z:cz-d/2}; const p6 = {x:cx+w/2, y:cy+h, z:cz-d/2};
-                const p7 = {x:cx+w/2, y:cy+h, z:cz+d/2}; const p8 = {x:cx-w/2, y:cy+h, z:cz+d/2};
-                
-                addQuad(p1, p4, p8, p5, fill, stroke); // Left
-                addQuad(p2, p3, p7, p6, fill, stroke); // Right
-                addQuad(p1, p2, p6, p5, fill, stroke); // Back
-                addQuad(p4, p3, p7, p8, fill, stroke); // Front
-                addQuad(p5, p6, p7, p8, fill, stroke); // Top
-                addQuad(p1, p2, p3, p4, fill, stroke); // Bot
-            }
-
-            // 1. Grid (Site)
-            const pw = p.plateWidth, pd = p.plateDepth;
-            const g1 = {x:-pw*0.6, y:0, z:-pd*0.6}, g2 = {x:pw*0.6, y:0, z:-pd*0.6};
-            const g3 = {x:pw*0.6, y:0, z:pd*0.6}, g4 = {x:-pw*0.6, y:0, z:pd*0.6};
-            addLine(g1, g2, "#bbb", 1, false, true); addLine(g2, g3, "#bbb", 1, false, true);
-            addLine(g3, g4, "#bbb", 1, false, true); addLine(g4, g1, "#bbb", 1, false, true);
-
-            // 2. Concrete Core Walls (Hollow)
-            const cw = p.plateWidth * (p.coreWidthPct/100);
-            const cd = p.plateDepth * (p.coreDepthPct/100);
-            const wallThick = 0.3;
-            
-            const coreFill = "rgba(255, 255, 255, 0.22)";
-            const coreStroke = "rgba(34, 34, 34, 0.55)";
-            addBoxFaces(0, 0, -cd/2 + wallThick/2, cw, coreH, wallThick, coreFill, coreStroke); // Back
-            addBoxFaces(0, 0, cd/2 - wallThick/2, cw, coreH, wallThick, coreFill, coreStroke); // Front
-            addBoxFaces(-cw/2 + wallThick/2, 0, 0, wallThick, coreH, cd - 2*wallThick, coreFill, coreStroke); // Left
-            addBoxFaces(cw/2 - wallThick/2, 0, 0, wallThick, coreH, cd - 2*wallThick, coreFill, coreStroke); // Right
-
-            // 2b. Roof hung in tension: the walls rise past the roof plate and
-            // the plate is suspended from that extra height (pulled UP against
-            // sag) rather than sitting on a horizontal tie at its own level.
-            const hasRoofTension = p.floorSupports[p.numFloors - 1] === 'tension';
-            const roofExtension = hasRoofTension ? p.floorHeight * 0.6 : 0;
-            const hangH = coreH + roofExtension;
-            if (hasRoofTension) {
-                const parapetThick = wallThick * 0.6;
-                addBoxFaces(0, coreH, -cd/2 + parapetThick/2, cw, roofExtension, parapetThick, coreFill, coreStroke);
-                addBoxFaces(0, coreH, cd/2 - parapetThick/2, cw, roofExtension, parapetThick, coreFill, coreStroke);
-                addBoxFaces(-cw/2 + parapetThick/2, coreH, 0, parapetThick, roofExtension, cd - 2*parapetThick, coreFill, coreStroke);
-                addBoxFaces(cw/2 - parapetThick/2, coreH, 0, parapetThick, roofExtension, cd - 2*parapetThick, coreFill, coreStroke);
-            }
-
-            function deflect(pt, isFailedFloor) {
-                if (!isFailedFloor) return pt;
-                let dist = 0;
-                if (pt.x > cw/2) dist = pt.x - cw/2;
-                else if (pt.x < -cw/2) dist = -cw/2 - pt.x;
-                if (pt.z > cd/2) dist = Math.max(dist, pt.z - cd/2);
-                else if (pt.z < -cd/2) dist = Math.max(dist, -cd/2 - pt.z);
-                
-                let drop = (dist * dist) * 1.5 * 0.05;
-                return {x: pt.x, y: pt.y - drop, z: pt.z};
-            }
-
-            function addTaperedFloor(y, isFailedFloor) {
-                let yo = y - edgeThick;
-                let yi = y - p.slabThick;
-                let fill = isFailedFloor ? "rgba(255, 235, 238, 0.7)" : "rgba(255, 255, 255, 0.55)"; 
-                let str = isFailedFloor ? "rgba(198,40,40,0.55)" : "rgba(17,17,17,0.25)";
-                let strW = 0.7;
-
-                let ofl = deflect({x:-pw/2, y, z:pd/2}, isFailedFloor),  ofr = deflect({x:pw/2, y, z:pd/2}, isFailedFloor);
-                let obl = deflect({x:-pw/2, y, z:-pd/2}, isFailedFloor), obr = deflect({x:pw/2, y, z:-pd/2}, isFailedFloor);
-                let ifl = {x:-cw/2, y, z:cd/2},  ifr = {x:cw/2, y, z:cd/2}, ibl = {x:-cw/2, y, z:-cd/2}, ibr = {x:cw/2, y, z:-cd/2};
-                
-                let oflb = deflect({x:-pw/2, y:yo, z:pd/2}, isFailedFloor),  ofrb = deflect({x:pw/2, y:yo, z:pd/2}, isFailedFloor);
-                let oblb = deflect({x:-pw/2, y:yo, z:-pd/2}, isFailedFloor), obrb = deflect({x:pw/2, y:yo, z:-pd/2}, isFailedFloor);
-                let iflb = {x:-cw/2, y:yi, z:cd/2},  ifrb = {x:cw/2, y:yi, z:cd/2}, iblb = {x:-cw/2, y:yi, z:-cd/2}, ibrb = {x:cw/2, y:yi, z:-cd/2};
-
-                // Front Segment
-                addQuad(ofl, ofr, ifr, ifl, fill, str, strW); addQuad(oflb, iflb, ifrb, ofrb, fill, str, strW);
-                addQuad(ofl, oflb, ofrb, ofr, fill, str, strW); addQuad(ifl, ifr, ifrb, iflb, fill, str, strW); 
-                addQuad(ofl, ifl, iflb, oflb, fill, str, strW); addQuad(ofr, ofrb, ifrb, ifr, fill, str, strW); 
-
-                // Back Segment
-                addQuad(obl, ibl, ibr, obr, fill, str, strW); addQuad(oblb, obrb, ibrb, iblb, fill, str, strW);
-                addQuad(obl, obr, obrb, oblb, fill, str, strW); addQuad(ibl, iblb, ibrb, ibr, fill, str, strW);
-                addQuad(obl, oblb, iblb, ibl, fill, str, strW); addQuad(obr, ibr, ibrb, obrb, fill, str, strW);
-
-                // Left Segment
-                addQuad(ofl, ifl, ibl, obl, fill, str, strW); addQuad(oflb, oblb, iblb, iflb, fill, str, strW);
-                addQuad(ofl, obl, oblb, oflb, fill, str, strW); addQuad(ifl, iflb, iblb, ibl, fill, str, strW);
-                
-                // Right Segment
-                addQuad(ofr, obr, ibr, ifr, fill, str, strW); addQuad(ofrb, ifrb, ibrb, obrb, fill, str, strW);
-                addQuad(ofr, ofrb, obrb, obr, fill, str, strW); addQuad(ifr, ibr, ibrb, ifrb, fill, str, strW);
-            }
-
-            // 3. Draw Floors
-            for(let i=1; i<=p.numFloors; i++) {
-                let isFailed = (p.floorSupports[i-1] === 'none' && p.absoluteMaxSpan > 5);
-                addTaperedFloor(i * p.floorHeight, isFailed);
-            }
-
-            // 4. Position Setups based on Corner Support Selection
-            let compPositions = [];
-            let tensPositions = [];
-            const stepZ = pd / p.spanCountZ;
-            const stepX = pw / p.spanCountX;
-            
-            const isCornerComp = (p.cornerSupport === 'compression');
-
-            // Collect Z edges
-            for(let i=0; i<=p.spanCountZ; i++) {
-                let z = -pd/2 + i*stepZ;
-                let pt1 = {x: -pw/2 + p.colDim/2, z};
-                let pt2 = {x: pw/2 - p.colDim/2, z};
-                
-                if(isCornerComp) {
-                    compPositions.push(pt1); compPositions.push(pt2);
-                } else {
-                    tensPositions.push(pt1); tensPositions.push(pt2);
-                }
-
-                if (i < p.spanCountZ) {
-                    let tz = z + stepZ/2;
-                    let tpt1 = {x: -pw/2, z: tz};
-                    let tpt2 = {x: pw/2, z: tz};
-                    if(isCornerComp) {
-                        tensPositions.push(tpt1); tensPositions.push(tpt2);
-                    } else {
-                        compPositions.push(tpt1); compPositions.push(tpt2);
+            TREES.forEach((t, i) => {
+                const raise = t.cur.raise * Math.min(1, grown);
+                if (raise <= 0.002) return;
+                const crawl = sstep_(0, 0.45, raise);           // tongue reaches the wall first
+                const stand = sstep_(0.4, 1, raise);            // then the column climbs
+                const x = t.cur.x;
+                if (crawl > 0) {
+                    const reach = (t.z - FRONT_Z - 0.1) * crawl;
+                    if (reach > 0.05) {
+                        const m = new THREE.Mesh(new THREE.PlaneGeometry(0.42, reach), mat);
+                        m.rotation.x = -Math.PI / 2;
+                        m.position.set(lerp_(t.x, x, 0.5), GROUND_Y + 0.02, t.z - reach / 2);
+                        shadowG.add(m);
                     }
                 }
-            }
-
-            // Collect X edges
-            for(let i=1; i<p.spanCountX; i++) {
-                let x = -pw/2 + i*stepX;
-                let pt1 = {x, z: -pd/2 + p.colDim/2};
-                let pt2 = {x, z: pd/2 - p.colDim/2};
-                if(isCornerComp) {
-                    compPositions.push(pt1); compPositions.push(pt2);
-                } else {
-                    tensPositions.push(pt1); tensPositions.push(pt2);
-                }
-            }
-            for(let i=0; i<p.spanCountX; i++) {
-                let x = -pw/2 + i*stepX + stepX/2;
-                let tpt1 = {x, z: -pd/2};
-                let tpt2 = {x, z: pd/2};
-                if(isCornerComp) {
-                    tensPositions.push(tpt1); tensPositions.push(tpt2);
-                } else {
-                    compPositions.push(tpt1); compPositions.push(tpt2);
-                }
-            }
-
-            // 5. Render Columns (Compression)
-            if(p.hasCompression) {
-                let maxCompFloor = p.floorSupports.lastIndexOf('compression') + 1;
-                let colTopY = maxCompFloor * p.floorHeight;
-
-                compPositions.forEach(pos => {
-                    addBoxFaces(pos.x, 0, pos.z, p.colDim, colTopY, p.colDim, "rgba(255,255,255,0.7)", "#333");
-                    for(let i=1; i<=p.numFloors; i++) {
-                        if(p.floorSupports[i-1] === 'compression') {
-                            addLine({x:pos.x, y: i*p.floorHeight, z:pos.z}, {x:pos.x, y: i*p.floorHeight - p.floorHeight*0.7, z:pos.z}, "rgba(211,47,47,0.8)", 2, true);
-                        }
-                    }
-                });
-            } 
-
-            // 5b. Hidden Center Compression Pillar (Roof Tension)
-            // The long-span roof plate is mostly hung in tension, but its
-            // middle still needs a real compression prop — deliberately
-            // understated so it reads as part of the hanging system.
-            if (hasRoofTension && p.numFloors > 0) {
-                const propDim = Math.max(0.3, (p.colDim || 0.35) * 0.75);
-                const propTopY = p.numFloors * p.floorHeight;
-                const propBotY = (p.numFloors - 1) * p.floorHeight;
-                // Sit right at the plate's rim (matching the perimeter grid),
-                // not buried mid-span in the interior of the plan.
-                const spanX = (pw - cw) / 2, spanZ = (pd - cd) / 2;
-                let propPositions = [];
-                if (spanX >= spanZ) {
-                    propPositions = [{x: pw/2 - propDim/2, z: 0}, {x: -(pw/2 - propDim/2), z: 0}];
-                } else {
-                    propPositions = [{x: 0, z: pd/2 - propDim/2}, {x: 0, z: -(pd/2 - propDim/2)}];
-                }
-                propPositions.forEach(pos => {
-                    addBoxFaces(pos.x, propBotY, pos.z, propDim, propTopY - propBotY, propDim, "rgba(255,255,255,0.7)", "#333");
-                    addLine({x:pos.x, y: propTopY, z:pos.z}, {x:pos.x, y: propTopY - p.floorHeight*0.7, z:pos.z}, "rgba(211,47,47,0.8)", 2, true);
-                });
-            }
-
-            // 6. Render Cables (Tension) - TOP FLOOR HANDLED DIRECTLY TO CORE
-            if (p.hasTension) {
-                let minTensFloor = p.floorSupports.indexOf('tension') + 1;
-                let topFloorIdx = p.numFloors - 1;
-                let isTopFloorTension = (p.floorSupports[topFloorIdx] === 'tension');
-
-                tensPositions.forEach(pos => {
-                    let cableBotY = minTensFloor * p.floorHeight;
-                    let cableTopY = isTopFloorTension ? (p.numFloors - 1) * p.floorHeight : coreH;
-
-                    const cableColor = "rgba(13, 71, 161, 0.75)";
-                    if (!isTopFloorTension) {
-                        addLine({x:pos.x, y:cableBotY, z:pos.z}, {x:pos.x, y:coreH, z:pos.z}, cableColor, 1.8, false, true);
-                    } else {
-                        if (p.numFloors > 1) {
-                            addLine({x:pos.x, y:cableBotY, z:pos.z}, {x:pos.x, y: (p.numFloors-1)*p.floorHeight, z:pos.z}, cableColor, 1.8, false, true);
-                        }
-                    }
-
-                    for(let i=1; i<=p.numFloors; i++) {
-                        if(p.floorSupports[i-1] === 'tension') {
-                            if (i === p.numFloors) {
-                                let topFloorY = p.numFloors * p.floorHeight;
-                                let coreAttachX = pos.x < 0 ? -cw/2 : (pos.x > 0 ? cw/2 : 0);
-                                let coreAttachZ = pos.z < 0 ? -cd/2 : (pos.z > 0 ? cd/2 : 0);
-
-                                addLine({x:pos.x, y:topFloorY, z:pos.z}, {x:coreAttachX, y:hangH, z:coreAttachZ}, "rgba(230,81,0,0.9)", 2.5, true);
-                            } else {
-                                addLine({x:pos.x, y: (i-1)*p.floorHeight, z:pos.z}, {x:pos.x, y: i*p.floorHeight, z:pos.z}, "rgba(25,118,210,0.8)", 2, true);
-                            }
-                        }
-                    }
-
-                    // When the top floor uses tension, also show a suspension
-                    // arrow standing on the floor directly below it, since the
-                    // load path continues down through that level too.
-                    if (isTopFloorTension && p.numFloors > 1) {
-                        let belowIdx = p.numFloors - 1;
-                        if (p.floorSupports[belowIdx - 1] !== 'tension') {
-                            addLine({x:pos.x, y:(belowIdx-1)*p.floorHeight, z:pos.z}, {x:pos.x, y: belowIdx*p.floorHeight, z:pos.z}, "rgba(25,118,210,0.8)", 2, true);
-                        }
-                    }
-
-                    if (!isTopFloorTension) {
-                        let cx = pos.x < 0 ? -cw/2 : (pos.x > 0 ? cw/2 : 0);
-                        let cz = pos.z < 0 ? -cd/2 : (pos.z > 0 ? cd/2 : 0);
-                        addLine({x:pos.x, y:coreH, z:pos.z}, {x:cx, y:coreH, z:cz}, "rgba(230,81,0, 0.9)", 2.5, true);
-                    }
-                });
-            }
-
-            // Fit Camera to Actual Geometry (always shows the whole building)
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            renderQueue.forEach(item => {
-                const pts = item.pts ? item.pts : [item.p1, item.p2];
-                pts.forEach(pt => {
-                    const { px, py } = rawXY(pt);
-                    if (px < minX) minX = px; if (px > maxX) maxX = px;
-                    if (py < minY) minY = py; if (py > maxY) maxY = py;
-                });
-            });
-
-            const marginPx = 80;
-            const spanX = maxX - minX, spanY = maxY - minY;
-            // A single uniform scale (never separate X/Y factors) is what keeps
-            // the axonometric angles and proportions correct while fitting.
-            scale = (isFinite(spanX) && isFinite(spanY) && spanX > 0 && spanY > 0)
-                ? Math.min(
-                    (canvas.width - marginPx * 2) / spanX,
-                    (canvas.height - marginPx * 2) / spanY
-                  )
-                : 1;
-            offsetX = canvas.width / 2 - ((minX + maxX) / 2) * scale;
-            offsetY = canvas.height / 2 - ((minY + maxY) / 2) * scale;
-
-            // Execute Render Queue (Sort & Draw)
-            renderQueue.sort((a, b) => a.depth - b.depth);
-
-            renderQueue.forEach(item => {
-                if(item.pts) {
-                    ctx.beginPath();
-                    let start = project(item.pts[0]);
-                    ctx.moveTo(start.x, start.y);
-                    for(let i=1; i<item.pts.length; i++) {
-                        let pt = project(item.pts[i]);
-                        ctx.lineTo(pt.x, pt.y);
-                    }
-                    ctx.closePath();
-                    ctx.fillStyle = item.fill; ctx.fill();
-                    if(item.stroke) {
-                        ctx.strokeStyle = item.stroke; ctx.lineWidth = item.lineWidth; ctx.stroke();
-                    }
-                } else if(item.p1 && item.p2) {
-                    let pt1 = project(item.p1); let pt2 = project(item.p2);
-                    ctx.beginPath(); ctx.moveTo(pt1.x, pt1.y); ctx.lineTo(pt2.x, pt2.y);
-                    ctx.strokeStyle = item.color; ctx.lineWidth = item.width;
-                    if(item.isDashed) ctx.setLineDash([4,4]);
-                    ctx.stroke(); ctx.setLineDash([]);
-                    
-                    if(item.isArrow) {
-                        const dx = pt2.x - pt1.x; const dy = pt2.y - pt1.y;
-                        const angle = Math.atan2(dy, dx);
-                        const headlen = 10;
-                        ctx.beginPath();
-                        ctx.moveTo(pt2.x, pt2.y);
-                        ctx.lineTo(pt2.x - headlen * Math.cos(angle - Math.PI / 6), pt2.y - headlen * Math.sin(angle - Math.PI / 6));
-                        ctx.moveTo(pt2.x, pt2.y);
-                        ctx.lineTo(pt2.x - headlen * Math.cos(angle + Math.PI / 6), pt2.y - headlen * Math.sin(angle + Math.PI / 6));
-                        ctx.stroke();
-                    }
+                if (stand > 0) {
+                    const H = H0 * stand;
+                    const w = (reading === 'domino' && t.isDom) ? 0.16 : 0.5;
+                    const m = new THREE.Mesh(spireGeom(w, w * t.taper, H), mat);
+                    m.position.set(x, GROUND_Y + H / 2, FRONT_Z + 0.05 + i * 0.004);
+                    shadowG.add(m);
                 }
             });
         }
 
-        // Initialize
-        updateSimulation();
+        // The hourglass is a toggle. 1st press wakes the garden: the trees grow
+        // out of the ground, then the shadow reading begins and the two readings
+        // (Greek / Dom-ino) cross-fade back and forth on their own for ever.
+        // Press again to cancel: the trees shrink back into the ground and vanish.
+        const easeIO = x => x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
+        const STUB = 0.14;                                 // shadow left lying on the ground
+        function targetFor(state, t) {
+            if (state === 'temple') return { raise: 1, x: t.lineX };
+            if (state === 'domino') return t.isDom ? { raise: 1, x: t.colX } : { raise: STUB, x: t.x };
+            return { raise: 0, x: t.x };
+        }
+
+        const LEG_S = 6, HOLD_S = 2.6, GROW_S = 2.2, RETRACT_S = 1.5;
+        let legU = 0, legActive = false, holdUntil = 0;
+        let awake = false, grown = 0, growDir = 0;         // grown 0 = underground, 1 = full grove
+        let groveRAF = 0, groveLast = 0;
+        let hgRot = 0, hgFrom = 0, hgTo = 0;
+        const froms = [], tgts = [];
+
+        function applyGrowth() {
+            for (let i = 0; i < groveG.children.length; i++) {
+                const t = TREES[i], g = groveG.children[i];
+                const eg = easeIO(Math.max(0, Math.min(1, (grown - t.goff) / (1 - t.goff))));
+                g.scale.set(1, eg, 1);
+                g.visible = eg > 0.001 && C.mode !== 'xray';
+            }
+        }
+        function beginLeg(state) {
+            TREES.forEach((t, i) => { froms[i] = { raise: t.cur.raise, x: t.cur.x }; tgts[i] = targetFor(state, t); });
+            reading = state; syncGlass();
+            hgFrom = hgRot; hgTo = (state === 'domino') ? 180 : 0;
+            legU = 0; legActive = true;
+        }
+        function nextReading() {
+            return reading === 'temple' ? 'domino'
+                 : reading === 'domino' ? 'temple'
+                 : (Math.random() < 0.5 ? 'temple' : 'domino');
+        }
+
+        function groveTick(now) {
+            groveRAF = 0;
+            const dt = Math.min(0.05, (now - groveLast) / 1000); groveLast = now;
+
+            if (growDir !== 0) {
+                grown = Math.max(0, Math.min(1, grown + growDir * dt / (growDir > 0 ? GROW_S : RETRACT_S)));
+                applyGrowth();
+                if (growDir > 0 && grown >= 1) { growDir = 0; if (awake) beginLeg(nextReading()); }
+                if (growDir < 0 && grown <= 0) {
+                    growDir = 0; legActive = false; reading = 'none'; syncGlass();
+                    TREES.forEach(t => { t.cur.raise = 0; t.cur.x = t.x; });
+                    hgRot = 0; hg.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            if (awake && grown >= 0.999) {
+                if (legActive) {
+                    legU = Math.min(1, legU + dt / LEG_S);
+                    const e = easeIO(legU);
+                    TREES.forEach((t, i) => {
+                        const f = froms[i], g = tgts[i];
+                        const uu = easeIO(Math.max(0, Math.min(1, (legU - t.uoff) / (1 - t.uoff))));
+                        t.cur.raise = f.raise + (g.raise - f.raise) * uu;
+                        t.cur.x     = f.x     + (g.x     - f.x)     * uu;
+                    });
+                    hgRot = hgFrom + (hgTo - hgFrom) * e;      // the glass turns in step with the shadow
+                    hg.style.transform = `rotate(${hgRot}deg)`;
+                    if (legU >= 1) { legActive = false; holdUntil = now + HOLD_S * 1000; }
+                } else if (now >= holdUntil) {
+                    beginLeg(nextReading());
+                }
+            }
+
+            buildGroveShadows();
+            render();
+            if (growDir !== 0 || (awake && grown >= 0.999)) groveRAF = requestAnimationFrame(groveTick);
+        }
+        function runGrove() { if (!groveRAF) { groveLast = performance.now(); groveRAF = requestAnimationFrame(groveTick); } }
+
+        const glassBtn = document.getElementById('glassBtn');
+        const hg = glassBtn.querySelector('.hg');
+        const lblTop = glassBtn.querySelector('.lbl.top');
+        const lblBot = glassBtn.querySelector('.lbl.bot');
+        function syncGlass() {
+            lblTop.classList.toggle('on', reading === 'temple');
+            lblBot.classList.toggle('on', reading === 'domino');
+        }
+        glassBtn.addEventListener('click', () => {
+            awake = !awake;
+            growDir = awake ? 1 : -1;
+            if (!awake) legActive = false;
+            runGrove();
+        });
+
+        function update() {
+            const p = readParams();
+            const risers = Math.max(2, Math.round(p.floorHeight / REAL.riser));
+            renderScene(p, risers);
+            applyCam();
+            applyGrowth();
+            buildGroveShadows();
+            render();
+        }
+
+        update();
+        resize();
+        // the garden starts asleep — the hourglass wakes it
     </script>
 </body>
 </html>
