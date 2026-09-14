@@ -114,6 +114,18 @@
             color: #aaa;
             pointer-events: none;
         }
+        /* A refusal that names itself, drawn where the eye already is - the 2D
+           editor's bottom-left canvas text, moved to the corner of the model. */
+        #refuse-note {
+            position: absolute;
+            bottom: 8px;
+            left: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #d32f2f;
+            pointer-events: none;
+            max-width: 60%;
+        }
 
         /* What the 2D editor's button row used to sit under the plan; now it sits
            under the model. .disabled is the other half of the "explode to edit"
@@ -307,6 +319,7 @@
                     <button id="explode-btn" onclick="toggleExplode()">Explode</button>
                 </div>
                 <div id="defl-key"><i></i>slab edge &times;25</div>
+                <div id="refuse-note" hidden></div>
                 <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
             </div>
             <!-- SINGLE SCREEN. The 2D plan used to carry every edit: drag a fold node,
@@ -2451,10 +2464,16 @@
             const st = computeState();
             updateSim(st);
             updateReadouts(st);
+            const rn = document.getElementById('refuse-note');
+            rn.hidden = !(refuseNote && invalidFlash > 0);
+            rn.textContent = refuseNote;
         }
 
         /* =====================================================================
-           2D EDITOR
+           EDIT STATE - what a drag reads and writes, unchanged since the 2D
+           editor: dragType/dragIdx name what is being moved, refuse() names why
+           a clamp stopped short, dragSafe is the last known-good position for
+           the two drag types that can escape past a fold-layout change.
            ===================================================================== */
         let dragType = null, dragIdx = null, invalidFlash = 0;
         /* A CHECK ROW IS ALSO A SWITCH. Clicking one asks the plan to show what
@@ -3274,6 +3293,86 @@
         const modelGroup = new THREE.Group();
         scene.add(modelGroup);
 
+        /* =====================================================================
+           EXPLODE-MODE EDITING. A handle is a real object, not a symbol of one:
+           raycasting against it replaces the 2D editor's near()/pointInPolygon
+           hit-test outright, and a horizontal plane at the handle's own Y
+           replaces toPx/fromPx - the world coordinates already ARE the model
+           coordinates, so there is no screen<->world mapping left to get wrong.
+           dragType/dragIdx/dragSafe/refuse()/applyDrag/endDrag are unchanged
+           from the 2D editor; only how they get set is new.
+
+           Interception happens on simContainer, in the CAPTURE phase, one level
+           above the canvas. OrbitControls attaches its own pointerdown listener
+           directly to renderer.domElement - and for listeners on the SAME node,
+           capture vs bubble does not order them, registration order does, so
+           intercepting on renderer.domElement itself could not reliably win
+           against a control already listening there. A capture listener on the
+           PARENT fires while the event is still travelling inward, strictly
+           before it reaches the canvas at all, so stopping it there is airtight
+           regardless of listener order below. */
+        const raycaster = new THREE.Raycaster();
+        let handleMeshes = [];
+        let dragPlaneY = 0;
+
+        function rayFromEvent(e) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            const ndc = new THREE.Vector2(
+                ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                -((e.clientY - rect.top) / rect.height) * 2 + 1);
+            raycaster.setFromCamera(ndc, camera);
+            return raycaster;
+        }
+
+        // the world (x, z) a pointer event lands on, on the CURRENT drag's own
+        // horizontal plane - fold, stretch, anchor, vertex and stair all read
+        // this the same way, because a handle's own Y is what the eye is at
+        function planeTarget(e) {
+            rayFromEvent(e);
+            const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -dragPlaneY);
+            const hit = new THREE.Vector3();
+            return raycaster.ray.intersectPlane(plane, hit) ? { x: hit.x, z: hit.z } : null;
+        }
+
+        simContainer.addEventListener('pointerdown', e => {
+            if (!explodeMode) return;
+            rayFromEvent(e);
+            const hits = raycaster.intersectObjects(handleMeshes, false);
+            if (!hits.length) return;                    // nothing grabbed - orbit as usual
+            e.stopPropagation();
+            e.preventDefault();
+
+            const u = hits[0].object.userData;
+            const idx = clamp(u.floor !== undefined ? u.floor
+                : parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
+            document.getElementById('floorIndex').value = idx;
+            dragPlaneY = hits[0].object.position.y;
+            refuseNote = ''; invalidFlash = 0;
+            dragType = u.kind; dragIdx = u.index;
+            // dragSafe: exactly the two drag types that can be clamped back to a
+            // known-good position rather than merely refused - see applyDrag
+            if (u.kind === 'stretch' || u.kind === 'stair') {
+                dragSafe = floorData[idx].stairs.map(x => ({
+                    side: x.side, tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap }));
+            }
+            controls.enabled = false;
+        }, { capture: true });
+
+        renderer.domElement.addEventListener('pointermove', e => {
+            if (dragType === null) return;
+            const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
+            const target = planeTarget(e);
+            if (target) applyDrag(idx, target);
+        });
+
+        const finishExplodeDrag = () => {
+            if (dragType !== null) endDrag();
+            controls.enabled = true;
+        };
+        renderer.domElement.addEventListener('pointerup', finishExplodeDrag);
+        renderer.domElement.addEventListener('pointercancel', finishExplodeDrag);
+        renderer.domElement.addEventListener('pointerleave', finishExplodeDrag);
+
         // Concrete, lit and shadowed for real: a soft hemisphere fill plus one sun
         // that casts shadow maps, so the slabs shade the wall and each other.
         scene.add(new THREE.HemisphereLight(0xffffff, 0xf4f4f4, 3.1));
@@ -3380,6 +3479,17 @@
         const stairGhostMaterial = shared(new THREE.LineBasicMaterial({ color: 0x9fb8cc, transparent: true, opacity: 0.5 }));
         // exploded-axonometric alignment guides - present only while exploded
         const guideMaterial = shared(new THREE.LineDashedMaterial({ color: 0xaaaaaa, dashSize: 0.15, gapSize: 0.12, transparent: true, opacity: 0.6 }));
+
+        /* Handle colours carry the same language the 2D editor used: blue for a
+           fold node and the reserved stretch, near-black for a wall end, grey for
+           a plate corner. Unlit (Basic) so a handle reads the same in shadow as
+           in light - it is a control, not part of the building. */
+        const handleGeo = new THREE.SphereGeometry(0.16, 12, 8);
+        const foldHandleMat   = shared(new THREE.MeshBasicMaterial({ color: 0x007BFF, depthTest: false }));
+        const stretchHandleMat= shared(new THREE.MeshBasicMaterial({ color: 0x007BFF, depthTest: false }));
+        const anchorHandleMat = shared(new THREE.MeshBasicMaterial({ color: 0x111111, depthTest: false }));
+        const vertexHandleMat = shared(new THREE.MeshBasicMaterial({ color: 0x777777, depthTest: false }));
+        const stairHandleMat  = shared(new THREE.MeshBasicMaterial({ color: 0xb26a00, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthTest: false }));
 
         function createExtrusionGroup(poly2D, yB, yT, material, edgeMaterial, holes) {
             if (!poly2D || poly2D.length < 3) return null;
@@ -3600,6 +3710,77 @@
         /* =====================================================================
            SIMULATION + READOUTS
            ===================================================================== */
+        /* EVERY PICKABLE HANDLE, rebuilt from floorData each refresh exactly like
+           the model itself - nothing here is retained state, so a handle can never
+           drift from the geometry it edits. Only built while exploded: collapsed,
+           handleMeshes is emptied and nothing is pickable, which is the other half
+           of "explode to edit" (the CSS .edit-bar.disabled is the button half).
+
+           Two things chosen deliberately over the 2D editor's precedent:
+           - every floor's handles exist at once, not just the selected one, since
+             exploding already answers "which floor am I looking at" by where the
+             layers sit - picking a handle sets floorIndex FROM the pick, rather
+             than requiring it be set first.
+           - stretch/stair handles stop at the roof (numFloors - 1): the roof
+             carries no stair opening (placeStairsOn's own guard), and a stretch
+             handle there edited a reservation nothing used. Fold and plate-corner
+             handles cover every floor including the roof, since both are real
+             there. */
+        function buildHandles(st) {
+            handleMeshes = [];
+            if (!explodeMode) return;
+            const P = st.P, run = currentRun();
+            const sphere = (mat, x, y, z, ud) => {
+                const m = new THREE.Mesh(handleGeo, mat);
+                m.position.set(x, y, z);
+                m.userData = ud;
+                m.renderOrder = 20;
+                modelGroup.add(m);
+                handleMeshes.push(m);
+            };
+            const flatQuad = (mat, poly, y, ud) => {
+                const pts = poly.map(p => new THREE.Vector3(p.x, 0, p.z));
+                const geo = new THREE.BufferGeometry();
+                const idx3 = [0, 1, 2, 0, 2, 3];
+                const pos = new Float32Array(poly.length * 3);
+                poly.forEach((p, i) => { pos[i*3] = p.x; pos[i*3+1] = 0; pos[i*3+2] = p.z; });
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                geo.setIndex(idx3.slice(0, (poly.length - 2) * 3));
+                const m = new THREE.Mesh(geo, mat);
+                m.position.y = y;
+                m.userData = ud;
+                m.renderOrder = 19;
+                modelGroup.add(m);
+                handleMeshes.push(m);
+            };
+
+            for (let i = 0; i < numFloors; i++) {
+                const yMid = floorBaseY(i, P.floorH) + P.floorH * 0.5;
+                const ySlab = floorBaseY(i, P.floorH) + P.floorH;
+
+                floorData[i].foldNodes.forEach((n, j) =>
+                    sphere(foldHandleMat, n.x, yMid, n.z, { kind: 'fold', floor: i, index: j }));
+
+                floorData[i].vertices.forEach((v, j) =>
+                    sphere(vertexHandleMat, v.x, ySlab, v.z, { kind: 'vertex', floor: i, index: j }));
+
+                [0, 1].forEach(k => {
+                    const a = wallAnchors(floorData[i].vertices)[k];
+                    sphere(anchorHandleMat, a.x, yMid, a.z, { kind: 'anchor', floor: i, index: k });
+                });
+
+                if (i < numFloors - 1) {
+                    [0, 1].forEach(k => {
+                        const r = stretchOf(i, k, run);
+                        [r.P0, r.P1].forEach((p, e) => sphere(stretchHandleMat, p.x, yMid, p.z,
+                            { kind: 'stretch', floor: i, index: k * 2 + e }));
+                    });
+                    (st.floors[i].slots || []).forEach((sl, k) =>
+                        flatQuad(stairHandleMat, sl.poly, ySlab + 0.02, { kind: 'stair', floor: i, index: k }));
+                }
+            }
+        }
+
         function updateSim(st) {
             const { P, floors, slabT } = st;
 
@@ -3691,6 +3872,7 @@
                     modelGroup.add(line);
                 });
             }
+            buildHandles(st);
             updateGround();
         }
 
