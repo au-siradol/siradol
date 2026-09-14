@@ -1809,10 +1809,26 @@
             const ts = [c0, c1, c2, c3].map(axisParam);
             return {
                 poly: [c0, c1, c2, c3], outer: [c3, c2],
-                n: { x: nx, z: nz }, side: stair.side,
+                n: { x: nx, z: nz }, side: stair.side, flip: !!stair.flip,
                 t0: Math.min(...ts), t1: Math.max(...ts),
                 root: gap, width: g.width
             };
+        }
+
+        // where a flight actually starts and ends, along its own run - shared by
+        // the wireframe and solid so a flip can only ever mean one thing. The
+        // landing sits at whichever slot corner is "up" (poly[1] normally, or
+        // poly[0] once flipped), and the flight runs back from there into the
+        // headroom behind the opening.
+        function stairFlightAnchor(slot, g) {
+            const c0 = slot.poly[0], c1 = slot.poly[1];
+            let dx = c1.x - c0.x, dz = c1.z - c0.z;
+            const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+            const top = slot.flip ? c0 : c1;
+            // the step direction has to flip along with which corner is "up" -
+            // otherwise the flight would climb across the opening backwards
+            const rdx = slot.flip ? -dx : dx, rdz = slot.flip ? -dz : dz;
+            return { top, sx: top.x - rdx * g.run, sz: top.z - rdz * g.run, dx: rdx, dz: rdz };
         }
 
         function slotsFor(idx, g, coreT) {
@@ -1863,13 +1879,11 @@
         // The flight is longer than the opening it rises through, so its lower part
         // reaches back beyond the slot - that part has to land on the floor below.
         function stairFootprint(slot, g) {
-            const c0 = slot.poly[0], c1 = slot.poly[1];
-            let dx = c1.x - c0.x, dz = c1.z - c0.z;
-            const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
             const n = slot.n;
-            const a = { x: c1.x - dx * g.run, z: c1.z - dz * g.run };
-            return [a, c1,
-                    { x: c1.x + n.x * g.width, z: c1.z + n.z * g.width },
+            const { top, sx, sz } = stairFlightAnchor(slot, g);
+            const a = { x: sx, z: sz };
+            return [a, top,
+                    { x: top.x + n.x * g.width, z: top.z + n.z * g.width },
                     { x: a.x + n.x * g.width,  z: a.z + n.z * g.width }];
         }
         function footprintOnPlate(slot, g, verts) {
@@ -1880,9 +1894,7 @@
         // standing room in front of the bottom step and where you arrive at the top.
         function approachClear(slot, g, verts) {
             const fp = stairFootprint(slot, g);
-            const c0 = slot.poly[0], c1 = slot.poly[1];
-            let dx = c1.x - c0.x, dz = c1.z - c0.z;
-            const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+            const { dx, dz } = stairFlightAnchor(slot, g);
             const low = { x: (fp[0].x + fp[3].x) / 2, z: (fp[0].z + fp[3].z) / 2 };
             return outwardClearance(low, { x: -dx, z: -dz }, verts);
         }
@@ -2300,8 +2312,8 @@
                 floorData[i] = {
                     vertices: PLATE.map(v => ({ x: v.x, z: v.z, edge: v.edge || null })),
                     foldNodes: [],
-                    stairs: [{ side: 1, tc: undefined, sc: 0, ang: 0, gap: undefined },
-                             { side: -1, tc: undefined, sc: 0, ang: 0, gap: undefined }],
+                    stairs: [{ side: 1, tc: undefined, sc: 0, ang: 0, gap: undefined, flip: false },
+                             { side: -1, tc: undefined, sc: 0, ang: 0, gap: undefined, flip: false }],
                     stretch: undefined
                 };
             }
@@ -2739,6 +2751,18 @@
                         || wallEscapesPlate(nodes, fd.vertices, coreT)
                         || !wallClearsSlots(generateWallQuads(nodes, coreT, endDirsFor(fd.vertices)), must);
                     if (broken) fd.foldNodes = solveFolds(i, P, g);
+
+                    /* A stair's position is parametrised along the wall axis, not
+                       tied to the plate directly - so moving a plate corner or a
+                       wall end can strand a flight outside the new boundary with
+                       nothing above catching it (only the FOLD layout gets
+                       re-solved). Same fix, extended to the thing that stands in
+                       the wall: if the flight itself moved this round, the
+                       dragSafe revert below already covers it, so only floors
+                       broken as a SIDE EFFECT of some other edit get re-placed. */
+                    if (i < numFloors - 1 && moved !== 'stair' && stairMoveFault(i, g, 0)) {
+                        placeStairsOn(i, P, g, 1);
+                    }
                 }
             }
             refresh();
@@ -3334,21 +3358,61 @@
             return raycaster.ray.intersectPlane(plane, hit) ? { x: hit.x, z: hit.z } : null;
         }
 
-        simContainer.addEventListener('pointerdown', e => {
-            if (!explodeMode) return;
+        // a handle's world position projected to CSS pixels, for screen-space
+        // pick tolerance - the sphere's own world radius shrinks to a couple
+        // of screen pixels depending on camera zoom/distance, so hit-testing
+        // against its actual geometry is unusable for a real pointer
+        function screenPos(v3) {
+            const p = v3.clone().project(camera);
+            const rect = renderer.domElement.getBoundingClientRect();
+            return {
+                x: (p.x * 0.5 + 0.5) * rect.width + rect.left,
+                y: (-p.y * 0.5 + 0.5) * rect.height + rect.top
+            };
+        }
+
+        const HANDLE_PICK_PX = 16; // mirrors the deleted 2D editor's near() < 12px tolerance
+
+        // exact raycast first (covers the stair footprint quads, which are
+        // area targets and already generously sized); point-like handles
+        // (fold/vertex/anchor/stretch spheres) fall back to nearest-within-
+        // tolerance in screen space, since they render only a few pixels
+        // across and are effectively unhittable by exact geometry
+        function pickHandle(e) {
             rayFromEvent(e);
             const hits = raycaster.intersectObjects(handleMeshes, false);
-            if (!hits.length) return;                    // nothing grabbed - orbit as usual
+            if (hits.length) return hits[0].object;
+            let best = null, bestD = HANDLE_PICK_PX;
+            for (const m of handleMeshes) {
+                if (m.userData.kind === 'stair') continue;
+                const s = screenPos(m.position);
+                const d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
+                if (d < bestD) { bestD = d; best = m; }
+            }
+            return best;
+        }
+
+        // a stair handle is both a drag target (slide the flight) and a tap
+        // target (flip which end it climbs from) - the two are told apart by
+        // whether the pointer actually travelled before it lifted
+        const TAP_MAX_PX = 6;
+        let dragStartClient = null, dragMoved = false;
+
+        simContainer.addEventListener('pointerdown', e => {
+            if (!explodeMode) return;
+            const picked = pickHandle(e);
+            if (!picked) return;                          // nothing grabbed - orbit as usual
             e.stopPropagation();
             e.preventDefault();
 
-            const u = hits[0].object.userData;
+            const u = picked.userData;
             const idx = clamp(u.floor !== undefined ? u.floor
                 : parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             document.getElementById('floorIndex').value = idx;
-            dragPlaneY = hits[0].object.position.y;
+            dragPlaneY = picked.position.y;
             refuseNote = ''; invalidFlash = 0;
             dragType = u.kind; dragIdx = u.index;
+            dragStartClient = { x: e.clientX, y: e.clientY }; dragMoved = false;
             // dragSafe: exactly the two drag types that can be clamped back to a
             // known-good position rather than merely refused - see applyDrag
             if (u.kind === 'stretch' || u.kind === 'stair') {
@@ -3360,13 +3424,29 @@
 
         renderer.domElement.addEventListener('pointermove', e => {
             if (dragType === null) return;
+            if (!dragMoved && Math.hypot(e.clientX - dragStartClient.x, e.clientY - dragStartClient.y) > TAP_MAX_PX) {
+                dragMoved = true;
+            }
+            // a stair handle only starts sliding once the pointer has actually
+            // moved - applying from pointerdown would mark it manually placed
+            // (and nudge it a hair) on what the user meant as a plain tap
+            if (dragType === 'stair' && !dragMoved) return;
             const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const target = planeTarget(e);
             if (target) applyDrag(idx, target);
         });
 
         const finishExplodeDrag = () => {
-            if (dragType !== null) endDrag();
+            if (dragType === 'stair' && !dragMoved) {
+                // a tap, not a drag - flip which end of the run this flight climbs from
+                const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
+                const st = floorData[idx].stairs[dragIdx];
+                st.flip = !st.flip;
+                dragType = null; dragIdx = null;
+                refresh();
+            } else if (dragType !== null) {
+                endDrag();
+            }
             controls.enabled = true;
         };
         renderer.domElement.addEventListener('pointerup', finishExplodeDrag);
@@ -3419,15 +3499,20 @@
            actually the hot one. Materials are cached per bucket - three.js would
            otherwise leak one per storey per refresh. */
         const storeyMatCache = new Map();
+        // While exploded the wall itself is only there to give the handles
+        // something to stand on - it wins nothing by staying as opaque as the
+        // plain reading view, and every point of opacity it gives up is a
+        // point the handle underneath it reads more clearly.
+        function wallOpacityBase() { return explodeMode ? 0.58 : 0.78; }
         function storeyWallMaterial(use) {
             if (viewMode === 'concrete') return concreteWall;   // the building, not the reading
-            if (!isFinite(use) || use <= 0.70) return wallMaterial;
+            if (!isFinite(use) || use <= 0.70) { wallMaterial.opacity = wallOpacityBase(); return wallMaterial; }
             const k = Math.min(Math.round(Math.min(use, 1.15) * 20) / 20, 1.15);
-            if (storeyMatCache.has(k)) return storeyMatCache.get(k);
+            if (storeyMatCache.has(k)) { const cached = storeyMatCache.get(k); cached.opacity = wallOpacityBase(); return cached; }
             const f = clamp((k - 0.70) / 0.45, 0, 1);          // 0 at 70%, 1 at 115%
             const col = new THREE.Color(0xffffff).lerp(new THREE.Color(0xd06a3c), f * 0.55);
             const m = new THREE.MeshLambertMaterial({ color: col, transparent: true,
-                                                      opacity: 0.78, side: THREE.DoubleSide });
+                                                      opacity: wallOpacityBase(), side: THREE.DoubleSide });
             storeyMatCache.set(k, m);
             return m;
         }
@@ -3554,12 +3639,8 @@
         }
 
         function stairWireframe(slot, g, yFloor, mat) {
-            const c0 = slot.poly[0], c1 = slot.poly[1];
-            let dx = c1.x - c0.x, dz = c1.z - c0.z;
-            const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
             const n = slot.n;
-            const top = c1;
-            const sx = top.x - dx * g.run, sz = top.z - dz * g.run;
+            const { sx, sz, dx, dz } = stairFlightAnchor(slot, g);
             const P = (m, w, h) => new THREE.Vector3(sx + dx * m + n.x * w, yFloor + h, sz + dz * m + n.z * w);
 
             const pts = [];
@@ -3585,11 +3666,8 @@
            is. It is then lit, shadowed and occluded like every other surface, and
            the x-ray question disappears. */
         function stairSolid(slot, g, yFloor, mat) {
-            const c0 = slot.poly[0], c1 = slot.poly[1];
-            let dx = c1.x - c0.x, dz = c1.z - c0.z;
-            const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
-            const n = slot.n, top = c1;
-            const sx = top.x - dx * g.run, sz = top.z - dz * g.run;
+            const n = slot.n;
+            const { sx, sz, dx, dz } = stairFlightAnchor(slot, g);
 
             const shape = new THREE.Shape();
             shape.moveTo(0, 0);
@@ -3649,7 +3727,18 @@
             const aspect = simContainer.clientWidth / Math.max(simContainer.clientHeight, 1);
             if (aspect >= 1) { camera.top = d; camera.bottom = -d; camera.left = -d * aspect; camera.right = d * aspect; }
             else { camera.left = -d; camera.right = d; camera.top = d / aspect; camera.bottom = -d / aspect; }
-            camera.position.set(center.x + 50, center.y + 50, center.z + 50);
+            /* Refit the FRAME, not the VIEW. Toggling Explode or Forces/Concrete
+               used to reset the camera to one fixed corner every time, which
+               read as the model spinning under you if you had orbited anywhere
+               else first. The direction the user last orbited to is still
+               sitting in camera.position - controls.target, so keep it and
+               only move the camera further out or in along it; only the very
+               first call, before any target has been set, has nothing to keep
+               and falls back to the original corner. */
+            const dir = controls.target.lengthSq() > 0 || camera.position.lengthSq() > 0
+                ? camera.position.clone().sub(controls.target).normalize()
+                : new THREE.Vector3(1, 1, 1).normalize();
+            camera.position.copy(center).addScaledVector(dir, Math.sqrt(3) * 50);
             camera.updateProjectionMatrix();
             controls.target.copy(center);
             camera.lookAt(center);
@@ -3716,20 +3805,24 @@
            handleMeshes is emptied and nothing is pickable, which is the other half
            of "explode to edit" (the CSS .edit-bar.disabled is the button half).
 
-           Two things chosen deliberately over the 2D editor's precedent:
-           - every floor's handles exist at once, not just the selected one, since
-             exploding already answers "which floor am I looking at" by where the
-             layers sit - picking a handle sets floorIndex FROM the pick, rather
-             than requiring it be set first.
-           - stretch/stair handles stop at the roof (numFloors - 1): the roof
-             carries no stair opening (placeStairsOn's own guard), and a stretch
-             handle there edited a reservation nothing used. Fold and plate-corner
-             handles cover every floor including the roof, since both are real
-             there. */
+           Only the SELECTED floor's handles are built, not every floor's at once -
+           with every floor lit up together the dots pile up across overlapping
+           layers and none of them read clearly. floorIndex already exists to say
+           which floor the action buttons and the Structural Check column target,
+           so it doing double duty as "which floor's dots are on screen" costs
+           nothing new; picking a handle still sets floorIndex FROM the pick,
+           exactly as before, so the two can never disagree.
+
+           stretch/stair handles stop at the roof (numFloors - 1): the roof
+           carries no stair opening (placeStairsOn's own guard), and a stretch
+           handle there edited a reservation nothing used. Fold and plate-corner
+           handles cover every floor including the roof, since both are real
+           there. */
         function buildHandles(st) {
             handleMeshes = [];
             if (!explodeMode) return;
             const P = st.P, run = currentRun();
+            const shown = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const sphere = (mat, x, y, z, ud) => {
                 const m = new THREE.Mesh(handleGeo, mat);
                 m.position.set(x, y, z);
@@ -3754,30 +3847,29 @@
                 handleMeshes.push(m);
             };
 
-            for (let i = 0; i < numFloors; i++) {
-                const yMid = floorBaseY(i, P.floorH) + P.floorH * 0.5;
-                const ySlab = floorBaseY(i, P.floorH) + P.floorH;
+            const i = shown;
+            const yMid = floorBaseY(i, P.floorH) + P.floorH * 0.5;
+            const ySlab = floorBaseY(i, P.floorH) + P.floorH;
 
-                floorData[i].foldNodes.forEach((n, j) =>
-                    sphere(foldHandleMat, n.x, yMid, n.z, { kind: 'fold', floor: i, index: j }));
+            floorData[i].foldNodes.forEach((n, j) =>
+                sphere(foldHandleMat, n.x, yMid, n.z, { kind: 'fold', floor: i, index: j }));
 
-                floorData[i].vertices.forEach((v, j) =>
-                    sphere(vertexHandleMat, v.x, ySlab, v.z, { kind: 'vertex', floor: i, index: j }));
+            floorData[i].vertices.forEach((v, j) =>
+                sphere(vertexHandleMat, v.x, ySlab, v.z, { kind: 'vertex', floor: i, index: j }));
 
+            [0, 1].forEach(k => {
+                const a = wallAnchors(floorData[i].vertices)[k];
+                sphere(anchorHandleMat, a.x, yMid, a.z, { kind: 'anchor', floor: i, index: k });
+            });
+
+            if (i < numFloors - 1) {
                 [0, 1].forEach(k => {
-                    const a = wallAnchors(floorData[i].vertices)[k];
-                    sphere(anchorHandleMat, a.x, yMid, a.z, { kind: 'anchor', floor: i, index: k });
+                    const r = stretchOf(i, k, run);
+                    [r.P0, r.P1].forEach((p, e) => sphere(stretchHandleMat, p.x, yMid, p.z,
+                        { kind: 'stretch', floor: i, index: k * 2 + e }));
                 });
-
-                if (i < numFloors - 1) {
-                    [0, 1].forEach(k => {
-                        const r = stretchOf(i, k, run);
-                        [r.P0, r.P1].forEach((p, e) => sphere(stretchHandleMat, p.x, yMid, p.z,
-                            { kind: 'stretch', floor: i, index: k * 2 + e }));
-                    });
-                    (st.floors[i].slots || []).forEach((sl, k) =>
-                        flatQuad(stairHandleMat, sl.poly, ySlab + 0.02, { kind: 'stair', floor: i, index: k }));
-                }
+                (st.floors[i].slots || []).forEach((sl, k) =>
+                    flatQuad(stairHandleMat, sl.poly, ySlab + 0.02, { kind: 'stair', floor: i, index: k }));
             }
         }
 
@@ -3815,6 +3907,7 @@
 
             clearGroup(modelGroup);
             const asBuilt = viewMode === 'concrete';
+            floorMaterial.opacity = explodeMode ? 0.32 : 0.42;
             const slabMat = asBuilt ? concreteSlab : floorMaterial;
             const wallEdge = asBuilt ? concreteEdge : wallEdgeMaterial;
             const slabEdge = asBuilt ? concreteEdge : floorEdgeMaterial;
