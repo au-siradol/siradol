@@ -52,22 +52,21 @@
             gap: 15px; 
         }
 
-        .canvases-wrapper {
-            display: flex;
-            gap: 15px; 
-        }
-
+        /* SINGLE SCREEN. The plan used to sit beside the model at flex: 1 against
+           the model's flex: 2.5; removing it does not just delete a pane, it gives
+           the model the full width - a single wrapper, no row of two to share. */
         .canvas-3d-wrapper {
-            flex: 2.5;
             position: relative;
             background: #fff;
             border: 1px solid #e5e5e5;
             overflow: hidden;
         }
+        /* Taller than the old 420px: it was sized to sit beside a 262px-tall plan,
+           and now has the vertical room the plan gave back as well as the width. */
         #simContainer {
             display: block;
             width: 100%;
-            height: 420px;
+            height: 520px;
             background: transparent;
             cursor: grab;
             position: relative;
@@ -89,6 +88,22 @@
         #view-mode button:hover { color: #111; border-color: #bbb; }
         #view-mode button.on { background: #111; color: #fff; border-color: #111; }
 
+        /* EXPLODE, on the opposite corner from Forces/Concrete because it answers a
+           different question - not "what am I looking at" but "can I touch it".
+           .on doubles as the switch that arms editing: see .edit-bar.disabled and
+           the pickability check in the pointer handlers. */
+        #explode-mode {
+            position: absolute; top: 8px; right: 10px; display: flex; z-index: 2;
+        }
+        #explode-mode button {
+            padding: 4px 9px; background: rgba(255,255,255,0.85); color: #999;
+            border: 1px solid #ddd; font-size: 8px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.6px; cursor: pointer;
+            transition: 0.15s;
+        }
+        #explode-mode button:hover { color: #111; border-color: #bbb; }
+        #explode-mode button.on { background: #d32f2f; color: #fff; border-color: #d32f2f; }
+
         #sim-hint {
             position: absolute;
             bottom: 8px;
@@ -100,46 +115,16 @@
             pointer-events: none;
         }
 
-        .canvas-2d-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            min-width: 300px;
-            padding: 15px;
+        /* What the 2D editor's button row used to sit under the plan; now it sits
+           under the model. .disabled is the other half of the "explode to edit"
+           contract - collapsed, these can be seen but not reached. */
+        .edit-bar {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            transition: opacity 0.15s;
         }
-        .editor-header {
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .editor-header h3 {
-            margin: 0; 
-            font-size: 11px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            color: #333;
-            letter-spacing: 0.5px;
-        }
-        /* 262 px, as it was. At 560 the plan drew beautifully - 28 px/m, a 12 px
-           wall - but it pushed the status bar and every control below the fold, and
-           a study you have to scroll to read is a worse trade than a delicate
-           drawing. Poche survives at 12 px/m: the wall lands about 5 px, thin but
-           still a filled band rather than a line, and the hierarchy holds. */
-        canvas#editorCanvas {
-            display: block;
-            width: 100%;
-            height: 286px;
-            background: #fff;
-            border: 1px solid #eee;
-            cursor: crosshair;
-            touch-action: none;
-            margin-bottom: 8px;
-        }
+        .edit-bar.disabled { opacity: 0.4; pointer-events: none; }
 
-        .btn-group { display: flex; gap: 5px; margin-top: auto; }
+        .btn-group { display: flex; gap: 5px; }
         select { 
             width: auto; padding: 4px 6px; font-size: 10px; 
             background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 0;
@@ -312,33 +297,36 @@
     <div class="main-container">
         
         <div class="main-view-panel">
-            <div class="canvases-wrapper">
-                <div class="canvas-3d-wrapper">
-                    <div id="simContainer"></div>
-                    <div id="view-mode">
-                        <button data-mode="forces" class="on" onclick="setViewMode('forces')">Forces</button>
-                        <button data-mode="concrete" onclick="setViewMode('concrete')">Concrete</button>
-                    </div>
-                    <div id="defl-key"><i></i>slab edge &times;25</div>
-                    <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
+            <div class="canvas-3d-wrapper">
+                <div id="simContainer"></div>
+                <div id="view-mode">
+                    <button data-mode="forces" class="on" onclick="setViewMode('forces')">Forces</button>
+                    <button data-mode="concrete" onclick="setViewMode('concrete')">Concrete</button>
                 </div>
-                <div class="canvas-2d-wrapper">
-                    <div class="editor-header">
-                        <h3>2D Geometry Editor</h3>
-                        <select id="floorIndex" autocomplete="off"></select>
-                    </div>
-                    <canvas id="editorCanvas"></canvas>
-                    
-                    <div class="btn-group">
-                        <button class="action-btn" onclick="addFold()">+ Fold</button>
-                        <button class="action-btn" onclick="removeFold()">&minus; Fold</button>
-                        <button class="action-btn" onclick="autoPlaceStairs()">Stairs</button>
-                        <button class="action-btn" onclick="resetDesign()">Reset</button>
-                    </div>
-                    <div class="btn-group" style="margin-top:5px;">
-                        <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeWall()">Auto-Fold Floor</button>
-                        <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeAll()">Auto-Fold All</button>
-                    </div>
+                <div id="explode-mode">
+                    <button id="explode-btn" onclick="toggleExplode()">Explode</button>
+                </div>
+                <div id="defl-key"><i></i>slab edge &times;25</div>
+                <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
+            </div>
+            <!-- SINGLE SCREEN. The 2D plan used to carry every edit: drag a fold node,
+                 a stair, a plate corner, all in one shared top-down frame. That frame
+                 is gone; editing now happens IN the model, on the exploded layers,
+                 where the handle you grab is the thing itself rather than a symbol of
+                 it. This bar is what survives from the plan's old edge: which floor is
+                 selected, and the actions that do not have a handle to grab (Auto-Fold,
+                 Stairs, Reset). It only responds while exploded, via .disabled. -->
+            <div class="edit-bar disabled" id="editBar">
+                <select id="floorIndex" autocomplete="off"></select>
+                <div class="btn-group">
+                    <button class="action-btn" onclick="addFold()">+ Fold</button>
+                    <button class="action-btn" onclick="removeFold()">&minus; Fold</button>
+                    <button class="action-btn" onclick="autoPlaceStairs()">Stairs</button>
+                    <button class="action-btn" onclick="resetDesign()">Reset</button>
+                </div>
+                <div class="btn-group" style="margin-top:5px;">
+                    <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeWall()">Auto-Fold Floor</button>
+                    <button class="action-btn primary-btn" style="margin-top:0;" onclick="optimizeAll()">Auto-Fold All</button>
                 </div>
             </div>
             <div id="status-bar" class="ok">SAFE</div>
@@ -442,8 +430,6 @@
         // shape of the value is visible at the declaration
         let axisEnds = [{ x: 0, z: 0 }, { x: 0, z: 18.45 }];
 
-        const editCanvas = document.getElementById('editorCanvas');
-        const editCtx = editCanvas.getContext('2d');
 
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
         const P_coreT = () => parseFloat(document.getElementById('coreT').value) || 0.55;
@@ -2463,8 +2449,6 @@
 
         function refresh() {
             const st = computeState();
-            updateEditView();
-            drawEditor(st);
             updateSim(st);
             updateReadouts(st);
         }
@@ -2472,7 +2456,6 @@
         /* =====================================================================
            2D EDITOR
            ===================================================================== */
-        let editView = { scale: 11, cx: 0, cz: 0 };
         let dragType = null, dragIdx = null, invalidFlash = 0;
         /* A CHECK ROW IS ALSO A SWITCH. Clicking one asks the plan to show what
            that row measures, and dims everything else - so "offset from the wall
@@ -2510,600 +2493,18 @@
         }
         let stairsManual = false;   // set once a flight has been placed by hand
 
-        /* EVERY LINE WAS DRAWN AT HALF RESOLUTION. A canvas has two sizes: the CSS
-           box it occupies and the pixel buffer behind it. This set the buffer to the
-           CSS size, so on a 2x display the browser stretched each drawn pixel over
-           2x2 screen pixels - the whole plan arrived soft, and so did the model,
-           which had no setPixelRatio either.
 
-           The buffer is now css x dpr and the context is scaled by dpr, so every
-           drawing routine keeps working in CSS pixels and none of them had to
-           change - only the six places that read the canvas size for layout, which
-           now read the CSS size that editCssW/H carry. dpr is capped at 2: past
-           that the buffer grows fourfold for a difference nobody can see. */
-        let editCssW = 0, editCssH = 0;
-        function ensureCanvasSize(canvas) {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            const w = Math.floor(rect.width), h = Math.floor(rect.height);
-            const bw = Math.floor(w * dpr), bh = Math.floor(h * dpr);
-            const changed = canvas.width !== bw || canvas.height !== bh;
-            if (changed) { canvas.width = bw; canvas.height = bh; }
-            editCssW = w; editCssH = h;
-            // resizing resets the context, and drawEditor calls this every frame,
-            // so the transform is (re)applied here rather than once at startup
-            canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
-            return changed;
-        }
-
-        // Locked to the union of every visible floor: comparing folds between
-        // storeys is the whole point of the ghost wireframes.
-        function updateEditView() {
-            if (dragType !== null) return;
-            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-            for (let i = 0; i < numFloors; i++) floorData[i].vertices.forEach(v => {
-                minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x);
-                minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z);
-            });
-            if (!isFinite(minX)) return;
-            const pad = 22;
-            const s = Math.min((editCssW - pad * 2) / Math.max(maxX - minX, 0.001),
-                               (editCssH - pad * 2) / Math.max(maxZ - minZ, 0.001));
-            editView.scale = clamp(s, 3, 40);   // 24 used to cap the fit short
-            editView.cx = editCssW / 2 - ((minX + maxX) / 2) * editView.scale;
-            editView.cz = editCssH / 2 - ((minZ + maxZ) / 2) * editView.scale;
-        }
-
-        function toPx(x, z)   { return { px: editView.cx + x * editView.scale, pz: editView.cz + z * editView.scale }; }
-        function fromPx(px, pz) { return { x: (px - editView.cx) / editView.scale, z: (pz - editView.cz) / editView.scale }; }
-
-        function strokePath(pts, close) {
-            if (!pts.length) return;
-            editCtx.beginPath();
-            const p0 = toPx(pts[0].x, pts[0].z);
-            editCtx.moveTo(p0.px, p0.pz);
-            for (let i = 1; i < pts.length; i++) { const p = toPx(pts[i].x, pts[i].z); editCtx.lineTo(p.px, p.pz); }
-            if (close) editCtx.closePath();
-        }
-
-        function drawEditor(st) {
-            ensureCanvasSize(editCanvas);
-            editCtx.clearRect(0, 0, editCssW, editCssH);
-            const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
-
-            // ghost floors
-            for (let i = 0; i < numFloors; i++) {
-                if (i === idx) continue;
-                strokePath(floorData[i].vertices, true);
-                editCtx.strokeStyle = 'rgba(180,180,180,0.32)'; editCtx.lineWidth = 1; editCtx.stroke();
-                strokePath(st.floors[i].nodes, false);
-                editCtx.strokeStyle = 'rgba(160,160,160,0.5)'; editCtx.lineWidth = 1.6; editCtx.stroke();
-                const p0 = toPx(floorData[i].vertices[0].x, floorData[i].vertices[0].z);
-                editCtx.fillStyle = 'rgba(150,150,150,0.8)'; editCtx.font = '9px Helvetica';
-                editCtx.fillText('F' + (i + 1), p0.px + 5, p0.pz - 5);
-            }
-
-            /* WHAT THE FLOOR BELOW FORBIDS. Two different things, and conflating
-               them is what made this confusing to use:
-
-               - the OPENINGS below, faintly outlined. The wall of this floor
-                 stands on that slab, so it may not land on them.
-               - the BAND those openings forbid, which is wider: bandPad inflates
-                 each one by coreT + STAIR_CLEAR, because a turning wall is thicker
-                 than its own axis line. Drawn separately, because a ghost of the
-                 opening alone would stop the wall a wall-thickness short of the
-                 line you can see, and that reads as the page being broken. */
-            if (idx > 0) (function () {
-                // `data` is declared further down, so read the source directly -
-                // referencing it here would be a temporal dead zone
-                const verts = floorData[idx].vertices;
-                const coreT = st.P.coreT;
-                const half = plateHalfWidth(verts) * 1.6;
-                editCtx.save();
-                blockedBands(idx, coreT).forEach(b => {
-                    const strip = clipPolygon([
-                        axisToXZ(b[0], -half), axisToXZ(b[1], -half),
-                        axisToXZ(b[1], half), axisToXZ(b[0], half)
-                    ], verts);
-                    if (strip.length < 3) return;
-                    strokePath(strip, true);
-                    editCtx.fillStyle = 'rgba(211,47,47,0.055)'; editCtx.fill();
-                    editCtx.setLineDash([2, 3]);
-                    editCtx.strokeStyle = 'rgba(211,47,47,0.30)'; editCtx.lineWidth = 1; editCtx.stroke();
-                });
-                editCtx.setLineDash([1, 3]);
-                st.floors[idx - 1].slots.forEach(sl => {
-                    strokePath(sl.poly, true);
-                    editCtx.strokeStyle = 'rgba(150,150,150,0.75)'; editCtx.lineWidth = 1; editCtx.stroke();
-                });
-                editCtx.restore();
-            })();
-
-            // division axis - the fixed line the wall ends are locked to
-            (function () {
-                const p0 = axisPoint(), u = axisDir(), L = 200;
-                strokePath([{ x: p0.x - u.x * L, z: p0.z - u.z * L }, { x: p0.x + u.x * L, z: p0.z + u.z * L }], false);
-                editCtx.save();
-                editCtx.setLineDash([5, 4]);
-                editCtx.strokeStyle = 'rgba(211,47,47,0.55)'; editCtx.lineWidth = 1; editCtx.stroke();
-                editCtx.restore();
-            })();
-
-            const data = floorData[idx];
-            const nodes = st.floors[idx].nodes;
-
-            /* Cantilever reach band - the exact quantity the check measures, and
-               only ever a statement about the PLATE: how much of the floor a slab
-               this thick can carry off the wall. Offsetting a folded wall by more
-               than its own segments are long gives a ring that crosses itself and
-               throws lobes far outside the building - at eight storeys the offset
-               reaches 6 m against segments of 2 to 4 m, and the guide read as a
-               fault in the geometry when nothing was outside the plate at all.
-               Clipping to the plate is not cosmetic: outside it the band means
-               nothing, and the canvas clip takes the self-crossing with it. */
-            /* Reach: the LINE the slab cannot carry past, not a wash over the plan.
-               Filled, it was the largest mark in the drawing and the least
-               important one - it made the plate read as a coloured shape rather
-               than an outline. When the line falls outside the plate everywhere,
-               nothing is drawn, which is exactly what "all of it is within reach"
-               should look like. */
-            (function () {
-                const w = st.capacity + st.P.coreT / 2;
-                const { lefts, rights } = offsetPolyline(nodes, w);
-                editCtx.save();
-                strokePath(data.vertices, true);
-                editCtx.clip();
-                editCtx.setLineDash([4, 4]);
-                editCtx.strokeStyle = 'rgba(0,123,255,0.45)'; editCtx.lineWidth = 1;
-                [lefts, rights].forEach(side => { strokePath(side, false); editCtx.stroke(); });
-                editCtx.restore();
-            })();
-
-            /* THREE WEIGHTS, AND THE WALL IS THE HEAVY ONE. The plate used to be
-               drawn at 1.5 px in near-black while the wall was a blue line, which
-               put the envelope above the subject. The plate is the envelope: one
-               thin grey line. Its corners are small open squares, because that is
-               what they are - points on a boundary, not data. */
-            strokePath(data.vertices, true);
-            editCtx.strokeStyle = '#9a9a9a'; editCtx.lineWidth = 1; editCtx.stroke();
-            data.vertices.forEach(v => {
-                const p = toPx(v.x, v.z);
-                editCtx.fillStyle = '#fff'; editCtx.strokeStyle = '#777'; editCtx.lineWidth = 1;
-                editCtx.fillRect(p.px - 2.5, p.pz - 2.5, 5, 5);
-                editCtx.strokeRect(p.px - 2.5, p.pz - 2.5, 5, 5);
-            });
-
-            // two stair slots, one per dwelling, parallel to the division axis
-            st.floors[idx].slots.forEach((sl, k) => {
-                const bad = !slotInsidePlate(sl, data.vertices) || slotPassage(sl, data.vertices) < PASSAGE_MIN;
-                // amber: legal, but this position leaves the wall too little to fold
-                const tight = !bad && stairRoomTight(idx, k, st.stair, st.P);
-                strokePath(sl.poly, true);
-                editCtx.fillStyle = bad ? 'rgba(211,47,47,0.10)'
-                                  : tight ? 'rgba(178,106,0,0.10)' : 'rgba(0,0,0,0.05)';
-                editCtx.fill();
-                editCtx.save();
-                editCtx.setLineDash([4, 3]);
-                editCtx.strokeStyle = bad ? '#d32f2f' : tight ? '#b26a00' : '#555';
-                editCtx.lineWidth = 1; editCtx.stroke();
-                editCtx.restore();
-                // open risers, drawn across the flight
-                editCtx.strokeStyle = 'rgba(85,85,85,0.35)'; editCtx.lineWidth = 1;
-                const steps = Math.max(3, Math.round(sl.poly.length && (sl.t1 - sl.t0) / st.stair.going));
-                for (let k = 1; k < steps; k++) {
-                    const f = k / steps;
-                    const a = sl.poly[0], b = sl.poly[1], c = sl.poly[2], d2 = sl.poly[3];
-                    strokePath([{ x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f },
-                                { x: d2.x + (c.x - d2.x) * f, z: d2.z + (c.z - d2.z) * f }], false);
-                    editCtx.stroke();
-                }
-                /* The direction of ascent, drawn the way a plan always draws it -
-                   and here it carries information rather than convention: the slab
-                   opening sits at the TOP of the run, the end headroom decides, so
-                   the arrow says which end of the slot is which. stairWireframe
-                   treats poly[1] as the top, so the arrow agrees with the model. */
-                (function () {
-                    const a = sl.poly[0], b = sl.poly[1], c = sl.poly[2], d2 = sl.poly[3];
-                    const foot = { x: (a.x + d2.x) / 2, z: (a.z + d2.z) / 2 };
-                    const head = { x: (b.x + c.x) / 2, z: (b.z + c.z) / 2 };
-                    let dx = head.x - foot.x, dz = head.z - foot.z;
-                    const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
-                    const tail = { x: foot.x + dx * L * 0.12, z: foot.z + dz * L * 0.12 };
-                    const tip  = { x: foot.x + dx * L * 0.88, z: foot.z + dz * L * 0.88 };
-                    strokePath([tail, tip], false);
-                    editCtx.strokeStyle = 'rgba(85,85,85,0.85)'; editCtx.lineWidth = 1.1;
-                    editCtx.stroke();
-                    // head
-                    const hw = 0.16, hl = 0.34;
-                    const nx = dz, nz = -dx;
-                    strokePath([{ x: tip.x - dx * hl + nx * hw, z: tip.z - dz * hl + nz * hw },
-                                tip,
-                                { x: tip.x - dx * hl - nx * hw, z: tip.z - dz * hl - nz * hw }], false);
-                    editCtx.stroke();
-                    // a short bar at the foot, so the bottom end reads as the bottom
-                    strokePath([{ x: tail.x + nx * hw, z: tail.z + nz * hw },
-                                { x: tail.x - nx * hw, z: tail.z - nz * hw }], false);
-                    editCtx.stroke();
-                })();
-            });
-
-            drawStairAid(st, idx);
-            drawHighlight(st, idx, nodes);
-
-            /* THE WALL DRAWS ITS OWN UTILISATION. Each segment is weighted and
-               tinted by the share of its capacity the combined lateral check puts
-               into it - so the plan says which fold is working, which is the thing
-               the side column cannot say. Uniform blue when the check has no
-               answer, and red while an edit is being refused. */
-            /* POCHE. A cut concrete wall is filled in plan, not drawn as a line -
-               and at 28 px/m a 0.43 m wall is 12 px, wide enough to be one. The
-               utilisation that used to ride on line WIDTH now rides on the fill,
-               which is better: the area is already proportional to the wall, so the
-               tint says how hard that piece is working without the weight lying
-               about how thick it is. Uniform dark when the check has no answer, red
-               while an edit is being refused. */
-            (function () {
-                const per = st.floors[idx].comb.perSeg || {};
-                const dim = hlKey && hlKey !== 'lateral' ? 0.5 : 1;
-                const quads = st.floors[idx].quads || [];
-                quads.forEach((q, j) => {
-                    const u = per[j];
-                    let col;
-                    if (invalidFlash > 0)        col = [211, 47, 47];
-                    else if (u === undefined)    col = [34, 34, 34];
-                    else if (u > 1)              col = [211, 47, 47];
-                    else if (u > 0.85)           col = [178, 106, 0];
-                    else                         col = [34, 34, 34];
-                    const a = u === undefined ? 0.88 : 0.62 + 0.34 * clamp(u, 0, 1.1);
-                    strokePath(q, true);
-                    editCtx.fillStyle = 'rgba(' + col.join(',') + ',' + (a * dim) + ')';
-                    editCtx.fill();
-                    editCtx.strokeStyle = 'rgba(' + col.join(',') + ',' + Math.min(1, a * dim + 0.1) + ')';
-                    editCtx.lineWidth = 0.8; editCtx.stroke();
-                });
-            })();
-
-            // locked ends
-            (function () {   // one straight stretch per stair, merged when they coincide
-                wallSegments(idx, st.stair.run).segs.forEach(r => {
-                    // ticks across the poche at each end, instead of a fat second
-                    // colour laid over the wall - the stretch is a NOTE on the wall
-                    /* On dark poche a blue tick disappears, so each tick is drawn
-                       twice: a white one to cut the fill, the blue one over it. Same
-                       trick a drawing uses for a dimension line over a hatch. */
-                    editCtx.save();
-                    [r.P0, r.P1].forEach(pt => {
-                        const t = st.P.coreT * 1.5;
-                        const seg = [{ x: pt.x + r.n.x * t, z: pt.z + r.n.z * t },
-                                     { x: pt.x - r.n.x * t, z: pt.z - r.n.z * t }];
-                        strokePath(seg, false);
-                        editCtx.strokeStyle = 'rgba(255,255,255,0.9)'; editCtx.lineWidth = 3.2;
-                        editCtx.stroke();
-                        strokePath(seg, false);
-                        editCtx.strokeStyle = '#007BFF'; editCtx.lineWidth = 1.3;
-                        editCtx.stroke();
-                    });
-                    editCtx.restore();
-                    editCtx.fillStyle = '#007BFF';
-                    [r.P0, r.P1].forEach(p => {
-                        const q = toPx(p.x, p.z);
-                        editCtx.beginPath(); editCtx.arc(q.px, q.pz, 4.5, 0, Math.PI * 2); editCtx.fill();
-                    });
-                });
-            })();
-
-            /* THE TWO CENTRES. Twist is what forces the fold, and this is the
-               picture of it: the centre of rigidity sits on the wall, the centre of
-               mass sits in the plate, and the gap between them is the lever the
-               earthquake pulls on. Eurocode 8 adds 5% of the plan whatever the
-               layout does, which is the ring. */
-            (function () {
-                const tw = st.floors[idx].tors;
-                if (!tw || !tw.cr) return;
-                const cr = toPx(tw.cr.x, tw.cr.z), cm = toPx(tw.cm.x, tw.cm.z);
-                const dim = hlKey && hlKey !== 'twist' ? 0.3 : 1;
-                editCtx.save();
-                // the mandatory accidental eccentricity, as a ring on the mass centre
-                const rAcc = Math.max(tw.accX, tw.accZ) * editView.scale;
-                editCtx.beginPath(); editCtx.arc(cm.px, cm.pz, rAcc, 0, Math.PI * 2);
-                editCtx.strokeStyle = 'rgba(211,47,47,' + (0.30 * dim) + ')';
-                editCtx.setLineDash([3, 3]); editCtx.lineWidth = 1; editCtx.stroke();
-                editCtx.setLineDash([]);
-                // the arm between them
-                editCtx.beginPath(); editCtx.moveTo(cm.px, cm.pz); editCtx.lineTo(cr.px, cr.pz);
-                editCtx.strokeStyle = 'rgba(211,47,47,' + (0.65 * dim) + ')';
-                editCtx.lineWidth = 1.2; editCtx.stroke();
-                // centre of mass: open circle
-                editCtx.beginPath(); editCtx.arc(cm.px, cm.pz, 3.5, 0, Math.PI * 2);
-                editCtx.strokeStyle = 'rgba(17,17,17,' + (0.75 * dim) + ')';
-                editCtx.lineWidth = 1.2; editCtx.stroke();
-                // centre of rigidity: cross on the wall
-                editCtx.beginPath();
-                editCtx.moveTo(cr.px - 4, cr.pz); editCtx.lineTo(cr.px + 4, cr.pz);
-                editCtx.moveTo(cr.px, cr.pz - 4); editCtx.lineTo(cr.px, cr.pz + 4);
-                editCtx.strokeStyle = 'rgba(211,47,47,' + (0.9 * dim) + ')';
-                editCtx.lineWidth = 1.4; editCtx.stroke();
-                editCtx.restore();
-            })();
-
-            editCtx.fillStyle = '#111';
-            axisEnds.forEach(a => {
-                const p = toPx(a.x, a.z);
-                editCtx.fillRect(p.px - 4, p.pz - 4, 8, 8);
-            });
-            // draggable folds
-            editCtx.fillStyle = invalidFlash > 0 ? '#d32f2f' : '#007BFF';
-            for (let i = 1; i < nodes.length - 1; i++) {
-                const p = toPx(nodes[i].x, nodes[i].z);
-                editCtx.beginPath(); editCtx.arc(p.px, p.pz, 3, 0, Math.PI * 2); editCtx.fill();
-            }
-
-            /* THE FLOOR EACH DWELLING GETS, one figure on each side of the wall.
-               A scale bar was the first idea and the wrong one: it says how big the
-               drawing is, which is fixed, while this says what the WALL does, which
-               is the subject and which changes every time it is folded. Taken to
-               the wall centreline, so the two areas sum to the plate. */
-            (function () {
-                const half = splitPlateByWall(data.vertices, nodes);
-                if (!half) return;
-                /* In the corner, not on the plan. Laid over the drawing these two
-                   figures fell on the poche and the stair slots, which both sit on
-                   the axis - and at this scale the plate is only about 110 px wide,
-                   so there was never room between the wall and the envelope. The
-                   left figure is the left side on screen, which needs no legend
-                   because the drawing is right there. */
-                const s0 = Math.sign(axisSide(half.firstVertex) || 1);
-                const left  = s0 < 0 ? half.a : half.b;
-                const right = s0 < 0 ? half.b : half.a;
-                const x1 = editCssW - 8, y1 = editCssH - 8;
-                editCtx.save();
-                editCtx.textAlign = 'right';
-                editCtx.font = '10px Helvetica';
-                editCtx.fillStyle = '#777';
-                editCtx.fillText(left.toFixed(1) + ' / ' + right.toFixed(1) + ' m\u00b2', x1, y1);
-                editCtx.font = '8px Helvetica';
-                editCtx.fillStyle = '#bbb';
-                editCtx.fillText('EACH SIDE OF THE WALL', x1, y1 - 11);
-                editCtx.restore();
-            })();
-
-            if (refuseNote && invalidFlash > 0) {
-                editCtx.font = 'bold 10px Helvetica';
-                editCtx.fillStyle = 'rgba(211,47,47,0.95)';
-                editCtx.fillText(refuseNote, 8, editCssH - 8);
-            }
-            if (invalidFlash > 0) {
-                invalidFlash--;
-                if (invalidFlash === 0) refuseNote = '';
-                setTimeout(() => refresh(), 160);
-            }
-        }
-
-        function drawStairAid(st, idx) {
-            if (idx >= numFloors - 1) return;
-            if (dragType !== 'stair' && dragType !== 'stretch') return;
-
-            /* WHAT THIS STAIR COSTS THE FLOOR ABOVE. Its openings force the wall
-               of the storey above to run straight across them, so moving a stair
-               changes what can be folded on TWO floors. Shown while a stair is being
-               moved, which is exactly when that price is being paid. */
-            if (idx + 1 < numFloors) {
-                const hw = plateHalfWidth(floorData[idx].vertices);
-                blockedBands(idx + 1, st.P.coreT).forEach(b => {
-                    strokePath([axisToXZ(b[0], -hw), axisToXZ(b[1], -hw),
-                                axisToXZ(b[1], hw), axisToXZ(b[0], hw)], true);
-                    editCtx.fillStyle = 'rgba(211,47,47,0.055)'; editCtx.fill();
-                });
-            }
-
-        }
-
-        function drawHighlight(st, idx, nodes) {
-            if (!hlKey) return;
-            const fl = st.floors[idx], d = floorData[idx], coreT = st.P.coreT;
-            const dash = (a, b) => { editCtx.save(); editCtx.setLineDash([a, b]); };
-            const mark = (p, r, col) => {
-                const q = toPx(p.x, p.z);
-                editCtx.beginPath(); editCtx.arc(q.px, q.pz, r, 0, Math.PI * 2);
-                editCtx.fillStyle = col; editCtx.fill();
-            };
-
-            if (hlKey === 'reach') {
-                // the line the slab cannot reach past, and the corners that do
-                const cap = cantileverCapacity(st.slabT);
-                [1, -1].forEach(sg => {
-                    const off = offsetPolyline(nodes, sg * (coreT / 2 + cap), endDirsFor(d.vertices));
-                    if (!off || off.length < 2) return;
-                    strokePath(off, false);
-                    dash(4, 3);
-                    editCtx.strokeStyle = 'rgba(211,47,47,0.55)'; editCtx.lineWidth = 1.2;
-                    editCtx.stroke(); editCtx.restore();
-                });
-                /* Mark the point that SETS the number, always - an overlay that
-                   draws nothing when the design is comfortable reads as broken.
-                   Then anything else within three quarters of the limit. */
-                const pts = d.vertices.concat(...fl.slots.map(sl => sl.poly));
-                let worst = null;
-                const clearAt = pt => {
-                    let dd = Infinity;
-                    for (let j = 0; j < nodes.length - 1; j++)
-                        dd = Math.min(dd, pointToSegmentDistance(pt, nodes[j], nodes[j + 1]));
-                    return Math.max(0, dd - coreT / 2);
-                };
-                pts.forEach(pt => {
-                    const clear = clearAt(pt);
-                    if (!worst || clear > worst.clear) worst = { pt, clear };
-                    if (clear > cap * 0.75) mark(pt, clear > cap ? 4 : 3,
-                        clear > cap ? 'rgba(211,47,47,0.85)' : 'rgba(178,106,0,0.7)');
-                });
-                if (worst) {
-                    mark(worst.pt, 5.5, 'rgba(211,47,47,0.18)');
-                    mark(worst.pt, 2.5, 'rgba(211,47,47,0.9)');
-                    // and the line back to the wall that the number measures
-                    let dd = Infinity, foot = null;
-                    for (let j = 0; j < nodes.length - 1; j++) {
-                        const e = pointToSegmentDistance(worst.pt, nodes[j], nodes[j + 1]);
-                        if (e < dd) { dd = e; foot = nearestOnSeg(worst.pt, nodes[j], nodes[j + 1]); }
-                    }
-                    if (foot) {
-                        strokePath([worst.pt, foot], false);
-                        editCtx.strokeStyle = 'rgba(211,47,47,0.7)'; editCtx.lineWidth = 1.2;
-                        editCtx.stroke();
-                    }
-                }
-            }
-
-            if (hlKey === 'transfer' && idx > 0) {
-                // where this wall steps off the one below, and by how much
-                const below = st.floors[idx - 1].nodes;
-                strokePath(below, false);
-                editCtx.strokeStyle = 'rgba(211,47,47,0.35)'; editCtx.lineWidth = 3; editCtx.stroke();
-                for (let j = 0; j < nodes.length - 1; j++) {
-                    const a = nodes[j], b = nodes[j + 1];
-                    for (let k = 0; k <= 4; k++) {
-                        const pt = { x: a.x + (b.x - a.x) * k / 4, z: a.z + (b.z - a.z) * k / 4 };
-                        let dd = Infinity, foot = null;
-                        for (let i = 0; i < below.length - 1; i++) {
-                            const e = pointToSegmentDistance(pt, below[i], below[i + 1]);
-                            if (e < dd) { dd = e; foot = nearestOnSeg(pt, below[i], below[i + 1]); }
-                        }
-                        if (dd < 0.15 || !foot) continue;
-                        strokePath([pt, foot], false);
-                        editCtx.strokeStyle = 'rgba(211,47,47,' + clamp(dd / 2, 0.15, 0.7) + ')';
-                        editCtx.lineWidth = 1; editCtx.stroke();
-                    }
-                }
-            }
-
-            if (hlKey === 'openend') {
-                // the two ends of every opening, where the strip beside it lands
-                fl.slots.forEach(sl => {
-                    const c = sl.poly;
-                    mark({ x: (c[0].x + c[3].x) / 2, z: (c[0].z + c[3].z) / 2 }, 4, 'rgba(211,47,47,0.8)');
-                    mark({ x: (c[1].x + c[2].x) / 2, z: (c[1].z + c[2].z) / 2 }, 4, 'rgba(211,47,47,0.8)');
-                });
-            }
-
-            if (hlKey === 'diaph') {
-                // the wall face the slab is joined to, broken where an opening cuts it
-                [1, -1].forEach(sg => {
-                    const face = offsetPolyline(nodes, sg * coreT / 2, endDirsFor(d.vertices));
-                    if (!face || face.length < 2) return;
-                    strokePath(face, false);
-                    editCtx.strokeStyle = 'rgba(0,123,255,0.5)'; editCtx.lineWidth = 4; editCtx.stroke();
-                });
-                fl.slots.forEach(sl => {
-                    strokePath([sl.poly[0], sl.poly[1]], false);
-                    dash(2, 3);
-                    editCtx.strokeStyle = 'rgba(211,47,47,0.85)'; editCtx.lineWidth = 4;
-                    editCtx.stroke(); editCtx.restore();
-                });
-            }
-
-            if (hlKey === 'twist') {
-                // every segment's lever arm about the centre of rigidity
-                const tw = fl.tors;
-                if (tw && tw.arms) tw.arms.forEach(a => {
-                    strokePath([tw.cr, a.foot], false);
-                    editCtx.strokeStyle = 'rgba(211,47,47,0.30)'; editCtx.lineWidth = 1; editCtx.stroke();
-                });
-            }
-        }
-
-        function nearestOnSeg(p, a, b) {
-            const dx = b.x - a.x, dz = b.z - a.z;
-            const l2 = dx * dx + dz * dz;
-            if (l2 < 1e-12) return { x: a.x, z: a.z };
-            const t = clamp(((p.x - a.x) * dx + (p.z - a.z) * dz) / l2, 0, 1);
-            return { x: a.x + dx * t, z: a.z + dz * t };
-        }
-
-        /* (iii) The track is gone. A hard limit is now something you cannot cross
-           rather than something reported after the fact: the drag clamps, so an
-           illegal position is unreachable. What is left over is the SOFT trade -
-           a position that is legal but leaves the wall too little to fold - and
-           that gets amber on the slot itself, because it is a trade to weigh, not
-           an error to forbid. No new visual vocabulary, and nothing to look up.
-           (The 25-sample sweep the track needed is gone with it; clamping bisects
-           the boundary instead, which is both faster and exact.) */
-        function stairRoomTight(idx, k, g, P) {
-            if (idx >= numFloors - 1) return false;
-            const d = floorData[idx], st = d.stairs[k];
-            if (!st) return false;
-            const room = foldableSpans(idx).reduce((a2, z) => a2 + (z[1] - z[0]), 0);
-            const slabTNow = parseFloat(document.getElementById('slabT').value) || 0.4;
-            const need = (foldCountForDensity(P, d.vertices, slabTNow) + 1) * FOLD_MIN_SEG;
-            return room < need;
-        }
-
-        function canvasPoint(e) {
-            // CSS pixels, which is what the scaled context draws in
-            const rect = editCanvas.getBoundingClientRect();
-            return fromPx(e.clientX - rect.left, e.clientY - rect.top);
-        }
-
-        editCanvas.addEventListener('pointerdown', e => {
-            const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
-            const m = canvasPoint(e);
-            const mp = toPx(m.x, m.z);
-            const near = p => Math.hypot(toPx(p.x, p.z).px - mp.px, toPx(p.x, p.z).pz - mp.pz) < 12;
-
-            // The two ends of the straight stretch sit ON the wall line, so they go
-            // first or something else swallows them.
-            const runNow = currentRun();
-            for (let k = 0; k < 2; k++) {
-                const r = stretchOf(idx, k, runNow);
-                for (let e = 0; e < 2; e++) {
-                    if (near([r.P0, r.P1][e])) {
-                        dragType = 'stretch'; dragIdx = k * 2 + e;
-                        dragSafe = floorData[idx].stairs.map(x => ({
-                            side: x.side, tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap }));
-                        return;
-                    }
-                }
-            }
-
-            // Hit-test the SOURCE data, never getWallNodes(): that list has the
-            // anchors and the stretch ends spliced into it, so indices taken from it
-            // do not line up with foldNodes - which was moving the wrong fold.
-            const d0 = floorData[idx];
-            const fz = foldZones(idx, runNow);
-            for (let i = 0; i < d0.foldNodes.length; i++) {
-                const t = axisParam(d0.foldNodes[i]);
-                const inWall = fz.zones.some(z => t > z[0] && t < z[1]);
-                if (inWall && near(d0.foldNodes[i])) { dragType = 'fold'; dragIdx = i; return; }
-            }
-
-            const verts = floorData[idx].vertices;
-            for (let i = 0; i < verts.length; i++) {
-                if (near(verts[i])) { dragType = 'vertex'; dragIdx = i; return; }
-            }
-            for (let k = 0; k < 2; k++) {
-                if (near(axisEnds[k])) { dragType = 'anchor'; dragIdx = k; return; }
-            }
-            const { P, g } = stairParams();
-            const slots = slotsFor(idx, g, P.coreT);
-            const snap = () => { dragSafe = floorData[idx].stairs.map(x => ({
-                side: x.side, tc: x.tc, sc: x.sc, ang: x.ang, gap: x.gap })); };
-            for (let k = 0; k < slots.length; k++) {
-                if (pointInPolygon(m, slots[k].poly)) { dragType = 'stair'; dragIdx = k; snap(); return; }
-            }
-            /* 6 - the strip between the two slots is the wall itself, and clicking
-               it used to hit nothing at all. Fall back to the nearer flight, so the
-               whole band around the stair is grabbable rather than two thin
-               rectangles with a dead lane down the middle. */
-            for (let k = 0; k < slots.length; k++) {
-                if (pointInPolygon(m, inflatedSlot(slots[k], 0.45).poly)) {
-                    dragType = 'stair'; dragIdx = k; snap(); return;
-                }
-            }
-        });
-
-        editCanvas.addEventListener('pointermove', e => {
+        /* THE MUTATION LAYER, unchanged from the 2D editor. dragType/dragIdx say
+           WHAT is being moved; idx/target say WHERE it is being moved TO - and
+           every branch below only ever reads those four things, never how they
+           were obtained. The 2D canvas produced target via its own screen-space
+           transform; the 3D pointer handlers produce it by raycasting a floor's
+           own horizontal plane and reading the hit point's (x, z) directly - a
+           strictly simpler source, since there is no screen<->world mapping left
+           to get wrong. Nothing past this line needed to change. */
+        function applyDrag(idx, target) {
             if (dragType === null) return;
-            const idx = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             const d = floorData[idx];
-            const target = canvasPoint(e);
 
             if (dragType === 'vertex') {
                 const v = d.vertices[dragIdx];
@@ -3288,7 +2689,7 @@
                 }
             }
             refresh();
-        });
+        }
 
         const endDrag = () => {
             if (dragType === null) return;
@@ -3346,9 +2747,6 @@
                 }
             }
         };
-        editCanvas.addEventListener('pointerup', endDrag);
-        editCanvas.addEventListener('pointercancel', endDrag);
-        editCanvas.addEventListener('pointerleave', endDrag);
 
         /* =====================================================================
            FOLD EDITING
@@ -3899,6 +3297,17 @@
            has to be told to recompile; three.js caches programs per material and a
            stale one renders unlit or throws. Hence the shared() register. */
         let viewMode = 'forces';
+        /* EXPLODE. A separate axis from Forces/Concrete - not what you are
+           looking at, but whether you can reach into it. The gap scales with
+           storey height rather than sitting at one fixed metre figure, so it
+           reads as a gap at H 2.5 m and at H 5.0 m alike; floorBaseY is the one
+           formula both the model build and fitCamera read, so they cannot drift
+           the way two independent copies of a formula have before in this file. */
+        let explodeMode = false;
+        function explodeGapFor(floorH) { return Math.max(1.2, floorH * 0.5); }
+        function floorBaseY(i, floorH) {
+            return i * floorH + (explodeMode ? i * explodeGapFor(floorH) : 0);
+        }
         const sharedMaterials = [];
         const shared = m => { sharedMaterials.push(m); return m; };
 
@@ -3969,6 +3378,8 @@
            the outline above it. The 2D editor already answers this by ghosting the
            floors you are not editing; the model now does the same. */
         const stairGhostMaterial = shared(new THREE.LineBasicMaterial({ color: 0x9fb8cc, transparent: true, opacity: 0.5 }));
+        // exploded-axonometric alignment guides - present only while exploded
+        const guideMaterial = shared(new THREE.LineDashedMaterial({ color: 0xaaaaaa, dashSize: 0.15, gapSize: 0.12, transparent: true, opacity: 0.6 }));
 
         function createExtrusionGroup(poly2D, yB, yT, material, edgeMaterial, holes) {
             if (!poly2D || poly2D.length < 3) return null;
@@ -4121,7 +3532,7 @@
         function fitCamera() {
             const b = planBounds();
             const floorH = parseFloat(document.getElementById('floorH').value) || 3.0;
-            const maxY = numFloors * floorH + 2;
+            const maxY = floorBaseY(numFloors - 1, floorH) + floorH + 2;
             const center = new THREE.Vector3((b.minX + b.maxX) / 2, maxY / 2, (b.minZ + b.maxZ) / 2);
             // fit the bounding sphere, so a tall narrow pane never crops the model
             const d = 0.55 * Math.hypot(b.maxX - b.minX, maxY, b.maxZ - b.minZ);
@@ -4227,7 +3638,7 @@
             const wallEdge = asBuilt ? concreteEdge : wallEdgeMaterial;
             const slabEdge = asBuilt ? concreteEdge : floorEdgeMaterial;
             for (let i = 0; i < numFloors; i++) {
-                const yB = i * P.floorH, yT = yB + P.floorH, slabYB = yT - slabT;
+                const yB = floorBaseY(i, P.floorH), yT = yB + P.floorH, slabYB = yT - slabT;
                 const wm = storeyWallMaterial(floors[i].comb.use);
                 floors[i].quads.forEach(q => {
                     const g = createExtrusionGroup(q, yB, slabYB, wm, wallEdge);
@@ -4244,7 +3655,7 @@
                edge profile of a one-way cantilever, not a plate analysis. At x25 a
                12 mm tip becomes 300 mm against a 3 m storey: visible, not silly. */
             if (!asBuilt) for (let i = 0; i < numFloors; i++) {
-                const line = deflectedEdge(floors[i], P, slabT, (i + 1) * P.floorH);
+                const line = deflectedEdge(floors[i], P, slabT, floorBaseY(i, P.floorH) + P.floorH);
                 if (line) modelGroup.add(line);
             }
 
@@ -4252,16 +3663,34 @@
             const shown = clamp(parseInt(document.getElementById('floorIndex').value) || 0, 0, numFloors - 1);
             for (let i = 0; i < numFloors; i++) {
                 floors[i].slots.forEach(sl => {
-                    if (asBuilt) { modelGroup.add(stairSolid(sl, st.stair, i * P.floorH, stairConcrete)); return; }
+                    if (asBuilt) { modelGroup.add(stairSolid(sl, st.stair, floorBaseY(i, P.floorH), stairConcrete)); return; }
                     const mat = i === shown ? stairMaterial : stairGhostMaterial;
-                    modelGroup.add(stairWireframe(sl, st.stair, i * P.floorH, mat));
+                    modelGroup.add(stairWireframe(sl, st.stair, floorBaseY(i, P.floorH), mat));
                 });
             }
 
             if (!asBuilt) bearings.forEach(b => {
-                const g = createExtrusionGroup(b.poly, b.floorIdx * P.floorH - slabT, b.floorIdx * P.floorH, bearMaterial, bearEdgeMaterial);
+                const g = createExtrusionGroup(b.poly, floorBaseY(b.floorIdx, P.floorH) - slabT, floorBaseY(b.floorIdx, P.floorH), bearMaterial, bearEdgeMaterial);
                 if (g) modelGroup.add(g);
             });
+
+            /* GUIDE LINES. The one thing an exploded drawing needs that a stacked
+               one gets for free: proof that a point on one layer is the SAME
+               point on the next. One dashed vertical per plate corner, run from
+               a little below the bottom floor to a little above the top - the
+               precedent for this is architectural exploded-axonometric convention,
+               not something invented for this page. */
+            if (explodeMode) {
+                const y0 = floorBaseY(0, P.floorH) - 0.4;
+                const y1 = floorBaseY(numFloors - 1, P.floorH) + P.floorH + 0.4;
+                floorData[0].vertices.forEach(v => {
+                    const geo = new THREE.BufferGeometry().setFromPoints(
+                        [new THREE.Vector3(v.x, y0, v.z), new THREE.Vector3(v.x, y1, v.z)]);
+                    const line = new THREE.LineSegments(geo, guideMaterial);
+                    line.computeLineDistances();
+                    modelGroup.add(line);
+                });
+            }
             updateGround();
         }
 
@@ -4608,7 +4037,6 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             renderer.setSize(simContainer.clientWidth, Math.max(simContainer.clientHeight, 1));
             fitCamera();
-            ensureCanvasSize(editCanvas);
             refresh();
         });
 
@@ -4675,8 +4103,22 @@
         }
         window.setViewMode = setViewMode;
 
+        /* EXPLODE IS THE EDIT SWITCH. Collapsed, the model is read-only - the
+           2D plan's old default. Exploded, every fold node, stretch end, anchor
+           and stair becomes a pickable 3D handle (wired where dragType is set,
+           below) and .edit-bar's buttons come alive. Toggling it off mid-drag
+           would leave a dangling pointer capture, so it also cancels one. */
+        function toggleExplode() {
+            if (dragType !== null) { dragType = null; dragIdx = null; }
+            explodeMode = !explodeMode;
+            document.getElementById('explode-btn').classList.toggle('on', explodeMode);
+            document.getElementById('editBar').classList.toggle('disabled', !explodeMode);
+            refresh();
+            fitCamera();
+        }
+        window.toggleExplode = toggleExplode;
+
         window.addEventListener('load', () => {
-            ensureCanvasSize(editCanvas);
             updateFloorDropdown();
             if (seedPending) {
                 seedPending = false;
