@@ -157,7 +157,6 @@ gap: 14px;
 .entry-icon svg { width: 32px; height: 25px; display: block; flex: none; margin-top: 2px; }
 .entry-icon svg .fill { transition: fill 0.15s ease; }
 .entry:hover .entry-icon svg .fill { fill: var(--accent); }
-.entry-icon img { width: 32px; height: 25px; display: block; flex: none; margin-top: 2px; object-fit: contain; }
 
 .entry-title {
 flex: 1;
@@ -197,7 +196,6 @@ min-height: 320px;
 .card .card-icon svg { width: 100%; height: 160px; }
 .card-icon svg .fill { transition: fill 0.15s ease; }
 .card:hover .card-icon svg .fill { fill: var(--accent); }
-.card .card-icon img { width: 100%; height: 160px; display: block; object-fit: contain; }
 .card .card-idx { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
 .card .card-title { font-size: 20px; font-weight: bold; margin: 14px 0 4px 0; letter-spacing: -0.3px; }
 .card .card-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
@@ -222,7 +220,7 @@ text-transform: uppercase;
 body { padding: 24px; }
 .intro { flex-direction: column; gap: 20px; }
 #list-view { grid-template-columns: 1fr; }
-.entry-icon svg, .entry-icon img { width: 30px; height: 24px; }
+.entry-icon svg { width: 30px; height: 24px; }
 .entry-title { font-size: 14px; }
 #image-view.show { grid-template-columns: 1fr; }
 }
@@ -346,7 +344,9 @@ body { padding: 24px; }
 <a class="entry" href="works/emerging-grid-catenoid.html">
 <div class="entry-inner">
 <div class="entry-icon">
-<img src="works/emerging-grid-catenoid.png" alt="">
+<svg viewBox="0 0 120 90">
+<path class="fill" fill="var(--ink)" d="M10.0,17.0 L110.0,17.0 L110.0,24.0 L98.1,24.0 C89.2,24.0 86.2,27.1 82.0,31.0 L80.6,32.4 L79.4,33.8 L78.3,35.2 L77.4,36.6 L76.7,38.0 L76.1,39.4 L75.6,40.8 L75.3,42.2 L75.1,43.6 L75.0,45.0 L75.1,46.4 L75.3,47.8 L75.6,49.2 L76.1,50.6 L76.7,52.0 L77.4,53.4 L78.3,54.8 L79.4,56.2 L80.6,57.6 L82.0,59.0 C86.2,62.9 89.2,66.0 98.1,66.0 L110.0,66.0 L110.0,73.0 L10.0,73.0 L10.0,66.0 L21.9,66.0 C30.8,66.0 33.8,62.9 38.0,59.0 L39.4,57.6 L40.6,56.2 L41.7,54.8 L42.6,53.4 L43.3,52.0 L43.9,50.6 L44.4,49.2 L44.7,47.8 L44.9,46.4 L45.0,45.0 L44.9,43.6 L44.7,42.2 L44.4,40.8 L43.9,39.4 L43.3,38.0 L42.6,36.6 L41.7,35.2 L40.6,33.8 L39.4,32.4 L38.0,31.0 C33.8,27.1 30.8,24.0 21.9,24.0 L10.0,24.0 Z"/>
+</svg>
 </div>
 <div class="entry-title">Toyo Ito: The Emerging Grid</div>
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
@@ -473,7 +473,9 @@ body { padding: 24px; }
 <div>
 <div class="card-idx">09 / STUDY</div>
 <div class="card-icon">
-<img src="works/emerging-grid-catenoid.png" alt="">
+<svg viewBox="0 0 120 90">
+<path class="fill" fill="var(--ink)" d="M10.0,17.0 L110.0,17.0 L110.0,24.0 L98.1,24.0 C89.2,24.0 86.2,27.1 82.0,31.0 L80.6,32.4 L79.4,33.8 L78.3,35.2 L77.4,36.6 L76.7,38.0 L76.1,39.4 L75.6,40.8 L75.3,42.2 L75.1,43.6 L75.0,45.0 L75.1,46.4 L75.3,47.8 L75.6,49.2 L76.1,50.6 L76.7,52.0 L77.4,53.4 L78.3,54.8 L79.4,56.2 L80.6,57.6 L82.0,59.0 C86.2,62.9 89.2,66.0 98.1,66.0 L110.0,66.0 L110.0,73.0 L10.0,73.0 L10.0,66.0 L21.9,66.0 C30.8,66.0 33.8,62.9 38.0,59.0 L39.4,57.6 L40.6,56.2 L41.7,54.8 L42.6,53.4 L43.3,52.0 L43.9,50.6 L44.4,49.2 L44.7,47.8 L44.9,46.4 L45.0,45.0 L44.9,43.6 L44.7,42.2 L44.4,40.8 L43.9,39.4 L43.3,38.0 L42.6,36.6 L41.7,35.2 L40.6,33.8 L39.4,32.4 L38.0,31.0 C33.8,27.1 30.8,24.0 21.9,24.0 L10.0,24.0 Z"/>
+</svg>
 </div>
 </div>
 <div>
