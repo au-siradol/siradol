@@ -157,6 +157,7 @@ gap: 14px;
 .entry-icon svg { width: 32px; height: 25px; display: block; flex: none; margin-top: 2px; }
 .entry-icon svg .fill { transition: fill 0.15s ease; }
 .entry:hover .entry-icon svg .fill { fill: var(--accent); }
+.entry-icon img { width: 32px; height: 25px; display: block; flex: none; margin-top: 2px; object-fit: contain; }
 
 .entry-title {
 flex: 1;
@@ -196,6 +197,7 @@ min-height: 320px;
 .card .card-icon svg { width: 100%; height: 160px; }
 .card-icon svg .fill { transition: fill 0.15s ease; }
 .card:hover .card-icon svg .fill { fill: var(--accent); }
+.card .card-icon img { width: 100%; height: 160px; display: block; object-fit: contain; }
 .card .card-idx { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
 .card .card-title { font-size: 20px; font-weight: bold; margin: 14px 0 4px 0; letter-spacing: -0.3px; }
 .card .card-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
@@ -220,7 +222,7 @@ text-transform: uppercase;
 body { padding: 24px; }
 .intro { flex-direction: column; gap: 20px; }
 #list-view { grid-template-columns: 1fr; }
-.entry-icon svg { width: 30px; height: 24px; }
+.entry-icon svg, .entry-icon img { width: 30px; height: 24px; }
 .entry-title { font-size: 14px; }
 #image-view.show { grid-template-columns: 1fr; }
 }
@@ -241,7 +243,7 @@ body { padding: 24px; }
 <h1>Exploring structural logic through interactive parametric 3D models.</h1>
 <div>
 <p>Browser-based tools mapping the structural behaviour from selected architectural works.</p>
-<div class="count">08 WORKS — UPDATED 2026</div>
+<div class="count">09 WORKS — UPDATED 2026</div>
 </div>
 </div>
 <div class="toolbar">
@@ -338,6 +340,15 @@ body { padding: 24px; }
 </svg>
 </div>
 <div class="entry-title">Lord Snowdon, Cedric Price &amp; Frank Newby: Snowdon Aviary</div>
+<div class="entry-open"><span class="arrow">&rarr;</span></div>
+</div>
+</a>
+<a class="entry" href="works/emerging-grid-catenoid.html">
+<div class="entry-inner">
+<div class="entry-icon">
+<img src="works/emerging-grid-catenoid.png" alt="">
+</div>
+<div class="entry-title">Toyo Ito: The Emerging Grid</div>
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
 </div>
 </a>
@@ -456,6 +467,18 @@ body { padding: 24px; }
 <div>
 <div class="card-title">Lord Snowdon, Cedric Price &amp; Frank Newby: Snowdon Aviary</div>
 <div class="card-sub">Tensegrity kinematics — prestress, self-stress states &amp; wind load simulation</div>
+</div>
+</a>
+<a class="card" href="works/emerging-grid-catenoid.html">
+<div>
+<div class="card-idx">09 / STUDY</div>
+<div class="card-icon">
+<img src="works/emerging-grid-catenoid.png" alt="">
+</div>
+</div>
+<div>
+<div class="card-title">Toyo Ito: The Emerging Grid</div>
+<div class="card-sub">Taichung Opera House — A/B grid, flexible grid, per-level control grid, overlapping catenoids</div>
 </div>
 </a>
 </div>
