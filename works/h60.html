@@ -170,12 +170,10 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <div id="pieceInfo"></div>
       <div class="btn-row" style="margin-top:3px"><button id="bCentre" class="toggle-btn">Centre in room</button></div>
     </div>
-    <h3>Export</h3>
+    <h3>Export 3D model · by layer</h3>
     <div class="btn-row">
-      <button id="saveDxf" class="toggle-btn">DXF 3D</button>
-      <button id="saveCsv" class="toggle-btn">Pieces</button>
-      <button id="saveWalls" class="toggle-btn">Walls</button>
-      <button id="saveWins" class="toggle-btn">Windows</button>
+      <button id="saveSkp" class="toggle-btn" title="Collada .dae, one group per layer — File › Import in SketchUp">SketchUp</button>
+      <button id="save3dm" class="toggle-btn" title="OBJ + MTL in a .zip, OBJ groups = layers — Import in Rhino">Rhino</button>
     </div>
     <p class="note" id="toast" role="status"></p>
   </div>
@@ -1111,98 +1109,134 @@ function loop() {
   drawTags();
 }
 
-/* ---------------- export (3D) ---------------- */
-function dxfString() {
-  const L = []; const w = (c, v) => L.push(String(c), String(v));
-  const ox = ORIGIN[0], oy = ORIGIN[1];
-  const layers = [["SITE", 3], ["SLAB", 8], ["BASE", 8], ["PLAN_L1", 7], ["PLAN_CIRCLE", 9], ["CENTER", 30], ["SHAPE_L2_BASE", 7], ["SHAPE_L2_TOP", 7], ["SHAPE_L2_WALL", 8], ["SHAPE_L2_SURFACE", 254], ["ENVELOPE_EDGE", 4], ["ENVELOPE_WALL", 4], ["ENVELOPE_ROOF", 4], ["WINDOW", 5], ["GF_WALL", 8], ["WALL_SEGMENT", 3], ["WALL_ID", 3], ["LABEL", 7]];
-  w(0, "SECTION"); w(2, "HEADER"); w(9, "$ACADVER"); w(1, "AC1009"); w(0, "ENDSEC");
-  w(0, "SECTION"); w(2, "TABLES"); w(0, "TABLE"); w(2, "LAYER"); w(70, layers.length);
-  layers.forEach(([n, c]) => { w(0, "LAYER"); w(2, n); w(70, 0); w(62, c); w(6, "CONTINUOUS"); });
-  w(0, "ENDTAB"); w(0, "ENDSEC");
-  w(0, "SECTION"); w(2, "ENTITIES");
-  const P = (x, y, z) => ({ x, y, z });
-  const line = (a, b, lay) => { w(0, "LINE"); w(8, lay); w(10, a.x + ox); w(20, a.y + oy); w(30, a.z); w(11, b.x + ox); w(21, b.y + oy); w(31, b.z); };
-  const poly3 = (pts, lay) => {
-    w(0, "POLYLINE"); w(8, lay); w(66, 1); w(10, 0); w(20, 0); w(30, 0); w(70, 9);
-    for (const q of pts) { w(0, "VERTEX"); w(8, lay); w(10, q.x + ox); w(20, q.y + oy); w(30, q.z); w(70, 32); }
-    w(0, "SEQEND"); w(8, lay);
+/* ---------------- 3D model export: SketchUp (.dae) and Rhino (.obj + .mtl) ---------------- */
+// the finished storey (step 3) as named triangle meshes on layers, in local
+// metres, z up, following the current toggles (outside/inside walls, windows)
+const LAYERS = ["SITE", "BASE", "SLAB", "ENVELOPE_WALL", "ROOF", "WINDOW", "WALL_OUTSIDE", "WALL_INSIDE", "CURVED_WALL"];
+const MATS = {
+  ground: { rgb: [0.93, 0.93, 0.91], a: 1 }, base: { rgb: [1, 1, 1], a: 1 }, slab: { rgb: [0.87, 0.86, 0.83], a: 1 },
+  wall: { rgb: [1, 1, 1], a: 1 }, gfwall: { rgb: [0.965, 0.96, 0.945], a: 1 }, tile: { rgb: [0.706, 0.353, 0.235], a: 1 },
+  glass: { rgb: [0.62, 0.74, 0.8], a: 0.3 }, curved: { rgb: [0.953, 0.945, 0.925], a: 1 },
+};
+function exportMeshes() {
+  const wins = shownWins(), out = [], P = (x, y, z) => ({ x, y, z });
+  const add = (name, mat, tris, layer) => { if (tris.length) out.push({ name, mat, tris, layer }); };
+  const quad = (t, a, b, c, d) => t.push([a, b, c], [a, c, d]);
+  const box = (x0, x1, y0, y1, z0, z1) => {
+    const t = [], c = (i, j, k) => P([x0, x1][i], [y0, y1][j], [z0, z1][k]);
+    quad(t, c(0, 0, 0), c(0, 1, 0), c(1, 1, 0), c(1, 0, 0)); quad(t, c(0, 0, 1), c(1, 0, 1), c(1, 1, 1), c(0, 1, 1));
+    quad(t, c(0, 0, 0), c(1, 0, 0), c(1, 0, 1), c(0, 0, 1)); quad(t, c(0, 1, 0), c(0, 1, 1), c(1, 1, 1), c(1, 1, 0));
+    quad(t, c(0, 0, 0), c(0, 0, 1), c(0, 1, 1), c(0, 1, 0)); quad(t, c(1, 0, 0), c(1, 1, 0), c(1, 1, 1), c(1, 0, 1));
+    return t;
   };
-  const face = (lay, a, b, c, d) => {
-    w(0, "3DFACE"); w(8, lay);
-    [a, b, c, d || c].forEach((q, i) => { w(10 + i, q.x + ox); w(20 + i, q.y + oy); w(30 + i, q.z); });
-  };
-  poly3(SITE.map(q => P(q.x, q.y, 0)), "SITE");
-  const rect = [[0, 0], [W, 0], [W, D], [0, D]];
-  poly3(rect.map(([x, y]) => P(x, y, FF)), "SLAB"); poly3(rect.map(([x, y]) => P(x, y, FF - SLAB)), "SLAB");
-  rect.forEach(([x, y]) => line(P(x, y, FF - SLAB), P(x, y, FF), "SLAB"));
-  for (let i = 0; i < 4; i++) {
-    const [ax, ay] = rect[i], [bx, by] = rect[(i + 1) % 4];
-    w(0, "3DFACE"); w(8, "BASE");
-    [P(ax, ay, 0), P(bx, by, 0), P(bx, by, FF - SLAB), P(ax, ay, FF - SLAB)].forEach((q, j) => { w(10 + j, q.x + ox); w(20 + j, q.y + oy); w(30 + j, q.z); });
+  { const t = []; for (let i = 1; i + 1 < SITE.length; i++) t.push([P(SITE[0].x, SITE[0].y, 0), P(SITE[i].x, SITE[i].y, 0), P(SITE[i + 1].x, SITE[i + 1].y, 0)]); add("Site", "ground", t, "SITE"); }
+  add("Base", "base", box(0, W, 0, D, 0, FF - SLAB), "BASE");
+  add("Slab", "slab", box(0, W, 0, D, FF - SLAB, FF), "SLAB");
+  {
+    const t = [];
+    if (!S.gfE) for (const f of Object.keys(FACES))
+      for (const [u, v, p, q] of bandQuads(f, 0, FACES[f].len, FF, L2, wins)) quad(t, facePt(f, u, p), facePt(f, v, p), facePt(f, v, q), facePt(f, u, q));
+    for (const y of [0, D]) t.push([P(0, y, L2), P(W, y, L2), P(RX, y, RIDGE)]);
+    add("Envelope walls", "wall", t, "ENVELOPE_WALL");
   }
-  poly3(rect.map(([x, y]) => P(x, y, 0)), "BASE");
-  PLAN.forEach(l => { for (let i = 0; i + 1 < l.length; i++) line(P(l[i].x, l[i].y, FF), P(l[i + 1].x, l[i + 1].y, FF), "PLAN_L1"); });
-  // envelope
-  const wins = shownWins();
-  for (const f of Object.keys(FACES))
-    if (!S.gfE) for (const [u, v, p, q] of bandQuads(f, 0, FACES[f].len, FF, L2, wins)) face("ENVELOPE_WALL", facePt(f, u, p), facePt(f, v, p), facePt(f, v, q), facePt(f, u, q));
-  for (const y of [0, D]) face("ENVELOPE_WALL", P(0, y, L2), P(W, y, L2), P(RX, y, RIDGE));
-  for (const wl of gfWalls()) for (const f of gfWallQuads(wl, wins)) face("GF_WALL", ...f);
-  for (const win of wins) poly3([[win.a0, FF + win.sill], [win.a1, FF + win.sill], [win.a1, FF + win.sill + win.h], [win.a0, FF + win.sill + win.h]].map(([a, z]) => facePt(win.face, a, z)), "WINDOW");
-  for (const wl of WALLS) {
-    line(P(wl.a.x, wl.a.y, FF), P(wl.b.x, wl.b.y, FF), "WALL_SEGMENT");
-    const tx = wl.mx + ox, ty = wl.my + oy;
-    w(0, "TEXT"); w(8, "WALL_ID"); w(10, tx); w(20, ty); w(30, FF); w(40, 0.15); w(1, wl.id);
-    if (Math.abs(wl.a.x - wl.b.x) < 1e-6) w(50, 90);
-    w(72, 1); w(73, 2); w(11, tx); w(21, ty); w(31, FF);
+  { const t = []; for (const f of roofSolid().faces) quad(t, ...f); add("Roof", "tile", t, "ROOF"); }
+  for (const w of wins) {
+    const c = [[w.a0, FF + w.sill], [w.a1, FF + w.sill], [w.a1, FF + w.sill + w.h], [w.a0, FF + w.sill + w.h]].map(([a, z]) => facePt(w.face, a, z));
+    const t = []; quad(t, ...c); add("Window " + w.key, "glass", t, "WINDOW");
   }
-  const rs = roofSolid();
-  for (const f of rs.faces) face("ENVELOPE_ROOF", ...f);
-  for (const [a, b] of rs.edges) line(a, b, "ENVELOPE_EDGE");
-  for (const x of [0, W]) { line(P(x, 0, L2), P(x, D, L2), "ENVELOPE_EDGE"); for (const y of [0, D]) line(P(x, y, FF), P(x, y, L2), "ENVELOPE_EDGE"); }
-  // curved walls
+  for (const wl of gfWalls()) { const t = []; for (const f of gfWallQuads(wl, wins)) quad(t, ...f); add("Wall " + wl.id, "gfwall", t, wl.face ? "WALL_OUTSIDE" : "WALL_INSIDE"); }
   for (const p of PIECES) {
-    w(0, "CIRCLE"); w(8, "PLAN_CIRCLE"); w(10, p.cx + ox); w(20, p.cy + oy); w(30, FF); w(40, circleR(p));
-    const ring = ringPts(p, 1, S.n, 240);
+    const ring = ringPts(p, 1, S.n, 160), t = [];
     const bot = ring.map(q => P(q.x, q.y, L2)), top = ring.map(q => P(q.x, q.y, wallTop(q.x)));
-    poly3(bot, "SHAPE_L2_BASE"); poly3(top, "SHAPE_L2_TOP");
-    const plain = shapePts(p, 1, S.n, 240);
-    for (let i = 0; i < plain.length; i += 15) if (wallTop(plain[i].x) > L2 + 1e-6) line(P(plain[i].x, plain[i].y, L2), P(plain[i].x, plain[i].y, wallTop(plain[i].x)), "SHAPE_L2_WALL");
     for (let i = 0; i < ring.length; i++) {
       const j = (i + 1) % ring.length;
       if (top[i].z - L2 < 1e-6 && top[j].z - L2 < 1e-6) continue;
-      face("SHAPE_L2_SURFACE", bot[i], bot[j], top[j], top[i]);
+      quad(t, bot[i], bot[j], top[j], top[i]);
     }
-    for (const tr of capTris(ring)) face("SHAPE_L2_SURFACE", ...tr.map(q => P(q.x, q.y, wallTop(q.x))));
-    w(0, "POINT"); w(8, "CENTER"); w(10, p.cx + ox); w(20, p.cy + oy); w(30, L2);
-    const m = 0.12;
-    line(P(p.cx - m, p.cy, L2), P(p.cx + m, p.cy, L2), "CENTER");
-    line(P(p.cx, p.cy - m, L2), P(p.cx, p.cy + m, L2), "CENTER");
-    const tx = p.cx + ox, ty = p.cy + oy - Math.min(circleR(p) * 0.5, 0.5);
-    w(0, "TEXT"); w(8, "LABEL"); w(10, tx); w(20, ty); w(30, L2); w(40, 0.2); w(1, String(p.no)); w(72, 1); w(73, 2); w(11, tx); w(21, ty); w(31, L2);
+    for (const tr of capTris(ring)) t.push(tr.map(q => P(q.x, q.y, wallTop(q.x))));
+    add("Curved " + p.no, "curved", t.filter(([a, b, c]) => {
+      const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z, vx = c.x - a.x, vy = c.y - a.y, vz = c.z - a.z;
+      return (uy * vz - uz * vy) ** 2 + (uz * vx - ux * vz) ** 2 + (ux * vy - uy * vx) ** 2 > 1e-14;
+    }), "CURVED_WALL");
   }
-  w(0, "ENDSEC"); w(0, "EOF");
-  return L.join("\n") + "\n";
+  return out;
 }
-function csvString() {
-  const head = "piece,room,x0,y0,x1,y1,centre_x,centre_y,centre_x_dxf,centre_y_dxf,circle_r,half_left,half_right,half_down,half_up,n,area_m2,z_base,roof_offset_left,roof_offset_right,z_top_at_centre,z_top_min,z_top_max";
-  return head + "\n" + PIECES.map(p => {
-    const a = axes(p), ring = ringPts(p, 1, S.n, 720), zs = ring.map(q => wallTop(q.x));
-    return [p.no, p.room, p.x0, p.y0, p.x1, p.y1, p.cx.toFixed(4), p.cy.toFixed(4), (p.cx + ORIGIN[0]).toFixed(4), (p.cy + ORIGIN[1]).toFixed(4),
-      circleR(p).toFixed(4), a.l.toFixed(4), a.r.toFixed(4), a.d.toFixed(4), a.u.toFixed(4), S.n.toFixed(2), shapeArea(ring).toFixed(3),
-      L2.toFixed(2), S.offL.toFixed(2), S.offR.toFixed(2), wallTop(p.cx).toFixed(3), Math.min(...zs).toFixed(3), Math.max(...zs).toFixed(3)].join(",");
-  }).join("\n") + "\n";
+const n6 = v => (Math.abs(v) < 5e-7 ? 0 : v).toFixed(6);
+function objFiles() {
+  const meshes = exportMeshes(), L = ["# H60 — local metres, Z up (origin = lower-left corner of the plan)", "# layers are OBJ groups (g): in Rhino import OBJ groups as layers", "mtllib h60.mtl"];
+  let base = 1;
+  for (const m of meshes) {
+    L.push(`o ${m.name.replace(/\s+/g, "_")}`, `g ${m.layer}`, `usemtl ${m.mat}`);
+    for (const t of m.tris) for (const q of t) L.push(`v ${n6(q.x)} ${n6(q.y)} ${n6(q.z)}`);
+    for (let i = 0; i < m.tris.length; i++) L.push(`f ${base + 3 * i} ${base + 3 * i + 1} ${base + 3 * i + 2}`);
+    base += 3 * m.tris.length;
+  }
+  // the ground-floor plan as polylines
+  L.push("o Plan_lines", "g PLAN_GROUND_FLOOR");
+  for (const l of PLAN) {
+    for (const q of l) L.push(`v ${n6(q.x)} ${n6(q.y)} ${n6(FF)}`);
+    L.push("l " + l.map((_, i) => base + i).join(" "));
+    base += l.length;
+  }
+  const mtl = Object.entries(MATS).map(([k, m]) => `newmtl ${k}\nKd ${m.rgb.map(n6).join(" ")}\nKa 0 0 0\nd ${m.a}\nillum 1`).join("\n\n");
+  return [{ name: "h60.obj", data: L.join("\n") + "\n" }, { name: "h60.mtl", data: mtl + "\n" }];
 }
-function wallsCsv() {
-  return "wall,type,elevation,x0,y0,x1,y1,length_m,x0_dxf,y0_dxf,x1_dxf,y1_dxf\n" + WALLS.map(w => [w.id, w.face ? "outside" : "inside", w.face || "",
-    w.a.x.toFixed(4), w.a.y.toFixed(4), w.b.x.toFixed(4), w.b.y.toFixed(4), w.len.toFixed(4),
-    (w.a.x + ORIGIN[0]).toFixed(4), (w.a.y + ORIGIN[1]).toFixed(4), (w.b.x + ORIGIN[0]).toFixed(4), (w.b.y + ORIGIN[1]).toFixed(4)].join(",")).join("\n") + "\n";
+function daeFile() {
+  const meshes = exportMeshes(), esc = t => t.replace(/[<>&"]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+  const effects = Object.entries(MATS).map(([k, m]) => `<effect id="fx-${k}"><profile_COMMON><technique sid="common"><lambert><diffuse><color>${m.rgb.join(" ")} 1</color></diffuse>${m.a < 1 ? `<transparent opaque="A_ONE"><color>0 0 0 ${m.a}</color></transparent><transparency><float>1</float></transparency>` : ""}</lambert></technique></profile_COMMON></effect>`).join("\n");
+  const mats = Object.keys(MATS).map(k => `<material id="mat-${k}" name="${k}"><instance_effect url="#fx-${k}"/></material>`).join("\n");
+  const geos = meshes.map((m, i) => {
+    const pos = m.tris.flatMap(t => t.flatMap(q => [n6(q.x), n6(q.y), n6(q.z)]));
+    const idx = m.tris.map((_, j) => `${3 * j} ${3 * j + 1} ${3 * j + 2}`).join(" ");
+    return `<geometry id="g${i}" name="${esc(m.name)}"><mesh><source id="g${i}-p"><float_array id="g${i}-pa" count="${pos.length}">${pos.join(" ")}</float_array><technique_common><accessor source="#g${i}-pa" count="${pos.length / 3}" stride="3"><param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/></accessor></technique_common></source><vertices id="g${i}-v"><input semantic="POSITION" source="#g${i}-p"/></vertices><triangles material="m" count="${m.tris.length}"><input semantic="VERTEX" source="#g${i}-v" offset="0"/><p>${idx}</p></triangles></mesh></geometry>`;
+  }).join("\n");
+  const node = (m, i) => `<node id="n${i}" name="${esc(m.name)}"><instance_geometry url="#g${i}"><bind_material><technique_common><instance_material symbol="m" target="#mat-${m.mat}"/></technique_common></bind_material></instance_geometry></node>`;
+  const nodes = LAYERS.filter(l => meshes.some(m => m.layer === l)).map(l =>
+    `<node id="layer-${l}" name="${l}">\n${meshes.map((m, i) => m.layer === l ? node(m, i) : "").filter(Boolean).join("\n")}\n</node>`).join("\n");
+  return `<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+<asset><contributor><authoring_tool>H60</authoring_tool></contributor><created>${new Date().toISOString()}</created><modified>${new Date().toISOString()}</modified><unit name="meter" meter="1"/><up_axis>Z_UP</up_axis></asset>
+<library_effects>
+${effects}
+</library_effects>
+<library_materials>
+${mats}
+</library_materials>
+<library_geometries>
+${geos}
+</library_geometries>
+<library_visual_scenes><visual_scene id="scene" name="H60">
+${nodes}
+</visual_scene></library_visual_scenes>
+<scene><instance_visual_scene url="#scene"/></scene>
+</COLLADA>
+`;
 }
-function windowsCsv() {
-  return "window,elevation,wall,along_from,along_to,width_m,sill_level,head_level,height_m\n" + windows().map(w => [w.key, w.face, w.wall || "added",
-    w.a0.toFixed(3), w.a1.toFixed(3), (w.a1 - w.a0).toFixed(3), (FF + w.sill).toFixed(3), (FF + w.sill + w.h).toFixed(3), w.h.toFixed(3)].join(",")).join("\n") + "\n";
+// a stored (uncompressed) zip
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function zipFiles(files) {
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = typeof f.data === "string" ? enc.encode(f.data) : f.data;
+    let crc = 0xffffffff; for (let i = 0; i < data.length; i++) crc = CRC_T[(crc ^ data[i]) & 0xff] ^ (crc >>> 8); crc = (crc ^ 0xffffffff) >>> 0;
+    const head = (sig, extra) => { const b = new DataView(new ArrayBuffer(extra)); b.setUint32(0, sig, true); return b; };
+    const lh = head(0x04034b50, 30);
+    lh.setUint16(4, 20, true); lh.setUint16(8, 0, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = head(0x02014b50, 46);
+    ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + data.length;
+  }
+  const size = central.reduce((s, a) => s + a.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, size, true); end.setUint32(16, offset, true);
+  const all = [...parts, ...central, new Uint8Array(end.buffer)], out = new Uint8Array(all.reduce((s, a) => s + a.length, 0));
+  let o = 0; for (const a of all) { out.set(a, o); o += a.length; }
+  return out;
 }
+
 function toast(m) { $("toast").textContent = m; }
 let downloads = null;
 (async () => {
@@ -1210,23 +1244,23 @@ let downloads = null;
 })();
 async function save(filename, data) {
   if (!downloads) {
-    // a plain page (not inside Claude): an ordinary browser download, real .dxf name
-    const name = filename.replace(/\.dxf\.txt$/, ".dxf");
+    // a plain page (not inside Claude): an ordinary browser download
+    const name = filename;
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
+    a.href = URL.createObjectURL(new Blob([data], { type: typeof data === "string" ? "text/plain" : "application/octet-stream" }));
     a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     toast("Saved " + name);
     return;
   }
-  try { await downloads.save({ filename, data }); toast("Saved " + filename + (filename.endsWith(".dxf.txt") ? " — remove .txt to open in CAD" : "")); }
+  try { await downloads.save({ filename, data }); toast("Saved " + filename); }
   catch (e) { toast(e.code === "declined" ? "Save cancelled." : "Could not save: " + (e.message || e.code)); }
 }
-// .dxf is not on the viewer's save allowlist: saved as .dxf.txt, drop the .txt to open
-$("saveDxf").addEventListener("click", () => save("plan-superellipse-gable-3d.dxf.txt", dxfString()));
-$("saveCsv").addEventListener("click", () => save("plan-superellipse-pieces.csv", csvString()));
-$("saveWalls").addEventListener("click", () => save("plan-walls.csv", wallsCsv()));
-$("saveWins").addEventListener("click", () => save("plan-windows.csv", windowsCsv()));
+// Claude's viewer saves only some file types: there the .dae travels in a .zip
+$("saveSkp").addEventListener("click", () => downloads
+  ? save("h60-sketchup.zip", zipFiles([{ name: "h60.dae", data: daeFile() }]))
+  : save("h60.dae", daeFile()));
+$("save3dm").addEventListener("click", () => save("h60-rhino.zip", zipFiles(objFiles())));
 
 PIECES = findPieces();
 S.n = +$("n").value; S.op = +$("op").value / 100; S.env = +$("env").value / 100; S.offL = +$("offL").value; S.offR = +$("offR").value;
