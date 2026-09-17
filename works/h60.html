@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H60</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+/* one light look, after works/snowdon-aviary-tensegrity.html — compact: the model gets the room */
+html, body { height: 100%; margin: 0; overflow: hidden; }
+body {
+  font-family: Helvetica, sans-serif;
+  background: #f4f4f4; color: #111;
+  padding: 8px 14px; box-sizing: border-box;
+  display: flex; flex-direction: column;
+}
+.bar {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px solid #111; flex-shrink: 0;
+}
+.bar h1 { margin: 0; font-size: 12px; font-weight: bold; letter-spacing: .8px; text-transform: uppercase; }
+.bar span { font-size: 9px; letter-spacing: .8px; text-transform: uppercase; color: #999; }
+
+.canvas-container { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+#canvas-inner {
+  flex: 1 1 auto; min-height: 200px; background: #fdfdfd;
+  border: 1px solid #eaeaea; position: relative; touch-action: none;
+  outline: none; overflow: hidden; cursor: move;
+}
+#canvas-inner.handle { cursor: grab; }
+#canvas-inner canvas { display: block; position: absolute; left: 0; top: 0; }
+#labels { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+.tag { position: absolute; font-size: 9px; transform: translate(-50%, -50%); white-space: nowrap; color: #666; font-variant-numeric: tabular-nums; }
+.tag.lvl { transform: translate(-100%, -50%); margin-left: -6px; color: #333; }
+.tag.lvr { transform: translate(0, -50%); margin-left: 6px; color: #333; }
+.tag.wid { color: #2f5fb3; font-size: 8px; }
+.view-btns { position: absolute; top: 6px; right: 6px; z-index: 20; display: flex; gap: 3px; }
+.view-btns .sep { width: 5px; }
+#status-text { font-size: 9px; text-align: center; margin: 4px 0 0; flex-shrink: 0; letter-spacing: .3px; color: #888; line-height: 1.35; }
+
+.controls-container {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
+  margin-top: 6px; padding-top: 6px; border-top: 1px dashed #aaa;
+  font-size: 9px; line-height: 1.3; flex-shrink: 0;
+}
+.column { padding: 0 12px; border-left: 1px solid #ddd; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.column:first-child { border-left: none; padding-left: 0; }
+.column h3 { margin: 2px 0 1px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: .6px; color: #999; }
+.control-row { display: grid; grid-template-columns: minmax(0, 1fr) 42% 38px; align-items: center; gap: 6px; }
+.control-row label { color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.control-row label.dim { color: #aaa; }
+.val { color: #555; text-align: right; font-variant-numeric: tabular-nums; }
+.note { color: #777; font-size: 9px; margin: 0; line-height: 1.3; }
+input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; background: transparent; margin: 3px 0; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 8px; width: 8px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -3px; }
+input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 2px; cursor: pointer; background: #ccc; }
+input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 50%; background: #111; border: 0; }
+input[type="range"]::-moz-range-track { height: 2px; background: #ccc; }
+input[type="range"]:disabled::-webkit-slider-thumb { background: #bbb; }
+input[type="range"]:focus-visible { outline: 1px dashed #111; outline-offset: 2px; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 3px; }
+button.toggle-btn {
+  border: 1px solid #bbb; background: #fff; color: #333; padding: 2px 6px;
+  font: bold 8px Helvetica, sans-serif; line-height: 1.5;
+  text-transform: uppercase; letter-spacing: .4px; cursor: pointer; transition: all .15s ease; flex: 1 0 auto;
+}
+.view-btns button.toggle-btn { flex: none; }
+button.toggle-btn:hover { background: #eee; }
+button.toggle-btn.active { background: #111; border-color: #111; color: #fff; }
+button.toggle-btn:disabled { opacity: .35; cursor: default; background: #fff; }
+button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px; }
+#pieceInfo, #winInfo { color: #333; font-variant-numeric: tabular-nums; }
+#toast { color: #d32f2f; min-height: 1.2em; }
+.num-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.num-row label { display: flex; flex-direction: column; gap: 1px; color: #777; font-size: 8px; }
+.num-row input { width: 100%; box-sizing: border-box; font: 9px Helvetica, sans-serif; padding: 1px 3px; border: 1px solid #bbb; background: #fff; font-variant-numeric: tabular-nums; }
+.num-row input:focus-visible { outline: 1px dashed #111; outline-offset: 1px; }
+
+@media (max-width: 900px) { .controls-container { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 8px; } .column:nth-child(3) { border-left: none; padding-left: 0; } }
+@media (max-width: 560px) {
+  html, body { overflow: auto; height: auto; }
+  .canvas-container { flex: none; height: 65vh; }
+  .controls-container { grid-template-columns: 1fr; }
+  .column { border-left: none; padding: 6px 0 0; border-top: 1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1><a href="../index.html" style="color:inherit;text-decoration:none">&larr; Index</a> &nbsp;·&nbsp; H60</h1>
+  <span>Drawing1.dxf · house 7.50 × 21.00 m · plan → superellipse → storey</span>
+</div>
+
+<div class="canvas-container">
+  <div id="canvas-inner" tabindex="0" aria-label="Model">
+    <div class="view-btns">
+      <button id="eS" class="toggle-btn" title="South elevation (y = 0)">S</button>
+      <button id="eN" class="toggle-btn" title="North elevation (y = 21)">N</button>
+      <button id="eW" class="toggle-btn" title="West elevation (x = 0)">W</button>
+      <button id="eE" class="toggle-btn" title="East elevation (x = 7.5)">E</button>
+      <span class="sep"></span>
+      <button id="vBelow" class="toggle-btn" aria-pressed="false" title="Let the view orbit below the ground">Below ground</button>
+      <button id="vReset" class="toggle-btn">Reset view</button>
+    </div>
+    <div id="labels"></div>
+  </div>
+  <div id="status-text"></div>
+</div>
+
+<div class="controls-container">
+  <div class="column">
+    <h3>Steps</h3>
+    <div class="btn-row">
+      <button id="st0" class="toggle-btn">1 Plan</button>
+      <button id="st1" class="toggle-btn">2 Flexible</button>
+      <button id="st2" class="toggle-btn">3 Storey</button>
+    </div>
+    <h3>Display</h3>
+    <div class="btn-row">
+      <button id="mWire" class="toggle-btn">Wireframe</button>
+      <button id="mSolid" class="toggle-btn">Solid</button>
+      <button id="mIds" class="toggle-btn active" aria-pressed="true" title="Wall IDs and level labels">Wall IDs</button>
+      <button id="mGfE" class="toggle-btn" aria-pressed="false" title="Ground-floor outside walls, 10 cm, on the plan lines">Ext walls</button>
+      <button id="mGfI" class="toggle-btn" aria-pressed="false" title="Ground-floor inside walls, 10 cm, on the plan lines">Int walls</button>
+      <button id="mWin" class="toggle-btn active" aria-pressed="true">Windows</button>
+    </div>
+    <h3>Centres</h3>
+    <div class="btn-row">
+      <button id="bRandom" class="toggle-btn">Random</button>
+      <button id="bUndo" class="toggle-btn" disabled>Undo</button>
+      <button id="reset" class="toggle-btn">Reset</button>
+    </div>
+  </div>
+
+  <div class="column">
+    <h3>Superellipse &amp; roof</h3>
+    <div class="control-row"><label for="n">Squareness n</label><input type="range" id="n" min="2" max="10" step="0.1" value="4"><span id="o-n" class="val"></span></div>
+    <div class="control-row"><label for="offL">Roof offset left</label><input type="range" id="offL" min="0" max="1.5" step="0.05" value="0"><span id="o-offL" class="val"></span></div>
+    <div class="control-row"><label for="offR">Roof offset right</label><input type="range" id="offR" min="0" max="1.5" step="0.05" value="0"><span id="o-offR" class="val"></span></div>
+    <div class="control-row"><label for="op" id="l-op">Curved wall opacity</label><input type="range" id="op" min="0" max="100" step="1" value="100"><span id="o-op" class="val"></span></div>
+    <div class="control-row"><label for="env">Envelope opacity</label><input type="range" id="env" min="0" max="100" step="1" value="35"><span id="o-env" class="val"></span></div>
+  </div>
+
+  <div class="column">
+    <h3>Windows · ground floor</h3>
+    <div class="control-row"><label for="winW">Width, share of wall</label><input type="range" id="winW" min="20" max="90" step="1" value="50"><span id="o-winW" class="val"></span></div>
+    <div class="control-row"><label for="winH">Height</label><input type="range" id="winH" min="0.3" max="2.2" step="0.05" value="1.2"><span id="o-winH" class="val"></span></div>
+    <div class="control-row"><label for="winSill">Sill above floor</label><input type="range" id="winSill" min="0" max="1.8" step="0.05" value="0.9"><span id="o-winSill" class="val"></span></div>
+    <div class="btn-row">
+      <button id="wDel" class="toggle-btn" disabled title="Delete the selected window (or press Delete)">Delete selected</button>
+    </div>
+    <p class="note" id="winHint">Click a window in 3D or in an elevation to select it.</p>
+    <div id="winBox" hidden>
+      <h3>Selected window</h3>
+      <div id="winInfo"></div>
+      <div class="num-row">
+        <label>From corner<input id="wA" type="number" step="0.05" min="0"></label>
+        <label>Width<input id="wW" type="number" step="0.05" min="0.2"></label>
+        <label>Sill<input id="wS" type="number" step="0.05" min="0"></label>
+        <label>Height<input id="wH" type="number" step="0.05" min="0.2"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="column">
+    <div id="selBox" hidden>
+      <h3>Selected piece</h3>
+      <div id="pieceInfo"></div>
+      <div class="btn-row" style="margin-top:3px"><button id="bCentre" class="toggle-btn">Centre in room</button></div>
+    </div>
+    <h3>Export</h3>
+    <div class="btn-row">
+      <button id="saveDxf" class="toggle-btn">DXF 3D</button>
+      <button id="saveCsv" class="toggle-btn">Pieces</button>
+      <button id="saveWalls" class="toggle-btn">Walls</button>
+      <button id="saveWins" class="toggle-btn">Windows</button>
+    </div>
+    <p class="note" id="toast" role="status"></p>
+  </div>
+</div>
+
+<script>
+/* From the plan of Drawing1.dxf:
+   1  Plan: every room is a rectangle (the L room is cut into two at x = 6.00);
+      a circle sits at its centre, as large as the room allows 10 cm clear of
+      the plan lines
+   2  Flexible: the circle grows into a superellipse held by the room frame and
+      its centre — four half-axes, the distances from the centre to the frame's
+      sides less 10 cm. Centres move inside their rooms, snap, or are randomised
+   Walls: every stretch of plan line between two junctions is a wall, E01…
+      outside and I01… inside, numbered bottom to top, left to right.
+   Windows (ground floor only): one per outside wall, centred, by rule; each can
+      then be moved, resized, deleted or added in the four elevations.
+   3  Storey: the ground is ±0.00; the ground floor is a thin slab at +1.00 on
+      a solid base the size of the house, with the plan on it; the superellipses are the second floor,
+      base +3.40, walls rising to an offset (measured normal to the roof) under
+      a gable roof — ridge +7.00 on the house's centre line, down to +3.40 at its
+      long walls. The roof is 0.30 m thick, built up from that surface, with
+      eaves 1.20 m out along the slope at the sides and 1.00 m at the gable
+      ends, cut square to the slope. The envelope is white walls and a flat
+      clay-tile roof, see-through by a slider */
+
+// house, local origin at the lower-left corner of the plan in Drawing1.dxf (metres, y up)
+const ORIGIN = [2750.541365912678, 1907.039885595487];
+const W = 7.5, D = 21.0, GAP = 0.10, KEEP = 0.15, SNAP_PX = 9;
+// ground ±0.00; ground floor +1.00 on columns; second floor 2.40 above it
+const FF = 1.00, L2 = FF + 2.40, RIDGE = FF + 6.00, RX = W / 2, SLAB = 0.15;
+const ROOF_T = 0.30, GABLE_EAVE = 1.00;
+const SLOPE = (RIDGE - L2) / RX, COS = 1 / Math.hypot(1, SLOPE);
+const roof = x => RIDGE - SLOPE * Math.abs(x - RX);   // also past the walls, for the eaves
+const EAVE = 1.20 * COS;                               // 1.20 m along the slope
+const Z_EAVE = roof(-EAVE);
+const fmtZ = z => (Math.abs(z) < 0.005 ? "±" : "+") + z.toFixed(2);
+// the roof as a solid: per side a section (eave underside, ridge underside,
+// ridge top, eave top), the top offset 0.30 m along the roof's normal, run from
+// one gable eave to the other. Faces and edges in site coordinates
+function roofSolid() {
+  const Y0 = -GABLE_EAVE, Y1 = D + GABLE_EAVE, dz = ROOF_T * COS, dx = ROOF_T * SLOPE * COS;
+  const faces = [], edges = [];
+  for (const side of [-1, 1]) {
+    const xe = side < 0 ? -EAVE : W + EAVE;
+    const sec = [{ x: xe, z: Z_EAVE }, { x: RX, z: RIDGE }, { x: RX, z: RIDGE + ROOF_T / COS }, { x: xe + side * dx, z: Z_EAVE + dz }];
+    const at = (q, y) => ({ x: q.x, y, z: q.z });
+    for (let i = 0; i < 4; i++) {
+      const a = sec[i], b = sec[(i + 1) % 4];
+      if (i !== 1) faces.push([at(a, Y0), at(b, Y0), at(b, Y1), at(a, Y1)]); // the ridge joint is inside
+      edges.push([at(a, Y0), at(b, Y0)], [at(a, Y1), at(b, Y1)], [at(a, Y0), at(a, Y1)]);
+    }
+    faces.push(sec.map(q => at(q, Y0)), sec.map(q => at(q, Y1)));
+  }
+  return { faces, edges };
+}
+// the site: the outer LWPOLYLINE of Drawing1.dxf (12:47)
+const SITE = [[-18.2198, 23.494], [-17.8638, -4.5594], [9.6311, -4.5594], [9.49, 22.9187]].map(([x, y]) => ({ x, y }));
+// every LINE and LWPOLYLINE edge of the house plan, local metres
+const PLAN = [
+ [[7.5,0.0404],[7.5,0]],[[0,14.25],[3.5503,14.25]],[[7.5,0],[4.7429,0]],[[6,8.9147],[0,8.9147]],
+ [[4.7429,0],[4.65,0]],[[4.65,0],[4.5571,0]],[[4.5571,0],[0,0]],[[0,21],[0,0]],[[7.5,0.0404],[7.5,8.9147]],
+ [[6,10.6153],[0,10.6153]],
+ [[3.5503,12.9933],[6,12.9933],[6,16.0939],[3.5503,16.0939],[3.5503,12.9933]],
+ [[6,11.5012],[7.5,11.5012],[7.5,8.9147],[6,8.9147],[6,11.5012]],
+ [[2.7959,0],[0,0],[0,5.25],[2.7959,5.25],[2.7959,0]],
+ [[4.7752,18.0939],[7.5,18.0939],[7.5,21],[4.7752,21],[4.7752,18.0939]],
+ [[4.7752,18.0939],[4.7752,16.0939]],[[4.7752,17.0939],[0,17.0939]],[[4.7752,12.9933],[4.7752,10.6153]],
+ [[0,21],[4.7752,21]],[[7.5,18.0939],[7.5,11.5012]],[[2.7959,5.25],[2.7959,8.9147]],[[2.7959,5.25],[7.5,5.25]],
+ [[6,16.0939],[7.5,16.0939]],[[3.5503,16.0939],[3.5503,17.0939]],[[3.5503,12.9933],[3.5503,10.6153]],
+ [[3.5503,10.6153],[3.5503,8.9147]],
+].map(l => l.map(([x, y]) => ({ x, y })));
+
+const $ = id => document.getElementById(id);
+const S = { t: 1, target: 1, n: 4, op: 1, env: 0.18, offL: 0, offR: 0, solid: false, below: false, ids: true, gfE: false, gfI: false, win: true, elev: null, winSel: null, winW: 0.5, winH: 1.2, winSill: 0.9, sel: null, dirty: true };
+let PIECES = [], UNDO = null;
+
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const ease = q => q < 0.5 ? 2 * q * q : 1 - (-2 * q + 2) ** 2 / 2;
+
+/* ---------------- rooms of the plan, as rectangles ---------------- */
+// the plan is orthogonal: cut the site at every x and y the lines use, join
+// neighbouring grid cells no line separates, then cut a room that is not a
+// rectangle into column rectangles (the L room splits along x = 6.00)
+function findPieces() {
+  const segs = [];
+  PLAN.forEach(l => { for (let k = 0; k + 1 < l.length; k++) segs.push([l[k], l[k + 1]]); });
+  const r4 = v => Math.round(v * 1e4) / 1e4;
+  const xs = [...new Set(segs.flatMap(s => s.map(p => r4(p.x))))].sort((a, b) => a - b);
+  const ys = [...new Set(segs.flatMap(s => s.map(p => r4(p.y))))].sort((a, b) => a - b);
+  const e = 1e-3;
+  const wallV = (x, y0, y1) => segs.some(([a, b]) => Math.abs(a.x - x) < e && Math.abs(b.x - x) < e && Math.min(a.y, b.y) <= y0 + e && Math.max(a.y, b.y) >= y1 - e);
+  const wallH = (y, x0, x1) => segs.some(([a, b]) => Math.abs(a.y - y) < e && Math.abs(b.y - y) < e && Math.min(a.x, b.x) <= x0 + e && Math.max(a.x, b.x) >= x1 - e);
+  const nx = xs.length - 1, ny = ys.length - 1, seen = new Set(), key = (i, j) => i * 1000 + j;
+  const pieces = [];
+  let room = 0;
+  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+    if (seen.has(key(i, j))) continue;
+    room++;
+    const cells = [], st = [[i, j]]; seen.add(key(i, j));
+    while (st.length) {
+      const [a, b] = st.pop(); cells.push([a, b]);
+      const nb = [];
+      if (a > 0 && !wallV(xs[a], ys[b], ys[b + 1])) nb.push([a - 1, b]);
+      if (a < nx - 1 && !wallV(xs[a + 1], ys[b], ys[b + 1])) nb.push([a + 1, b]);
+      if (b > 0 && !wallH(ys[b], xs[a], xs[a + 1])) nb.push([a, b - 1]);
+      if (b < ny - 1 && !wallH(ys[b + 1], xs[a], xs[a + 1])) nb.push([a, b + 1]);
+      for (const q of nb) if (!seen.has(key(...q))) { seen.add(key(...q)); st.push(q); }
+    }
+    const cols = new Map();
+    for (const [a, b] of cells) {
+      const c = cols.get(a) || { a, y0: Infinity, y1: -Infinity };
+      c.y0 = Math.min(c.y0, ys[b]); c.y1 = Math.max(c.y1, ys[b + 1]);
+      cols.set(a, c);
+    }
+    const rects = [];
+    for (const c of [...cols.values()].sort((p, q) => p.a - q.a)) {
+      const last = rects[rects.length - 1];
+      if (last && last.a1 === c.a && Math.abs(last.y0 - c.y0) < e && Math.abs(last.y1 - c.y1) < e) { last.x1 = xs[c.a + 1]; last.a1 = c.a + 1; }
+      else rects.push({ x0: xs[c.a], x1: xs[c.a + 1], y0: c.y0, y1: c.y1, a1: c.a + 1 });
+    }
+    rects.forEach(r => pieces.push({ room, x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1, split: rects.length > 1 }));
+  }
+  pieces.sort((p, q) => ((p.y0 + p.y1) - (q.y0 + q.y1)) || ((p.x0 + p.x1) - (q.x0 + q.x1)));
+  pieces.forEach((p, k) => { p.no = k + 1; p.cx = (p.x0 + p.x1) / 2; p.cy = (p.y0 + p.y1) / 2; });
+  return pieces;
+}
+
+
+/* ---------------- shapes ---------------- */
+function axes(p) { return { l: p.cx - p.x0 - GAP, r: p.x1 - p.cx - GAP, d: p.cy - p.y0 - GAP, u: p.y1 - p.cy - GAP }; }
+const circleR = p => { const a = axes(p); return Math.max(0, Math.min(a.l, a.r, a.d, a.u)); };
+// superellipse with a different half-axis on each side; k blends from the
+// circle (0) to the full shape (1). N a multiple of 4 keeps the extremes as samples
+function shapePts(p, k, n, N) {
+  const a = axes(p), r0 = circleR(p), ex = lerp(2, n, k);
+  const L = lerp(r0, a.l, k), R = lerp(r0, a.r, k), Dn = lerp(r0, a.d, k), U = lerp(r0, a.u, k);
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const th = i / N * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
+    pts.push({ x: p.cx + Math.sign(c) * Math.abs(c) ** (2 / ex) * (c >= 0 ? R : L), y: p.cy + Math.sign(s) * Math.abs(s) ** (2 / ex) * (s >= 0 ? U : Dn) });
+  }
+  return pts;
+}
+// top of the curved walls: each roof plane moved in by its side's offset along
+// its normal (a vertical drop of offset / cos), never below the storey base.
+// With unequal offsets the two planes meet off the ridge line
+const DL = () => S.offL / COS, DR = () => S.offR / COS;
+const wallTop = x => Math.max(L2, Math.min(RIDGE - SLOPE * (RX - x) - DL(), RIDGE - SLOPE * (x - RX) - DR()));
+// x where the top surface creases: where the two planes meet, and where each meets +3.40
+function breaks() {
+  const xc = RX + (DL() - DR()) / (2 * SLOPE);
+  const xl = RX - (RIDGE - L2 - DL()) / SLOPE, xr = RX + (RIDGE - L2 - DR()) / SLOPE;
+  const b = [xc];
+  if (xl < xc - 1e-9) b.push(xl);
+  if (xr > xc + 1e-9) b.push(xr);
+  return b.sort((u, v) => u - v);
+}
+// the ring with points added on every crease, so the wall top follows it exactly
+function ringPts(p, k, n, N) {
+  const pts = shapePts(p, k, n, N), out = [], bs = breaks();
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    out.push(a);
+    const cross = bs.filter(x => (a.x - x) * (b.x - x) < 0).map(x => (x - a.x) / (b.x - a.x)).sort((u, v) => (u - v));
+    for (const t of cross) out.push({ x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) });
+  }
+  return out;
+}
+function clipSide(poly, x0, keepAbove) {
+  const out = [], side = q => keepAbove ? q.x - x0 : x0 - q.x;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length], da = side(a), db = side(b);
+    if (da >= -1e-12) out.push(a);
+    if ((da > 1e-12 && db < -1e-12) || (da < -1e-12 && db > 1e-12)) { const t = da / (da - db); out.push({ x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) }); }
+  }
+  return out;
+}
+// the top cap: the (convex) shape cut at every crease into strips, each flat
+// on its own plane, fanned into triangles
+function capTris(ring) {
+  const bs = breaks(), edges = [-Infinity, ...bs, Infinity], tris = [];
+  for (let k = 0; k + 1 < edges.length; k++) {
+    let strip = ring;
+    if (isFinite(edges[k])) strip = clipSide(strip, edges[k], true);
+    if (isFinite(edges[k + 1]) && strip.length) strip = clipSide(strip, edges[k + 1], false);
+    if (strip.length < 3) continue;
+    for (let i = 1; i + 1 < strip.length; i++) tris.push([strip[0], strip[i], strip[i + 1]]);
+  }
+  return tris;
+}
+function shapeArea(pts) { let s = 0; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; s += a.x * b.y - b.x * a.y; } return s / 2; }
+
+/* ---------------- walls: plan lines cut at every junction ---------------- */
+const FACES = {
+  S: { axis: "x", at: 0, len: W, dir: [0, 0, 1] },
+  N: { axis: "x", at: D, len: W, dir: [0, 0, -1] },
+  W: { axis: "y", at: 0, len: D, dir: [-1, 0, 0] },
+  E: { axis: "y", at: W, len: D, dir: [1, 0, 0] },
+};
+// a point on a facade: a = distance along the wall's axis, z = height
+const facePt = (f, a, z) => FACES[f].axis === "x" ? { x: a, y: FACES[f].at, z } : { x: FACES[f].at, y: a, z };
+function findWalls() {
+  const e = 1e-4, r4 = v => Math.round(v * 1e4) / 1e4;
+  const segs = [];
+  PLAN.forEach(l => { for (let k = 0; k + 1 < l.length; k++) segs.push([l[k], l[k + 1]]); });
+  const pts = [];
+  segs.forEach(sg => sg.forEach(q => { if (!pts.some(o => Math.abs(o.x - q.x) < e && Math.abs(o.y - q.y) < e)) pts.push(q); }));
+  const units = new Map();
+  for (const [a, b] of segs) {
+    const horiz = Math.abs(a.y - b.y) < e;
+    const c = horiz ? a.y : a.x, lo = Math.min(horiz ? a.x : a.y, horiz ? b.x : b.y), hi = Math.max(horiz ? a.x : a.y, horiz ? b.x : b.y);
+    const cuts = [lo, hi, ...pts.filter(q => Math.abs((horiz ? q.y : q.x) - c) < e).map(q => horiz ? q.x : q.y).filter(v => v > lo + e && v < hi - e)].sort((u, v) => u - v);
+    for (let i = 0; i + 1 < cuts.length; i++) {
+      if (cuts[i + 1] - cuts[i] < e) continue;
+      const key = [horiz ? "H" : "V", r4(c), r4(cuts[i]), r4(cuts[i + 1])].join();
+      if (!units.has(key)) units.set(key, horiz
+        ? { a: { x: cuts[i], y: c }, b: { x: cuts[i + 1], y: c } }
+        : { a: { x: c, y: cuts[i] }, b: { x: c, y: cuts[i + 1] } });
+    }
+  }
+  const face = u => Math.abs(u.a.y) < e && Math.abs(u.b.y) < e ? "S" : Math.abs(u.a.y - D) < e && Math.abs(u.b.y - D) < e ? "N"
+    : Math.abs(u.a.x) < e && Math.abs(u.b.x) < e ? "W" : Math.abs(u.a.x - W) < e && Math.abs(u.b.x - W) < e ? "E" : null;
+  const list = [...units.values()].map(u => ({ ...u, face: face(u), len: Math.hypot(u.b.x - u.a.x, u.b.y - u.a.y), mx: (u.a.x + u.b.x) / 2, my: (u.a.y + u.b.y) / 2 }));
+  list.sort((p, q) => (p.my - q.my) || (p.mx - q.mx));
+  let ne = 0, ni = 0;
+  for (const w of list) w.id = w.face ? "E" + String(++ne).padStart(2, "0") : "I" + String(++ni).padStart(2, "0");
+  return list;
+}
+const WALLS = findWalls();
+
+// windows: by rule on every outside wall at least 0.90 m long, then edited
+const WIN_MIN_WALL = 0.9, WIN_MIN = 0.2;
+// ground-floor walls: 10 cm, centred on the plan lines, all but these
+const GF_T = 0.10, GF_HIDE = new Set(["I09", "I17", "I27", "I04", "I03", "I01", "I02"]);
+let WIN_OVR = new Map(), WIN_EXTRA = [], XID = 1;
+function windows() {
+  const out = [];
+  for (const w of WALLS) {
+    if (!w.face || w.len < WIN_MIN_WALL) continue;
+    const o = WIN_OVR.get(w.id);
+    if (o && o.deleted) continue;
+    const lo = FACES[w.face].axis === "x" ? Math.min(w.a.x, w.b.x) : Math.min(w.a.y, w.b.y);
+    const ww = S.winW * w.len, a0 = lo + (w.len - ww) / 2;
+    out.push(clampWin({ key: w.id, wall: w.id, face: w.face, a0, a1: a0 + ww, sill: S.winSill, h: S.winH, ...(o || {}) }));
+  }
+  for (const x of WIN_EXTRA) out.push(clampWin({ ...x }));
+  return out;
+}
+function clampWin(w) {
+  const L = FACES[w.face].len;
+  w.a0 = Math.max(0, Math.min(L - WIN_MIN, w.a0));
+  w.a1 = Math.max(w.a0 + WIN_MIN, Math.min(L, w.a1));
+  w.sill = Math.max(0, Math.min(L2 - FF - WIN_MIN, w.sill));
+  w.h = Math.max(WIN_MIN, Math.min(L2 - FF - w.sill, w.h));
+  return w;
+}
+function setWin(key, patch) {
+  const x = WIN_EXTRA.find(q => q.key === key);
+  if (x) { Object.assign(x, patch); clampWin(x); return; }
+  const cur = windows().find(q => q.key === key);
+  if (!cur) return;
+  WIN_OVR.set(key, clampWin({ ...cur, ...patch }));
+}
+function deleteWin(key) {
+  const i = WIN_EXTRA.findIndex(q => q.key === key);
+  if (i >= 0) WIN_EXTRA.splice(i, 1); else WIN_OVR.set(key, { deleted: true });
+  S.winSel = null;
+}
+// a facade band (lo..hi along the wall, z0..z1) with the windows cut out, as quads
+const winHoles = (face, wins) => wins.filter(w => w.face === face).map(w => ({ a0: w.a0, a1: w.a1, z0: FF + w.sill, z1: FF + w.sill + w.h }));
+function bandQuads(face, lo, hi, z0, z1, wins) { return holeQuads(lo, hi, z0, z1, winHoles(face, wins)); }
+function holeQuads(lo, hi, z0, z1, holes) {
+  const xs = [...new Set([lo, hi, ...holes.flatMap(h => [h.a0, h.a1]).filter(v => v > lo && v < hi)])].sort((u, v) => u - v);
+  const quads = [];
+  for (let i = 0; i + 1 < xs.length; i++) {
+    const u = xs[i], v = xs[i + 1];
+    if (v - u < 1e-6) continue;
+    let spans = [[z0, z1]];
+    for (const h of holes) {
+      if (!(h.a0 <= u + 1e-9 && h.a1 >= v - 1e-9)) continue;
+      spans = spans.flatMap(([p, q]) => [[p, Math.min(q, h.z0)], [Math.max(p, h.z1), q]]).filter(([p, q]) => q - p > 1e-6);
+    }
+    for (const [p, q] of spans) quads.push([u, v, p, q]);
+  }
+  return quads;
+}
+
+// a ground-floor wall as quads (site coordinates): both faces with the
+// windows cut out, the window reveals, the ends, top and bottom. Each wall
+// runs 5 cm past its ends so corners close
+function gfWallQuads(wl, wins) {
+  const horiz = Math.abs(wl.a.y - wl.b.y) < 1e-6;
+  const lo = (horiz ? Math.min(wl.a.x, wl.b.x) : Math.min(wl.a.y, wl.b.y)) - GF_T / 2;
+  const hi = (horiz ? Math.max(wl.a.x, wl.b.x) : Math.max(wl.a.y, wl.b.y)) + GF_T / 2;
+  const c = horiz ? wl.a.y : wl.a.x;
+  const P = (a, n, z) => horiz ? { x: a, y: c + n, z } : { x: c + n, y: a, z };
+  const holes = (wl.face ? winHoles(wl.face, wins) : []).map(h => ({ ...h, a0: Math.max(h.a0, lo), a1: Math.min(h.a1, hi) })).filter(h => h.a1 - h.a0 > 1e-6);
+  const q = [], t = GF_T / 2;
+  for (const n of [-t, t]) for (const [u, v, p, r] of holeQuads(lo, hi, FF, L2, holes)) q.push([P(u, n, p), P(v, n, p), P(v, n, r), P(u, n, r)]);
+  for (const a of [lo, hi]) q.push([P(a, -t, FF), P(a, t, FF), P(a, t, L2), P(a, -t, L2)]);
+  for (const z of [FF, L2]) q.push([P(lo, -t, z), P(hi, -t, z), P(hi, t, z), P(lo, t, z)]);
+  for (const h of holes) {
+    for (const z of [h.z0, h.z1]) q.push([P(h.a0, -t, z), P(h.a1, -t, z), P(h.a1, t, z), P(h.a0, t, z)]);
+    for (const a of [h.a0, h.a1]) if (a > lo + 1e-6 && a < hi - 1e-6) q.push([P(a, -t, h.z0), P(a, t, h.z0), P(a, t, h.z1), P(a, -t, h.z1)]);
+  }
+  return q;
+}
+const gfWalls = () => WALLS.filter(w => !GF_HIDE.has(w.id) && (w.face ? S.gfE : S.gfI));
+// the windows in the model: none while they are switched off
+const shownWins = () => S.win ? windows() : [];
+
+/* ---------------- snapping ---------------- */
+const FRACS = [1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4];
+function snapAxis(v, lo, hi, others, tol) {
+  const cands = FRACS.map(f => ({ v: lo + (hi - lo) * f, kind: "frac" }))
+    .concat(others.filter(o => o > lo + KEEP && o < hi - KEEP).map(o => ({ v: o, kind: "align" })));
+  let best = null;
+  for (const c of cands) if (Math.abs(c.v - v) <= tol && (!best || Math.abs(c.v - v) < Math.abs(best.v - v))) best = c;
+  return best || { v: Math.round(v / 0.05) * 0.05, kind: "grid" };
+}
+let guides = [];
+function moveCentre(p, q) {
+  const tol = SNAP_PX * worldPerPx();
+  const others = PIECES.filter(o => o !== p);
+  const sx = snapAxis(q.x, p.x0, p.x1, others.map(o => o.cx), tol);
+  const sy = snapAxis(q.y, p.y0, p.y1, others.map(o => o.cy), tol);
+  p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, sx.v));
+  p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, sy.v));
+  guides = [];
+  if (sx.kind === "align") others.filter(o => Math.abs(o.cx - p.cx) < 1e-9).forEach(o => guides.push([p, o]));
+  if (sy.kind === "align") others.filter(o => Math.abs(o.cy - p.cy) < 1e-9).forEach(o => guides.push([p, o]));
+}
+
+
+function randomCentres() {
+  UNDO = PIECES.map(p => ({ cx: p.cx, cy: p.cy }));
+  for (const p of PIECES) {
+    p.cx = lerp(p.x0 + KEEP, p.x1 - KEEP, Math.random());
+    p.cy = lerp(p.y0 + KEEP, p.y1 - KEEP, Math.random());
+  }
+}
+
+/* ---------------- three.js scene ---------------- */
+const box = $("canvas-inner"), labels = $("labels");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.setClearColor(0xfdfdfd);
+box.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-6, 14, 9); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.2); fill.position.set(8, 5, -10); scene.add(fill);
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -400, 400);
+// turntable: 360° around the house, never upside down; below the ground only when unlocked
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = false; controls.screenSpacePanning = true;
+controls.rotateSpeed = 0.8; controls.zoomSpeed = 1.1;
+const POLAR_ABOVE = Math.PI / 2 - 0.02;
+controls.minPolarAngle = 0; controls.maxPolarAngle = POLAR_ABOVE;
+// steps 1-2 are a plan: left drag pans, no rotation; step 3 orbits
+function controlMode() {
+  const orbit = S.target === 2;
+  controls.enableRotate = orbit;
+  controls.mouseButtons.LEFT = orbit ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
+  controls.touches.ONE = orbit ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
+}
+let model = new THREE.Group(); scene.add(model);
+
+// the scene is centred on the site; site (x, y) and height z → scene, y up
+const SX = SITE.map(q => q.x), SY = SITE.map(q => q.y);
+const CX = (Math.min(...SX) + Math.max(...SX)) / 2, CY = (Math.min(...SY) + Math.max(...SY)) / 2;
+const HALF_W = (Math.max(...SX) - Math.min(...SX)) / 2, HALF_D = (Math.max(...SY) - Math.min(...SY)) / 2;
+const V = (x, y, z) => new THREE.Vector3(x - CX, z, -(y - CY));
+const INK = 0x111111, FAINT = 0xb9b9b4, ACCENT = 0xe8772e;
+const matLine = new THREE.LineBasicMaterial({ color: INK });
+const matFaint = new THREE.LineBasicMaterial({ color: FAINT });
+const matEnvLine = new THREE.LineBasicMaterial({ color: 0x8a8a84 });
+const matSel = new THREE.LineBasicMaterial({ color: ACCENT });
+const matGuide = new THREE.LineDashedMaterial({ color: ACCENT, dashSize: 0.12, gapSize: 0.08 });
+const matCut = new THREE.LineDashedMaterial({ color: FAINT, dashSize: 0.12, gapSize: 0.08 });
+const matFillPlan = new THREE.MeshBasicMaterial({ color: 0xe9e7e2, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+const matSolid = new THREE.MeshLambertMaterial({ color: 0xf3f1ec, side: THREE.DoubleSide, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+const matWall = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, depthWrite: false });
+const matTile = new THREE.MeshLambertMaterial({ color: 0xb45a3c, side: THREE.DoubleSide, transparent: true, depthWrite: false });
+const matGround = new THREE.MeshBasicMaterial({ color: 0xeeede8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+const matSlab = new THREE.MeshLambertMaterial({ color: 0xdedbd4, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+// the base under the ground floor takes the wall colour
+const matBase = new THREE.MeshLambertMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+const matSnap = new THREE.PointsMaterial({ color: ACCENT, size: 5, sizeAttenuation: false });
+const matPane = new THREE.MeshBasicMaterial({ color: 0x9fbccb, side: THREE.DoubleSide, transparent: true, opacity: 0.3, depthWrite: false });
+const matWinLine = new THREE.LineBasicMaterial({ color: 0x2b2b2b });
+const matGfWall = new THREE.MeshLambertMaterial({ color: 0xf6f5f1, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+
+function withOpacity(mat, opacity) {
+  if (opacity === undefined || opacity >= 0.999) return { m: mat, own: false };
+  const m = mat.clone(); m.transparent = true; m.opacity = opacity; return { m, own: true };
+}
+function segsObj(pairs, mat, opacity) {
+  const g = new THREE.BufferGeometry().setFromPoints(pairs.flat());
+  const { m, own } = withOpacity(mat, opacity);
+  const o = new THREE.LineSegments(g, m); o.userData.ownMat = own;
+  if (m.isLineDashedMaterial) o.computeLineDistances();
+  return o;
+}
+function loopPairs(pts3) { const out = []; for (let i = 0; i < pts3.length; i++) out.push([pts3[i], pts3[(i + 1) % pts3.length]]); return out; }
+function meshObj(positions, mat, opacity, order) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  const m = mat.clone();
+  if (opacity !== undefined) { m.opacity = opacity; m.transparent = opacity < 0.999; m.depthWrite = opacity >= 0.999; }
+  const o = new THREE.Mesh(g, m); o.userData.ownMat = true; o.renderOrder = order || 0;
+  return o;
+}
+// pushes triangles (three vertices each), skipping degenerate slivers
+function pushTri(pos, ...vs) {
+  for (let i = 0; i + 2 < vs.length; i += 3) {
+    const a = vs[i], b = vs[i + 1], c = vs[i + 2];
+    if (new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).lengthSq() < 1e-14) continue;
+    pos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+  }
+}
+function clearModel() {
+  model.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.userData.ownMat) o.material.dispose(); });
+  scene.remove(model); model = new THREE.Group(); scene.add(model);
+}
+
+let tags = [];
+function build() {
+  clearModel();
+  tags = [];
+  const k = smooth(0, 1, S.t), k3 = smooth(1, 2, S.t);
+  const solid = S.solid, wireOp = solid ? 1 - k3 : 1;
+  const zg = 0, zf = FF * k3; // ground; ground floor, rising with the storey
+
+  // the site: ground plane and boundary
+  {
+    const pos = [];
+    for (let i = 1; i + 1 < SITE.length; i++) pushTri(pos, V(SITE[0].x, SITE[0].y, zg), V(SITE[i].x, SITE[i].y, zg), V(SITE[i + 1].x, SITE[i + 1].y, zg));
+    if (!S.below) { const o = meshObj(pos, matGround); o.material.side = THREE.DoubleSide; model.add(o); }
+    model.add(segsObj(loopPairs(SITE.map(q => V(q.x, q.y, zg + 0.002))), matLine));
+  }
+  // ground-floor slab on a solid base, rising with the storey; edges only
+  // when the view may go below the ground
+  if (k3 > 0.01) {
+    for (const [z0, z1] of [[0, FF - SLAB], [FF - SLAB, FF]]) {
+      const g = new THREE.BoxGeometry(W, (z1 - z0) * k3, D), at = V(W / 2, D / 2, (z0 + z1) / 2 * k3);
+      if (S.below) {
+        const o = new THREE.LineSegments(new THREE.EdgesGeometry(g), matLine); g.dispose();
+        o.position.copy(at); model.add(o);
+      } else {
+        const o = new THREE.Mesh(g, z0 === 0 ? matBase : matSlab); o.position.copy(at); model.add(o);
+      }
+    }
+  }
+  // ground-floor plan lines, always on
+  const zp = zf + 0.004;
+  const planPairs = [];
+  PLAN.forEach(l => { for (let i = 0; i + 1 < l.length; i++) planPairs.push([V(l[i].x, l[i].y, zp), V(l[i + 1].x, l[i + 1].y, zp)]); });
+  model.add(segsObj(planPairs, matLine));
+  const cut = [];
+  PIECES.filter(p => p.split).forEach(p => PIECES.filter(q => q.split && q.room === p.room && q !== p && Math.abs(q.x0 - p.x1) < 1e-3)
+    .forEach(q => cut.push([V(p.x1, Math.max(p.y0, q.y0), zp), V(p.x1, Math.min(p.y1, q.y1), zp)])));
+  if (cut.length) model.add(segsObj(cut, matCut));
+  // in an elevation only that facade's walls are labelled, on its sill line
+  if (S.ids) for (const w of WALLS) if (!S.elev || w.face === S.elev) tags.push({ p: V(w.mx, w.my, S.elev ? zf - 0.25 : zf), text: w.id, cls: "wid", op: 1 });
+
+  // the envelope: house walls and the gable roof with its eaves
+  if (k3 > 0.01) {
+    const z = h => h * k3;
+    const walls = [], roofs = [], rs = roofSolid(), wins = shownWins();
+    // ground-floor bands with the windows cut out, gable triangles above
+    if (!S.gfE) for (const f of Object.keys(FACES)) {
+      for (const [u, v, p, q] of bandQuads(f, 0, FACES[f].len, FF, L2, wins)) {
+        const P3 = (a, h) => { const t = facePt(f, a, h); return V(t.x, t.y, z(t.z)); };
+        pushTri(walls, P3(u, p), P3(v, p), P3(v, q), P3(u, p), P3(v, q), P3(u, q));
+      }
+    }
+    for (const y of [0, D]) pushTri(walls, V(0, y, z(L2)), V(W, y, z(L2)), V(RX, y, z(RIDGE)));
+    // windows: a pane and a frame each
+    const panes = [], frames = [];
+    for (const w of wins) {
+      const c = [[w.a0, FF + w.sill], [w.a1, FF + w.sill], [w.a1, FF + w.sill + w.h], [w.a0, FF + w.sill + w.h]]
+        .map(([a, h]) => { const t = facePt(w.face, a, h); return V(t.x, t.y, z(t.z)); });
+      pushTri(panes, c[0], c[1], c[2], c[0], c[2], c[3]);
+      if (S.winSel !== w.key) frames.push(...loopPairs(c));
+    }
+    if (panes.length) model.add(meshObj(panes, matPane, 0.3 * k3, 6));
+    if (S.gfE || S.gfI) {
+      const pos = [], edges = [], VZ3 = q => V(q.x, q.y, z(q.z));
+      for (const wl of gfWalls()) for (const f of gfWallQuads(wl, wins)) {
+        const c = f.map(VZ3);
+        pushTri(pos, c[0], c[1], c[2], c[0], c[2], c[3]);
+        edges.push(...loopPairs(c));
+      }
+      if (S.solid) model.add(meshObj(pos, matGfWall, k3 < 0.999 ? k3 : undefined, 3));
+      model.add(segsObj(edges, S.solid ? matFaint : matLine, k3));
+    }
+    if (frames.length) model.add(segsObj(frames, matWinLine, k3));
+    const VZ = q => V(q.x, q.y, z(q.z));
+    for (const f of rs.faces) pushTri(roofs, VZ(f[0]), VZ(f[1]), VZ(f[2]), VZ(f[0]), VZ(f[2]), VZ(f[3]));
+    if (S.env > 0.001) {
+      model.add(meshObj(walls, matWall, S.env * k3, 4));
+      model.add(meshObj(roofs, matTile, S.env * k3, 5));
+    }
+    const e = [];
+    for (const [a, b] of rs.edges) e.push([VZ(a), VZ(b)]);
+    for (const y of [0, D]) e.push([V(0, y, z(L2)), V(RX, y, z(RIDGE))], [V(RX, y, z(RIDGE)), V(W, y, z(L2))]);
+    for (const x of [0, W]) { e.push([V(x, 0, z(L2)), V(x, D, z(L2))], [V(x, 0, z(FF)), V(x, D, z(FF))]); for (const y of [0, D]) e.push([V(x, y, z(FF)), V(x, y, z(L2))]); }
+    for (const y of [0, D]) e.push([V(0, y, z(FF)), V(W, y, z(FF))]);
+    model.add(segsObj(e, matEnvLine, k3));
+    tags.push(
+      { p: V(0, 0, 0), text: "±0.00", cls: "lvl", op: k3 },
+      { p: V(0, 0, z(FF)), text: fmtZ(FF), cls: "lvl", op: k3 },
+      { p: V(0, 0, z(L2)), text: fmtZ(L2), cls: "lvl", op: k3 },
+      { p: V(RX, 0, z(RIDGE)), text: fmtZ(RIDGE), cls: "lvl", op: k3 },
+      { p: V(RX, -GABLE_EAVE, z(RIDGE + ROOF_T / COS)), text: "top " + fmtZ(RIDGE + ROOF_T / COS), cls: "lvr", op: k3 },
+      { p: V(W + EAVE, -GABLE_EAVE, z(Z_EAVE)), text: "eave " + fmtZ(Z_EAVE), cls: "lvr", op: k3 });
+  }
+
+  // the curved walls
+  const zb = L2 * k3, zt = q => wallTop(q.x) * k3;
+  for (const p of PIECES) {
+    const sel = S.sel === p.no;
+    const ring = ringPts(p, k, S.n, 160);
+    const bottom = ring.map(q => V(q.x, q.y, zb)), top = ring.map(q => V(q.x, q.y, zt(q)));
+    if (1 - k3 > 0.01) {
+      const pos = [];
+      for (const tr of capTris(ring)) for (const q of tr) pos.push(q.x - CX, zf + 0.002, -(q.y - CY));
+      model.add(meshObj(pos, matFillPlan, 0.85 * (1 - k3), 1));
+    }
+    if (solid && k3 > 0.01 && S.op > 0.001) {
+      const pos = [];
+      for (let i = 0; i < ring.length; i++) {
+        const j = (i + 1) % ring.length;
+        if (top[i].y - bottom[i].y < 1e-6 && top[j].y - bottom[j].y < 1e-6) continue; // no wall where it has no height
+        pushTri(pos, bottom[i], bottom[j], top[j], bottom[i], top[j], top[i]);
+      }
+      for (const tr of capTris(ring)) pushTri(pos, ...tr.map(q => V(q.x, q.y, zt(q))));
+      model.add(meshObj(pos, matSolid, S.op * k3, 2));
+    }
+    const lm = sel ? matSel : matLine;
+    model.add(segsObj(loopPairs(bottom), lm));
+    if (k3 > 0.01) {
+      model.add(segsObj(loopPairs(top), lm, k3));
+      if (wireOp > 0.01) {
+        const vp = [], plain = shapePts(p, k, S.n, 160);
+        for (let i = 0; i < 160; i += 10) { const q = plain[i]; if (wallTop(q.x) > L2 + 1e-6) vp.push([V(q.x, q.y, zb), V(q.x, q.y, zt(q))]); }
+        if (vp.length) model.add(segsObj(vp, sel ? matSel : matFaint, k3 * wireOp));
+      }
+    }
+    const m = Math.min(0.12, circleR(p) * 0.35);
+    model.add(segsObj([[V(p.cx - m, p.cy, zb + 0.004), V(p.cx + m, p.cy, zb + 0.004)], [V(p.cx, p.cy - m, zb + 0.004), V(p.cx, p.cy + m, zb + 0.004)]], matSel, solid ? 1 - k3 : 1));
+    if (k3 < 0.5) tags.push({ p: V(p.cx, p.cy - Math.min(circleR(p) * 0.5, 0.45), 0), text: String(p.no), op: 1 - 2 * k3 });
+  }
+
+  // snap marks and guides while dragging
+  if (drag) {
+    const p = drag, pts = [];
+    for (const fx of FRACS) for (const fy of FRACS) pts.push(V(p.x0 + (p.x1 - p.x0) * fx, p.y0 + (p.y1 - p.y0) * fy, zb + 0.006));
+    model.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts), matSnap));
+    if (guides.length) model.add(segsObj(guides.map(([a, b]) => [V(a.cx, a.cy, zb + 0.006), V(b.cx, b.cy, zb + 0.006)]), matGuide));
+  }
+  S.dirty = false;
+}
+
+/* ---------------- camera ---------------- */
+const TOP = { dir: new THREE.Vector3(0, 1, 0.002).normalize(), up: new THREE.Vector3(0, 1, 0) };
+const AXO = { dir: new THREE.Vector3(-0.95, 0.72, 0.8).normalize(), up: new THREE.Vector3(0, 1, 0) };
+const DIST = 120;
+let camFrom = null, camTo = { ...TOP, zoom: 1, target: new THREE.Vector3() }, camK = 1;
+function camState() {
+  return { dir: camera.position.clone().sub(controls.target).normalize(), up: camera.up.clone(), zoom: camera.zoom, target: controls.target.clone() };
+}
+function homeTarget(view3d) {
+  // centre of the site in plan; in 3D, lifted to mid-height of the house
+  return new THREE.Vector3(0, view3d ? RIDGE / 2 : 0, 0);
+}
+function frustum() {
+  const w = box.clientWidth, h = box.clientHeight, asp = w / Math.max(1, h);
+  const k3 = smooth(1, 2, S.t);
+  const planH = Math.max(HALF_D + 1.2, (HALF_W + 1.2) / asp);
+  const R = Math.hypot(HALF_W, HALF_D, RIDGE / 2) + 1;
+  const axoH = Math.max(R * 0.62, R * 0.8 / asp);
+  const hh = lerp(planH, axoH, k3);
+  camera.left = -hh * asp; camera.right = hh * asp; camera.top = hh; camera.bottom = -hh;
+}
+function flyTo(view, dur, zoom, target, onDone) {
+  camFrom = camState();
+  camTo = { dir: view.dir.clone(), up: view.up.clone(), zoom: zoom || 1, target: target || homeTarget(view === AXO), onDone };
+  camK = 0;
+  const start = performance.now();
+  if (reduce) dur = 1;
+  const stepF = () => {
+    camK = clamp01((performance.now() - start) / dur);
+    if (camK < 1) requestAnimationFrame(stepF);
+  };
+  requestAnimationFrame(stepF);
+}
+function placeCamera() {
+  if (camFrom && camK < 1 + 1e-9) {
+    const e = ease(camK);
+    const dir = camFrom.dir.clone().lerp(camTo.dir, e);
+    if (dir.lengthSq() < 1e-6) dir.copy(camTo.dir);
+    dir.normalize();
+    const up = camFrom.up.clone().lerp(camTo.up, e);
+    if (up.lengthSq() < 1e-6) up.copy(camTo.up);
+    up.normalize();
+    const target = camFrom.target.clone().lerp(camTo.target, e);
+    controls.target.copy(target);
+    camera.position.copy(target).addScaledVector(dir, DIST);
+    camera.up.copy(up);
+    camera.zoom = lerp(camFrom.zoom, camTo.zoom, e);
+    camera.lookAt(target);
+    if (camK >= 1) { camFrom = null; controls.update(); if (camTo.onDone) camTo.onDone(); }
+  }
+  frustum();
+  camera.updateProjectionMatrix();
+}
+function worldPerPx() { return (camera.top - camera.bottom) / camera.zoom / Math.max(1, box.clientHeight); }
+$("vBelow").addEventListener("click", () => {
+  const on = controls.maxPolarAngle < Math.PI - 0.01;
+  controls.maxPolarAngle = on ? Math.PI - 0.02 : POLAR_ABOVE;
+  S.below = on; S.dirty = true;
+  $("vBelow").classList.toggle("active", on);
+  $("vBelow").setAttribute("aria-pressed", String(on));
+  controls.update();
+});
+$("vReset").addEventListener("click", () => { S.elev = null; ui(); flyTo(S.target === 2 ? AXO : TOP, 600); });
+// elevations: square on to a facade, the house filling the view; windows are edited here
+const TOP_Z = RIDGE + ROOF_T / COS;
+let elevToken = 0;
+function flyElev(f) {
+  const go = token => {
+    if (token !== elevToken || S.target !== 2) return;
+    const F = FACES[f], w = box.clientWidth, h = box.clientHeight, asp = w / Math.max(1, h);
+    const R = Math.hypot(HALF_W, HALF_D, RIDGE / 2) + 1, hh = Math.max(R * 0.62, R * 0.8 / asp);
+    const halfLen = (F.axis === "x" ? W / 2 + EAVE + 0.3 : D / 2 + GABLE_EAVE) + 0.6, halfH = TOP_Z / 2 + 0.6;
+    const zoom = Math.min(hh * asp / halfLen, hh / halfH);
+    S.elev = null; ui();
+    flyTo({ dir: new THREE.Vector3(...F.dir), up: new THREE.Vector3(0, 1, 0) }, 600, zoom, V(W / 2, D / 2, TOP_Z / 2), () => { S.elev = f; ui(); });
+  };
+  if (S.target !== 2) { goTo(2); const tk = elevToken; setTimeout(() => go(tk), reduce ? 0 : 950); } else go(elevToken);
+}
+["S", "N", "W", "E"].forEach(f => $("e" + f).addEventListener("click", () => flyElev(f)));
+controls.addEventListener("start", () => { if (S.elev) { S.elev = null; ui(); } });
+
+/* ---------------- steps ---------------- */
+const CAPS = [
+  "1 Plan — a circle at each room centre, 10 cm clear of the plan lines. Drag + to move it.",
+  "2 Flexible — circles grow into superellipses held by the room frames. Centres snap to ¼ ⅓ ½ ⅔ ¾, other centres or 5 cm.",
+  "3 Storey — slab at +1.00 on a solid base; curved walls from +3.40 to the roof underside (ridge +7.00) less the offset; roof 0.30 m thick, eaves 1.20 m along the slope and 1.00 m at the gables."
+];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let anim = null;
+function goTo(target) {
+  const t0 = S.t;
+  S.target = target;
+  if (target !== 2) { S.elev = null; S.winSel = null; }
+  elevToken++;
+  controlMode();
+  const dur = reduce ? 1 : 900 * Math.abs(target - t0) + 150;
+  // steps 1-2 open on the plan; step 3 on the axonometric
+  flyTo(target === 2 ? AXO : TOP, dur);
+  cancelAnimationFrame(anim);
+  const start = performance.now();
+  const stepF = () => {
+    const q = clamp01((performance.now() - start) / dur);
+    S.t = lerp(t0, target, ease(q));
+    S.dirty = true;
+    if (q < 1) anim = requestAnimationFrame(stepF);
+  };
+  anim = requestAnimationFrame(stepF);
+  ui();
+}
+[0, 1, 2].forEach(i => $("st" + i).addEventListener("click", () => goTo(i)));
+
+/* ---------------- controls ---------------- */
+function ui() {
+  [0, 1, 2].forEach(i => $("st" + i).classList.toggle("active", S.target === i));
+  $("mWire").classList.toggle("active", !S.solid);
+  $("mSolid").classList.toggle("active", S.solid);
+  $("op").disabled = !S.solid;
+  $("l-op").classList.toggle("dim", !S.solid);
+  $("o-n").textContent = S.n.toFixed(1);
+  $("o-offL").textContent = S.offL.toFixed(2) + " m";
+  $("o-offR").textContent = S.offR.toFixed(2) + " m";
+  $("o-winW").textContent = Math.round(S.winW * 100) + "%";
+  $("o-winH").textContent = S.winH.toFixed(2) + " m";
+  $("o-winSill").textContent = S.winSill.toFixed(2) + " m";
+  $("mIds").classList.toggle("active", S.ids); $("mIds").setAttribute("aria-pressed", String(S.ids));
+  for (const [id, on] of [["mGfE", S.gfE], ["mGfI", S.gfI], ["mWin", S.win]]) { $(id).classList.toggle("active", on); $(id).setAttribute("aria-pressed", String(on)); }
+  ["S", "N", "W", "E"].forEach(f => $("e" + f).classList.toggle("active", S.elev === f));
+  const win = S.win && S.winSel && windows().find(q => q.key === S.winSel);
+  if (S.winSel && !win) S.winSel = null;
+  $("winBox").hidden = !win;
+  $("wDel").disabled = !win;
+  if (win) {
+    const wall = win.wall ? `on ${win.wall}` : "added";
+    $("winInfo").textContent = `${win.face} elevation · ${wall} · ${(win.a1 - win.a0).toFixed(2)} × ${win.h.toFixed(2)} m, head ${fmtZ(FF + win.sill + win.h)}`;
+    const setIf = (id, v) => { if (document.activeElement !== $(id)) $(id).value = v.toFixed(2); };
+    setIf("wA", win.a0); setIf("wW", win.a1 - win.a0); setIf("wS", win.sill); setIf("wH", win.h);
+  }
+  $("o-op").textContent = Math.round(S.op * 100) + "%";
+  $("o-env").textContent = Math.round(S.env * 100) + "%";
+  $("bUndo").disabled = !UNDO;
+  $("status-text").textContent = S.elev && !S.win ? `${S.elev} elevation — windows are switched off.` : S.elev ? `${S.elev} elevation — click the wall to add a window; drag a window to move it, drag its edge to resize; drag outside the wall to leave the elevation.` : CAPS[S.target];
+  const p = PIECES.find(q => q.no === S.sel);
+  $("selBox").hidden = !p;
+  if (p) {
+    const a = axes(p);
+    $("pieceInfo").innerHTML = `Piece ${p.no} · room ${p.room} · centre ${p.cx.toFixed(3)}, ${p.cy.toFixed(3)}<br>${(a.l + a.r).toFixed(2)} × ${(a.d + a.u).toFixed(2)} m · wall ${(wallTop(p.cx) - L2).toFixed(2)} m at centre`;
+  }
+  S.dirty = true;
+}
+$("n").addEventListener("input", () => { S.n = +$("n").value; if (S.target === 0) goTo(1); ui(); });
+$("offL").addEventListener("input", () => { S.offL = +$("offL").value; ui(); });
+$("offR").addEventListener("input", () => { S.offR = +$("offR").value; ui(); });
+for (const [id, key, f] of [["winW", "winW", 0.01], ["winH", "winH", 1], ["winSill", "winSill", 1]]) $(id).addEventListener("input", () => { S[key] = +$(id).value * f; ui(); });
+$("mIds").addEventListener("click", () => { S.ids = !S.ids; ui(); });
+$("mGfE").addEventListener("click", () => { S.gfE = !S.gfE; if (S.gfE && S.target !== 2) goTo(2); ui(); });
+$("mGfI").addEventListener("click", () => { S.gfI = !S.gfI; if (S.gfI && S.target !== 2) goTo(2); ui(); });
+$("mWin").addEventListener("click", () => { S.win = !S.win; if (!S.win) S.winSel = null; ui(); });
+$("wDel").addEventListener("click", () => { if (S.winSel) { deleteWin(S.winSel); ui(); } });
+document.addEventListener("keydown", ev => {
+  if ((ev.key === "Delete" || ev.key === "Backspace") && S.winSel && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
+    ev.preventDefault(); deleteWin(S.winSel); ui();
+  }
+});
+const winField = (id, fn) => $(id).addEventListener("input", () => {
+  const w = S.winSel && windows().find(q => q.key === S.winSel), v = parseFloat($(id).value);
+  if (!w || !isFinite(v)) return;
+  setWin(w.key, fn(w, v)); ui();
+});
+winField("wA", (w, v) => ({ a0: v, a1: v + (w.a1 - w.a0) }));
+winField("wW", (w, v) => ({ a1: w.a0 + v }));
+winField("wS", (w, v) => ({ sill: v }));
+winField("wH", (w, v) => ({ h: v }));
+$("op").addEventListener("input", () => { S.op = +$("op").value / 100; ui(); });
+$("env").addEventListener("input", () => { S.env = +$("env").value / 100; ui(); });
+$("mWire").addEventListener("click", () => { S.solid = false; ui(); });
+$("mSolid").addEventListener("click", () => { S.solid = true; ui(); });
+$("bRandom").addEventListener("click", () => { randomCentres(); ui(); });
+$("bUndo").addEventListener("click", () => { if (!UNDO) return; PIECES.forEach((p, i) => { p.cx = UNDO[i].cx; p.cy = UNDO[i].cy; }); UNDO = null; ui(); });
+$("reset").addEventListener("click", () => { UNDO = PIECES.map(p => ({ cx: p.cx, cy: p.cy })); PIECES.forEach(p => { p.cx = (p.x0 + p.x1) / 2; p.cy = (p.y0 + p.y1) / 2; }); ui(); });
+$("bCentre").addEventListener("click", () => { const p = PIECES.find(q => q.no === S.sel); if (p) { p.cx = (p.x0 + p.x1) / 2; p.cy = (p.y0 + p.y1) / 2; ui(); } });
+
+/* ---------------- pointer: a + moves a centre, a click selects, anything else orbits ---------------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+// the centres lie on the storey base (on the ground in steps 1-2)
+function planPoint(ev) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -L2 * smooth(1, 2, S.t));
+  const hit = new THREE.Vector3();
+  if (Math.abs(ray.ray.direction.y) < 1e-4 || !ray.ray.intersectPlane(plane, hit)) return null;
+  return { x: hit.x + CX, y: -hit.z + CY };
+}
+function handleAt(ev) {
+  const q = planPoint(ev); if (!q) return null;
+  const r = renderer.domElement.getBoundingClientRect(), zb = L2 * smooth(1, 2, S.t);
+  let best = null, bd = 12;
+  for (const p of PIECES) {
+    const v = V(p.cx, p.cy, zb).project(camera);
+    const d = Math.hypot((v.x + 1) / 2 * r.width - (ev.clientX - r.left), (1 - v.y) / 2 * r.height - (ev.clientY - r.top));
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
+}
+// a point on the current elevation's wall plane: a along the wall, z height
+function facadePoint(ev, f) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const F = FACES[f], n = new THREE.Vector3(...F.dir), p0 = (() => { const t = facePt(f, 0, 0); return V(t.x, t.y, 0); })();
+  const hit = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(n, p0), hit)) return null;
+  const x = hit.x + CX, y = -hit.z + CY;
+  return { a: F.axis === "x" ? x : y, z: hit.y, dist: ray.ray.origin.distanceTo(hit) };
+}
+let wdrag = null;
+function windowPress(ev) {
+  const f = S.elev, q = facadePoint(ev, f);
+  if (!q || q.a < 0 || q.a > FACES[f].len || q.z < FF || q.z > L2) return false;
+  const tol = 8 * worldPerPx();
+  let hit = null;
+  for (const w of windows().filter(w => w.face === f)) {
+    const z0 = FF + w.sill, z1 = z0 + w.h;
+    if (q.a < w.a0 - tol || q.a > w.a1 + tol || q.z < z0 - tol || q.z > z1 + tol) continue;
+    const edge = Math.abs(q.a - w.a0) < tol ? "l" : Math.abs(q.a - w.a1) < tol ? "r" : Math.abs(q.z - z0) < tol ? "b" : Math.abs(q.z - z1) < tol ? "t" : "m";
+    hit = { w, edge }; break;
+  }
+  wdrag = { f, start: q, moved: false, x: ev.clientX, y: ev.clientY, hit, orig: hit ? { ...hit.w } : null };
+  if (hit) S.winSel = hit.w.key;
+  return true;
+}
+function windowMove(ev) {
+  if (Math.hypot(ev.clientX - wdrag.x, ev.clientY - wdrag.y) > 3) wdrag.moved = true;
+  const { hit, orig, start } = wdrag;
+  if (!hit || !wdrag.moved) return;
+  const q = facadePoint(ev, wdrag.f); if (!q) return;
+  const da = q.a - start.a, dz = q.z - start.z, snap = v => Math.round(v / 0.05) * 0.05;
+  const L = FACES[wdrag.f].len, wd = orig.a1 - orig.a0;
+  let patch;
+  if (hit.edge === "m") { const a0 = Math.max(0, Math.min(L - wd, snap(orig.a0 + da))); patch = { a0, a1: a0 + wd, sill: Math.max(0, Math.min(L2 - FF - orig.h, snap(orig.sill + dz))) }; }
+  else if (hit.edge === "l") patch = { a0: Math.min(orig.a1 - WIN_MIN, snap(orig.a0 + da)) };
+  else if (hit.edge === "r") patch = { a1: Math.max(orig.a0 + WIN_MIN, snap(orig.a1 + da)) };
+  else if (hit.edge === "b") { const s0 = Math.min(orig.sill + orig.h - WIN_MIN, Math.max(0, snap(orig.sill + dz))); patch = { sill: s0, h: orig.sill + orig.h - s0 }; }
+  else patch = { h: Math.max(WIN_MIN, snap(orig.h + dz)) };
+  setWin(hit.w.key, patch); ui();
+}
+function windowRelease() {
+  const d = wdrag; wdrag = null;
+  if (!d.moved && !d.hit) {
+    // a click on bare wall adds a window there, at the rule's size
+    const wd = 0.9, a0 = Math.max(0, Math.min(FACES[d.f].len - wd, d.start.a - wd / 2));
+    const key = "X" + XID++;
+    WIN_EXTRA.push(clampWin({ key, wall: null, face: d.f, a0, a1: a0 + wd, sill: Math.max(0, Math.min(L2 - FF - S.winH, d.start.z - FF - S.winH / 2)), h: S.winH }));
+    S.winSel = key;
+  }
+  ui();
+}
+
+let drag = null, down = null;
+// capture phase on the container: a press on a + or on an elevation's wall never reaches the orbit controls
+box.addEventListener("pointerdown", ev => {
+  if (ev.button !== 0 || ev.target !== renderer.domElement) return;
+  if (S.elev && S.win && S.target === 2 && !camFrom && windowPress(ev)) {
+    ev.stopPropagation(); ev.preventDefault();
+    renderer.domElement.setPointerCapture(ev.pointerId);
+    ui(); return;
+  }
+  const h = handleAt(ev);
+  if (h && S.target < 2 && Math.abs(S.t - S.target) < 1e-3) {
+    ev.stopPropagation(); ev.preventDefault();
+    drag = h; guides = []; S.sel = h.no;
+    renderer.domElement.setPointerCapture(ev.pointerId);
+    ui(); return;
+  }
+  down = { x: ev.clientX, y: ev.clientY };
+}, true);
+renderer.domElement.addEventListener("pointermove", ev => {
+  if (wdrag) { windowMove(ev); return; }
+  if (drag) { const q = planPoint(ev); if (q) { moveCentre(drag, q); ui(); } return; }
+  box.classList.toggle("handle", S.target < 2 && !!handleAt(ev));
+});
+// the nearest window under the pointer (storey fully up only)
+function windowAt(ev) {
+  if (!S.win || S.t < 1.999) return null;
+  let best = null;
+  for (const w of windows()) {
+    const q = facadePoint(ev, w.face);
+    if (!q || q.a < w.a0 || q.a > w.a1 || q.z < FF + w.sill || q.z > FF + w.sill + w.h) continue;
+    if (!best || q.dist < best.d) best = { w, d: q.dist };
+  }
+  return best && best.w;
+}
+function endPointer(ev) {
+  if (wdrag) { windowRelease(); return; }
+  if (drag) { drag = null; guides = []; ui(); return; }
+  // a click without a drag selects the piece under the pointer
+  if (down && Math.hypot(ev.clientX - down.x, ev.clientY - down.y) < 4) {
+    const q = planPoint(ev);
+    const hit = q && PIECES.find(p => q.x >= p.x0 && q.x <= p.x1 && q.y >= p.y0 && q.y <= p.y1);
+    const win = S.target === 2 && !S.elev ? windowAt(ev) : null;
+    if (win) { S.winSel = win.key; S.sel = null; ui(); }
+    else if (S.target < 2 || !S.elev) { S.sel = hit ? hit.no : null; S.winSel = null; ui(); }
+  }
+  down = null;
+}
+renderer.domElement.addEventListener("pointerup", endPointer);
+renderer.domElement.addEventListener("pointercancel", () => { drag = null; wdrag = null; down = null; guides = []; ui(); });
+
+/* ---------------- loop ---------------- */
+function resize() {
+  renderer.setSize(box.clientWidth, box.clientHeight);
+  S.dirty = true;
+}
+new ResizeObserver(resize).observe(box);
+// level labels sit beside their points on the model; they show with the wall IDs
+function drawTags() {
+  const w = box.clientWidth, h = box.clientHeight;
+  labels.replaceChildren(...tags.filter(t => t.op > 0.02 && (S.ids || (t.cls !== "lvl" && t.cls !== "lvr"))).map(t => {
+    const v = t.p.clone().project(camera), d = document.createElement("div");
+    d.className = "tag" + (t.cls ? " " + t.cls : "");
+    d.textContent = t.text; d.style.opacity = t.op;
+    d.style.left = ((v.x + 1) / 2 * w) + "px"; d.style.top = ((1 - v.y) / 2 * h) + "px";
+    return d;
+  }));
+}
+const selGroup = new THREE.Group(); scene.add(selGroup);
+const matSelFill = new THREE.MeshBasicMaterial({ color: ACCENT, transparent: true, opacity: 0.12, depthTest: false, side: THREE.DoubleSide });
+const matSelBar = new THREE.MeshBasicMaterial({ color: ACCENT, depthTest: false, side: THREE.DoubleSide });
+const matSelKnob = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, side: THREE.DoubleSide });
+function drawSelection() {
+  selGroup.children.forEach(o => o.geometry.dispose());
+  selGroup.clear();
+  const w = S.win && S.winSel && S.t > 1.999 && windows().find(q => q.key === S.winSel);
+  if (!w) return;
+  const px = worldPerPx(), n = new THREE.Vector3(...FACES[w.face].dir).multiplyScalar(0.03);
+  const Pt = (a, z) => { const t = facePt(w.face, a, z); return V(t.x, t.y, t.z).add(n); };
+  // a rectangle on the facade, a0..a1 × z0..z1
+  const rect = (a0, a1, z0, z1, mat, order) => {
+    const pos = [];
+    const c = [Pt(a0, z0), Pt(a1, z0), Pt(a1, z1), Pt(a0, z1)];
+    [c[0], c[1], c[2], c[0], c[2], c[3]].forEach(v => pos.push(v.x, v.y, v.z));
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    const m = new THREE.Mesh(g, mat); m.renderOrder = order; selGroup.add(m);
+  };
+  const a0 = w.a0, a1 = w.a1, z0 = FF + w.sill, z1 = z0 + w.h, t = 3 * px, k = 5 * px, kb = 6.5 * px;
+  rect(a0, a1, z0, z1, matSelFill, 30);
+  rect(a0 - t / 2, a1 + t / 2, z0 - t / 2, z0 + t / 2, matSelBar, 31);
+  rect(a0 - t / 2, a1 + t / 2, z1 - t / 2, z1 + t / 2, matSelBar, 31);
+  rect(a0 - t / 2, a0 + t / 2, z0 - t / 2, z1 + t / 2, matSelBar, 31);
+  rect(a1 - t / 2, a1 + t / 2, z0 - t / 2, z1 + t / 2, matSelBar, 31);
+  const am = (a0 + a1) / 2, zm = (z0 + z1) / 2;
+  for (const [a, z] of [[a0, z0], [a1, z0], [a1, z1], [a0, z1], [am, z0], [am, z1], [a0, zm], [a1, zm]]) {
+    rect(a - kb, a + kb, z - kb, z + kb, matSelBar, 32);
+    rect(a - k + px, a + k - px, z - k + px, z + k - px, matSelKnob, 33);
+  }
+}
+function loop() {
+  requestAnimationFrame(loop);
+  if (!camFrom) controls.update();
+  placeCamera();
+  if (S.dirty) build();
+  drawSelection();
+  renderer.render(scene, camera);
+  drawTags();
+}
+
+/* ---------------- export (3D) ---------------- */
+function dxfString() {
+  const L = []; const w = (c, v) => L.push(String(c), String(v));
+  const ox = ORIGIN[0], oy = ORIGIN[1];
+  const layers = [["SITE", 3], ["SLAB", 8], ["BASE", 8], ["PLAN_L1", 7], ["PLAN_CIRCLE", 9], ["CENTER", 30], ["SHAPE_L2_BASE", 7], ["SHAPE_L2_TOP", 7], ["SHAPE_L2_WALL", 8], ["SHAPE_L2_SURFACE", 254], ["ENVELOPE_EDGE", 4], ["ENVELOPE_WALL", 4], ["ENVELOPE_ROOF", 4], ["WINDOW", 5], ["GF_WALL", 8], ["WALL_SEGMENT", 3], ["WALL_ID", 3], ["LABEL", 7]];
+  w(0, "SECTION"); w(2, "HEADER"); w(9, "$ACADVER"); w(1, "AC1009"); w(0, "ENDSEC");
+  w(0, "SECTION"); w(2, "TABLES"); w(0, "TABLE"); w(2, "LAYER"); w(70, layers.length);
+  layers.forEach(([n, c]) => { w(0, "LAYER"); w(2, n); w(70, 0); w(62, c); w(6, "CONTINUOUS"); });
+  w(0, "ENDTAB"); w(0, "ENDSEC");
+  w(0, "SECTION"); w(2, "ENTITIES");
+  const P = (x, y, z) => ({ x, y, z });
+  const line = (a, b, lay) => { w(0, "LINE"); w(8, lay); w(10, a.x + ox); w(20, a.y + oy); w(30, a.z); w(11, b.x + ox); w(21, b.y + oy); w(31, b.z); };
+  const poly3 = (pts, lay) => {
+    w(0, "POLYLINE"); w(8, lay); w(66, 1); w(10, 0); w(20, 0); w(30, 0); w(70, 9);
+    for (const q of pts) { w(0, "VERTEX"); w(8, lay); w(10, q.x + ox); w(20, q.y + oy); w(30, q.z); w(70, 32); }
+    w(0, "SEQEND"); w(8, lay);
+  };
+  const face = (lay, a, b, c, d) => {
+    w(0, "3DFACE"); w(8, lay);
+    [a, b, c, d || c].forEach((q, i) => { w(10 + i, q.x + ox); w(20 + i, q.y + oy); w(30 + i, q.z); });
+  };
+  poly3(SITE.map(q => P(q.x, q.y, 0)), "SITE");
+  const rect = [[0, 0], [W, 0], [W, D], [0, D]];
+  poly3(rect.map(([x, y]) => P(x, y, FF)), "SLAB"); poly3(rect.map(([x, y]) => P(x, y, FF - SLAB)), "SLAB");
+  rect.forEach(([x, y]) => line(P(x, y, FF - SLAB), P(x, y, FF), "SLAB"));
+  for (let i = 0; i < 4; i++) {
+    const [ax, ay] = rect[i], [bx, by] = rect[(i + 1) % 4];
+    w(0, "3DFACE"); w(8, "BASE");
+    [P(ax, ay, 0), P(bx, by, 0), P(bx, by, FF - SLAB), P(ax, ay, FF - SLAB)].forEach((q, j) => { w(10 + j, q.x + ox); w(20 + j, q.y + oy); w(30 + j, q.z); });
+  }
+  poly3(rect.map(([x, y]) => P(x, y, 0)), "BASE");
+  PLAN.forEach(l => { for (let i = 0; i + 1 < l.length; i++) line(P(l[i].x, l[i].y, FF), P(l[i + 1].x, l[i + 1].y, FF), "PLAN_L1"); });
+  // envelope
+  const wins = shownWins();
+  for (const f of Object.keys(FACES))
+    if (!S.gfE) for (const [u, v, p, q] of bandQuads(f, 0, FACES[f].len, FF, L2, wins)) face("ENVELOPE_WALL", facePt(f, u, p), facePt(f, v, p), facePt(f, v, q), facePt(f, u, q));
+  for (const y of [0, D]) face("ENVELOPE_WALL", P(0, y, L2), P(W, y, L2), P(RX, y, RIDGE));
+  for (const wl of gfWalls()) for (const f of gfWallQuads(wl, wins)) face("GF_WALL", ...f);
+  for (const win of wins) poly3([[win.a0, FF + win.sill], [win.a1, FF + win.sill], [win.a1, FF + win.sill + win.h], [win.a0, FF + win.sill + win.h]].map(([a, z]) => facePt(win.face, a, z)), "WINDOW");
+  for (const wl of WALLS) {
+    line(P(wl.a.x, wl.a.y, FF), P(wl.b.x, wl.b.y, FF), "WALL_SEGMENT");
+    const tx = wl.mx + ox, ty = wl.my + oy;
+    w(0, "TEXT"); w(8, "WALL_ID"); w(10, tx); w(20, ty); w(30, FF); w(40, 0.15); w(1, wl.id);
+    if (Math.abs(wl.a.x - wl.b.x) < 1e-6) w(50, 90);
+    w(72, 1); w(73, 2); w(11, tx); w(21, ty); w(31, FF);
+  }
+  const rs = roofSolid();
+  for (const f of rs.faces) face("ENVELOPE_ROOF", ...f);
+  for (const [a, b] of rs.edges) line(a, b, "ENVELOPE_EDGE");
+  for (const x of [0, W]) { line(P(x, 0, L2), P(x, D, L2), "ENVELOPE_EDGE"); for (const y of [0, D]) line(P(x, y, FF), P(x, y, L2), "ENVELOPE_EDGE"); }
+  // curved walls
+  for (const p of PIECES) {
+    w(0, "CIRCLE"); w(8, "PLAN_CIRCLE"); w(10, p.cx + ox); w(20, p.cy + oy); w(30, FF); w(40, circleR(p));
+    const ring = ringPts(p, 1, S.n, 240);
+    const bot = ring.map(q => P(q.x, q.y, L2)), top = ring.map(q => P(q.x, q.y, wallTop(q.x)));
+    poly3(bot, "SHAPE_L2_BASE"); poly3(top, "SHAPE_L2_TOP");
+    const plain = shapePts(p, 1, S.n, 240);
+    for (let i = 0; i < plain.length; i += 15) if (wallTop(plain[i].x) > L2 + 1e-6) line(P(plain[i].x, plain[i].y, L2), P(plain[i].x, plain[i].y, wallTop(plain[i].x)), "SHAPE_L2_WALL");
+    for (let i = 0; i < ring.length; i++) {
+      const j = (i + 1) % ring.length;
+      if (top[i].z - L2 < 1e-6 && top[j].z - L2 < 1e-6) continue;
+      face("SHAPE_L2_SURFACE", bot[i], bot[j], top[j], top[i]);
+    }
+    for (const tr of capTris(ring)) face("SHAPE_L2_SURFACE", ...tr.map(q => P(q.x, q.y, wallTop(q.x))));
+    w(0, "POINT"); w(8, "CENTER"); w(10, p.cx + ox); w(20, p.cy + oy); w(30, L2);
+    const m = 0.12;
+    line(P(p.cx - m, p.cy, L2), P(p.cx + m, p.cy, L2), "CENTER");
+    line(P(p.cx, p.cy - m, L2), P(p.cx, p.cy + m, L2), "CENTER");
+    const tx = p.cx + ox, ty = p.cy + oy - Math.min(circleR(p) * 0.5, 0.5);
+    w(0, "TEXT"); w(8, "LABEL"); w(10, tx); w(20, ty); w(30, L2); w(40, 0.2); w(1, String(p.no)); w(72, 1); w(73, 2); w(11, tx); w(21, ty); w(31, L2);
+  }
+  w(0, "ENDSEC"); w(0, "EOF");
+  return L.join("\n") + "\n";
+}
+function csvString() {
+  const head = "piece,room,x0,y0,x1,y1,centre_x,centre_y,centre_x_dxf,centre_y_dxf,circle_r,half_left,half_right,half_down,half_up,n,area_m2,z_base,roof_offset_left,roof_offset_right,z_top_at_centre,z_top_min,z_top_max";
+  return head + "\n" + PIECES.map(p => {
+    const a = axes(p), ring = ringPts(p, 1, S.n, 720), zs = ring.map(q => wallTop(q.x));
+    return [p.no, p.room, p.x0, p.y0, p.x1, p.y1, p.cx.toFixed(4), p.cy.toFixed(4), (p.cx + ORIGIN[0]).toFixed(4), (p.cy + ORIGIN[1]).toFixed(4),
+      circleR(p).toFixed(4), a.l.toFixed(4), a.r.toFixed(4), a.d.toFixed(4), a.u.toFixed(4), S.n.toFixed(2), shapeArea(ring).toFixed(3),
+      L2.toFixed(2), S.offL.toFixed(2), S.offR.toFixed(2), wallTop(p.cx).toFixed(3), Math.min(...zs).toFixed(3), Math.max(...zs).toFixed(3)].join(",");
+  }).join("\n") + "\n";
+}
+function wallsCsv() {
+  return "wall,type,elevation,x0,y0,x1,y1,length_m,x0_dxf,y0_dxf,x1_dxf,y1_dxf\n" + WALLS.map(w => [w.id, w.face ? "outside" : "inside", w.face || "",
+    w.a.x.toFixed(4), w.a.y.toFixed(4), w.b.x.toFixed(4), w.b.y.toFixed(4), w.len.toFixed(4),
+    (w.a.x + ORIGIN[0]).toFixed(4), (w.a.y + ORIGIN[1]).toFixed(4), (w.b.x + ORIGIN[0]).toFixed(4), (w.b.y + ORIGIN[1]).toFixed(4)].join(",")).join("\n") + "\n";
+}
+function windowsCsv() {
+  return "window,elevation,wall,along_from,along_to,width_m,sill_level,head_level,height_m\n" + windows().map(w => [w.key, w.face, w.wall || "added",
+    w.a0.toFixed(3), w.a1.toFixed(3), (w.a1 - w.a0).toFixed(3), (FF + w.sill).toFixed(3), (FF + w.sill + w.h).toFixed(3), w.h.toFixed(3)].join(",")).join("\n") + "\n";
+}
+function toast(m) { $("toast").textContent = m; }
+let downloads = null;
+(async () => {
+  try { downloads = await window.claude?.use?.("downloads"); } catch (e) { downloads = null; }
+})();
+async function save(filename, data) {
+  if (!downloads) {
+    // a plain page (not inside Claude): an ordinary browser download, real .dxf name
+    const name = filename.replace(/\.dxf\.txt$/, ".dxf");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast("Saved " + name);
+    return;
+  }
+  try { await downloads.save({ filename, data }); toast("Saved " + filename + (filename.endsWith(".dxf.txt") ? " — remove .txt to open in CAD" : "")); }
+  catch (e) { toast(e.code === "declined" ? "Save cancelled." : "Could not save: " + (e.message || e.code)); }
+}
+// .dxf is not on the viewer's save allowlist: saved as .dxf.txt, drop the .txt to open
+$("saveDxf").addEventListener("click", () => save("plan-superellipse-gable-3d.dxf.txt", dxfString()));
+$("saveCsv").addEventListener("click", () => save("plan-superellipse-pieces.csv", csvString()));
+$("saveWalls").addEventListener("click", () => save("plan-walls.csv", wallsCsv()));
+$("saveWins").addEventListener("click", () => save("plan-windows.csv", windowsCsv()));
+
+PIECES = findPieces();
+S.n = +$("n").value; S.op = +$("op").value / 100; S.env = +$("env").value / 100; S.offL = +$("offL").value; S.offR = +$("offR").value;
+S.winW = +$("winW").value / 100; S.winH = +$("winH").value; S.winSill = +$("winSill").value;
+camFrom = { dir: TOP.dir.clone(), up: TOP.up.clone(), zoom: 1, target: new THREE.Vector3() }; camK = 1;
+controlMode();
+ui(); resize(); loop();
+</script>
+</body>
+</html>
