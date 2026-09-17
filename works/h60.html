@@ -174,6 +174,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
     <div class="btn-row">
       <button id="saveSkp" class="toggle-btn" title="Collada .dae, one group per layer — File › Import in SketchUp">SketchUp</button>
       <button id="save3dm" class="toggle-btn" title="OBJ + MTL in a .zip, OBJ groups = layers — Import in Rhino">Rhino</button>
+      <button id="saveGh" class="toggle-btn" title="Grasshopper definition for Rhino 7: six GhPython boxes wired to sliders">Grasshopper</button>
     </div>
     <p class="note" id="toast" role="status"></p>
   </div>
@@ -1237,6 +1238,239 @@ function zipFiles(files) {
   return out;
 }
 
+// the six GhPython boxes (IronPython 2.7), one per panel of this page
+const GH_PY_SOURCES = {
+"plan": "\"\"\"H60 - 1 Plan\nThe rooms of Drawing1 as rectangles (the L room cut in two at x = 6.00),\na circle at each centre, as large as the room allows Gap clear of the lines.\nInputs : Gap (m)\nOutputs: Data, PlanLines, Site, Rooms, Circles, WallLines, WallIDs, WallMids\nLocal metres; origin = lower-left corner of the plan.\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nif Gap is None: Gap = 0.10\nW, D = 7.5, 21.0\nPLAN = __PLAN__\nSITE = __SITE__\n# no, room, x0, y0, x1, y1, centre x, centre y, split  (centres as set on the web page)\nPIECES = __PIECES__\n# id, facade (S N W E or \"\"), ax, ay, bx, by\nWALLS = __WALLS__\n\ndef P(x, y, z=0.0):\n    return rg.Point3d(x, y, z)\n\ndef closed(pts):\n    return rg.PolylineCurve([P(x, y) for x, y in list(pts) + [pts[0]]])\n\npieces = []\nfor no, room, x0, y0, x1, y1, cx, cy, split in PIECES:\n    pieces.append(dict(no=no, room=room, x0=x0, y0=y0, x1=x1, y1=y1, cx=cx, cy=cy, split=split))\nwalls = [dict(id=i, face=f, a=(ax, ay), b=(bx, by)) for i, f, ax, ay, bx, by in WALLS]\n\ndef circle_r(p):\n    return max(0.0, min(p[\"cx\"] - p[\"x0\"], p[\"x1\"] - p[\"cx\"], p[\"cy\"] - p[\"y0\"], p[\"y1\"] - p[\"cy\"]) - Gap)\n\nPlanLines = [rg.PolylineCurve([P(x, y) for x, y in l]) for l in PLAN]\nSite = closed(SITE)\nRooms = [closed([(p[\"x0\"], p[\"y0\"]), (p[\"x1\"], p[\"y0\"]), (p[\"x1\"], p[\"y1\"]), (p[\"x0\"], p[\"y1\"])]) for p in pieces]\nCircles = [rg.Circle(P(p[\"cx\"], p[\"cy\"]), max(circle_r(p), 0.001)).ToNurbsCurve() for p in pieces]\nWallLines = [rg.LineCurve(P(w[\"a\"][0], w[\"a\"][1]), P(w[\"b\"][0], w[\"b\"][1])) for w in walls]\nWallIDs = [w[\"id\"] for w in walls]\nWallMids = [P((w[\"a\"][0] + w[\"b\"][0]) / 2.0, (w[\"a\"][1] + w[\"b\"][1]) / 2.0) for w in walls]\nData = H60(dict(W=W, D=D, gap=float(Gap), plan=PLAN, site=SITE, pieces=pieces, walls=walls))\n",
+"flexible": "\"\"\"H60 - 2 Flexible\nEach circle grows into a superellipse held by its room frame and centre:\nfour half-axes = distance from the centre to each side, less Gap.\nInputs : Data, n (2 = ellipse), Seed (0 = centres from the web page,\n         any other value = random centres inside each room)\nOutputs: Data, Shapes, Centres\"\"\"\nimport Rhino.Geometry as rg\nimport math, random\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif n is None: n = 4.0\nif Seed is None: Seed = 0\nKEEP = 0.15\ngap = d0[\"gap\"]\npieces = [dict(p) for p in d0[\"pieces\"]]\nif int(Seed) != 0:\n    rnd = random.Random(int(Seed))\n    for p in pieces:\n        p[\"cx\"] = p[\"x0\"] + KEEP + (p[\"x1\"] - p[\"x0\"] - 2 * KEEP) * rnd.random()\n        p[\"cy\"] = p[\"y0\"] + KEEP + (p[\"y1\"] - p[\"y0\"] - 2 * KEEP) * rnd.random()\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, ex, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        x = p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l)\n        y = p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)\n        pts.append((x, y))\n    return pts\n\nShapes = []\nfor p in pieces:\n    pts = shape_pts(p, n)\n    Shapes.append(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in pts + [pts[0]]]))\nCentres = [rg.Point3d(p[\"cx\"], p[\"cy\"], 0) for p in pieces]\nd = dict(d0)\nd[\"pieces\"] = pieces\nd[\"n\"] = float(n)\nData = H60(d)\n",
+"levels": "\"\"\"H60 - 3 Levels & roof\nGround +/-0.00, ground floor FF on a solid base, second floor Storey above it,\na gable roof over the house: ridge RidgeH above FF on the centre line, down\nto the storey base at the long walls, RoofT thick (built up along the normal),\neaves EaveSlope out along the slope at the sides and GableEave at the ends.\nInputs : Data, FF, Storey, RidgeH, RoofT, EaveSlope, GableEave, Slab\nOutputs: Data, Site, Base, SlabBrep, Roof, Levels\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif FF is None: FF = 1.0\nif Storey is None: Storey = 2.4\nif RidgeH is None: RidgeH = 6.0\nif RoofT is None: RoofT = 0.3\nif EaveSlope is None: EaveSlope = 1.2\nif GableEave is None: GableEave = 1.0\nif Slab is None: Slab = 0.15\nW, D = d0[\"W\"], d0[\"D\"]\nL2 = FF + Storey\nRIDGE = FF + RidgeH\nRX = W / 2.0\nSLOPE = (RIDGE - L2) / RX\nCOS = 1.0 / math.hypot(1.0, SLOPE)\nEAVE = EaveSlope * COS\nroof = lambda x: RIDGE - SLOPE * abs(x - RX)\nZ_EAVE = roof(-EAVE)\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef quad(t, a, b, c, d):\n    t.append((a, b, c)); t.append((a, c, d))\n\ndef box(x0, x1, y0, y1, z0, z1):\n    return rg.Box(rg.BoundingBox(rg.Point3d(x0, y0, z0), rg.Point3d(x1, y1, z1))).ToBrep()\n\nsite = d0[\"site\"]\nSite = mesh([((site[0][0], site[0][1], 0), (site[i][0], site[i][1], 0), (site[i + 1][0], site[i + 1][1], 0)) for i in range(1, len(site) - 1)])\nBase = box(0, W, 0, D, 0, FF - Slab)\nSlabBrep = box(0, W, 0, D, FF - Slab, FF)\n\n# the roof solid: per side a section (eave under, ridge under, ridge top, eave top)\nY0, Y1 = -GableEave, D + GableEave\ndz, dx = RoofT * COS, RoofT * SLOPE * COS\nt = []\nfor side in (-1, 1):\n    xe = -EAVE if side < 0 else W + EAVE\n    sec = [(xe, Z_EAVE), (RX, RIDGE), (RX, RIDGE + RoofT / COS), (xe + side * dx, Z_EAVE + dz)]\n    for i in range(4):\n        a, b = sec[i], sec[(i + 1) % 4]\n        if i != 1:\n            quad(t, (a[0], Y0, a[1]), (b[0], Y0, b[1]), (b[0], Y1, b[1]), (a[0], Y1, a[1]))\n    for y in (Y0, Y1):\n        quad(t, *[(q[0], y, q[1]) for q in sec])\nRoof = mesh(t)\nLevels = [0.0, FF, L2, RIDGE, RIDGE + RoofT / COS, Z_EAVE]\nd = dict(d0)\nd.update(FF=FF, L2=L2, RIDGE=RIDGE, RX=RX, SLOPE=SLOPE, COS=COS, SLAB=Slab)\nData = H60(d)\n",
+"curved": "\"\"\"H60 - 4 Curved walls\nThe superellipses stand on the storey base and rise to the roof underside,\neach roof plane moved in by its side's offset along its normal; never below\nthe base (where the roof is too low the wall has no height).\nInputs : Data, OffL, OffR (m, normal to the roof)\nOutputs: Data, CurvedWalls, Bases, Tops\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif OffL is None: OffL = 0.0\nif OffR is None: OffR = 0.0\ngap, ex = d0[\"gap\"], d0[\"n\"]\nL2, RIDGE, RX, SLOPE, COS = d0[\"L2\"], d0[\"RIDGE\"], d0[\"RX\"], d0[\"SLOPE\"], d0[\"COS\"]\nDL, DR = OffL / COS, OffR / COS\n\ndef wall_top(x):\n    return max(L2, min(RIDGE - SLOPE * (RX - x) - DL, RIDGE - SLOPE * (x - RX) - DR))\n\ndef breaks():\n    xc = RX + (DL - DR) / (2 * SLOPE)\n    xl = RX - (RIDGE - L2 - DL) / SLOPE\n    xr = RX + (RIDGE - L2 - DR) / SLOPE\n    b = [xc]\n    if xl < xc - 1e-9: b.append(xl)\n    if xr > xc + 1e-9: b.append(xr)\n    return sorted(b)\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        pts.append((p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l),\n                    p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)))\n    return pts\n\ndef ring_pts(p):\n    pts, out, bs = shape_pts(p), [], breaks()\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        ts = sorted((x - a[0]) / (b[0] - a[0]) for x in bs if (a[0] - x) * (b[0] - x) < 0)\n        for t in ts:\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\ndef clip_side(poly, x0, keep_above):\n    out = []\n    side = (lambda q: q[0] - x0) if keep_above else (lambda q: x0 - q[0])\n    for i in range(len(poly)):\n        a, b = poly[i], poly[(i + 1) % len(poly)]\n        da, db = side(a), side(b)\n        if da >= -1e-12: out.append(a)\n        if (da > 1e-12 and db < -1e-12) or (da < -1e-12 and db > 1e-12):\n            t = da / (da - db)\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\ndef cap_tris(ring):\n    edges = [None] + breaks() + [None]\n    tris = []\n    for k in range(len(edges) - 1):\n        strip = ring\n        if edges[k] is not None: strip = clip_side(strip, edges[k], True)\n        if edges[k + 1] is not None and strip: strip = clip_side(strip, edges[k + 1], False)\n        for i in range(1, len(strip) - 1):\n            tris.append((strip[0], strip[i], strip[i + 1]))\n    return tris\n\ndef area2(a, b, c):\n    ux, uy, uz = b[0] - a[0], b[1] - a[1], b[2] - a[2]\n    vx, vy, vz = c[0] - a[0], c[1] - a[1], c[2] - a[2]\n    return (uy * vz - uz * vy) ** 2 + (uz * vx - ux * vz) ** 2 + (ux * vy - uy * vx) ** 2\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        if area2(a, b, c) < 1e-14: continue\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\nCurvedWalls, Bases, Tops = [], [], []\nfor p in d0[\"pieces\"]:\n    ring = ring_pts(p)\n    bot = [(x, y, L2) for x, y in ring]\n    top = [(x, y, wall_top(x)) for x, y in ring]\n    t = []\n    for i in range(len(ring)):\n        j = (i + 1) % len(ring)\n        if top[i][2] - L2 < 1e-6 and top[j][2] - L2 < 1e-6: continue\n        t.append((bot[i], bot[j], top[j])); t.append((bot[i], top[j], top[i]))\n    for a, b, c in cap_tris(ring):\n        t.append(tuple((q[0], q[1], wall_top(q[0])) for q in (a, b, c)))\n    CurvedWalls.append(mesh(t))\n    Bases.append(rg.PolylineCurve([rg.Point3d(*q) for q in bot + [bot[0]]]))\n    Tops.append(rg.PolylineCurve([rg.Point3d(*q) for q in top + [top[0]]]))\nd = dict(d0)\nd.update(offL=float(OffL), offR=float(OffR))\nData = H60(d)\n",
+"windows": "\"\"\"H60 - 5 Windows (ground floor)\nOne centred window on every outside wall at least 0.90 m long (rule), or the\nwindows as edited on the web page.\nInputs : Data, WidthPct (share of the wall, %), Height, Sill (above FF),\n         UsePage (1 = windows from the web page, 0 = rule), Show (1/0)\nOutputs: Data, Panes, Frames, WindowIDs\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif WidthPct is None: WidthPct = 50.0\nif Height is None: Height = 1.2\nif Sill is None: Sill = 0.9\nif UsePage is None: UsePage = 1\nif Show is None: Show = 1\nW, D, FF, L2 = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"]\n# key, facade, wall id, from, to (along the wall axis), sill, height\nPAGE = __WINDOWS__\nFACES = {\"S\": (\"x\", 0.0, W), \"N\": (\"x\", D, W), \"W\": (\"y\", 0.0, D), \"E\": (\"y\", W, D)}\nMIN_WALL, MIN = 0.9, 0.2\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return rg.Point3d(a, at, z) if axis == \"x\" else rg.Point3d(at, a, z)\n\ndef clamp_win(w):\n    L = FACES[w[\"face\"]][2]\n    w[\"a0\"] = max(0.0, min(L - MIN, w[\"a0\"]))\n    w[\"a1\"] = max(w[\"a0\"] + MIN, min(L, w[\"a1\"]))\n    w[\"sill\"] = max(0.0, min(L2 - FF - MIN, w[\"sill\"]))\n    w[\"h\"] = max(MIN, min(L2 - FF - w[\"sill\"], w[\"h\"]))\n    return w\n\nwins = []\nif int(Show):\n    if int(UsePage):\n        for key, f, wall, a0, a1, sill, h in PAGE:\n            wins.append(clamp_win(dict(key=key, face=f, wall=wall, a0=a0, a1=a1, sill=sill, h=h)))\n    else:\n        for wl in d0[\"walls\"]:\n            if not wl[\"face\"]: continue\n            ln = abs(wl[\"b\"][0] - wl[\"a\"][0]) + abs(wl[\"b\"][1] - wl[\"a\"][1])\n            if ln < MIN_WALL: continue\n            lo = min(wl[\"a\"][0], wl[\"b\"][0]) if FACES[wl[\"face\"]][0] == \"x\" else min(wl[\"a\"][1], wl[\"b\"][1])\n            ww = WidthPct / 100.0 * ln\n            a0 = lo + (ln - ww) / 2.0\n            wins.append(clamp_win(dict(key=wl[\"id\"], face=wl[\"face\"], wall=wl[\"id\"], a0=a0, a1=a0 + ww, sill=float(Sill), h=float(Height))))\n\nPanes, Frames, WindowIDs = [], [], []\nfor w in wins:\n    z0, z1 = FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]\n    c = [face_pt(w[\"face\"], w[\"a0\"], z0), face_pt(w[\"face\"], w[\"a1\"], z0), face_pt(w[\"face\"], w[\"a1\"], z1), face_pt(w[\"face\"], w[\"a0\"], z1)]\n    Panes.append(rg.Brep.CreateFromCornerPoints(c[0], c[1], c[2], c[3], 0.001))\n    Frames.append(rg.PolylineCurve(c + [c[0]]))\n    WindowIDs.append(w[\"key\"])\nd = dict(d0)\nd[\"windows\"] = wins\nData = H60(d)\n",
+"walls": "\"\"\"H60 - 6 Walls\nThe see-through envelope (ground-floor band with the windows cut out, gable\ntriangles) and the ground-floor walls: Thickness, centred on the plan lines,\neach run past its ends by half the thickness so corners close.\nInputs : Data, ShowExt (1/0), ShowInt (1/0), Thickness\nOutputs: Envelope, ExtWalls, IntWalls, ExtIDs, IntIDs\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif ShowExt is None: ShowExt = 1\nif ShowInt is None: ShowInt = 1\nif Thickness is None: Thickness = 0.10\nHIDE = set(__HIDE__)\nW, D, FF, L2, RX, RIDGE = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"], d0[\"RX\"], d0[\"RIDGE\"]\nwins = d0.get(\"windows\", [])\nFACES = {\"S\": (\"x\", 0.0, W), \"N\": (\"x\", D, W), \"W\": (\"y\", 0.0, D), \"E\": (\"y\", W, D)}\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return (a, at, z) if axis == \"x\" else (at, a, z)\n\ndef holes_of(f):\n    return [(w[\"a0\"], w[\"a1\"], FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]) for w in wins if w[\"face\"] == f]\n\ndef hole_quads(lo, hi, z0, z1, holes):\n    xs = sorted(set([lo, hi] + [v for h in holes for v in (h[0], h[1]) if lo < v < hi]))\n    quads = []\n    for i in range(len(xs) - 1):\n        u, v = xs[i], xs[i + 1]\n        if v - u < 1e-6: continue\n        spans = [(z0, z1)]\n        for a0, a1, h0, h1 in holes:\n            if not (a0 <= u + 1e-9 and a1 >= v - 1e-9): continue\n            nxt = []\n            for p, q in spans:\n                for s in ((p, min(q, h0)), (max(p, h1), q)):\n                    if s[1] - s[0] > 1e-6: nxt.append(s)\n            spans = nxt\n        for p, q in spans: quads.append((u, v, p, q))\n    return quads\n\ndef mesh(quads):\n    m = rg.Mesh()\n    for a, b, c, d in quads:\n        i = m.Vertices.Count\n        for q in (a, b, c, d): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2, i + 3)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef wall_quads(wl, t):\n    horiz = abs(wl[\"a\"][1] - wl[\"b\"][1]) < 1e-6\n    lo = (min(wl[\"a\"][0], wl[\"b\"][0]) if horiz else min(wl[\"a\"][1], wl[\"b\"][1])) - t / 2.0\n    hi = (max(wl[\"a\"][0], wl[\"b\"][0]) if horiz else max(wl[\"a\"][1], wl[\"b\"][1])) + t / 2.0\n    c = wl[\"a\"][1] if horiz else wl[\"a\"][0]\n    P = (lambda a, n, z: (a, c + n, z)) if horiz else (lambda a, n, z: (c + n, a, z))\n    holes = []\n    if wl[\"face\"]:\n        for a0, a1, z0, z1 in holes_of(wl[\"face\"]):\n            a0, a1 = max(a0, lo), min(a1, hi)\n            if a1 - a0 > 1e-6: holes.append((a0, a1, z0, z1))\n    q, h = [], t / 2.0\n    for n in (-h, h):\n        for u, v, p, r in hole_quads(lo, hi, FF, L2, holes):\n            q.append((P(u, n, p), P(v, n, p), P(v, n, r), P(u, n, r)))\n    for a in (lo, hi): q.append((P(a, -h, FF), P(a, h, FF), P(a, h, L2), P(a, -h, L2)))\n    for z in (FF, L2): q.append((P(lo, -h, z), P(hi, -h, z), P(hi, h, z), P(lo, h, z)))\n    for a0, a1, z0, z1 in holes:\n        for z in (z0, z1): q.append((P(a0, -h, z), P(a1, -h, z), P(a1, h, z), P(a0, h, z)))\n        for a in (a0, a1):\n            if lo + 1e-6 < a < hi - 1e-6: q.append((P(a, -h, z0), P(a, h, z0), P(a, h, z1), P(a, -h, z1)))\n    return q\n\nenv = []\nif not int(ShowExt):\n    for f in FACES:\n        for u, v, p, r in hole_quads(0.0, FACES[f][2], FF, L2, holes_of(f)):\n            env.append((face_pt(f, u, p), face_pt(f, v, p), face_pt(f, v, r), face_pt(f, u, r)))\nm = mesh(env)\nfor y in (0.0, D):\n    i = m.Vertices.Count\n    for q in ((0.0, y, L2), (W, y, L2), (RX, y, RIDGE)): m.Vertices.Add(q[0], q[1], q[2])\n    m.Faces.AddFace(i, i + 1, i + 2)\nm.Normals.ComputeNormals()\nEnvelope = m\n\nExtWalls, IntWalls, ExtIDs, IntIDs = [], [], [], []\nfor wl in d0[\"walls\"]:\n    if wl[\"id\"] in HIDE: continue\n    if wl[\"face\"] and int(ShowExt):\n        ExtWalls.append(mesh(wall_quads(wl, Thickness))); ExtIDs.append(wl[\"id\"])\n    if not wl[\"face\"] and int(ShowInt):\n        IntWalls.append(mesh(wall_quads(wl, Thickness))); IntIDs.append(wl[\"id\"])\n# a line in the \"out\" panel so an empty output is never a mystery\nprint(\"outside walls: %d (ShowExt = %d), inside walls: %d (ShowInt = %d), hidden: %s\" % (\n    len(ExtWalls), int(ShowExt), len(IntWalls), int(ShowInt), \", \".join(sorted(HIDE))))\n"
+};
+/* ---------------- Grasshopper export: a wired .gh for Rhino 7 (GhPython) ---------------- */
+// GH_IO binary archive: a chunk is its name, index, item count, chunk count,
+// the items (name, index, type, value) and the child chunks; the whole
+// archive is raw-deflated
+class GhChunk {
+  constructor(name, idx = -1) { this.name = name; this.idx = idx; this.items = []; this.chunks = []; }
+  item(name, type, value, idx = -1) { this.items.push({ name, idx, type, value }); return this; }
+  chunk(name, idx = -1) { const c = new GhChunk(name, idx); this.chunks.push(c); return c; }
+}
+const GH_T = { bool: 1, int: 3, single: 5, double: 6, date: 8, guid: 9, string: 10, point: 30, pointf: 31, size: 32, rectf: 35, color: 36, version: 80 };
+function ghBytes(root) {
+  const out = [], enc = new TextEncoder();
+  const u8 = v => out.push(v & 255);
+  const i32 = v => { const b = new DataView(new ArrayBuffer(4)); b.setInt32(0, v, true); out.push(...new Uint8Array(b.buffer)); };
+  const f32 = v => { const b = new DataView(new ArrayBuffer(4)); b.setFloat32(0, v, true); out.push(...new Uint8Array(b.buffer)); };
+  const f64 = v => { const b = new DataView(new ArrayBuffer(8)); b.setFloat64(0, v, true); out.push(...new Uint8Array(b.buffer)); };
+  const i64 = v => { const b = new DataView(new ArrayBuffer(8)); b.setBigInt64(0, v, true); out.push(...new Uint8Array(b.buffer)); };
+  const str = s => {
+    const b = enc.encode(s); let n = b.length;
+    do { let c = n & 0x7f; n >>>= 7; if (n) c |= 0x80; u8(c); } while (n);
+    for (const x of b) out.push(x);
+  };
+  const guid = g => {
+    const h = g.replace(/-/g, ""), by = [];
+    for (let i = 0; i < 32; i += 2) by.push(parseInt(h.slice(i, i + 2), 16));
+    out.push(by[3], by[2], by[1], by[0], by[5], by[4], by[7], by[6], ...by.slice(8));
+  };
+  const value = (t, v) => {
+    switch (t) {
+      case GH_T.bool: u8(v ? 1 : 0); break;
+      case GH_T.int: case GH_T.color: i32(v); break;
+      case GH_T.single: f32(v); break;
+      case GH_T.double: f64(v); break;
+      case GH_T.date: i64(v); break;
+      case GH_T.guid: guid(v); break;
+      case GH_T.string: str(v); break;
+      case GH_T.point: case GH_T.size: i32(v[0]); i32(v[1]); break;
+      case GH_T.pointf: f32(v[0]); f32(v[1]); break;
+      case GH_T.rectf: v.forEach(f32); break;
+      case GH_T.version: v.forEach(i32); break;
+      default: throw new Error("GH type " + t);
+    }
+  };
+  const write = c => {
+    str(c.name); i32(c.idx); i32(c.items.length); i32(c.chunks.length);
+    for (const it of c.items) { str(it.name); i32(it.idx); i32(it.type); value(it.type, it.value); }
+    c.chunks.forEach(write);
+  };
+  write(root);
+  return new Uint8Array(out);
+}
+async function deflateRaw(bytes) {
+  const cs = new CompressionStream("deflate-raw");
+  const stream = new Blob([bytes]).stream().pipeThrough(cs);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+const newGuid = () => (crypto.randomUUID ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+  const r = Math.random() * 16 | 0; return (c === "x" ? r : (r & 3 | 8)).toString(16);
+}));
+// now as .NET DateTime ticks (Grasshopper reads plain ticks, no kind bits)
+const dotnetNow = () => (BigInt(Date.now()) + 62135596800000n) * 10000n;
+
+// GhPython (Rhino 7) and Grasshopper type ids, as they appear in a saved file
+const GHID = {
+  python: "410755b1-224a-4c1e-a407-bf32fb45ea7e", slider: "57da07bd-ecab-415d-9d86-af36d7073abc", group: "c552a431-af5b-46a9-a8a4-0fcbc27ef596",
+  scriptVar: "84fa917c-1ed8-4db3-8be1-7bdc4a6495a2", outString: "3ede854e-c753-40eb-84cb-b48008f14fd4", outGeneric: "8ec86459-bf01-4409-baee-174d0d2b13d0",
+  hintFloat: "39fbc626-7a01-46ab-a18e-ec1c0c41685b", hintInt: "48d01794-d3d8-4aef-990e-127168822244", hintObject: "87f87f55-5b71-41f4-8aea-21d494016f81",
+  zero: "00000000-0000-0000-0000-000000000000",
+};
+const GH_PY_LIB = { name: "GhPython, Version=7.16.22061.3002, Culture=neutral, PublicKeyToken=null", version: "7.16.22061.3002" };
+
+// a scene description → archive. comps: { nick, code, x, y, inputs:[{name, hint, src?}], outputs:[names] }
+// sliders: { nick, x, y, min, max, value, digits, int }; groups: { nick, colour, members:[objects] }
+function ghArchive(comps, sliders, groups) {
+  const root = new GhChunk("Root");
+  root.item("ArchiveVersion", GH_T.version, [0, 2, 2]);
+  const def = root.chunk("Definition");
+  def.item("plugin_version", GH_T.version, [1, 0, 7]);
+  const hd = def.chunk("DocumentHeader");
+  hd.item("DocumentID", GH_T.guid, newGuid()).item("Preview", GH_T.string, "Shaded").item("PreviewMeshType", GH_T.int, 1)
+    .item("PreviewNormal", GH_T.color, -1498698837).item("PreviewSelected", GH_T.color, -543488);
+  const pr = def.chunk("DefinitionProperties");
+  pr.item("Date", GH_T.date, dotnetNow()).item("Description", GH_T.string, "H60 — Flexible Grid from the Plan (exported from the web page)").item("Name", GH_T.string, "h60.gh");
+  pr.chunk("Revisions").item("RevisionCount", GH_T.int, 0);
+  pr.chunk("Projection").item("Target", GH_T.point, [-40, -40]).item("Zoom", GH_T.single, 0.75);
+  pr.chunk("Views").item("ViewCount", GH_T.int, 0);
+  def.chunk("RcpLayout").item("GroupCount", GH_T.int, 0);
+  def.chunk("Author").item("Company", GH_T.string, "").item("Name", GH_T.string, "H60").item("Website", GH_T.string, "https://au-siradol.github.io/siradol/");
+  const libs = def.chunk("GHALibraries");
+  libs.item("Count", GH_T.int, 1);
+  libs.chunk("Library", 0).item("AssemblyFullName", GH_T.string, GH_PY_LIB.name).item("AssemblyVersion", GH_T.string, GH_PY_LIB.version)
+    .item("Author", GH_T.string, "").item("Id", GH_T.guid, GHID.zero).item("Name", GH_T.string, "").item("Version", GH_T.string, "");
+  const objs = def.chunk("DefinitionObjects");
+  const all = [...sliders, ...comps, ...groups];
+  objs.item("ObjectCount", GH_T.int, all.length);
+  let k = 0;
+  for (const s of sliders) {
+    const o = objs.chunk("Object", k++);
+    o.item("GUID", GH_T.guid, GHID.slider).item("Name", GH_T.string, "Number Slider");
+    const c = o.chunk("Container");
+    const w = 170;
+    c.item("Description", GH_T.string, "Numeric slider for single values").item("InstanceGuid", GH_T.guid, s.id)
+      .item("Name", GH_T.string, "Number Slider").item("NickName", GH_T.string, s.nick).item("Optional", GH_T.bool, false).item("SourceCount", GH_T.int, 0);
+    c.chunk("Attributes").item("Bounds", GH_T.rectf, [s.x, s.y, w, 20]).item("Pivot", GH_T.pointf, [s.x, s.y]);
+    c.chunk("Slider").item("Digits", GH_T.int, s.digits).item("GripDisplay", GH_T.int, 1).item("Interval", GH_T.int, s.int ? 1 : 0)
+      .item("Max", GH_T.double, s.max).item("Min", GH_T.double, s.min).item("SnapCount", GH_T.int, 0).item("Value", GH_T.double, s.value);
+  }
+  for (const cp of comps) {
+    const o = objs.chunk("Object", k++);
+    o.item("GUID", GH_T.guid, GHID.python).item("Lib", GH_T.guid, GHID.zero).item("Name", GH_T.string, "GhPython Script");
+    const c = o.chunk("Container");
+    const nIn = cp.inputs.length, nOut = cp.outputs.length + 1, rows = Math.max(nIn, nOut), h = rows * 20 + 4, wIn = 70, wOut = 80, w = wIn + wOut + 30;
+    c.item("CodeInput", GH_T.string, cp.code).item("Description", GH_T.string, "GhPython provides a Python script component")
+      .item("EditorLocation", GH_T.point, [200, 100]).item("EditorSize", GH_T.size, [760, 620])
+      .item("HideInput", GH_T.bool, true).item("HideOutput", GH_T.bool, false).item("InputIsPath", GH_T.bool, false)
+      .item("InstanceGuid", GH_T.guid, cp.id).item("IsAdvancedMode", GH_T.bool, false).item("MarshalOutGuids", GH_T.bool, true)
+      .item("Name", GH_T.string, "GhPython Script").item("NickName", GH_T.string, cp.nick);
+    c.chunk("Attributes").item("Bounds", GH_T.rectf, [cp.x, cp.y, w, h]).item("Pivot", GH_T.pointf, [cp.x + w / 2, cp.y + h / 2]);
+    const pd = c.chunk("ParameterData");
+    pd.item("InputCount", GH_T.int, nIn);
+    cp.inputs.forEach((p, i) => pd.item("InputId", GH_T.guid, GHID.scriptVar, i));
+    pd.item("OutputCount", GH_T.int, nOut);
+    pd.item("OutputId", GH_T.guid, GHID.outString, 0);
+    cp.outputs.forEach((p, i) => pd.item("OutputId", GH_T.guid, GHID.outGeneric, i + 1));
+    const ph = (h - 4) / nIn, oh = (h - 4) / nOut;
+    cp.inputs.forEach((p, i) => {
+      const ip = pd.chunk("InputParam", i);
+      ip.item("AllowTreeAccess", GH_T.bool, true).item("Description", GH_T.string, "Script input " + p.name + ".")
+        .item("InstanceGuid", GH_T.guid, p.id).item("Name", GH_T.string, p.name).item("NickName", GH_T.string, p.name)
+        .item("Optional", GH_T.bool, true).item("ScriptParamAccess", GH_T.int, 0).item("ShowTypeHints", GH_T.bool, true);
+      if (p.src) ip.item("Source", GH_T.guid, p.src, 0);
+      ip.item("SourceCount", GH_T.int, p.src ? 1 : 0).item("TypeHintID", GH_T.guid, p.hint);
+      ip.chunk("Attributes").item("Bounds", GH_T.rectf, [cp.x + 2, cp.y + 2 + i * ph, wIn - 4, ph]).item("Pivot", GH_T.pointf, [cp.x + wIn / 2, cp.y + 2 + (i + 0.5) * ph]);
+    });
+    ["out", ...cp.outputs].forEach((name, i) => {
+      const op = pd.chunk("OutputParam", i);
+      op.item("Description", GH_T.string, i ? "Script output " + name + "." : "The execution information, as output and error streams")
+        .item("InstanceGuid", GH_T.guid, cp.outIds[i]).item("Name", GH_T.string, name).item("NickName", GH_T.string, name)
+        .item("Optional", GH_T.bool, false).item("SourceCount", GH_T.int, 0);
+      op.chunk("Attributes").item("Bounds", GH_T.rectf, [cp.x + w - wOut + 2, cp.y + 2 + i * oh, wOut - 4, oh]).item("Pivot", GH_T.pointf, [cp.x + w - wOut / 2, cp.y + 2 + (i + 0.5) * oh]);
+    });
+  }
+  for (const g of groups) {
+    const o = objs.chunk("Object", k++);
+    o.item("GUID", GH_T.guid, GHID.group).item("Name", GH_T.string, "Group");
+    const c = o.chunk("Container");
+    c.item("Border", GH_T.int, 1).item("Colour", GH_T.color, g.colour).item("Description", GH_T.string, "A group of Grasshopper objects");
+    g.members.forEach((m, i) => c.item("ID", GH_T.guid, m, i));
+    c.item("ID_Count", GH_T.int, g.members.length).item("InstanceGuid", GH_T.guid, g.id).item("Name", GH_T.string, "Group").item("NickName", GH_T.string, g.nick);
+    c.chunk("Attributes");
+  }
+  return root;
+}
+
+// Python literal for plain data (numbers, strings, lists)
+const pyLit = v => Array.isArray(v) ? "[" + v.map(pyLit).join(", ") + "]"
+  : typeof v === "string" ? JSON.stringify(v)
+  : typeof v === "boolean" ? (v ? "True" : "False")
+  : Number.isInteger(v) ? String(v) : String(+v.toFixed(6));
+
+const GH_README = `H60 — Grasshopper definition (Rhino 7, GhPython)
+
+Open h60.gh in Grasshopper. Six GhPython boxes run left to right, each with its
+sliders, grouped like the panels of the web page:
+
+  1 Plan           Gap                                  -> Data, PlanLines, Site, Rooms, Circles, WallLines, WallIDs, WallMids
+  2 Flexible       Data, n, Seed (0 = centres from the page, other = random)   -> Data, Shapes, Centres
+  3 Levels & roof  Data, FF, Storey, RidgeH, RoofT, EaveSlope, GableEave, Slab -> Data, Site, Base, SlabBrep, Roof, Levels
+  4 Curved walls   Data, OffL, OffR                     -> Data, CurvedWalls, Bases, Tops
+  5 Windows        Data, WidthPct, Height, Sill, UsePage (1 = page windows, 0 = rule), Show -> Data, Panes, Frames, WindowIDs
+  6 Walls          Data, ShowExt, ShowInt, Thickness    -> Envelope, ExtWalls, IntWalls, ExtIDs, IntIDs
+
+"Data" carries the design from box to box. Units: metres, Z up, origin at the
+lower-left corner of the plan. Slider values start at the page's settings.
+`;
+async function ghFile() {
+  const fill = (src, map) => Object.entries(map).reduce((s, [k, v]) => s.split(k).join(v), src);
+  const PY = GH_PY_SOURCES;
+  const codes = [
+    fill(PY.plan, {
+      __PLAN__: pyLit(PLAN.map(l => l.map(q => [q.x, q.y]))),
+      __SITE__: pyLit(SITE.map(q => [q.x, q.y])),
+      __PIECES__: "[\n    " + PIECES.map(p => pyLit([p.no, p.room, p.x0, p.y0, p.x1, p.y1, +p.cx.toFixed(4), +p.cy.toFixed(4), !!p.split])).join(",\n    ") + "]",
+      __WALLS__: "[\n    " + WALLS.map(w => pyLit([w.id, w.face || "", w.a.x, w.a.y, w.b.x, w.b.y])).join(",\n    ") + "]",
+    }),
+    PY.flexible, PY.levels, PY.curved,
+    fill(PY.windows, { __WINDOWS__: "[\n    " + windows().map(w => pyLit([w.key, w.face, w.wall || "", +w.a0.toFixed(4), +w.a1.toFixed(4), +w.sill.toFixed(4), +w.h.toFixed(4)])).join(",\n    ") + "]" }),
+    fill(PY.walls, { __HIDE__: pyLit([...GF_HIDE]) }),
+  ];
+  // components left to right, sliders to the left of each, one group per box
+  const F = GHID.hintFloat, I = GHID.hintInt, O = GHID.hintObject;
+  const spec = [
+    { nick: "1 Plan", inputs: [["Gap", F, 0, 0.5, GAP, 2]], outputs: ["Data", "PlanLines", "Site", "Rooms", "Circles", "WallLines", "WallIDs", "WallMids"] },
+    { nick: "2 Flexible", inputs: [["Data", O], ["n", F, 2, 10, S.n, 1], ["Seed", I, 0, 100, 0, 0]], outputs: ["Data", "Shapes", "Centres"] },
+    { nick: "3 Levels & roof", inputs: [["Data", O], ["FF", F, 0, 3, FF, 2], ["Storey", F, 2, 4, L2 - FF, 2], ["RidgeH", F, 3, 10, RIDGE - FF, 2], ["RoofT", F, 0.05, 0.6, ROOF_T, 2], ["EaveSlope", F, 0, 3, 1.2, 2], ["GableEave", F, 0, 3, GABLE_EAVE, 2], ["Slab", F, 0.05, 0.5, SLAB, 2]], outputs: ["Data", "Site", "Base", "SlabBrep", "Roof", "Levels"] },
+    { nick: "4 Curved walls", inputs: [["Data", O], ["OffL", F, 0, 1.5, S.offL, 2], ["OffR", F, 0, 1.5, S.offR, 2]], outputs: ["Data", "CurvedWalls", "Bases", "Tops"] },
+    { nick: "5 Windows", inputs: [["Data", O], ["WidthPct", F, 20, 90, S.winW * 100, 0], ["Height", F, 0.3, 2.2, S.winH, 2], ["Sill", F, 0, 1.8, S.winSill, 2], ["UsePage", I, 0, 1, 1, 0], ["Show", I, 0, 1, S.win ? 1 : 0, 0]], outputs: ["Data", "Panes", "Frames", "WindowIDs"] },
+    { nick: "6 Walls", inputs: [["Data", O], ["ShowExt", I, 0, 1, 1, 0], ["ShowInt", I, 0, 1, 1, 0], ["Thickness", F, 0.05, 0.4, GF_T, 2]], outputs: ["Envelope", "ExtWalls", "IntWalls", "ExtIDs", "IntIDs"] },
+  ];
+  const COLOURS = [0x50b4c8d2, 0x50c8d2b4, 0x50d2c3b4, 0x50d2b4b4, 0x50b4b4d2, 0x50c3c3c3]; // translucent tints, ARGB
+  const comps = [], sliders = [], groups = [];
+  let prevData = null;
+  spec.forEach((sp, k) => {
+    const x = 60 + k * 470, y = 80;
+    const cp = { id: newGuid(), nick: sp.nick, code: codes[k], x: x + 230, y, inputs: [], outputs: sp.outputs, outIds: [newGuid(), ...sp.outputs.map(() => newGuid())] };
+    const members = [cp.id];
+    let sy = y;
+    sp.inputs.forEach(([name, hint, min, max, value, digits]) => {
+      const ip = { name, hint, id: newGuid() };
+      if (name === "Data") ip.src = prevData;
+      else {
+        const sl = { id: newGuid(), nick: name, x, y: sy, min, max, value: Math.min(max, Math.max(min, value)), digits, int: hint === I };
+        sy += 26; sliders.push(sl); members.push(sl.id); ip.src = sl.id;
+      }
+      cp.inputs.push(ip);
+    });
+    const di = sp.outputs.indexOf("Data");
+    if (di >= 0) prevData = cp.outIds[di + 1];
+    comps.push(cp);
+    groups.push({ id: newGuid(), nick: sp.nick, colour: COLOURS[k], members });
+  });
+  return deflateRaw(ghBytes(ghArchive(comps, sliders, groups)));
+}
+
 function toast(m) { $("toast").textContent = m; }
 let downloads = null;
 (async () => {
@@ -1261,6 +1495,13 @@ $("saveSkp").addEventListener("click", () => downloads
   ? save("h60-sketchup.zip", zipFiles([{ name: "h60.dae", data: daeFile() }]))
   : save("h60.dae", daeFile()));
 $("save3dm").addEventListener("click", () => save("h60-rhino.zip", zipFiles(objFiles())));
+$("saveGh").addEventListener("click", async () => {
+  try {
+    const gh = await ghFile();
+    if (downloads) save("h60-grasshopper.zip", zipFiles([{ name: "h60.gh", data: gh }, { name: "README.txt", data: GH_README }]));
+    else save("h60.gh", gh);
+  } catch (e) { toast("Could not build the Grasshopper file: " + e.message); }
+});
 
 PIECES = findPieces();
 S.n = +$("n").value; S.op = +$("op").value / 100; S.env = +$("env").value / 100; S.offL = +$("offL").value; S.offR = +$("offR").value;
