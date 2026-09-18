@@ -410,25 +410,45 @@ const WALLS = findWalls();
 
 // windows: by rule on every outside wall at least 0.90 m long, then edited
 const WIN_MIN_WALL = 0.9, WIN_MIN = 0.2;
-// ground-floor walls: 10 cm, centred on the plan lines, all but these
-const GF_T = 0.10, GF_HIDE = new Set(["I09", "I17", "I27", "I04", "I03", "I01", "I02"]);
+// ground-floor walls, 10 cm: all but these. A hidden inside wall is simply
+// not built; a hidden outside wall is an opening (no wall, no glass, no window)
+const GF_T = 0.10, GF_HIDE = new Set(["I09", "I17", "I27", "I04", "I03", "I01", "I02", "E15", "E11"]);
+const alongOf = (f, w) => FACES[f].axis === "x" ? [Math.min(w.a.x, w.b.x), Math.max(w.a.x, w.b.x)] : [Math.min(w.a.y, w.b.y), Math.max(w.a.y, w.b.y)];
+// the stretches of a facade that are wall (hidden outside walls left out), merged
+function faceRuns(f) {
+  const iv = WALLS.filter(w => w.face === f && !GF_HIDE.has(w.id)).map(w => alongOf(f, w)).sort((a, b) => a[0] - b[0]);
+  const runs = [];
+  for (const [a, b] of iv) {
+    const last = runs[runs.length - 1];
+    if (last && a <= last[1] + 1e-6) last[1] = Math.max(last[1], b); else runs.push([a, b]);
+  }
+  return runs;
+}
+const openings = f => WALLS.filter(w => w.face === f && GF_HIDE.has(w.id)).map(w => alongOf(f, w));
+const inOpening = w => openings(w.face).some(([a, b]) => w.a1 > a + 1e-6 && w.a0 < b - 1e-6);
 let WIN_OVR = new Map(), WIN_EXTRA = [], XID = 1;
 function windows() {
   const out = [];
   for (const w of WALLS) {
-    if (!w.face || w.len < WIN_MIN_WALL) continue;
+    if (!w.face || w.len < WIN_MIN_WALL || GF_HIDE.has(w.id)) continue;
     const o = WIN_OVR.get(w.id);
     if (o && o.deleted) continue;
     const lo = FACES[w.face].axis === "x" ? Math.min(w.a.x, w.b.x) : Math.min(w.a.y, w.b.y);
+    if (DOOR_WALLS.has(w.id)) {
+      // a glass door: from the floor, centred
+      const dw = Math.min(DOOR_W, w.len - 0.1), a0 = lo + (w.len - dw) / 2;
+      out.push(clampWin({ key: w.id, wall: w.id, face: w.face, door: true, a0, a1: a0 + dw, sill: 0, h: DOOR_H, ...(o || {}) }));
+      continue;
+    }
     const ww = S.winW * w.len, a0 = lo + (w.len - ww) / 2;
     out.push(clampWin({ key: w.id, wall: w.id, face: w.face, a0, a1: a0 + ww, sill: S.winSill, h: S.winH, ...(o || {}) }));
   }
   for (const x of WIN_EXTRA) out.push(clampWin({ ...x }));
-  return out;
+  return out.filter(w => !inOpening(w));
 }
 function clampWin(w) {
-  const L = FACES[w.face].len;
-  w.a0 = Math.max(0, Math.min(L - WIN_MIN, w.a0));
+  const L = FACES[w.face].len, L0 = FACES[w.face].lo || 0;
+  w.a0 = Math.max(L0, Math.min(L - WIN_MIN, w.a0));
   w.a1 = Math.max(w.a0 + WIN_MIN, Math.min(L, w.a1));
   w.sill = Math.max(0, Math.min(L2 - FF - WIN_MIN, w.sill));
   w.h = Math.max(WIN_MIN, Math.min(L2 - FF - w.sill, w.h));
@@ -465,22 +485,28 @@ function holeQuads(lo, hi, z0, z1, holes) {
   return quads;
 }
 
-// a ground-floor wall as quads (site coordinates): both faces with the
-// windows cut out, the window reveals, the ends, top and bottom. Each wall
-// runs 5 cm past its ends so corners close; inside walls are centred on the
-// plan line, outside walls stand inside the outline
-function gfWallQuads(wl, wins) {
-  const horiz = Math.abs(wl.a.y - wl.b.y) < 1e-6;
-  let lo = (horiz ? Math.min(wl.a.x, wl.b.x) : Math.min(wl.a.y, wl.b.y)) - GF_T / 2;
-  let hi = (horiz ? Math.max(wl.a.x, wl.b.x) : Math.max(wl.a.y, wl.b.y)) + GF_T / 2;
-  let c = horiz ? wl.a.y : wl.a.x;
-  // outside walls sit on the floor: outer face on the plan line, never past the corners
-  if (wl.face) {
-    c += { S: 1, N: -1, W: 1, E: -1 }[wl.face] * GF_T / 2;
-    lo = Math.max(lo, 0); hi = Math.min(hi, FACES[wl.face].len);
-  }
+// a ground-floor wall as quads (site coordinates): a box lo..hi along its
+// axis, centred at c across it, FF..L2 high, with the windows cut through
+// (both faces, the reveals), the ends, top and bottom
+// the same box's real edges: both faces' outlines, the ends, and each window
+// opening on both faces with its reveal corners
+function wallBoxEdges(horiz, c, lo, hi, holes, openingsOnly) {
   const P = (a, n, z) => horiz ? { x: a, y: c + n, z } : { x: c + n, y: a, z };
-  const holes = (wl.face ? winHoles(wl.face, wins) : []).map(h => ({ ...h, a0: Math.max(h.a0, lo), a1: Math.min(h.a1, hi) })).filter(h => h.a1 - h.a0 > 1e-6);
+  holes = holes.map(h => ({ ...h, a0: Math.max(h.a0, lo), a1: Math.min(h.a1, hi) })).filter(h => h.a1 - h.a0 > 1e-6);
+  const e = [], t = GF_T / 2, rect = (a0, a1, z0, z1, n) => [[P(a0, n, z0), P(a1, n, z0)], [P(a1, n, z0), P(a1, n, z1)], [P(a1, n, z1), P(a0, n, z1)], [P(a0, n, z1), P(a0, n, z0)]];
+  if (!openingsOnly) {
+    for (const n of [-t, t]) e.push(...rect(lo, hi, FF, L2, n));
+    for (const a of [lo, hi]) for (const z of [FF, L2]) e.push([P(a, -t, z), P(a, t, z)]);
+  }
+  for (const h of holes) {
+    for (const n of [-t, t]) e.push(...rect(h.a0, h.a1, h.z0, h.z1, n));
+    for (const a of [h.a0, h.a1]) for (const z of [h.z0, h.z1]) e.push([P(a, -t, z), P(a, t, z)]);
+  }
+  return e;
+}
+function wallBoxQuads(horiz, c, lo, hi, holes) {
+  const P = (a, n, z) => horiz ? { x: a, y: c + n, z } : { x: c + n, y: a, z };
+  holes = holes.map(h => ({ ...h, a0: Math.max(h.a0, lo), a1: Math.min(h.a1, hi) })).filter(h => h.a1 - h.a0 > 1e-6);
   const q = [], t = GF_T / 2;
   for (const n of [-t, t]) for (const [u, v, p, r] of holeQuads(lo, hi, FF, L2, holes)) q.push([P(u, n, p), P(v, n, p), P(v, n, r), P(u, n, r)]);
   for (const a of [lo, hi]) q.push([P(a, -t, FF), P(a, t, FF), P(a, t, L2), P(a, -t, L2)]);
@@ -491,7 +517,45 @@ function gfWallQuads(wl, wins) {
   }
   return q;
 }
-const gfWalls = () => WALLS.filter(w => !GF_HIDE.has(w.id) && (w.face ? S.gfE : S.gfI));
+const INWARD = { S: 1, N: -1, W: 1, E: -1 };
+// the walls around the open court behind opening E15 face outdoors: they are
+// outside walls with windows (I28: a glass door), their outer face on the plan
+// line and their thickness towards the rooms (inward: the side across the wall
+// the room is on)
+const COURT_WALLS = { I21: -1, I29: 1, I23: 1, I28: 1 };
+const DOOR_WALLS = new Set(["I28"]), DOOR_W = 0.90, DOOR_H = 2.10;
+for (const [id, inward] of Object.entries(COURT_WALLS)) {
+  const w = WALLS.find(q => q.id === id);
+  if (!w) continue;
+  const horiz = Math.abs(w.a.y - w.b.y) < 1e-6;
+  FACES[id] = horiz
+    ? { axis: "x", at: w.a.y, lo: Math.min(w.a.x, w.b.x), len: Math.max(w.a.x, w.b.x), dir: [0, 0, inward] }
+    : { axis: "y", at: w.a.x, lo: Math.min(w.a.y, w.b.y), len: Math.max(w.a.y, w.b.y), dir: [-inward, 0, 0] };
+  INWARD[id] = inward;
+  w.face = id;
+}
+// the ground-floor walls to build: outside, one continuous wall per run of a
+// facade, standing inside the outline (outer face on it); inside, one per
+// segment, centred on its line, run 5 cm past its ends so corners close but
+// never past the outline
+function gfSolids(wins) {
+  const out = [];
+  if (S.gfE) for (const f of Object.keys(FACES)) {
+    const runs = faceRuns(f), F = FACES[f];
+    runs.forEach(([lo, hi], k) => {
+      const args = [F.axis === "x", F.at + INWARD[f] * GF_T / 2, lo, hi, winHoles(f, wins)];
+      out.push({ name: "Wall " + f + (runs.length > 1 ? k + 1 : ""), layer: "WALL_OUTSIDE", quads: wallBoxQuads(...args), edges: wallBoxEdges(...args), openEdges: wallBoxEdges(...args, true) });
+    });
+  }
+  if (S.gfI) for (const wl of WALLS) {
+    if (wl.face || GF_HIDE.has(wl.id)) continue;
+    const horiz = Math.abs(wl.a.y - wl.b.y) < 1e-6, L = horiz ? W : D;
+    const [a, b] = horiz ? [Math.min(wl.a.x, wl.b.x), Math.max(wl.a.x, wl.b.x)] : [Math.min(wl.a.y, wl.b.y), Math.max(wl.a.y, wl.b.y)];
+    const args = [horiz, horiz ? wl.a.y : wl.a.x, Math.max(0, a - GF_T / 2), Math.min(L, b + GF_T / 2), []];
+    out.push({ name: "Wall " + wl.id, layer: "WALL_INSIDE", quads: wallBoxQuads(...args), edges: wallBoxEdges(...args), openEdges: [] });
+  }
+  return out;
+}
 // the windows in the model: none while they are switched off
 const shownWins = () => S.win ? windows() : [];
 
@@ -569,13 +633,13 @@ const matSolid = new THREE.MeshLambertMaterial({ color: 0xf3f1ec, side: THREE.Do
 const matWall = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, depthWrite: false });
 const matTile = new THREE.MeshLambertMaterial({ color: 0xb45a3c, side: THREE.DoubleSide, transparent: true, depthWrite: false });
 const matGround = new THREE.MeshBasicMaterial({ color: 0xeeede8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
-const matSlab = new THREE.MeshLambertMaterial({ color: 0xdedbd4, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+const matSlab = new THREE.MeshLambertMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
 // the base under the ground floor takes the wall colour
 const matBase = new THREE.MeshLambertMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
 const matSnap = new THREE.PointsMaterial({ color: ACCENT, size: 5, sizeAttenuation: false });
 const matPane = new THREE.MeshBasicMaterial({ color: 0x9fbccb, side: THREE.DoubleSide, transparent: true, opacity: 0.3, depthWrite: false });
 const matWinLine = new THREE.LineBasicMaterial({ color: 0x2b2b2b });
-const matGfWall = new THREE.MeshLambertMaterial({ color: 0xf6f5f1, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+const matGfWall = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
 
 function withOpacity(mat, opacity) {
   if (opacity === undefined || opacity >= 0.999) return { m: mat, own: false };
@@ -623,7 +687,8 @@ function build() {
   {
     const pos = [];
     for (let i = 1; i + 1 < SITE.length; i++) pushTri(pos, V(SITE[0].x, SITE[0].y, zg), V(SITE[i].x, SITE[i].y, zg), V(SITE[i + 1].x, SITE[i + 1].y, zg));
-    if (!S.below) { const o = meshObj(pos, matGround); o.material.side = THREE.DoubleSide; model.add(o); }
+    // wireframe means lines only: the ground plane goes once the storey is up
+    if (!S.below && (S.solid || k3 < 0.01)) { const o = meshObj(pos, matGround); o.material.side = THREE.DoubleSide; model.add(o); }
     model.add(segsObj(loopPairs(SITE.map(q => V(q.x, q.y, zg + 0.002))), matLine));
   }
   // ground-floor slab on a solid base, rising with the storey; edges only
@@ -631,7 +696,7 @@ function build() {
   if (k3 > 0.01) {
     for (const [z0, z1] of [[0, FF - SLAB], [FF - SLAB, FF]]) {
       const g = new THREE.BoxGeometry(W, (z1 - z0) * k3, D), at = V(W / 2, D / 2, (z0 + z1) / 2 * k3);
-      if (S.below) {
+      if (S.below || !S.solid) {
         const o = new THREE.LineSegments(new THREE.EdgesGeometry(g), matLine); g.dispose();
         o.position.copy(at); model.add(o);
       } else {
@@ -643,7 +708,8 @@ function build() {
   const zp = zf + 0.004;
   const planPairs = [];
   PLAN.forEach(l => { for (let i = 0; i + 1 < l.length; i++) planPairs.push([V(l[i].x, l[i].y, zp), V(l[i + 1].x, l[i + 1].y, zp)]); });
-  model.add(segsObj(planPairs, matLine));
+  // the plan: crisp in plan and wireframe, quiet on the floor of the solid storey
+  model.add(segsObj(planPairs, S.solid && k3 > 0.5 ? matFaint : matLine, S.solid && k3 > 0.5 ? 0.45 : undefined));
   const cut = [];
   PIECES.filter(p => p.split).forEach(p => PIECES.filter(q => q.split && q.room === p.room && q !== p && Math.abs(q.x0 - p.x1) < 1e-3)
     .forEach(q => cut.push([V(p.x1, Math.max(p.y0, q.y0), zp), V(p.x1, Math.min(p.y1, q.y1), zp)])));
@@ -656,8 +722,8 @@ function build() {
     const z = h => h * k3;
     const walls = [], roofs = [], rs = roofSolid(), wins = shownWins();
     // ground-floor bands with the windows cut out, gable triangles above
-    if (!S.gfE) for (const f of Object.keys(FACES)) {
-      for (const [u, v, p, q] of bandQuads(f, 0, FACES[f].len, FF, L2, wins)) {
+    if (!S.gfE) for (const f of Object.keys(FACES)) for (const [lo, hi] of faceRuns(f)) {
+      for (const [u, v, p, q] of bandQuads(f, lo, hi, FF, L2, wins)) {
         const P3 = (a, h) => { const t = facePt(f, a, h); return V(t.x, t.y, z(t.z)); };
         pushTri(walls, P3(u, p), P3(v, p), P3(v, q), P3(u, p), P3(v, q), P3(u, q));
       }
@@ -671,29 +737,38 @@ function build() {
       pushTri(panes, c[0], c[1], c[2], c[0], c[2], c[3]);
       if (S.winSel !== w.key) frames.push(...loopPairs(c));
     }
-    if (panes.length) model.add(meshObj(panes, matPane, 0.3 * k3, 6));
+    if (panes.length && S.solid) model.add(meshObj(panes, matPane, 0.3 * k3, 6));
     if (S.gfE || S.gfI) {
-      const pos = [], edges = [], VZ3 = q => V(q.x, q.y, z(q.z));
-      for (const wl of gfWalls()) for (const f of gfWallQuads(wl, wins)) {
-        const c = f.map(VZ3);
-        pushTri(pos, c[0], c[1], c[2], c[0], c[2], c[3]);
-        edges.push(...loopPairs(c));
+      const VZ3 = q => V(q.x, q.y, z(q.z));
+      for (const w of gfSolids(wins)) {
+        const pos = [];
+        for (const f of w.quads) { const c = f.map(VZ3); pushTri(pos, c[0], c[1], c[2], c[0], c[2], c[3]); }
+        if (S.solid) model.add(meshObj(pos, matGfWall, k3 < 0.999 ? k3 : undefined, 3));
+        // wireframe: the wall's real edges (outline, ends, openings, reveals);
+        // solid: the white walls read by their shading, only the openings are drawn
+        const ed = S.solid ? w.openEdges : w.edges;
+        if (ed.length) model.add(segsObj(ed.map(([a, b]) => [VZ3(a), VZ3(b)]), S.solid ? matFaint : matLine, k3));
       }
-      if (S.solid) model.add(meshObj(pos, matGfWall, k3 < 0.999 ? k3 : undefined, 3));
-      model.add(segsObj(edges, S.solid ? matFaint : matLine, k3));
     }
     if (frames.length) model.add(segsObj(frames, matWinLine, k3));
     const VZ = q => V(q.x, q.y, z(q.z));
     for (const f of rs.faces) pushTri(roofs, VZ(f[0]), VZ(f[1]), VZ(f[2]), VZ(f[0]), VZ(f[2]), VZ(f[3]));
-    if (S.env > 0.001) {
+    // wireframe means lines only: the envelope and roof surfaces are solid-mode
+    if (S.env > 0.001 && S.solid) {
       model.add(meshObj(walls, matWall, S.env * k3, 4));
       model.add(meshObj(roofs, matTile, S.env * k3, 5));
     }
     const e = [];
     for (const [a, b] of rs.edges) e.push([VZ(a), VZ(b)]);
-    for (const y of [0, D]) e.push([V(0, y, z(L2)), V(RX, y, z(RIDGE))], [V(RX, y, z(RIDGE)), V(W, y, z(L2))]);
-    for (const x of [0, W]) { e.push([V(x, 0, z(L2)), V(x, D, z(L2))], [V(x, 0, z(FF)), V(x, D, z(FF))]); for (const y of [0, D]) e.push([V(x, y, z(FF)), V(x, y, z(L2))]); }
-    for (const y of [0, D]) e.push([V(0, y, z(FF)), V(W, y, z(FF))]);
+    // the house frame (+1.00, +3.40, corners, gable lines) belongs to the
+    // see-through envelope: only while it shows, i.e. with Ext walls off
+    if (!S.gfE) {
+      for (const y of [0, D]) e.push([V(0, y, z(L2)), V(RX, y, z(RIDGE))], [V(RX, y, z(RIDGE)), V(W, y, z(L2))]);
+      for (const f of Object.keys(FACES)) for (const [lo, hi] of faceRuns(f)) {
+        const P3 = (a, h) => { const t = facePt(f, a, h); return V(t.x, t.y, z(t.z)); };
+        e.push([P3(lo, FF), P3(hi, FF)], [P3(lo, L2), P3(hi, L2)], [P3(lo, FF), P3(lo, L2)], [P3(hi, FF), P3(hi, L2)]);
+      }
+    }
     model.add(segsObj(e, matEnvLine, k3));
     tags.push(
       { p: V(0, 0, 0), text: "±0.00", cls: "lvl", op: k3 },
@@ -807,7 +882,9 @@ function placeCamera() {
 }
 function worldPerPx() { return (camera.top - camera.bottom) / camera.zoom / Math.max(1, box.clientHeight); }
 $("vBelow").addEventListener("click", () => {
-  const on = controls.maxPolarAngle < Math.PI - 0.01;
+  // toggle on the page's own state (the polar limit when on, PI - 0.02, is
+  // itself below PI - 0.01, so reading the limit back could never switch off)
+  const on = !S.below;
   controls.maxPolarAngle = on ? Math.PI - 0.02 : POLAR_ABOVE;
   S.below = on; S.dirty = true;
   $("vBelow").classList.toggle("active", on);
@@ -885,7 +962,7 @@ function ui() {
   $("wDel").disabled = !win;
   if (win) {
     const wall = win.wall ? `on ${win.wall}` : "added";
-    $("winInfo").textContent = `${win.face} elevation · ${wall} · ${(win.a1 - win.a0).toFixed(2)} × ${win.h.toFixed(2)} m, head ${fmtZ(FF + win.sill + win.h)}`;
+    $("winInfo").textContent = `${win.door ? "Glass door · " : ""}${win.face.length > 1 ? "court wall" : win.face + " elevation"} · ${wall} · ${(win.a1 - win.a0).toFixed(2)} × ${win.h.toFixed(2)} m, head ${fmtZ(FF + win.sill + win.h)}`;
     const setIf = (id, v) => { if (document.activeElement !== $(id)) $(id).value = v.toFixed(2); };
     setIf("wA", win.a0); setIf("wW", win.a1 - win.a0); setIf("wS", win.sill); setIf("wH", win.h);
   }
@@ -1123,8 +1200,8 @@ function loop() {
 // metres, z up, following the current toggles (outside/inside walls, windows)
 const LAYERS = ["SITE", "BASE", "SLAB", "ENVELOPE_WALL", "ROOF", "WINDOW", "WALL_OUTSIDE", "WALL_INSIDE", "CURVED_WALL"];
 const MATS = {
-  ground: { rgb: [0.93, 0.93, 0.91], a: 1 }, base: { rgb: [1, 1, 1], a: 1 }, slab: { rgb: [0.87, 0.86, 0.83], a: 1 },
-  wall: { rgb: [1, 1, 1], a: 1 }, gfwall: { rgb: [0.965, 0.96, 0.945], a: 1 }, tile: { rgb: [0.706, 0.353, 0.235], a: 1 },
+  ground: { rgb: [0.93, 0.93, 0.91], a: 1 }, base: { rgb: [1, 1, 1], a: 1 }, slab: { rgb: [1, 1, 1], a: 1 },
+  wall: { rgb: [1, 1, 1], a: 1 }, gfwall: { rgb: [1, 1, 1], a: 1 }, tile: { rgb: [0.706, 0.353, 0.235], a: 1 },
   glass: { rgb: [0.62, 0.74, 0.8], a: 0.3 }, curved: { rgb: [0.953, 0.945, 0.925], a: 1 },
 };
 function exportMeshes() {
@@ -1144,7 +1221,7 @@ function exportMeshes() {
   {
     const t = [];
     if (!S.gfE) for (const f of Object.keys(FACES))
-      for (const [u, v, p, q] of bandQuads(f, 0, FACES[f].len, FF, L2, wins)) quad(t, facePt(f, u, p), facePt(f, v, p), facePt(f, v, q), facePt(f, u, q));
+      for (const [lo, hi] of faceRuns(f)) for (const [u, v, p, q] of bandQuads(f, lo, hi, FF, L2, wins)) quad(t, facePt(f, u, p), facePt(f, v, p), facePt(f, v, q), facePt(f, u, q));
     for (const y of [0, D]) t.push([P(0, y, L2), P(W, y, L2), P(RX, y, RIDGE)]);
     add("Envelope walls", "wall", t, "ENVELOPE_WALL");
   }
@@ -1153,7 +1230,7 @@ function exportMeshes() {
     const c = [[w.a0, FF + w.sill], [w.a1, FF + w.sill], [w.a1, FF + w.sill + w.h], [w.a0, FF + w.sill + w.h]].map(([a, z]) => facePt(w.face, a, z));
     const t = []; quad(t, ...c); add("Window " + w.key, "glass", t, "WINDOW");
   }
-  for (const wl of gfWalls()) { const t = []; for (const f of gfWallQuads(wl, wins)) quad(t, ...f); add("Wall " + wl.id, "gfwall", t, wl.face ? "WALL_OUTSIDE" : "WALL_INSIDE"); }
+  for (const w of gfSolids(wins)) { const t = []; for (const f of w.quads) quad(t, ...f); add(w.name, "gfwall", t, w.layer); }
   for (const p of PIECES) {
     const ring = ringPts(p, 1, S.n, 160), t = [];
     const bot = ring.map(q => P(q.x, q.y, L2)), top = ring.map(q => P(q.x, q.y, wallTop(q.x)));
@@ -1256,8 +1333,8 @@ const GH_PY_SOURCES = {
 "flexible": "\"\"\"H60 - 2 Flexible\nEach circle grows into a superellipse held by its room frame and centre:\nfour half-axes = distance from the centre to each side, less Gap.\nInputs : Data, n (2 = ellipse), Seed (0 = centres from the web page,\n         any other value = random centres inside each room)\nOutputs: Data, Shapes, Centres\"\"\"\nimport Rhino.Geometry as rg\nimport math, random\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif n is None: n = 4.0\nif Seed is None: Seed = 0\nKEEP = 0.15\ngap = d0[\"gap\"]\npieces = [dict(p) for p in d0[\"pieces\"]]\nif int(Seed) != 0:\n    rnd = random.Random(int(Seed))\n    for p in pieces:\n        p[\"cx\"] = p[\"x0\"] + KEEP + (p[\"x1\"] - p[\"x0\"] - 2 * KEEP) * rnd.random()\n        p[\"cy\"] = p[\"y0\"] + KEEP + (p[\"y1\"] - p[\"y0\"] - 2 * KEEP) * rnd.random()\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, ex, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        x = p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l)\n        y = p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)\n        pts.append((x, y))\n    return pts\n\nShapes = []\nfor p in pieces:\n    pts = shape_pts(p, n)\n    Shapes.append(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in pts + [pts[0]]]))\nCentres = [rg.Point3d(p[\"cx\"], p[\"cy\"], 0) for p in pieces]\nd = dict(d0)\nd[\"pieces\"] = pieces\nd[\"n\"] = float(n)\nData = H60(d)\n",
 "levels": "\"\"\"H60 - 3 Levels & roof\nGround +/-0.00, ground floor FF on a solid base, second floor Storey above it,\na gable roof over the house: ridge RidgeH above FF on the centre line, down\nto the storey base at the long walls, RoofT thick (built up along the normal),\neaves EaveSlope out along the slope at the sides and GableEave at the ends.\nInputs : Data, FF, Storey, RidgeH, RoofT, EaveSlope, GableEave, Slab\nOutputs: Data, Site, Base, SlabBrep, Roof (closed Brep), Levels\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif FF is None: FF = 1.0\nif Storey is None: Storey = 2.4\nif RidgeH is None: RidgeH = 6.0\nif RoofT is None: RoofT = 0.3\nif EaveSlope is None: EaveSlope = 1.2\nif GableEave is None: GableEave = 1.0\nif Slab is None: Slab = 0.15\nW, D = d0[\"W\"], d0[\"D\"]\nL2 = FF + Storey\nRIDGE = FF + RidgeH\nRX = W / 2.0\nSLOPE = (RIDGE - L2) / RX\nCOS = 1.0 / math.hypot(1.0, SLOPE)\nEAVE = EaveSlope * COS\nroof = lambda x: RIDGE - SLOPE * abs(x - RX)\nZ_EAVE = roof(-EAVE)\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef quad(t, a, b, c, d):\n    t.append((a, b, c)); t.append((a, c, d))\n\ndef box(x0, x1, y0, y1, z0, z1):\n    return rg.Box(rg.BoundingBox(rg.Point3d(x0, y0, z0), rg.Point3d(x1, y1, z1))).ToBrep()\n\nsite = d0[\"site\"]\nSite = mesh([((site[0][0], site[0][1], 0), (site[i][0], site[i][1], 0), (site[i + 1][0], site[i + 1][1], 0)) for i in range(1, len(site) - 1)])\nBase = box(0, W, 0, D, 0, FF - Slab)\nSlabBrep = box(0, W, 0, D, FF - Slab, FF)\n\n# the roof as one closed solid: the gable section (both eaves under, ridge\n# under, both eaves on top, ridge on top) run from gable eave to gable eave,\n# built face by face and joined\nY0, Y1 = -GableEave, D + GableEave\ndz, dx = RoofT * COS, RoofT * SLOPE * COS\nsec = [(-EAVE, Z_EAVE), (RX, RIDGE), (W + EAVE, Z_EAVE), (W + EAVE + dx, Z_EAVE + dz), (RX, RIDGE + RoofT / COS), (-EAVE - dx, Z_EAVE + dz)]\nTOL = 0.001\nat = lambda q, y: rg.Point3d(q[0], y, q[1])\nparts = []\nfor i in range(len(sec)):\n    a, b = sec[i], sec[(i + 1) % len(sec)]\n    # one flat face per edge of the section, run along the house\n    parts.append(rg.Brep.CreateFromCornerPoints(at(a, Y0), at(b, Y0), at(b, Y1), at(a, Y1), TOL))\nfor y in (Y0, Y1):\n    cap = rg.PolylineCurve([at(q, y) for q in sec + [sec[0]]])\n    parts.extend(rg.Brep.CreatePlanarBreps(cap, TOL))\njoined = rg.Brep.JoinBreps([p for p in parts if p is not None], TOL)\nRoof = joined[0] if joined is not None and len(joined) == 1 else list(joined or parts)\nprint(\"roof: %d faces joined into %s\" % (len(parts), \"one closed solid\" if not isinstance(Roof, list) and Roof.IsSolid else \"%d pieces\" % len(Roof if isinstance(Roof, list) else [Roof])))\nLevels = [0.0, FF, L2, RIDGE, RIDGE + RoofT / COS, Z_EAVE]\nd = dict(d0)\nd.update(FF=FF, L2=L2, RIDGE=RIDGE, RX=RX, SLOPE=SLOPE, COS=COS, SLAB=Slab)\nData = H60(d)\n",
 "curved": "\"\"\"H60 - 4 Curved walls\nThe superellipses stand on the storey base and rise to the roof underside,\neach roof plane moved in by its side's offset along its normal; never below\nthe base (where the roof is too low the wall has no height).\nInputs : Data, OffL, OffR (m, normal to the roof)\nOutputs: Data, CurvedWalls, Bases, Tops\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif OffL is None: OffL = 0.0\nif OffR is None: OffR = 0.0\ngap, ex = d0[\"gap\"], d0[\"n\"]\nL2, RIDGE, RX, SLOPE, COS = d0[\"L2\"], d0[\"RIDGE\"], d0[\"RX\"], d0[\"SLOPE\"], d0[\"COS\"]\nDL, DR = OffL / COS, OffR / COS\n\ndef wall_top(x):\n    return max(L2, min(RIDGE - SLOPE * (RX - x) - DL, RIDGE - SLOPE * (x - RX) - DR))\n\ndef breaks():\n    xc = RX + (DL - DR) / (2 * SLOPE)\n    xl = RX - (RIDGE - L2 - DL) / SLOPE\n    xr = RX + (RIDGE - L2 - DR) / SLOPE\n    b = [xc]\n    if xl < xc - 1e-9: b.append(xl)\n    if xr > xc + 1e-9: b.append(xr)\n    return sorted(b)\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        pts.append((p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l),\n                    p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)))\n    return pts\n\ndef ring_pts(p):\n    pts, out, bs = shape_pts(p), [], breaks()\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        ts = sorted((x - a[0]) / (b[0] - a[0]) for x in bs if (a[0] - x) * (b[0] - x) < 0)\n        for t in ts:\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\ndef clip_side(poly, x0, keep_above):\n    out = []\n    side = (lambda q: q[0] - x0) if keep_above else (lambda q: x0 - q[0])\n    for i in range(len(poly)):\n        a, b = poly[i], poly[(i + 1) % len(poly)]\n        da, db = side(a), side(b)\n        if da >= -1e-12: out.append(a)\n        if (da > 1e-12 and db < -1e-12) or (da < -1e-12 and db > 1e-12):\n            t = da / (da - db)\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\ndef cap_tris(ring):\n    edges = [None] + breaks() + [None]\n    tris = []\n    for k in range(len(edges) - 1):\n        strip = ring\n        if edges[k] is not None: strip = clip_side(strip, edges[k], True)\n        if edges[k + 1] is not None and strip: strip = clip_side(strip, edges[k + 1], False)\n        for i in range(1, len(strip) - 1):\n            tris.append((strip[0], strip[i], strip[i + 1]))\n    return tris\n\ndef area2(a, b, c):\n    ux, uy, uz = b[0] - a[0], b[1] - a[1], b[2] - a[2]\n    vx, vy, vz = c[0] - a[0], c[1] - a[1], c[2] - a[2]\n    return (uy * vz - uz * vy) ** 2 + (uz * vx - ux * vz) ** 2 + (ux * vy - uy * vx) ** 2\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        if area2(a, b, c) < 1e-14: continue\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\nCurvedWalls, Bases, Tops = [], [], []\nfor p in d0[\"pieces\"]:\n    ring = ring_pts(p)\n    bot = [(x, y, L2) for x, y in ring]\n    top = [(x, y, wall_top(x)) for x, y in ring]\n    t = []\n    for i in range(len(ring)):\n        j = (i + 1) % len(ring)\n        if top[i][2] - L2 < 1e-6 and top[j][2] - L2 < 1e-6: continue\n        t.append((bot[i], bot[j], top[j])); t.append((bot[i], top[j], top[i]))\n    for a, b, c in cap_tris(ring):\n        t.append(tuple((q[0], q[1], wall_top(q[0])) for q in (a, b, c)))\n    CurvedWalls.append(mesh(t))\n    Bases.append(rg.PolylineCurve([rg.Point3d(*q) for q in bot + [bot[0]]]))\n    Tops.append(rg.PolylineCurve([rg.Point3d(*q) for q in top + [top[0]]]))\nd = dict(d0)\nd.update(offL=float(OffL), offR=float(OffR))\nData = H60(d)\n",
-"windows": "\"\"\"H60 - 5 Windows (ground floor)\nOne centred window on every outside wall at least 0.90 m long (rule), or the\nwindows as edited on the web page.\nInputs : Data, WidthPct (share of the wall, %), Height, Sill (above FF),\n         UsePage (1 = windows from the web page, 0 = rule), Show (1/0)\nOutputs: Data, Panes, Frames, WindowIDs\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif WidthPct is None: WidthPct = 50.0\nif Height is None: Height = 1.2\nif Sill is None: Sill = 0.9\nif UsePage is None: UsePage = 1\nif Show is None: Show = 1\nW, D, FF, L2 = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"]\n# key, facade, wall id, from, to (along the wall axis), sill, height\nPAGE = __WINDOWS__\nFACES = {\"S\": (\"x\", 0.0, W), \"N\": (\"x\", D, W), \"W\": (\"y\", 0.0, D), \"E\": (\"y\", W, D)}\nMIN_WALL, MIN = 0.9, 0.2\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return rg.Point3d(a, at, z) if axis == \"x\" else rg.Point3d(at, a, z)\n\ndef clamp_win(w):\n    L = FACES[w[\"face\"]][2]\n    w[\"a0\"] = max(0.0, min(L - MIN, w[\"a0\"]))\n    w[\"a1\"] = max(w[\"a0\"] + MIN, min(L, w[\"a1\"]))\n    w[\"sill\"] = max(0.0, min(L2 - FF - MIN, w[\"sill\"]))\n    w[\"h\"] = max(MIN, min(L2 - FF - w[\"sill\"], w[\"h\"]))\n    return w\n\nwins = []\nif int(Show):\n    if int(UsePage):\n        for key, f, wall, a0, a1, sill, h in PAGE:\n            wins.append(clamp_win(dict(key=key, face=f, wall=wall, a0=a0, a1=a1, sill=sill, h=h)))\n    else:\n        for wl in d0[\"walls\"]:\n            if not wl[\"face\"]: continue\n            ln = abs(wl[\"b\"][0] - wl[\"a\"][0]) + abs(wl[\"b\"][1] - wl[\"a\"][1])\n            if ln < MIN_WALL: continue\n            lo = min(wl[\"a\"][0], wl[\"b\"][0]) if FACES[wl[\"face\"]][0] == \"x\" else min(wl[\"a\"][1], wl[\"b\"][1])\n            ww = WidthPct / 100.0 * ln\n            a0 = lo + (ln - ww) / 2.0\n            wins.append(clamp_win(dict(key=wl[\"id\"], face=wl[\"face\"], wall=wl[\"id\"], a0=a0, a1=a0 + ww, sill=float(Sill), h=float(Height))))\n\nPanes, Frames, WindowIDs = [], [], []\nfor w in wins:\n    z0, z1 = FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]\n    c = [face_pt(w[\"face\"], w[\"a0\"], z0), face_pt(w[\"face\"], w[\"a1\"], z0), face_pt(w[\"face\"], w[\"a1\"], z1), face_pt(w[\"face\"], w[\"a0\"], z1)]\n    Panes.append(rg.Brep.CreateFromCornerPoints(c[0], c[1], c[2], c[3], 0.001))\n    Frames.append(rg.PolylineCurve(c + [c[0]]))\n    WindowIDs.append(w[\"key\"])\nd = dict(d0)\nd[\"windows\"] = wins\nData = H60(d)\n",
-"walls": "\"\"\"H60 - 6 Walls\nThe see-through envelope (ground-floor band with the windows cut out, gable\ntriangles) and the ground-floor walls, Thickness thick: inside walls centred\non the plan lines, outside walls with their outer face on the house outline\n(on the floor edge); each runs past its ends by half the thickness so corners\nclose, but never past the house corners.\nInputs : Data, ShowExt (1/0), ShowInt (1/0), Thickness\nOutputs: Envelope, ExtWalls, IntWalls, ExtIDs, IntIDs\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif ShowExt is None: ShowExt = 1\nif ShowInt is None: ShowInt = 1\nif Thickness is None: Thickness = 0.10\nHIDE = set(__HIDE__)\nW, D, FF, L2, RX, RIDGE = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"], d0[\"RX\"], d0[\"RIDGE\"]\nwins = d0.get(\"windows\", [])\nFACES = {\"S\": (\"x\", 0.0, W), \"N\": (\"x\", D, W), \"W\": (\"y\", 0.0, D), \"E\": (\"y\", W, D)}\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return (a, at, z) if axis == \"x\" else (at, a, z)\n\ndef holes_of(f):\n    return [(w[\"a0\"], w[\"a1\"], FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]) for w in wins if w[\"face\"] == f]\n\ndef hole_quads(lo, hi, z0, z1, holes):\n    xs = sorted(set([lo, hi] + [v for h in holes for v in (h[0], h[1]) if lo < v < hi]))\n    quads = []\n    for i in range(len(xs) - 1):\n        u, v = xs[i], xs[i + 1]\n        if v - u < 1e-6: continue\n        spans = [(z0, z1)]\n        for a0, a1, h0, h1 in holes:\n            if not (a0 <= u + 1e-9 and a1 >= v - 1e-9): continue\n            nxt = []\n            for p, q in spans:\n                for s in ((p, min(q, h0)), (max(p, h1), q)):\n                    if s[1] - s[0] > 1e-6: nxt.append(s)\n            spans = nxt\n        for p, q in spans: quads.append((u, v, p, q))\n    return quads\n\ndef mesh(quads):\n    m = rg.Mesh()\n    for a, b, c, d in quads:\n        i = m.Vertices.Count\n        for q in (a, b, c, d): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2, i + 3)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef wall_quads(wl, t):\n    horiz = abs(wl[\"a\"][1] - wl[\"b\"][1]) < 1e-6\n    lo = (min(wl[\"a\"][0], wl[\"b\"][0]) if horiz else min(wl[\"a\"][1], wl[\"b\"][1])) - t / 2.0\n    hi = (max(wl[\"a\"][0], wl[\"b\"][0]) if horiz else max(wl[\"a\"][1], wl[\"b\"][1])) + t / 2.0\n    c = wl[\"a\"][1] if horiz else wl[\"a\"][0]\n    if wl[\"face\"]:\n        # outside walls sit on the floor: outer face on the plan line, never past the corners\n        inward = {\"S\": 1, \"N\": -1, \"W\": 1, \"E\": -1}[wl[\"face\"]]\n        c += inward * t / 2.0\n        lo, hi = max(lo, 0.0), min(hi, FACES[wl[\"face\"]][2])\n    P = (lambda a, n, z: (a, c + n, z)) if horiz else (lambda a, n, z: (c + n, a, z))\n    holes = []\n    if wl[\"face\"]:\n        for a0, a1, z0, z1 in holes_of(wl[\"face\"]):\n            a0, a1 = max(a0, lo), min(a1, hi)\n            if a1 - a0 > 1e-6: holes.append((a0, a1, z0, z1))\n    q, h = [], t / 2.0\n    for n in (-h, h):\n        for u, v, p, r in hole_quads(lo, hi, FF, L2, holes):\n            q.append((P(u, n, p), P(v, n, p), P(v, n, r), P(u, n, r)))\n    for a in (lo, hi): q.append((P(a, -h, FF), P(a, h, FF), P(a, h, L2), P(a, -h, L2)))\n    for z in (FF, L2): q.append((P(lo, -h, z), P(hi, -h, z), P(hi, h, z), P(lo, h, z)))\n    for a0, a1, z0, z1 in holes:\n        for z in (z0, z1): q.append((P(a0, -h, z), P(a1, -h, z), P(a1, h, z), P(a0, h, z)))\n        for a in (a0, a1):\n            if lo + 1e-6 < a < hi - 1e-6: q.append((P(a, -h, z0), P(a, h, z0), P(a, h, z1), P(a, -h, z1)))\n    return q\n\nenv = []\nif not int(ShowExt):\n    for f in FACES:\n        for u, v, p, r in hole_quads(0.0, FACES[f][2], FF, L2, holes_of(f)):\n            env.append((face_pt(f, u, p), face_pt(f, v, p), face_pt(f, v, r), face_pt(f, u, r)))\nm = mesh(env)\nfor y in (0.0, D):\n    i = m.Vertices.Count\n    for q in ((0.0, y, L2), (W, y, L2), (RX, y, RIDGE)): m.Vertices.Add(q[0], q[1], q[2])\n    m.Faces.AddFace(i, i + 1, i + 2)\nm.Normals.ComputeNormals()\nEnvelope = m\n\nExtWalls, IntWalls, ExtIDs, IntIDs = [], [], [], []\nfor wl in d0[\"walls\"]:\n    if wl[\"id\"] in HIDE: continue\n    if wl[\"face\"] and int(ShowExt):\n        ExtWalls.append(mesh(wall_quads(wl, Thickness))); ExtIDs.append(wl[\"id\"])\n    if not wl[\"face\"] and int(ShowInt):\n        IntWalls.append(mesh(wall_quads(wl, Thickness))); IntIDs.append(wl[\"id\"])\n# a line in the \"out\" panel so an empty output is never a mystery\nprint(\"outside walls: %d (ShowExt = %d), inside walls: %d (ShowInt = %d), hidden: %s\" % (\n    len(ExtWalls), int(ShowExt), len(IntWalls), int(ShowInt), \", \".join(sorted(HIDE))))\n"
+"windows": "\"\"\"H60 - 5 Windows (ground floor)\nOne centred window on every outside wall at least 0.90 m long (rule), or the\nwindows as edited on the web page.\nInputs : Data, WidthPct (share of the wall, %), Height, Sill (above FF),\n         UsePage (1 = windows from the web page, 0 = rule), Show (1/0)\nOutputs: Data, Panes, Frames, WindowIDs  (I28 is a glass door, from the floor)\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif WidthPct is None: WidthPct = 50.0\nif Height is None: Height = 1.2\nif Sill is None: Sill = 0.9\nif UsePage is None: UsePage = 1\nif Show is None: Show = 1\nW, D, FF, L2 = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"]\n# key, facade, wall id, from, to (along the wall axis), sill, height\nPAGE = __WINDOWS__\n# walls that are openings get no window (the page has already left them out)\nHIDE = set(__HIDE__)\n# facades: axis, position across it, length (the house sides, plus the court walls)\nFACES = __FACES__\n# where a facade starts along its axis (court walls do not start at 0)\nFACE_LO = __FACELO__\n# walls whose opening is a glass door: from the floor, DOOR_W x DOOR_H\nDOORS = set(__DOORS__)\nDOOR_W, DOOR_H = __DOORW__, __DOORH__\nMIN_WALL, MIN = 0.9, 0.2\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return rg.Point3d(a, at, z) if axis == \"x\" else rg.Point3d(at, a, z)\n\ndef clamp_win(w):\n    L = FACES[w[\"face\"]][2]\n    w[\"a0\"] = max(FACE_LO.get(w[\"face\"], 0.0), min(L - MIN, w[\"a0\"]))\n    w[\"a1\"] = max(w[\"a0\"] + MIN, min(L, w[\"a1\"]))\n    w[\"sill\"] = max(0.0, min(L2 - FF - MIN, w[\"sill\"]))\n    w[\"h\"] = max(MIN, min(L2 - FF - w[\"sill\"], w[\"h\"]))\n    return w\n\nwins = []\nif int(Show):\n    if int(UsePage):\n        for key, f, wall, a0, a1, sill, h in PAGE:\n            wins.append(clamp_win(dict(key=key, face=f, wall=wall, a0=a0, a1=a1, sill=sill, h=h)))\n    else:\n        for wl in d0[\"walls\"]:\n            if not wl[\"face\"] or wl[\"id\"] in HIDE: continue\n            ln = abs(wl[\"b\"][0] - wl[\"a\"][0]) + abs(wl[\"b\"][1] - wl[\"a\"][1])\n            if ln < MIN_WALL: continue\n            lo = min(wl[\"a\"][0], wl[\"b\"][0]) if FACES[wl[\"face\"]][0] == \"x\" else min(wl[\"a\"][1], wl[\"b\"][1])\n            if wl[\"id\"] in DOORS:\n                dw = min(DOOR_W, ln - 0.1)\n                a0 = lo + (ln - dw) / 2.0\n                wins.append(clamp_win(dict(key=wl[\"id\"], face=wl[\"face\"], wall=wl[\"id\"], a0=a0, a1=a0 + dw, sill=0.0, h=DOOR_H)))\n                continue\n            ww = WidthPct / 100.0 * ln\n            a0 = lo + (ln - ww) / 2.0\n            wins.append(clamp_win(dict(key=wl[\"id\"], face=wl[\"face\"], wall=wl[\"id\"], a0=a0, a1=a0 + ww, sill=float(Sill), h=float(Height))))\n\nPanes, Frames, WindowIDs = [], [], []\nfor w in wins:\n    z0, z1 = FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]\n    c = [face_pt(w[\"face\"], w[\"a0\"], z0), face_pt(w[\"face\"], w[\"a1\"], z0), face_pt(w[\"face\"], w[\"a1\"], z1), face_pt(w[\"face\"], w[\"a0\"], z1)]\n    Panes.append(rg.Brep.CreateFromCornerPoints(c[0], c[1], c[2], c[3], 0.001))\n    Frames.append(rg.PolylineCurve(c + [c[0]]))\n    WindowIDs.append(w[\"key\"])\nd = dict(d0)\nd[\"windows\"] = wins\nData = H60(d)\n",
+"walls": "\"\"\"H60 - 6 Walls\nThe see-through envelope (ground-floor band with the windows cut out, gable\ntriangles) and the ground-floor walls, Thickness thick, as closed Breps:\noutside, one continuous wall per stretch of a facade, standing inside the\noutline (outer face on it), windows cut through; inside, one per segment,\ncentred on its line, run past its ends by half the thickness but never past\nthe outline. Hidden inside walls are not built; hidden outside walls are\nopenings (no wall, no glass, no window).\nInputs : Data, ShowExt (1/0), ShowInt (1/0), Thickness\nOutputs: Envelope, ExtWalls, IntWalls, ExtNames, IntIDs, White\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif ShowExt is None: ShowExt = 1\nif ShowInt is None: ShowInt = 1\nif Thickness is None: Thickness = 0.10\nHIDE = set(__HIDE__)\nW, D, FF, L2, RX, RIDGE, SLAB = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"], d0[\"RX\"], d0[\"RIDGE\"], d0[\"SLAB\"]\nwins = d0.get(\"windows\", [])\n# facades: axis, position across it, length (the house sides, plus the court walls)\nFACES = __FACES__\nINWARD = __INWARD__\nTOL = 0.001\n\ndef along(f, wl):\n    i = 0 if FACES[f][0] == \"x\" else 1\n    return (min(wl[\"a\"][i], wl[\"b\"][i]), max(wl[\"a\"][i], wl[\"b\"][i]))\n\ndef face_runs(f):\n    iv = sorted(along(f, wl) for wl in d0[\"walls\"] if wl[\"face\"] == f and wl[\"id\"] not in HIDE)\n    runs = []\n    for a, b in iv:\n        if runs and a <= runs[-1][1] + 1e-6: runs[-1][1] = max(runs[-1][1], b)\n        else: runs.append([a, b])\n    return runs\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return (a, at, z) if axis == \"x\" else (at, a, z)\n\ndef holes_of(f):\n    return [(w[\"a0\"], w[\"a1\"], FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]) for w in wins if w[\"face\"] == f]\n\ndef hole_quads(lo, hi, z0, z1, holes):\n    xs = sorted(set([lo, hi] + [v for h in holes for v in (h[0], h[1]) if lo < v < hi]))\n    quads = []\n    for i in range(len(xs) - 1):\n        u, v = xs[i], xs[i + 1]\n        if v - u < 1e-6: continue\n        spans = [(z0, z1)]\n        for a0, a1, h0, h1 in holes:\n            if not (a0 <= u + 1e-9 and a1 >= v - 1e-9): continue\n            nxt = []\n            for p, q in spans:\n                for s in ((p, min(q, h0)), (max(p, h1), q)):\n                    if s[1] - s[0] > 1e-6: nxt.append(s)\n            spans = nxt\n        for p, q in spans: quads.append((u, v, p, q))\n    return quads\n\ndef box(horiz, c, lo, hi, n0, n1, z0, z1):\n    # a box lo..hi along the wall axis, c+n0..c+n1 across it, z0..z1 high\n    if horiz: p0, p1 = rg.Point3d(lo, c + n0, z0), rg.Point3d(hi, c + n1, z1)\n    else: p0, p1 = rg.Point3d(c + n0, lo, z0), rg.Point3d(c + n1, hi, z1)\n    return rg.Box(rg.BoundingBox(p0, p1)).ToBrep()\n\ndef wall(horiz, c, lo, hi, holes, t):\n    solid = box(horiz, c, lo, hi, -t / 2.0, t / 2.0, FF, L2)\n    cutters = [box(horiz, c, max(a0, lo), min(a1, hi), -t, t, z0, z1) for a0, a1, z0, z1 in holes if min(a1, hi) - max(a0, lo) > 1e-6]\n    if cutters:\n        cut = rg.Brep.CreateBooleanDifference([solid], cutters, TOL)\n        if cut and len(cut) == 1: return cut[0]\n        print(\"window cut failed on a wall at %.2f..%.2f; kept whole\" % (lo, hi))\n    return solid\n\n# the envelope band, only where the facade is wall\nenv = []\nif not int(ShowExt):\n    for f in FACES:\n        for lo, hi in face_runs(f):\n            for u, v, p, r in hole_quads(lo, hi, FF, L2, holes_of(f)):\n                env.append((face_pt(f, u, p), face_pt(f, v, p), face_pt(f, v, r), face_pt(f, u, r)))\nm = rg.Mesh()\nfor a, b, c, dd in env:\n    i = m.Vertices.Count\n    for q in (a, b, c, dd): m.Vertices.Add(q[0], q[1], q[2])\n    m.Faces.AddFace(i, i + 1, i + 2, i + 3)\nfor y in (0.0, D):\n    i = m.Vertices.Count\n    for q in ((0.0, y, L2), (W, y, L2), (RX, y, RIDGE)): m.Vertices.Add(q[0], q[1], q[2])\n    m.Faces.AddFace(i, i + 1, i + 2)\nm.Normals.ComputeNormals()\nEnvelope = m\n\nExtWalls, IntWalls, ExtNames, IntIDs = [], [], [], []\nif int(ShowExt):\n    for f in sorted(FACES):\n        axis, at, _ = FACES[f]\n        runs = face_runs(f)\n        for k, (lo, hi) in enumerate(runs):\n            ExtWalls.append(wall(axis == \"x\", at + INWARD[f] * Thickness / 2.0, lo, hi, holes_of(f), Thickness))\n            ExtNames.append(\"Wall \" + f + (str(k + 1) if len(runs) > 1 else \"\"))\nif int(ShowInt):\n    for wl in d0[\"walls\"]:\n        if wl[\"face\"] or wl[\"id\"] in HIDE: continue\n        horiz = abs(wl[\"a\"][1] - wl[\"b\"][1]) < 1e-6\n        i = 0 if horiz else 1\n        L = W if horiz else D\n        lo = max(0.0, min(wl[\"a\"][i], wl[\"b\"][i]) - Thickness / 2.0)\n        hi = min(L, max(wl[\"a\"][i], wl[\"b\"][i]) + Thickness / 2.0)\n        IntWalls.append(box(horiz, wl[\"a\"][1] if horiz else wl[\"a\"][0], lo, hi, -Thickness / 2.0, Thickness / 2.0, FF, L2))\n        IntIDs.append(wl[\"id\"])\n\n# everything that takes the wall white: base, slab, outside and inside walls\nWhite = [rg.Box(rg.BoundingBox(rg.Point3d(0, 0, 0), rg.Point3d(W, D, FF - SLAB))).ToBrep(),\n         rg.Box(rg.BoundingBox(rg.Point3d(0, 0, FF - SLAB), rg.Point3d(W, D, FF))).ToBrep()] + ExtWalls + IntWalls\n\n# a line in the \"out\" panel so an empty output is never a mystery\nprint(\"outside walls: %d (ShowExt = %d), inside walls: %d (ShowInt = %d), hidden: %s\" % (\n    len(ExtWalls), int(ShowExt), len(IntWalls), int(ShowInt), \", \".join(sorted(HIDE))))\n"
 };
 /* ---------------- Grasshopper export: a wired .gh for Rhino 7 (GhPython) ---------------- */
 // GH_IO binary archive: a chunk is its name, index, item count, chunk count,
@@ -1429,11 +1506,13 @@ sliders, grouped like the panels of the web page:
   3 Levels & roof  Data, FF, Storey, RidgeH, RoofT, EaveSlope, GableEave, Slab -> Data, Site, Base, SlabBrep, Roof, Levels
   4 Curved walls   Data, OffL, OffR                     -> Data, CurvedWalls, Bases, Tops
   5 Windows        Data, WidthPct, Height, Sill, UsePage (1 = page windows, 0 = rule), Show -> Data, Panes, Frames, WindowIDs
-  6 Walls          Data, ShowExt, ShowInt, Thickness    -> Envelope, ExtWalls, IntWalls, ExtIDs, IntIDs
+  6 Walls          Data, ShowExt, ShowInt, Thickness    -> Envelope, ExtWalls, IntWalls, ExtNames, IntIDs, White (base, slab and walls: bake them white)
 
 "Data" carries the design from box to box. Units: metres, Z up, origin at the
 lower-left corner of the plan. Slider values start at the page's settings.
 `;
+// the facades as a Python dict: name -> (axis, position across, length)
+const pyFaces = () => "{" + Object.entries(FACES).map(([k, f]) => JSON.stringify(k) + ": (" + JSON.stringify(f.axis) + ", " + pyLit(f.at) + ", " + pyLit(f.len) + ")").join(", ") + "}";
 async function ghFile() {
   const fill = (src, map) => Object.entries(map).reduce((s, [k, v]) => s.split(k).join(v), src);
   const PY = GH_PY_SOURCES;
@@ -1445,8 +1524,10 @@ async function ghFile() {
       __WALLS__: "[\n    " + WALLS.map(w => pyLit([w.id, w.face || "", w.a.x, w.a.y, w.b.x, w.b.y])).join(",\n    ") + "]",
     }),
     PY.flexible, PY.levels, PY.curved,
-    fill(PY.windows, { __WINDOWS__: "[\n    " + windows().map(w => pyLit([w.key, w.face, w.wall || "", +w.a0.toFixed(4), +w.a1.toFixed(4), +w.sill.toFixed(4), +w.h.toFixed(4)])).join(",\n    ") + "]" }),
-    fill(PY.walls, { __HIDE__: pyLit([...GF_HIDE]) }),
+    fill(PY.windows, { __WINDOWS__: "[\n    " + windows().map(w => pyLit([w.key, w.face, w.wall || "", +w.a0.toFixed(4), +w.a1.toFixed(4), +w.sill.toFixed(4), +w.h.toFixed(4)])).join(",\n    ") + "]", __HIDE__: pyLit([...GF_HIDE]), __FACES__: pyFaces(),
+      __FACELO__: "{" + Object.entries(FACES).filter(([, f]) => f.lo).map(([k, f]) => JSON.stringify(k) + ": " + pyLit(f.lo)).join(", ") + "}",
+      __DOORS__: pyLit([...DOOR_WALLS]), __DOORW__: pyLit(DOOR_W), __DOORH__: pyLit(DOOR_H) }),
+    fill(PY.walls, { __HIDE__: pyLit([...GF_HIDE]), __FACES__: pyFaces(), __INWARD__: "{" + Object.entries(INWARD).map(([k, v]) => JSON.stringify(k) + ": " + v).join(", ") + "}" }),
   ];
   // components left to right, sliders to the left of each, one group per box
   const F = GHID.hintFloat, I = GHID.hintInt, O = GHID.hintObject;
@@ -1456,7 +1537,7 @@ async function ghFile() {
     { nick: "3 Levels & roof", inputs: [["Data", O], ["FF", F, 0, 3, FF, 2], ["Storey", F, 2, 4, L2 - FF, 2], ["RidgeH", F, 3, 10, RIDGE - FF, 2], ["RoofT", F, 0.05, 0.6, ROOF_T, 2], ["EaveSlope", F, 0, 3, 1.2, 2], ["GableEave", F, 0, 3, GABLE_EAVE, 2], ["Slab", F, 0.05, 0.5, SLAB, 2]], outputs: ["Data", "Site", "Base", "SlabBrep", "Roof", "Levels"] },
     { nick: "4 Curved walls", inputs: [["Data", O], ["OffL", F, 0, 1.5, S.offL, 2], ["OffR", F, 0, 1.5, S.offR, 2]], outputs: ["Data", "CurvedWalls", "Bases", "Tops"] },
     { nick: "5 Windows", inputs: [["Data", O], ["WidthPct", F, 20, 90, S.winW * 100, 0], ["Height", F, 0.3, 2.2, S.winH, 2], ["Sill", F, 0, 1.8, S.winSill, 2], ["UsePage", I, 0, 1, 1, 0], ["Show", I, 0, 1, S.win ? 1 : 0, 0]], outputs: ["Data", "Panes", "Frames", "WindowIDs"] },
-    { nick: "6 Walls", inputs: [["Data", O], ["ShowExt", I, 0, 1, 1, 0], ["ShowInt", I, 0, 1, 1, 0], ["Thickness", F, 0.05, 0.4, GF_T, 2]], outputs: ["Envelope", "ExtWalls", "IntWalls", "ExtIDs", "IntIDs"] },
+    { nick: "6 Walls", inputs: [["Data", O], ["ShowExt", I, 0, 1, 1, 0], ["ShowInt", I, 0, 1, 1, 0], ["Thickness", F, 0.05, 0.4, GF_T, 2]], outputs: ["Envelope", "ExtWalls", "IntWalls", "ExtNames", "IntIDs", "White"] },
   ];
   const COLOURS = [0x50b4c8d2, 0x50c8d2b4, 0x50d2c3b4, 0x50d2b4b4, 0x50b4b4d2, 0x50c3c3c3]; // translucent tints, ARGB
   const comps = [], sliders = [], groups = [];
