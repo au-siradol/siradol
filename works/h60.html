@@ -39,13 +39,17 @@ body {
 .view-btns .sep { width: 5px; }
 #status-text { font-size: 9px; text-align: center; margin: 4px 0 0; flex-shrink: 0; letter-spacing: .3px; color: #888; line-height: 1.35; }
 
-/* a low strip of six columns under the model, so the model keeps the height */
+/* a low strip of six columns under the model, so the model keeps the height;
+   the strip's height is fixed - a column whose panels grow (a selected window,
+   a roof opening) scrolls inside itself, and the model never changes size */
 .controls-container {
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: 126px; gap: 0;
   margin-top: 4px; padding-top: 5px; border-top: 1px dashed #aaa;
   font-size: 9px; line-height: 1.3; flex-shrink: 0;
 }
-.column { padding: 0 9px; border-left: 1px solid #ddd; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.column { padding: 0 9px; border-left: 1px solid #ddd; display: flex; flex-direction: column; gap: 2px; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.column::-webkit-scrollbar { width: 4px; }
+.column::-webkit-scrollbar-thumb { background: #ccc; }
 .column:first-child { border-left: none; padding-left: 0; }
 .column h3 { margin: 2px 0 1px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: .6px; color: #999; }
 .control-row { display: grid; grid-template-columns: minmax(0, 1fr) 42% 38px; align-items: center; gap: 6px; }
@@ -78,12 +82,12 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
 .num-row input { width: 100%; box-sizing: border-box; font: 9px Helvetica, sans-serif; padding: 1px 3px; border: 1px solid #bbb; background: #fff; font-variant-numeric: tabular-nums; }
 .num-row input:focus-visible { outline: 1px dashed #111; outline-offset: 1px; }
 
-@media (max-width: 1100px) { .controls-container { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 6px; } .column:nth-child(4) { border-left: none; padding-left: 0; } }
+@media (max-width: 1100px) { .controls-container { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 126px 126px; row-gap: 6px; } .column:nth-child(4) { border-left: none; padding-left: 0; } }
 @media (max-width: 560px) {
   html, body { overflow: auto; height: auto; }
   .canvas-container { flex: none; height: 65vh; }
-  .controls-container { grid-template-columns: 1fr; }
-  .column { border-left: none; padding: 6px 0 0; border-top: 1px solid #ddd; }
+  .controls-container { grid-template-columns: 1fr; grid-template-rows: none; }
+  .column { border-left: none; padding: 6px 0 0; border-top: 1px solid #ddd; overflow: visible; }
 }
 </style>
 </head>
@@ -97,11 +101,6 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
 <div class="canvas-container">
   <div id="canvas-inner" tabindex="0" aria-label="Model">
     <div class="view-btns">
-      <button id="eS" class="toggle-btn" title="South elevation (y = 0)">S</button>
-      <button id="eN" class="toggle-btn" title="North elevation (y = 21)">N</button>
-      <button id="eW" class="toggle-btn" title="West elevation (x = 0)">W</button>
-      <button id="eE" class="toggle-btn" title="East elevation (x = 7.5)">E</button>
-      <span class="sep"></span>
       <button id="vBelow" class="toggle-btn" aria-pressed="false" title="Let the view orbit below the ground">Below ground</button>
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
@@ -150,9 +149,10 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
     <div class="control-row"><label for="winH">Height</label><input type="range" id="winH" min="0.3" max="2.2" step="0.05" value="1.2"><span id="o-winH" class="val"></span></div>
     <div class="control-row"><label for="winSill">Sill</label><input type="range" id="winSill" min="0" max="1.8" step="0.05" value="0.9"><span id="o-winSill" class="val"></span></div>
     <div class="btn-row">
+      <button id="wAdd" class="toggle-btn" title="Then click a wall: a window there, at the sliders' size">Add window</button>
       <button id="wDel" class="toggle-btn" disabled title="Delete the selected window (or press Delete)">Delete selected</button>
     </div>
-    <p class="note" id="winHint">Click a window in 3D or in an elevation to select it.</p>
+    <p class="note" id="winHint">Click a window to select it; drag its orange knobs.</p>
     <div id="winBox" hidden>
       <h3>Selected window</h3>
       <div id="winInfo"></div>
@@ -221,7 +221,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
    Walls: every stretch of plan line between two junctions is a wall, E01…
       outside and I01… inside, numbered bottom to top, left to right.
    Windows (ground floor only): one per outside wall, centred, by rule; each can
-      then be moved, resized, deleted or added in the four elevations.
+      then be moved, resized (orange knobs, with snaps), deleted or added in 3D.
    2  Axonometric: the ground is ±0.00; the ground floor is a thin slab at +1.00 on
       a solid base the size of the house, with the plan on it; the superellipses are the second floor,
       base +3.40, walls rising to an offset (measured normal to the roof) under
@@ -293,8 +293,17 @@ const PLAN = [
 ].map(l => l.map(([x, y]) => ({ x, y })));
 
 const $ = id => document.getElementById(id);
-const S = { t: 1, target: 1, n: 4, op: 1, env: 0.18, offL: 0, offR: 0, solid: false, below: false, ids: true, gfE: false, gfI: false, win: true, elev: null, winSel: null, winW: 0.5, winH: 1.2, winSill: 0.9, sel: null, opening: {}, holes: new Set([13]), dirty: true };
+const S = { addWin: false, t: 1, target: 1, n: 4, op: 1, env: 0.18, offL: 0, offR: 0, solid: false, below: false, ids: true, gfE: false, gfI: false, win: true, elev: null, winSel: null, winW: 0.5, winH: 1.2, winSill: 0.9, sel: null, opening: {}, holes: new Set([13]), dirty: true };
 let PIECES = [], UNDO = null;
+/* edits to the plan's pieces: the ceiling line between 5 and 6 moves onto the
+   front door's wall (I09, on the I04 line); 8 and 9 share one curve ceiling */
+function editPieces(ps) {
+  const P = n => ps.find(q => q.no === n), re = q => { q.cx = (q.x0 + q.x1) / 2; q.cy = (q.y0 + q.y1) / 2; };
+  const x = WALLS.find(w => w.id === "I09").a.x;
+  P(5).x1 = x; P(6).x0 = x; re(P(5)); re(P(6));
+  P(8).x1 = P(9).x1; re(P(8));
+  return ps.filter(q => q.no !== 9);
+}
 
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -463,7 +472,7 @@ function ceilingTris(rings) {
 const CURB = 0.10, SIN = SLOPE * COS;
 const roofZ = (x, h) => RIDGE + h / COS - SLOPE * Math.abs(x - RX); // h: along the normal, from the underside
 // the opening's outline, not the shaft's, cuts the roof
-const openRings = () => PIECES.filter(p => S.holes.has(p.no)).map(p => { const r = withRidge(openingPts(p)); r.no = p.no; return r; });
+const openRings = () => PIECES.filter(p => S.holes.has(p.no) && canOpenRoof(p.no)).map(p => { const r = withRidge(openingPts(p)); r.no = p.no; return r; });
 // a closed outline with a point on the ridge line wherever it crosses it
 function withRidge(pts0) {
   const pts = pts0.map(q => Math.abs(q.x - RX) < 1e-7 ? { x: RX + 1e-6, y: q.y } : q), out = [];
@@ -483,7 +492,11 @@ const shaftRing = p => withRidge(shapePts(p, 1, S.n, 160));
    two edges lie no closer than DRAIN_DEG to the roof's contour and close in a
    point at the tip; the tip is lengthened when the sides are too wide */
 const DRAIN_DEG = 30, TAN_BOW = Math.tan((90 - DRAIN_DEG) * Math.PI / 180);
-const COURTS = new Set([13, 14]); // the open court behind E15: only there can an opening be left without glass
+const COURTS = new Set([13, 14]); // the court behind E15 and the bay by the I28 door
+// an opening can be left without glass only over the open court (open to the roof,
+// draining through its floor); none can be cut over a flat ceiling
+const openSky = no => COURTS.has(no) && ceilMode(no) === "open";
+const canOpenRoof = no => ceilMode(no) !== "flat";
 const MIN_GAP = 0.30;             // between openings, for the flashing and for the water to pass
 function openingDefault(p) {
   const a = axes(p), e = p.cx < RX ? 1 : -1;
@@ -647,7 +660,7 @@ function roofFaceTris(s, h, rings) {
 // in the court under its centre
 function skylights() {
   return openRings().map(r => {
-    const p = PIECES.find(q => q.no === r.no), o = openingShape(p), glazed = o.glass || !COURTS.has(r.no);
+    const p = PIECES.find(q => q.no === r.no), o = openingShape(p), glazed = o.glass || !openSky(r.no);
     const top = holeLoop(r, ROOF_T), gl = holeLoop(r, ROOF_T + CURB), on = r.filter(q => q.on);
     const glass = !glazed ? [] : on.length ? [-1, 1].flatMap(s => polyTris(halfLoop(gl, s), [], ROOF_T + CURB)) : polyTris(gl, [], ROOF_T + CURB);
     const edges = loopPairs(gl);
@@ -704,12 +717,24 @@ function findWalls() {
   return list;
 }
 const WALLS = findWalls();
+// edits to the plan's walls: E02-E04 (short bits of the drawing's south line)
+// join E05 as one wall; I09, the front door's wall, moves onto the I04 line
+// (x = 2.80), toward the stair, closing the entrance porch
+{
+  const ids = ["E02", "E03", "E04", "E05"], ws = WALLS.filter(w => ids.includes(w.id));
+  const x0 = Math.min(...ws.flatMap(w => [w.a.x, w.b.x])), x1 = Math.max(...ws.flatMap(w => [w.a.x, w.b.x]));
+  const e5 = WALLS.find(w => w.id === "E05");
+  Object.assign(e5, { a: { x: x0, y: 0 }, b: { x: x1, y: 0 }, len: x1 - x0, mx: (x0 + x1) / 2 });
+  for (const id of ["E02", "E03", "E04"]) WALLS.splice(WALLS.findIndex(w => w.id === id), 1);
+  const i9 = WALLS.find(w => w.id === "I09"), x4 = WALLS.find(w => w.id === "I04").a.x;
+  Object.assign(i9, { a: { x: x4, y: i9.a.y }, b: { x: x4, y: i9.b.y }, mx: x4 });
+}
 
 // windows: by rule on every outside wall at least 0.90 m long, then edited
 const WIN_MIN_WALL = 0.9, WIN_MIN = 0.2;
 // ground-floor walls, 10 cm: all but these. A hidden inside wall is simply
 // not built; a hidden outside wall is an opening (no wall, no glass, no window)
-const GF_T = 0.10, GF_HIDE = new Set(["I09", "I17", "I27", "I04", "I03", "I01", "I02", "E15", "E11"]);
+const GF_T = 0.10, GF_HIDE = new Set(["I17", "I27", "I04", "I03", "I01", "I02", "I26", "E15", "E11"]);
 const alongOf = (f, w) => FACES[f].axis === "x" ? [Math.min(w.a.x, w.b.x), Math.max(w.a.x, w.b.x)] : [Math.min(w.a.y, w.b.y), Math.max(w.a.y, w.b.y)];
 // the stretches of a facade that are wall (hidden outside walls left out), merged
 function faceRuns(f) {
@@ -723,7 +748,7 @@ function faceRuns(f) {
 }
 const openings = f => WALLS.filter(w => w.face === f && GF_HIDE.has(w.id)).map(w => alongOf(f, w));
 const inOpening = w => openings(w.face).some(([a, b]) => w.a1 > a + 1e-6 && w.a0 < b - 1e-6);
-// walls whose rule window is left out by default (still addable in an elevation)
+// walls whose rule window is left out by default (still addable with Add window)
 const WIN_OFF = ["E02", "E20", "E19", "E17", "E13"];
 let WIN_OVR = new Map(WIN_OFF.map(id => [id, { deleted: true }])), WIN_EXTRA = [], XID = 1;
 function windows() {
@@ -821,8 +846,10 @@ const INWARD = { S: 1, N: -1, W: 1, E: -1 };
 // outside walls with windows (I28: a glass door), their outer face on the plan
 // line and their thickness towards the rooms (inward: the side across the wall
 // the room is on)
-const COURT_WALLS = { I21: -1, I29: 1, I23: 1, I28: 1 };
-const DOOR_WALLS = new Set(["I28"]), DOOR_W = 0.90, DOOR_H = 2.10;
+// walls facing outdoors, standing on the house side of their line: the court's,
+// and I09, the front door's, on the entrance porch
+const COURT_WALLS = { I21: -1, I29: 1, I23: 1, I28: 1, I09: 1 };
+const DOOR_WALLS = new Set(["I28", "I09"]), DOOR_W = 0.90, DOOR_H = 2.10;
 
 /* ---------------- the entrance stair at E11 ---------------- */
 // from the ground up to the floor in six risers; counted from the ground, the
@@ -1088,7 +1115,8 @@ const matPane = new THREE.MeshBasicMaterial({ color: 0x9fbccb, side: THREE.Doubl
 const matWinLine = new THREE.LineBasicMaterial({ color: 0x2b2b2b });
 const matBad = new THREE.LineBasicMaterial({ color: 0xd0302a });
 const matDrain = new THREE.MeshBasicMaterial({ color: 0x55534e, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-const matHandle = new THREE.PointsMaterial({ color: ACCENT, size: 9, sizeAttenuation: false, depthTest: false });
+// the opening's handles: drawn last, over everything (the see-through roof included)
+const matHandle = new THREE.PointsMaterial({ color: ACCENT, size: 11, sizeAttenuation: false, depthTest: false, depthWrite: false, transparent: true });
 const matGfWall = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
 
 function withOpacity(mat, opacity) {
@@ -1213,7 +1241,8 @@ function build() {
     const selP = k3 > 0.999 && !S.elev && PIECES.find(q => q.no === S.sel && S.holes.has(q.no));
     if (selP) {
       const hp = openingHandles(selP).map(h => V(h.p.x, h.p.y, h.p.z));
-      model.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(hp), matHandle));
+      const hs = new THREE.Points(new THREE.BufferGeometry().setFromPoints(hp), matHandle);
+      hs.renderOrder = 999; model.add(hs);
     }
     if (panes.length && S.solid) model.add(meshObj(panes, matPane, 0.3 * k3, 6));
     // below the ground every ground-floor wall's cut at the floor (+1.00) is
@@ -1317,8 +1346,9 @@ function build() {
       model.add(segsObj(loopPairs(top), lm, k3));
       if (open) model.add(segsObj(loopPairs(liningLoop(p).map(([a]) => V(a.x, a.y, a.z * k3))), lm, k3));
       if (wireOp > 0.01) {
-        const vp = [], plain = shapePts(p, k, S.n, 160);
-        for (let i = 0; i < 160; i += 10) { const q = plain[i]; if (wallTop(q.x) > L2 + 1e-6) vp.push([V(q.x, q.y, zb), V(q.x, q.y, wt(q))]); }
+        // a line up the wall only where its top folds with the roof
+        const vp = [], folds = breaks();
+        for (const q of ring) if (folds.some(x => Math.abs(q.x - x) < 1e-9) && wallTop(q.x) > L2 + 1e-6) vp.push([V(q.x, q.y, zb), V(q.x, q.y, wt(q))]);
         if (vp.length) model.add(segsObj(vp, sel ? matSel : matFaint, k3 * wireOp));
       }
     }
@@ -1415,23 +1445,7 @@ $("vBelow").addEventListener("click", () => {
   controls.update();
 });
 $("vReset").addEventListener("click", () => { S.elev = null; ui(); flyTo(S.target === 2 ? AXO : TOP, 600); });
-// elevations: square on to a facade, the house filling the view; windows are edited here
-const TOP_Z = RIDGE + ROOF_T / COS;
-let elevToken = 0;
-function flyElev(f) {
-  const go = token => {
-    if (token !== elevToken || S.target !== 2) return;
-    const F = FACES[f], w = box.clientWidth, h = box.clientHeight, asp = w / Math.max(1, h);
-    const R = Math.hypot(HALF_W, HALF_D, RIDGE / 2) + 1, hh = Math.max(R * 0.62, R * 0.8 / asp);
-    const halfLen = (F.axis === "x" ? W / 2 + EAVE + 0.3 : D / 2 + GABLE_EAVE) + 0.6, halfH = TOP_Z / 2 + 0.6;
-    const zoom = Math.min(hh * asp / halfLen, hh / halfH);
-    S.elev = null; ui();
-    flyTo({ dir: new THREE.Vector3(...F.dir), up: new THREE.Vector3(0, 1, 0) }, 600, zoom, V(W / 2, D / 2, TOP_Z / 2), () => { S.elev = f; ui(); });
-  };
-  if (S.target !== 2) { goTo(2); const tk = elevToken; setTimeout(() => go(tk), reduce ? 0 : 950); } else go(elevToken);
-}
-["S", "N", "W", "E"].forEach(f => $("e" + f).addEventListener("click", () => flyElev(f)));
-controls.addEventListener("start", () => { if (S.elev) { S.elev = null; ui(); } });
+
 
 /* ---------------- steps ---------------- */
 const CAPS = [
@@ -1445,7 +1459,6 @@ function goTo(target) {
   const t0 = S.t;
   S.target = target;
   if (target !== 2) { S.elev = null; S.winSel = null; }
-  elevToken++;
   controlMode();
   const dur = reduce ? 1 : 900 * Math.abs(target - t0) + 150;
   // steps 1-2 open on the plan; step 3 on the axonometric
@@ -1480,37 +1493,40 @@ function ui() {
   $("o-winSill").textContent = S.winSill.toFixed(2) + " m";
   $("mIds").classList.toggle("active", S.ids); $("mIds").setAttribute("aria-pressed", String(S.ids));
   for (const [id, on] of [["mGfE", S.gfE], ["mGfI", S.gfI], ["mWin", S.win]]) { $(id).classList.toggle("active", on); $(id).setAttribute("aria-pressed", String(on)); }
-  ["S", "N", "W", "E"].forEach(f => $("e" + f).classList.toggle("active", S.elev === f));
   const win = S.win && S.winSel && windows().find(q => q.key === S.winSel);
   if (S.winSel && !win) S.winSel = null;
   $("winBox").hidden = !win;
+  $("winHint").hidden = !!win;
   $("wDel").disabled = !win;
   if (win) {
     const wall = win.wall ? `on ${win.wall}` : "added";
-    $("winInfo").textContent = `${win.door ? "Glass door · " : ""}${win.face.length > 1 ? "court wall" : win.face + " elevation"} · ${wall} · ${(win.a1 - win.a0).toFixed(2)} × ${win.h.toFixed(2)} m, head ${fmtZ(FF + win.sill + win.h)}`;
+    $("winInfo").textContent = `${win.door ? "Glass door · " : ""}${win.face.length > 1 ? "wall " + win.face : win.face + " side"} · ${wall} · ${(win.a1 - win.a0).toFixed(2)} × ${win.h.toFixed(2)} m, head ${fmtZ(FF + win.sill + win.h)}`;
     const setIf = (id, v) => { if (document.activeElement !== $(id)) $(id).value = v.toFixed(2); };
     setIf("wA", win.a0); setIf("wW", win.a1 - win.a0); setIf("wS", win.sill); setIf("wH", win.h);
   }
   $("o-op").textContent = Math.round(S.op * 100) + "%";
   $("o-env").textContent = Math.round(S.env * 100) + "%";
   $("bUndo").disabled = !UNDO;
-  $("status-text").textContent = S.elev && !S.win ? `${S.elev} elevation — windows are switched off.` : S.elev ? `${S.elev} elevation — click the wall to add a window; drag a window to move it, drag its edge to resize; drag outside the wall to leave the elevation.` : CAPS[S.target];
+  $("status-text").textContent = S.addWin ? "Click a wall to add a window there (Esc to cancel)." : CAPS[S.target];
+  $("wAdd").classList.toggle("active", !!S.addWin); $("wAdd").disabled = !S.win || S.target !== 2;
+  for (const n of [...S.holes]) if (!canOpenRoof(n) || !PIECES.some(q => q.no === n)) S.holes.delete(n); // none over a flat ceiling
   for (const q of PIECES) if (S.holes.has(q.no)) fitOpening(q);
   const p = PIECES.find(q => q.no === S.sel);
   $("selBox").hidden = !p;
-  if (p) { $("bHole").classList.toggle("active", S.holes.has(p.no)); $("bHole").setAttribute("aria-pressed", S.holes.has(p.no)); }
+  if (p) { $("bHole").classList.toggle("active", S.holes.has(p.no)); $("bHole").setAttribute("aria-pressed", S.holes.has(p.no)); $("bHole").disabled = !canOpenRoof(p.no); }
   $("openBox").hidden = !(p && S.holes.has(p.no));
   $("selHint").hidden = !!p;
+
   $("openHint").hidden = !!(p && S.holes.has(p.no));
   if (p && S.holes.has(p.no)) {
     const o = openingShape(p), bad = openingIssues()[p.no], court = COURTS.has(p.no);
     const set = (id, v, txt) => { if (document.activeElement !== $(id)) $(id).value = v; $("o-" + id).textContent = txt; };
     set("oUp", o.up, o.up.toFixed(2) + " m"); set("oDn", o.dn, o.dn.toFixed(2) + " m");
     set("oBs", o.bs, o.bs.toFixed(2) + " m"); set("oBn", o.bn, o.bn.toFixed(2) + " m"); set("oSh", o.sh, o.sh.toFixed(2) + " m");
-    const glazed = o.glass || !court;
-    $("oGlass").classList.toggle("active", glazed); $("oOpen").classList.toggle("active", !glazed); $("oOpen").disabled = !court;
+    const glazed = o.glass || !openSky(p.no);
+    $("oGlass").classList.toggle("active", glazed); $("oOpen").classList.toggle("active", !glazed); $("oOpen").disabled = !openSky(p.no);
     const notes = [`Tip at least ${o.tipMin.toFixed(2)} m, so the bow's edges fall ${DRAIN_DEG}° or more.`];
-    if (!court) notes.push("Glass only: open is for the court (13, 14).");
+    if (!openSky(p.no)) notes.push("Glass only: open is for the open court (13).");
     if (!glazed) notes.push("Open: rain falls to the court floor drain.");
     $("oNote").innerHTML = notes.join(" ") + (bad ? `<br><span style="color:#d0302a">${bad.join("; ")}</span>` : "");
   }
@@ -1529,8 +1545,10 @@ $("mIds").addEventListener("click", () => { S.ids = !S.ids; ui(); });
 $("mGfE").addEventListener("click", () => { S.gfE = !S.gfE; if (S.gfE && S.target !== 2) goTo(2); ui(); });
 $("mGfI").addEventListener("click", () => { S.gfI = !S.gfI; if (S.gfI && S.target !== 2) goTo(2); ui(); });
 $("mWin").addEventListener("click", () => { S.win = !S.win; if (!S.win) S.winSel = null; ui(); });
+$("wAdd").addEventListener("click", () => { S.addWin = !S.addWin; ui(); });
 $("wDel").addEventListener("click", () => { if (S.winSel) { deleteWin(S.winSel); ui(); } });
 document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && S.addWin) { S.addWin = false; ui(); }
   if ((ev.key === "Delete" || ev.key === "Backspace") && S.winSel && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
     ev.preventDefault(); deleteWin(S.winSel); ui();
   }
@@ -1552,11 +1570,11 @@ $("bRandom").addEventListener("click", () => { randomCentres(); ui(); });
 $("bUndo").addEventListener("click", () => { if (!UNDO) return; PIECES.forEach((p, i) => { p.cx = UNDO[i].cx; p.cy = UNDO[i].cy; }); UNDO = null; ui(); });
 $("reset").addEventListener("click", () => { UNDO = PIECES.map(p => ({ cx: p.cx, cy: p.cy })); PIECES.forEach(p => { p.cx = (p.x0 + p.x1) / 2; p.cy = (p.y0 + p.y1) / 2; }); ui(); });
 
-$("bHole").addEventListener("click", () => { if (S.sel == null) return; S.holes.has(S.sel) ? S.holes.delete(S.sel) : S.holes.add(S.sel); if (S.target !== 2) goTo(2); ui(); });
+$("bHole").addEventListener("click", () => { if (S.sel == null || !canOpenRoof(S.sel)) return; S.holes.has(S.sel) ? S.holes.delete(S.sel) : S.holes.add(S.sel); if (S.target !== 2) goTo(2); ui(); });
 for (const [id, key] of [["oUp", "up"], ["oDn", "dn"], ["oBs", "bs"], ["oBn", "bn"], ["oSh", "sh"]])
   $(id).addEventListener("input", () => { const p = PIECES.find(q => q.no === S.sel); if (p) { setOpening(p, { [key]: +$(id).value }); ui(); } });
 $("oGlass").addEventListener("click", () => { const p = PIECES.find(q => q.no === S.sel); if (p) { opening(p).glass = true; ui(); } });
-$("oOpen").addEventListener("click", () => { const p = PIECES.find(q => q.no === S.sel); if (p && COURTS.has(p.no)) { opening(p).glass = false; ui(); } });
+$("oOpen").addEventListener("click", () => { const p = PIECES.find(q => q.no === S.sel); if (p && openSky(p.no)) { opening(p).glass = false; ui(); } });
 $("oReset").addEventListener("click", () => { const p = PIECES.find(q => q.no === S.sel); if (p) { S.opening[p.no] = openingDefault(p); fitOpening(p); ui(); } });
 // every opening takes the selected one's shape - its reaches in proportion -
 // at its own size (the same area it had), keeping its place and glass; one
@@ -1598,7 +1616,7 @@ function handleAt(ev) {
   }
   return best;
 }
-// a point on the current elevation's wall plane: a along the wall, z height
+// a point on a facade's wall plane under the pointer: a along the wall, z height
 function facadePoint(ev, f) {
   const r = renderer.domElement.getBoundingClientRect();
   ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -1609,47 +1627,90 @@ function facadePoint(ev, f) {
   const x = hit.x + CX, y = -hit.z + CY;
   return { a: F.axis === "x" ? x : y, z: hit.y, dist: ray.ray.origin.distanceTo(hit) };
 }
+/* windows are edited in 3D: a click selects one; its orange knobs (edges,
+   corners) resize it and a drag inside moves it, on its own wall's plane from
+   any angle. Snaps: the wall's centre, the other windows' edges on the wall,
+   any window's sill and head, else 5 cm. Doors keep their size. Add window,
+   then a click on a wall, puts one there */
 let wdrag = null;
-function windowPress(ev) {
-  const f = S.elev, q = facadePoint(ev, f);
-  if (!q || q.a < 0 || q.a > FACES[f].len || q.z < FF || q.z > L2) return false;
-  const tol = 8 * worldPerPx();
-  let hit = null;
-  for (const w of windows().filter(w => w.face === f)) {
-    const z0 = FF + w.sill, z1 = z0 + w.h;
-    if (q.a < w.a0 - tol || q.a > w.a1 + tol || q.z < z0 - tol || q.z > z1 + tol) continue;
-    const edge = Math.abs(q.a - w.a0) < tol ? "l" : Math.abs(q.a - w.a1) < tol ? "r" : Math.abs(q.z - z0) < tol ? "b" : Math.abs(q.z - z1) < tol ? "t" : "m";
-    hit = { w, edge }; break;
+const editable = () => S.win && S.target === 2 && S.t > 1.999 && !camFrom;
+const toScreen = (v, r) => { const q = v.project(camera); return { x: (q.x + 1) / 2 * r.width + r.left, y: (1 - q.y) / 2 * r.height + r.top }; };
+const facePt3 = (f, a, z) => { const t = facePt(f, a, z); return V(t.x, t.y, t.z); };
+// the knob of the selected window under the pointer (within 12 px)
+function windowKnobAt(ev) {
+  const w = S.winSel && windows().find(q => q.key === S.winSel);
+  if (!w || w.door) return null;
+  const r = renderer.domElement.getBoundingClientRect(), z0 = FF + w.sill, z1 = z0 + w.h, am = (w.a0 + w.a1) / 2, zm = (z0 + z1) / 2;
+  // nearer the window's middle than to any knob: a move, not a resize (a small
+  // window on screen would otherwise be all knobs)
+  const cm = toScreen(facePt3(w.face, am, zm), r);
+  let best = null, bd = Math.min(12, Math.hypot(cm.x - ev.clientX, cm.y - ev.clientY));
+  for (const [a, z, edge] of [[w.a0, zm, "l"], [w.a1, zm, "r"], [am, z0, "b"], [am, z1, "t"], [w.a0, z0, "lb"], [w.a1, z0, "rb"], [w.a1, z1, "rt"], [w.a0, z1, "lt"]]) {
+    const q = toScreen(facePt3(w.face, a, z), r), d = Math.hypot(q.x - ev.clientX, q.y - ev.clientY);
+    if (d < bd) { bd = d; best = { w, edge }; }
   }
-  wdrag = { f, start: q, moved: false, x: ev.clientX, y: ev.clientY, hit, orig: hit ? { ...hit.w } : null };
-  if (hit) S.winSel = hit.w.key;
+  return best;
+}
+function windowPress(ev) {
+  if (!editable()) return false;
+  if (S.addWin) { addWindowAt(ev); return true; }
+  let hit = windowKnobAt(ev);
+  if (!hit) { const w = windowAt(ev); if (w && !w.door) hit = { w, edge: "m" }; }
+  if (!hit) return false;
+  const start = facadePoint(ev, hit.w.face);
+  if (!start) return false;
+  S.winSel = hit.w.key; S.sel = null;
+  wdrag = { f: hit.w.face, start, moved: false, x: ev.clientX, y: ev.clientY, hit, orig: { ...hit.w } };
   return true;
 }
+// a value snapped to the nearest candidate within tol, else to 5 cm
+const snapTo = (v, cands, tol) => { let b = null; for (const c of cands) if (Math.abs(c - v) <= tol && (b === null || Math.abs(c - v) < Math.abs(b - v))) b = c; return b ?? Math.round(v / 0.05) * 0.05; };
 function windowMove(ev) {
   if (Math.hypot(ev.clientX - wdrag.x, ev.clientY - wdrag.y) > 3) wdrag.moved = true;
-  const { hit, orig, start } = wdrag;
-  if (!hit || !wdrag.moved) return;
-  const q = facadePoint(ev, wdrag.f); if (!q) return;
-  const da = q.a - start.a, dz = q.z - start.z, snap = v => Math.round(v / 0.05) * 0.05;
-  const L = FACES[wdrag.f].len, wd = orig.a1 - orig.a0;
-  let patch;
-  if (hit.edge === "m") { const a0 = Math.max(0, Math.min(L - wd, snap(orig.a0 + da))); patch = { a0, a1: a0 + wd, sill: Math.max(0, Math.min(L2 - FF - orig.h, snap(orig.sill + dz))) }; }
-  else if (hit.edge === "l") patch = { a0: Math.min(orig.a1 - WIN_MIN, snap(orig.a0 + da)) };
-  else if (hit.edge === "r") patch = { a1: Math.max(orig.a0 + WIN_MIN, snap(orig.a1 + da)) };
-  else if (hit.edge === "b") { const s0 = Math.min(orig.sill + orig.h - WIN_MIN, Math.max(0, snap(orig.sill + dz))); patch = { sill: s0, h: orig.sill + orig.h - s0 }; }
-  else patch = { h: Math.max(WIN_MIN, snap(orig.h + dz)) };
-  setWin(hit.w.key, patch); ui();
-}
-function windowRelease() {
-  const d = wdrag; wdrag = null;
-  if (!d.moved && !d.hit) {
-    // a click on bare wall adds a window there, at the rule's size
-    const wd = 0.9, a0 = Math.max(0, Math.min(FACES[d.f].len - wd, d.start.a - wd / 2));
-    const key = "X" + XID++;
-    WIN_EXTRA.push(clampWin({ key, wall: null, face: d.f, a0, a1: a0 + wd, sill: Math.max(0, Math.min(L2 - FF - S.winH, d.start.z - FF - S.winH / 2)), h: S.winH }));
-    S.winSel = key;
+  const { hit, orig, start, f } = wdrag;
+  if (!wdrag.moved) return;
+  const q = facadePoint(ev, f); if (!q) return;
+  const da = q.a - start.a, dz = q.z - start.z, tol = 8 * worldPerPx(), e = hit.edge;
+  const others = windows().filter(o => o.key !== orig.key);
+  const aC = others.filter(o => o.face === f).flatMap(o => [o.a0, o.a1]), zC = others.flatMap(o => [o.sill, o.sill + o.h]);
+  // the centre of the wall (plan segment) the window sits on
+  const mid = (() => {
+    const am = (orig.a0 + orig.a1) / 2, wl = WALLS.find(w => w.face === f && !GF_HIDE.has(w.id) && (() => { const [lo, hi] = alongOf(f, w); return am >= lo && am <= hi; })());
+    if (!wl) return null; const [lo, hi] = alongOf(f, wl); return (lo + hi) / 2;
+  })();
+  let { a0, a1, sill, h } = orig;
+  if (e === "m") {
+    const wd = orig.a1 - orig.a0, c = orig.a0 + wd / 2 + da;
+    // the centre to the wall's centre, else an edge to another window's edge
+    let na0 = mid !== null && Math.abs(c - mid) <= tol ? mid - wd / 2 : null;
+    if (na0 === null) { const l = snapTo(orig.a0 + da, aC, tol), r = snapTo(orig.a1 + da, aC, tol); na0 = aC.some(x => Math.abs(x - r) < 1e-9) && !aC.some(x => Math.abs(x - l) < 1e-9) ? r - wd : l; }
+    a0 = na0; a1 = na0 + wd;
+    const ns = snapTo(orig.sill + dz, zC, tol), nh = snapTo(orig.sill + orig.h + dz, zC, tol);
+    sill = zC.some(x => Math.abs(x - nh) < 1e-9) && !zC.some(x => Math.abs(x - ns) < 1e-9) ? nh - orig.h : ns;
   }
-  ui();
+  const aSnap = v => snapTo(v, mid === null ? aC : [...aC, mid], tol);
+  if (e.includes("l")) a0 = Math.min(orig.a1 - WIN_MIN, aSnap(orig.a0 + da));
+  if (e.includes("r")) a1 = Math.max(orig.a0 + WIN_MIN, aSnap(orig.a1 + da));
+  if (e.includes("b")) { const s0 = Math.min(orig.sill + orig.h - WIN_MIN, Math.max(0, snapTo(orig.sill + dz, zC, tol))); h = orig.sill + orig.h - s0; sill = s0; }
+  if (e.includes("t")) h = Math.max(WIN_MIN, snapTo(orig.sill + orig.h + dz, zC, tol) - sill);
+  setWin(orig.key, { a0, a1, sill, h }); ui();
+}
+function windowRelease() { wdrag = null; ui(); }
+// Add window: the wall nearest the eye under the pointer, not a door's
+function addWindowAt(ev) {
+  let best = null;
+  for (const f of Object.keys(FACES)) {
+    if (DOOR_WALLS.has(f)) continue;
+    const q = facadePoint(ev, f);
+    if (!q || q.z < FF || q.z > L2 || !faceRuns(f).some(([lo, hi]) => q.a >= lo && q.a <= hi)) continue;
+    if (!best || q.dist < best.q.dist) best = { f, q };
+  }
+  S.addWin = false;
+  if (!best) { ui(); return; }
+  const { f, q } = best, run = faceRuns(f).find(([lo, hi]) => q.a >= lo && q.a <= hi), wd = Math.min(0.9, run[1] - run[0]);
+  const a0 = Math.max(run[0], Math.min(run[1] - wd, q.a - wd / 2)), key = "X" + XID++;
+  WIN_EXTRA.push(clampWin({ key, wall: null, face: f, a0, a1: a0 + wd, sill: S.winSill, h: S.winH }));
+  S.winSel = key; ui();
 }
 
 let drag = null, down = null, odrag = null;
@@ -1658,7 +1719,7 @@ function openingHandleAt(ev) {
   const p = S.target === 2 && S.t > 1.999 && !S.elev && !camFrom && PIECES.find(q => q.no === S.sel && S.holes.has(q.no));
   if (!p) return null;
   const r = renderer.domElement.getBoundingClientRect();
-  let best = null, bd = 10;
+  let best = null, bd = 12;
   for (const h of openingHandles(p)) {
     const v = V(h.p.x, h.p.y, h.p.z).project(camera);
     const d = Math.hypot((v.x + 1) / 2 * r.width - (ev.clientX - r.left), (1 - v.y) / 2 * r.height - (ev.clientY - r.top));
@@ -1679,10 +1740,10 @@ function openingDrag(ev) {
   setOpening(p, patch);
   ui();
 }
-// capture phase on the container: a press on a + or on an elevation's wall never reaches the orbit controls
+// capture phase on the container: a press on a +, a window or a handle never reaches the orbit controls
 box.addEventListener("pointerdown", ev => {
   if (ev.button !== 0 || ev.target !== renderer.domElement) return;
-  if (S.elev && S.win && S.target === 2 && !camFrom && windowPress(ev)) {
+  if (windowPress(ev)) {
     ev.stopPropagation(); ev.preventDefault();
     renderer.domElement.setPointerCapture(ev.pointerId);
     ui(); return;
@@ -1706,7 +1767,7 @@ renderer.domElement.addEventListener("pointermove", ev => {
   if (odrag) { openingDrag(ev); return; }
   if (wdrag) { windowMove(ev); return; }
   if (drag) { const q = planPoint(ev); if (q) { moveCentre(drag, q); ui(); } return; }
-  box.classList.toggle("handle", S.target < 2 && !!handleAt(ev));
+  box.classList.toggle("handle", (S.target < 2 && !!handleAt(ev)) || (editable() && (S.addWin || !!windowKnobAt(ev) || !!openingHandleAt(ev))));
 });
 // the nearest window under the pointer (storey fully up only)
 function windowAt(ev) {
@@ -1951,7 +2012,7 @@ function zipFiles(files) {
 const GH_PY_SOURCES = {
 "plan": "\"\"\"H60 - 1 Plan\nThe rooms of Drawing1 as rectangles (the L room cut in two at x = 6.00),\na circle at each centre, as large as the room allows Gap clear of the lines.\nInputs : Gap (m)\nOutputs: Data, PlanLines, Site, Rooms, Circles, WallLines, WallIDs, WallMids\nLocal metres; origin = lower-left corner of the plan.\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nif Gap is None: Gap = 0.10\nW, D = 7.5, 21.0\nPLAN = __PLAN__\nSITE = __SITE__\n# no, room, x0, y0, x1, y1, centre x, centre y, split  (centres as set on the web page)\nPIECES = __PIECES__\n# id, facade (S N W E or \"\"), ax, ay, bx, by\nWALLS = __WALLS__\n\ndef P(x, y, z=0.0):\n    return rg.Point3d(x, y, z)\n\ndef closed(pts):\n    return rg.PolylineCurve([P(x, y) for x, y in list(pts) + [pts[0]]])\n\npieces = []\nfor no, room, x0, y0, x1, y1, cx, cy, split in PIECES:\n    pieces.append(dict(no=no, room=room, x0=x0, y0=y0, x1=x1, y1=y1, cx=cx, cy=cy, split=split))\nwalls = [dict(id=i, face=f, a=(ax, ay), b=(bx, by)) for i, f, ax, ay, bx, by in WALLS]\n\ndef circle_r(p):\n    return max(0.0, min(p[\"cx\"] - p[\"x0\"], p[\"x1\"] - p[\"cx\"], p[\"cy\"] - p[\"y0\"], p[\"y1\"] - p[\"cy\"]) - Gap)\n\nPlanLines = [rg.PolylineCurve([P(x, y) for x, y in l]) for l in PLAN]\nSite = closed(SITE)\nRooms = [closed([(p[\"x0\"], p[\"y0\"]), (p[\"x1\"], p[\"y0\"]), (p[\"x1\"], p[\"y1\"]), (p[\"x0\"], p[\"y1\"])]) for p in pieces]\nCircles = [rg.Circle(P(p[\"cx\"], p[\"cy\"]), max(circle_r(p), 0.001)).ToNurbsCurve() for p in pieces]\nWallLines = [rg.LineCurve(P(w[\"a\"][0], w[\"a\"][1]), P(w[\"b\"][0], w[\"b\"][1])) for w in walls]\nWallIDs = [w[\"id\"] for w in walls]\nWallMids = [P((w[\"a\"][0] + w[\"b\"][0]) / 2.0, (w[\"a\"][1] + w[\"b\"][1]) / 2.0) for w in walls]\nData = H60(dict(W=W, D=D, gap=float(Gap), plan=PLAN, site=SITE, pieces=pieces, walls=walls))\n",
 "flexible": "\"\"\"H60 - 2 Flexible\nEach circle grows into a superellipse held by its room frame and centre:\nfour half-axes = distance from the centre to each side, less Gap.\nInputs : Data, n (2 = ellipse), Seed (0 = centres from the web page,\n         any other value = random centres inside each room)\nOutputs: Data, Shapes, Centres\"\"\"\nimport Rhino.Geometry as rg\nimport math, random\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif n is None: n = 4.0\nif Seed is None: Seed = 0\nKEEP = 0.15\ngap = d0[\"gap\"]\npieces = [dict(p) for p in d0[\"pieces\"]]\nif int(Seed) != 0:\n    rnd = random.Random(int(Seed))\n    for p in pieces:\n        p[\"cx\"] = p[\"x0\"] + KEEP + (p[\"x1\"] - p[\"x0\"] - 2 * KEEP) * rnd.random()\n        p[\"cy\"] = p[\"y0\"] + KEEP + (p[\"y1\"] - p[\"y0\"] - 2 * KEEP) * rnd.random()\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, ex, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        x = p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l)\n        y = p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)\n        pts.append((x, y))\n    return pts\n\nShapes = []\nfor p in pieces:\n    pts = shape_pts(p, n)\n    Shapes.append(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in pts + [pts[0]]]))\nCentres = [rg.Point3d(p[\"cx\"], p[\"cy\"], 0) for p in pieces]\nd = dict(d0)\nd[\"pieces\"] = pieces\nd[\"n\"] = float(n)\nData = H60(d)\n",
-"levels": "\"\"\"H60 - 3 Levels & roof\nGround +/-0.00, ground floor FF on a solid base, second floor Storey above it,\na gable roof over the house: ridge RidgeH above FF on the centre line, down\nto the storey base at the long walls, RoofT thick (built up along the normal),\neaves EaveSlope out along the slope at the sides and GableEave at the ends.\nRoof openings: over the pieces listed in Openings (e.g. a Panel \"2, 4, 10\";\nunwired = the page's choice) the roof is cut through normal to its slope, and\na glass sits on a curb 0.10 above the roof top. Each opening is a straight-\nedged pentagon with the shape set on the page (a new one takes the default,\nfitted inside its curve ceiling): a rectangle with a bow up the slope whose\nedges fall DRAIN_DEG or more, so the water is shed. Over the court (13, 14)\nan opening can be left open: a floor drain on the court floor.\nInputs : Data, FF, Storey, RidgeH, RoofT, EaveSlope, GableEave, Slab, Openings\nThe entrance stair at E11 rises from the ground to FF in six risers, the\nsecond step's nosing on the wall line. The court behind E15 is sunk four\nrisers to CF; the bay by the I28 door stays up as a landing, and from the I27\nline three steps, 0.50 deep, run down into the court toward E15. The base and slab are notched for both.\nOutputs: Data, Site, Base, SlabBrep, Stair (both, and the court floor), Roof (closed Brep), Skylights, Curbs, Drains, Levels\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif FF is None: FF = 1.0\nif Storey is None: Storey = 2.4\nif RidgeH is None: RidgeH = 6.0\nif RoofT is None: RoofT = 0.3\nif EaveSlope is None: EaveSlope = 1.2\nif GableEave is None: GableEave = 1.0\nif Slab is None: Slab = 0.15\nW, D = d0[\"W\"], d0[\"D\"]\nL2 = FF + Storey\nRIDGE = FF + RidgeH\nRX = W / 2.0\nSLOPE = (RIDGE - L2) / RX\nCOS = 1.0 / math.hypot(1.0, SLOPE)\nEAVE = EaveSlope * COS\nroof = lambda x: RIDGE - SLOPE * abs(x - RX)\nZ_EAVE = roof(-EAVE)\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef quad(t, a, b, c, d):\n    t.append((a, b, c)); t.append((a, c, d))\n\ndef box(x0, x1, y0, y1, z0, z1):\n    return rg.Box(rg.BoundingBox(rg.Point3d(x0, y0, z0), rg.Point3d(x1, y1, z1))).ToBrep()\n\nsite = d0[\"site\"]\nSite = mesh([((site[0][0], site[0][1], 0), (site[i][0], site[i][1], 0), (site[i + 1][0], site[i + 1][1], 0)) for i in range(1, len(site) - 1)])\n# the entrance stair at E11, the sunk court with its stair from the I28\n# door, and the notches they make in the base and slab\nRISERS, TREAD, GF_T, COURT_RISERS, COURT_TREAD = 6, 0.28, 0.10, 4, 0.50\nHT = GF_T / 2\nrise = FF / RISERS\nCF = FF - COURT_RISERS * rise\nwall = dict((w[\"id\"], w) for w in d0[\"walls\"])\ne11 = wall[\"E11\"]\nsy0, sy1 = min(e11[\"a\"][1], e11[\"b\"][1]) + HT, max(e11[\"a\"][1], e11[\"b\"][1]) - HT\nnose = lambda k: (k - 2) * TREAD\nback = nose(RISERS)  # the floor starts where step 6 would\n\ndef solid(curve, v):\n    \"\"\"a closed planar polyline swept along v, capped\"\"\"\n    b = rg.Surface.CreateExtrusion(curve, v).ToBrep()\n    return b.CapPlanarHoles(0.001) or b\n\n# the court's walls stand on the house side of their lines, so the sunk floor\n# runs to the lines; the stair's south side meets I24's face\nyS, x27, yN = wall[\"I21\"][\"a\"][1], wall[\"I27\"][\"a\"][0], wall[\"I29\"][\"a\"][1]\nyB = wall[\"I24\"][\"a\"][1] + HT\ncourt = [(0, yS), (x27, yS), (x27, yN), (0, yN)]\noutline = [(0, 0), (W, 0), (W, D), (0, D)] + court[::-1] + [(0, sy1), (back, sy1), (back, sy0), (0, sy0), (0, 0)]\nBase = solid(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in outline]), rg.Vector3d(0, 0, FF - Slab))\nSlabBrep = solid(rg.PolylineCurve([rg.Point3d(x, y, FF - Slab) for x, y in outline]), rg.Vector3d(0, 0, Slab))\nprof = [(nose(1), 0.0)]\nfor k in range(1, RISERS):\n    prof += [(nose(k), k * rise), (nose(k + 1), k * rise)]\nprof += [(back, 0.0), (nose(1), 0.0)]\nStair = [solid(rg.PolylineCurve([rg.Point3d(x, sy0, z) for x, z in prof]), rg.Vector3d(0, sy1 - sy0, 0))]\n# the court stair: from the I27 line three steps down toward E15\nfoot = x27 - (COURT_RISERS - 1) * COURT_TREAD\nprof = [(foot, CF)]\nfor k in range(1, COURT_RISERS):\n    prof += [(foot + (k - 1) * COURT_TREAD, CF + k * rise), (foot + k * COURT_TREAD, CF + k * rise)]\nprof += [(x27, CF), (foot, CF)]\nStair.append(solid(rg.PolylineCurve([rg.Point3d(x, yB, z) for x, z in prof]), rg.Vector3d(0, yN - yB, 0)))\nStair.append(solid(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in court + [court[0]]]), rg.Vector3d(0, 0, CF)))\n\n# ---- roof openings\n# piece -> (dx, dy, tip up the slope, down the slope, side south, side north, shoulder, glass)\nPAGE_OPEN = __OPENINGS__\nCOURTS = [13, 14]\nDRAIN_DEG = 30.0\nTAN_BOW = math.tan(math.radians(90.0 - DRAIN_DEG))\nCURB = 0.10\nSIN = SLOPE * COS\nTOL = 0.001\nY0, Y1 = -GableEave, D + GableEave\n\ndef parse_open(v):\n    if v is None: return list(PAGE_OPEN.keys())\n    if isinstance(v, (int, float)): return [int(v)]\n    if isinstance(v, str): return [int(t) for t in v.replace(\",\", \" \").split()]\n    return [int(t) for t in v]\n\nOPEN = sorted(set(parse_open(Openings)))\ngap, ex = d0[\"gap\"], d0[\"n\"]\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        pts.append((p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l),\n                    p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)))\n    return pts\n\ndef opening_of(p):\n    if p[\"no\"] in PAGE_OPEN: return PAGE_OPEN[p[\"no\"]]\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    e = 1 if p[\"cx\"] < RX else -1\n    return (0.0, 0.0, 0.6 * (r if e > 0 else l), 0.6 * (l if e > 0 else r),\n            0.6 * (p[\"cy\"] - p[\"y0\"] - gap), 0.6 * (p[\"y1\"] - p[\"cy\"] - gap), 0.0, True)\n\ndef opening_pts(p, o=None):\n    \"\"\"the opening's five corners: a rectangle down the slope and to the\n    sides, a bow from the shoulder to the tip up the slope; the tip at least\n    long enough that the bow's edges fall DRAIN_DEG or more\"\"\"\n    dx, dy, up, dn, bs, bn, sh, glass = o or opening_of(p)\n    cx, cy = p[\"cx\"] + dx, p[\"cy\"] + dy\n    e = 1 if cx < RX else -1\n    sh = max(-dn, sh)\n    up = max(up, sh + max(bs, bn) / TAN_BOW)\n    P = lambda u, w: (cx + e * u, cy + w)\n    return [P(-dn, -bs), P(sh, -bs), P(up, 0.0), P(sh, bn), P(-dn, bn)]\n\ndef inside(q, poly):\n    c = False\n    j = len(poly) - 1\n    for i in range(len(poly)):\n        a, b = poly[i], poly[j]\n        if (a[1] > q[1]) != (b[1] > q[1]) and q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]: c = not c\n        j = i\n    return c\n\ndef fitted(p):\n    \"\"\"the opening shrunk about its centre until it lies inside its curve\n    ceiling (the page keeps its own inside already)\"\"\"\n    dx, dy, up, dn, bs, bn, sh, glass = opening_of(p)\n    shaft = shape_pts(p)\n    ok = lambda t: all(inside(q, shaft) for q in opening_pts(p, (dx, dy, up * t, dn * t, bs * t, bn * t, sh * t, glass)))\n    if ok(1.0): return (dx, dy, up, dn, bs, bn, sh, glass)\n    lo, hi = 0.0, 1.0\n    for i in range(24):\n        t = (lo + hi) / 2\n        if ok(t): lo = t\n        else: hi = t\n    return (dx, dy, up * lo, dn * lo, bs * lo, bn * lo, sh * lo, glass)\n\ndef with_ridge(pts0):\n    \"\"\"the outline with a point on the ridge line wherever it crosses it\"\"\"\n    pts = [(RX + 1e-6 if abs(x - RX) < 1e-7 else x, y, False) for x, y in pts0]\n    out = []\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        if (a[0] - RX) * (b[0] - RX) < 0:\n            out.append((RX, a[1] + (RX - a[0]) / (b[0] - a[0]) * (b[1] - a[1]), True))\n    return out\n\ndef roof_z(x, h):\n    \"\"\"h: along the roof normal, from the underside\"\"\"\n    return RIDGE + h / COS - SLOPE * abs(x - RX)\n\ndef side(q):\n    return -1 if q[0] < RX else 1\n\ndef lift(q, s, h):\n    return rg.Point3d(q[0] + s * h * SIN, q[1], roof_z(q[0], 0) + h * COS)\n\ndef ridge_pt(q, h):\n    return rg.Point3d(RX, q[1], roof_z(RX, h))\n\ndef runs(ring):\n    \"\"\"(side, points, closed): the ring whole, or its stretch on each roof\n    plane from ridge point to ridge point\"\"\"\n    ons = [i for i, q in enumerate(ring) if q[2]]\n    if not ons: return [(side(ring[0]), ring, True)]\n    n, out = len(ring), []\n    for k in range(len(ons)):\n        i0, i1 = ons[k], ons[(k + 1) % len(ons)]\n        seg, j = [ring[i0]], (i0 + 1) % n\n        while j != i1:\n            seg.append(ring[j]); j = (j + 1) % n\n        seg.append(ring[i1])\n        out.append((side(seg[1]), seg, False))\n    return out\n\ndef dedupe(pts):\n    out = []\n    for q in pts:\n        if not out or q.DistanceTo(out[-1]) > 1e-9: out.append(q)\n    if len(out) > 1 and out[0].DistanceTo(out[-1]) < 1e-9: out.pop()\n    return out\n\ndef face(pts):\n    pts = dedupe(pts)\n    if len(pts) == 3: return rg.Brep.CreateFromCornerPoints(pts[0], pts[1], pts[2], TOL)\n    if len(pts) == 4: return rg.Brep.CreateFromCornerPoints(pts[0], pts[1], pts[2], pts[3], TOL)\n    return None\n\ndef band(ring, h1, h2):\n    \"\"\"the sides of an opening between two levels: a ruled surface per\n    stretch, and over the ridge the wedge between the two planes' cuts\"\"\"\n    out = []\n    for s, seg, closed in runs(ring):\n        a = [lift(q, s, h1) for q in seg]; b = [lift(q, s, h2) for q in seg]\n        if closed: a.append(a[0]); b.append(b[0])\n        srf = rg.NurbsSurface.CreateRuledSurface(rg.PolylineCurve(a), rg.PolylineCurve(b))\n        if srf: out.append(srf.ToBrep())\n    for q in ring:\n        if not q[2]: continue\n        for s in (-1, 1):\n            out.append(face([lift(q, s, h1), ridge_pt(q, h1), ridge_pt(q, h2), lift(q, s, h2)]))\n    return [b for b in out if b is not None]\n\ndef outline(seg, s, h):\n    \"\"\"a stretch at level h closed along the ridge\"\"\"\n    return dedupe([ridge_pt(seg[0], h)] + [lift(q, s, h) for q in seg] + [ridge_pt(seg[-1], h)])\n\ndef roof_face(s, h, rings):\n    \"\"\"one roof plane at level h (0 underside, RoofT top): an opening on the\n    ridge notches the ridge edge, one off it is a hole\"\"\"\n    xe = (-EAVE if s < 0 else W + EAVE) + s * h * SIN\n    holes, notches = [], []\n    for ring in rings:\n        for rs, seg, closed in runs(ring):\n            if rs != s: continue\n            if closed:\n                pts = [lift(q, s, h) for q in seg]\n                holes.append(rg.PolylineCurve(pts + [pts[0]]))\n                continue\n            pts = outline(seg, s, h)\n            if (pts[0].Y > pts[-1].Y) == (s < 0): pts.reverse()\n            notches.append(pts)\n    # counter-clockwise: the left face runs up the ridge, the right face down it\n    notches.sort(key=lambda n: n[0].Y, reverse=(s > 0))\n    P = lambda x, y: rg.Point3d(x, y, roof_z(x, h))\n    if s < 0: outer = [P(xe, Y0), P(RX, Y0)] + sum(notches, []) + [P(RX, Y1), P(xe, Y1)]\n    else: outer = [P(RX, Y0), P(xe, Y0), P(xe, Y1), P(RX, Y1)] + sum(notches, [])\n    return list(rg.Brep.CreatePlanarBreps([rg.PolylineCurve(outer + [outer[0]])] + holes, TOL) or [])\n\nopened = [p for p in d0[\"pieces\"] if p[\"no\"] in OPEN]\nrings = [with_ridge(opening_pts(p, fitted(p))) for p in opened]\n\n# the roof as one closed solid: the gable section (both eaves under, ridge\n# under, both eaves on top, ridge on top) run from gable eave to gable eave,\n# built face by face and joined; the four slopes are cut by the openings\ndz, dx = RoofT * COS, RoofT * SLOPE * COS\nsec = [(-EAVE, Z_EAVE), (RX, RIDGE), (W + EAVE, Z_EAVE), (W + EAVE + dx, Z_EAVE + dz), (RX, RIDGE + RoofT / COS), (-EAVE - dx, Z_EAVE + dz)]\nat = lambda q, y: rg.Point3d(q[0], y, q[1])\nparts = []\nfor i in (2, 5):\n    a, b = sec[i], sec[(i + 1) % len(sec)]\n    # the eave ends\n    parts.append(rg.Brep.CreateFromCornerPoints(at(a, Y0), at(b, Y0), at(b, Y1), at(a, Y1), TOL))\nfor s in (-1, 1):\n    for h in (0.0, RoofT):\n        parts.extend(roof_face(s, h, rings))\nfor ring in rings:\n    parts.extend(band(ring, 0.0, RoofT))\nfor y in (Y0, Y1):\n    cap = rg.PolylineCurve([at(q, y) for q in sec + [sec[0]]])\n    parts.extend(rg.Brep.CreatePlanarBreps(cap, TOL))\njoined = rg.Brep.JoinBreps([p for p in parts if p is not None], TOL)\nRoof = joined[0] if joined is not None and len(joined) == 1 else list(joined or parts)\nprint(\"roof: %d faces joined into %s\" % (len(parts), \"one closed solid\" if not isinstance(Roof, list) and Roof.IsSolid else \"%d pieces\" % len(Roof if isinstance(Roof, list) else [Roof])))\n\n# skylights: a curb from the roof top up CURB, the glass on it\nSkylights, Curbs, Drains = [], [], []\nfor p, ring in zip(opened, rings):\n    dx, dy = opening_of(p)[:2]\n    if not opening_of(p)[7] and p[\"no\"] in COURTS:\n        # open to the sky: a floor drain on the court floor under its centre\n        # (over the stair bay, at the stair's foot)\n        if p[\"no\"] == 14:\n            cx, cy = foot - 0.25, (yB + yN) / 2\n        else:\n            cx = min(p[\"x1\"] - 0.2, max(p[\"x0\"] + 0.2, p[\"cx\"] + dx))\n            cy = min(p[\"y1\"] - 0.2, max(p[\"y0\"] + 0.2, p[\"cy\"] + dy))\n        dr = [rg.Point3d(cx + 0.075 * math.cos(i * math.pi / 12), cy + 0.075 * math.sin(i * math.pi / 12), CF) for i in range(24)]\n        Drains.extend(rg.Brep.CreatePlanarBreps(rg.PolylineCurve(dr + [dr[0]]), TOL) or [])\n        cb = band(ring, RoofT, RoofT + CURB)\n        Curbs.extend(rg.Brep.JoinBreps(cb, TOL) or cb)\n        continue\n    rr = runs(ring)\n    if rr[0][2]:\n        pts = [lift(q, rr[0][0], RoofT + CURB) for q in ring]\n        glass = list(rg.Brep.CreatePlanarBreps(rg.PolylineCurve(pts + [pts[0]]), TOL) or [])\n    else:\n        glass = []\n        for s, seg, closed in rr:\n            pts = outline(seg, s, RoofT + CURB)\n            glass.extend(rg.Brep.CreatePlanarBreps(rg.PolylineCurve(pts + [pts[0]]), TOL) or [])\n    Skylights.extend(rg.Brep.JoinBreps(glass, TOL) or glass)\n    cb = band(ring, RoofT, RoofT + CURB)\n    Curbs.extend(rg.Brep.JoinBreps(cb, TOL) or cb)\nprint(\"roof openings: %s\" % (\", \".join(str(n) for n in OPEN) or \"none\"))\nLevels = [0.0, FF, L2, RIDGE, RIDGE + RoofT / COS, Z_EAVE]\nd = dict(d0)\nd.update(FF=FF, L2=L2, RIDGE=RIDGE, RX=RX, SLOPE=SLOPE, COS=COS, SLAB=Slab, ROOF_T=RoofT, OPEN=OPEN, CF=CF,\n         OPEN_PTS=dict((p[\"no\"], opening_pts(p, fitted(p))) for p in opened))\nData = H60(d)\n",
+"levels": "\"\"\"H60 - 3 Levels & roof\nGround +/-0.00, ground floor FF on a solid base, second floor Storey above it,\na gable roof over the house: ridge RidgeH above FF on the centre line, down\nto the storey base at the long walls, RoofT thick (built up along the normal),\neaves EaveSlope out along the slope at the sides and GableEave at the ends.\nRoof openings: over the pieces listed in Openings (e.g. a Panel \"2, 4, 10\";\nunwired = the page's choice) the roof is cut through normal to its slope, and\na glass sits on a curb 0.10 above the roof top. Each opening is a straight-\nedged pentagon with the shape set on the page (a new one takes the default,\nfitted inside its curve ceiling): a rectangle with a bow up the slope whose\nedges fall DRAIN_DEG or more, so the water is shed. Over the court (13, 14)\nan opening can be left open: a floor drain on the court floor.\nInputs : Data, FF, Storey, RidgeH, RoofT, EaveSlope, GableEave, Slab, Openings\nThe entrance stair at E11 rises from the ground to FF in six risers, the\nsecond step's nosing on the wall line. The court behind E15 is sunk four\nrisers to CF; the bay by the I28 door stays up as a landing, and from the I27\nline three steps, 0.50 deep, run down into the court toward E15. The base and slab are notched for both.\nOutputs: Data, Site, Base, SlabBrep, Stair (both, and the court floor), Roof (closed Brep), Skylights, Curbs, Drains, Levels\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif FF is None: FF = 1.0\nif Storey is None: Storey = 2.4\nif RidgeH is None: RidgeH = 6.0\nif RoofT is None: RoofT = 0.3\nif EaveSlope is None: EaveSlope = 1.2\nif GableEave is None: GableEave = 1.0\nif Slab is None: Slab = 0.15\nW, D = d0[\"W\"], d0[\"D\"]\nL2 = FF + Storey\nRIDGE = FF + RidgeH\nRX = W / 2.0\nSLOPE = (RIDGE - L2) / RX\nCOS = 1.0 / math.hypot(1.0, SLOPE)\nEAVE = EaveSlope * COS\nroof = lambda x: RIDGE - SLOPE * abs(x - RX)\nZ_EAVE = roof(-EAVE)\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef quad(t, a, b, c, d):\n    t.append((a, b, c)); t.append((a, c, d))\n\ndef box(x0, x1, y0, y1, z0, z1):\n    return rg.Box(rg.BoundingBox(rg.Point3d(x0, y0, z0), rg.Point3d(x1, y1, z1))).ToBrep()\n\nsite = d0[\"site\"]\nSite = mesh([((site[0][0], site[0][1], 0), (site[i][0], site[i][1], 0), (site[i + 1][0], site[i + 1][1], 0)) for i in range(1, len(site) - 1)])\n# the entrance stair at E11, the sunk court with its stair from the I28\n# door, and the notches they make in the base and slab\nRISERS, TREAD, GF_T, COURT_RISERS, COURT_TREAD = 6, 0.28, 0.10, 4, 0.50\nHT = GF_T / 2\nrise = FF / RISERS\nCF = FF - COURT_RISERS * rise\nwall = dict((w[\"id\"], w) for w in d0[\"walls\"])\ne11 = wall[\"E11\"]\nsy0, sy1 = min(e11[\"a\"][1], e11[\"b\"][1]) + HT, max(e11[\"a\"][1], e11[\"b\"][1]) - HT\nnose = lambda k: (k - 2) * TREAD\nback = nose(RISERS)  # the floor starts where step 6 would\n\ndef solid(curve, v):\n    \"\"\"a closed planar polyline swept along v, capped\"\"\"\n    b = rg.Surface.CreateExtrusion(curve, v).ToBrep()\n    return b.CapPlanarHoles(0.001) or b\n\n# the court's walls stand on the house side of their lines, so the sunk floor\n# runs to the lines; the stair's south side meets I24's face\nyS, x27, yN = wall[\"I21\"][\"a\"][1], wall[\"I27\"][\"a\"][0], wall[\"I29\"][\"a\"][1]\nyB = wall[\"I24\"][\"a\"][1] + HT\ncourt = [(0, yS), (x27, yS), (x27, yN), (0, yN)]\noutline = [(0, 0), (W, 0), (W, D), (0, D)] + court[::-1] + [(0, sy1), (back, sy1), (back, sy0), (0, sy0), (0, 0)]\nBase = solid(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in outline]), rg.Vector3d(0, 0, FF - Slab))\nSlabBrep = solid(rg.PolylineCurve([rg.Point3d(x, y, FF - Slab) for x, y in outline]), rg.Vector3d(0, 0, Slab))\nprof = [(nose(1), 0.0)]\nfor k in range(1, RISERS):\n    prof += [(nose(k), k * rise), (nose(k + 1), k * rise)]\nprof += [(back, 0.0), (nose(1), 0.0)]\nStair = [solid(rg.PolylineCurve([rg.Point3d(x, sy0, z) for x, z in prof]), rg.Vector3d(0, sy1 - sy0, 0))]\n# the court stair: from the I27 line three steps down toward E15\nfoot = x27 - (COURT_RISERS - 1) * COURT_TREAD\nprof = [(foot, CF)]\nfor k in range(1, COURT_RISERS):\n    prof += [(foot + (k - 1) * COURT_TREAD, CF + k * rise), (foot + k * COURT_TREAD, CF + k * rise)]\nprof += [(x27, CF), (foot, CF)]\nStair.append(solid(rg.PolylineCurve([rg.Point3d(x, yB, z) for x, z in prof]), rg.Vector3d(0, yN - yB, 0)))\nStair.append(solid(rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in court + [court[0]]]), rg.Vector3d(0, 0, CF)))\n\n# ---- roof openings\n# piece -> (dx, dy, tip up the slope, down the slope, side south, side north, shoulder, glass)\nPAGE_OPEN = __OPENINGS__\nCOURTS = [13, 14]\nDRAIN_DEG = 30.0\nTAN_BOW = math.tan(math.radians(90.0 - DRAIN_DEG))\nCURB = 0.10\nSIN = SLOPE * COS\nTOL = 0.001\nY0, Y1 = -GableEave, D + GableEave\n\ndef parse_open(v):\n    if v is None: return list(PAGE_OPEN.keys())\n    if isinstance(v, (int, float)): return [int(v)]\n    if isinstance(v, str): return [int(t) for t in v.replace(\",\", \" \").split()]\n    return [int(t) for t in v]\n\nOPEN = sorted(set(parse_open(Openings)))\ngap, ex = d0[\"gap\"], d0[\"n\"]\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        pts.append((p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l),\n                    p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)))\n    return pts\n\ndef opening_of(p):\n    if p[\"no\"] in PAGE_OPEN: return PAGE_OPEN[p[\"no\"]]\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    e = 1 if p[\"cx\"] < RX else -1\n    return (0.0, 0.0, 0.6 * (r if e > 0 else l), 0.6 * (l if e > 0 else r),\n            0.6 * (p[\"cy\"] - p[\"y0\"] - gap), 0.6 * (p[\"y1\"] - p[\"cy\"] - gap), 0.0, True)\n\ndef opening_pts(p, o=None):\n    \"\"\"the opening's five corners: a rectangle down the slope and to the\n    sides, a bow from the shoulder to the tip up the slope; the tip at least\n    long enough that the bow's edges fall DRAIN_DEG or more\"\"\"\n    dx, dy, up, dn, bs, bn, sh, glass = o or opening_of(p)\n    cx, cy = p[\"cx\"] + dx, p[\"cy\"] + dy\n    e = 1 if cx < RX else -1\n    sh = max(-dn, sh)\n    up = max(up, sh + max(bs, bn) / TAN_BOW)\n    P = lambda u, w: (cx + e * u, cy + w)\n    return [P(-dn, -bs), P(sh, -bs), P(up, 0.0), P(sh, bn), P(-dn, bn)]\n\ndef inside(q, poly):\n    c = False\n    j = len(poly) - 1\n    for i in range(len(poly)):\n        a, b = poly[i], poly[j]\n        if (a[1] > q[1]) != (b[1] > q[1]) and q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]: c = not c\n        j = i\n    return c\n\ndef fitted(p):\n    \"\"\"the opening shrunk about its centre until it lies inside its curve\n    ceiling (the page keeps its own inside already)\"\"\"\n    if p[\"no\"] in PAGE_OPEN: return PAGE_OPEN[p[\"no\"]]   # the page's own, fitted to its bound\n    dx, dy, up, dn, bs, bn, sh, glass = opening_of(p)\n    shaft = shape_pts(p)\n    ok = lambda t: all(inside(q, shaft) for q in opening_pts(p, (dx, dy, up * t, dn * t, bs * t, bn * t, sh * t, glass)))\n    if ok(1.0): return (dx, dy, up, dn, bs, bn, sh, glass)\n    lo, hi = 0.0, 1.0\n    for i in range(24):\n        t = (lo + hi) / 2\n        if ok(t): lo = t\n        else: hi = t\n    return (dx, dy, up * lo, dn * lo, bs * lo, bn * lo, sh * lo, glass)\n\ndef with_ridge(pts0):\n    \"\"\"the outline with a point on the ridge line wherever it crosses it\"\"\"\n    pts = [(RX + 1e-6 if abs(x - RX) < 1e-7 else x, y, False) for x, y in pts0]\n    out = []\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        if (a[0] - RX) * (b[0] - RX) < 0:\n            out.append((RX, a[1] + (RX - a[0]) / (b[0] - a[0]) * (b[1] - a[1]), True))\n    return out\n\ndef roof_z(x, h):\n    \"\"\"h: along the roof normal, from the underside\"\"\"\n    return RIDGE + h / COS - SLOPE * abs(x - RX)\n\ndef side(q):\n    return -1 if q[0] < RX else 1\n\ndef lift(q, s, h):\n    return rg.Point3d(q[0] + s * h * SIN, q[1], roof_z(q[0], 0) + h * COS)\n\ndef ridge_pt(q, h):\n    return rg.Point3d(RX, q[1], roof_z(RX, h))\n\ndef runs(ring):\n    \"\"\"(side, points, closed): the ring whole, or its stretch on each roof\n    plane from ridge point to ridge point\"\"\"\n    ons = [i for i, q in enumerate(ring) if q[2]]\n    if not ons: return [(side(ring[0]), ring, True)]\n    n, out = len(ring), []\n    for k in range(len(ons)):\n        i0, i1 = ons[k], ons[(k + 1) % len(ons)]\n        seg, j = [ring[i0]], (i0 + 1) % n\n        while j != i1:\n            seg.append(ring[j]); j = (j + 1) % n\n        seg.append(ring[i1])\n        out.append((side(seg[1]), seg, False))\n    return out\n\ndef dedupe(pts):\n    out = []\n    for q in pts:\n        if not out or q.DistanceTo(out[-1]) > 1e-9: out.append(q)\n    if len(out) > 1 and out[0].DistanceTo(out[-1]) < 1e-9: out.pop()\n    return out\n\ndef face(pts):\n    pts = dedupe(pts)\n    if len(pts) == 3: return rg.Brep.CreateFromCornerPoints(pts[0], pts[1], pts[2], TOL)\n    if len(pts) == 4: return rg.Brep.CreateFromCornerPoints(pts[0], pts[1], pts[2], pts[3], TOL)\n    return None\n\ndef band(ring, h1, h2):\n    \"\"\"the sides of an opening between two levels: a ruled surface per\n    stretch, and over the ridge the wedge between the two planes' cuts\"\"\"\n    out = []\n    for s, seg, closed in runs(ring):\n        a = [lift(q, s, h1) for q in seg]; b = [lift(q, s, h2) for q in seg]\n        if closed: a.append(a[0]); b.append(b[0])\n        srf = rg.NurbsSurface.CreateRuledSurface(rg.PolylineCurve(a), rg.PolylineCurve(b))\n        if srf: out.append(srf.ToBrep())\n    for q in ring:\n        if not q[2]: continue\n        for s in (-1, 1):\n            out.append(face([lift(q, s, h1), ridge_pt(q, h1), ridge_pt(q, h2), lift(q, s, h2)]))\n    return [b for b in out if b is not None]\n\ndef outline(seg, s, h):\n    \"\"\"a stretch at level h closed along the ridge\"\"\"\n    return dedupe([ridge_pt(seg[0], h)] + [lift(q, s, h) for q in seg] + [ridge_pt(seg[-1], h)])\n\ndef roof_face(s, h, rings):\n    \"\"\"one roof plane at level h (0 underside, RoofT top): an opening on the\n    ridge notches the ridge edge, one off it is a hole\"\"\"\n    xe = (-EAVE if s < 0 else W + EAVE) + s * h * SIN\n    holes, notches = [], []\n    for ring in rings:\n        for rs, seg, closed in runs(ring):\n            if rs != s: continue\n            if closed:\n                pts = [lift(q, s, h) for q in seg]\n                holes.append(rg.PolylineCurve(pts + [pts[0]]))\n                continue\n            pts = outline(seg, s, h)\n            if (pts[0].Y > pts[-1].Y) == (s < 0): pts.reverse()\n            notches.append(pts)\n    # counter-clockwise: the left face runs up the ridge, the right face down it\n    notches.sort(key=lambda n: n[0].Y, reverse=(s > 0))\n    P = lambda x, y: rg.Point3d(x, y, roof_z(x, h))\n    if s < 0: outer = [P(xe, Y0), P(RX, Y0)] + sum(notches, []) + [P(RX, Y1), P(xe, Y1)]\n    else: outer = [P(RX, Y0), P(xe, Y0), P(xe, Y1), P(RX, Y1)] + sum(notches, [])\n    return list(rg.Brep.CreatePlanarBreps([rg.PolylineCurve(outer + [outer[0]])] + holes, TOL) or [])\n\nopened = [p for p in d0[\"pieces\"] if p[\"no\"] in OPEN]\nrings = [with_ridge(opening_pts(p, fitted(p))) for p in opened]\n\n# the roof as one closed solid: the gable section (both eaves under, ridge\n# under, both eaves on top, ridge on top) run from gable eave to gable eave,\n# built face by face and joined; the four slopes are cut by the openings\ndz, dx = RoofT * COS, RoofT * SLOPE * COS\nsec = [(-EAVE, Z_EAVE), (RX, RIDGE), (W + EAVE, Z_EAVE), (W + EAVE + dx, Z_EAVE + dz), (RX, RIDGE + RoofT / COS), (-EAVE - dx, Z_EAVE + dz)]\nat = lambda q, y: rg.Point3d(q[0], y, q[1])\nparts = []\nfor i in (2, 5):\n    a, b = sec[i], sec[(i + 1) % len(sec)]\n    # the eave ends\n    parts.append(rg.Brep.CreateFromCornerPoints(at(a, Y0), at(b, Y0), at(b, Y1), at(a, Y1), TOL))\nfor s in (-1, 1):\n    for h in (0.0, RoofT):\n        parts.extend(roof_face(s, h, rings))\nfor ring in rings:\n    parts.extend(band(ring, 0.0, RoofT))\nfor y in (Y0, Y1):\n    cap = rg.PolylineCurve([at(q, y) for q in sec + [sec[0]]])\n    parts.extend(rg.Brep.CreatePlanarBreps(cap, TOL))\njoined = rg.Brep.JoinBreps([p for p in parts if p is not None], TOL)\nRoof = joined[0] if joined is not None and len(joined) == 1 else list(joined or parts)\nprint(\"roof: %d faces joined into %s\" % (len(parts), \"one closed solid\" if not isinstance(Roof, list) and Roof.IsSolid else \"%d pieces\" % len(Roof if isinstance(Roof, list) else [Roof])))\n\n# skylights: a curb from the roof top up CURB, the glass on it\nSkylights, Curbs, Drains = [], [], []\nfor p, ring in zip(opened, rings):\n    dx, dy = opening_of(p)[:2]\n    if not opening_of(p)[7] and p[\"no\"] in COURTS:\n        # open to the sky: a floor drain on the court floor under its centre\n        # (over the stair bay, at the stair's foot)\n        if p[\"no\"] == 14:\n            cx, cy = foot - 0.25, (yB + yN) / 2\n        else:\n            cx = min(p[\"x1\"] - 0.2, max(p[\"x0\"] + 0.2, p[\"cx\"] + dx))\n            cy = min(p[\"y1\"] - 0.2, max(p[\"y0\"] + 0.2, p[\"cy\"] + dy))\n        dr = [rg.Point3d(cx + 0.075 * math.cos(i * math.pi / 12), cy + 0.075 * math.sin(i * math.pi / 12), CF) for i in range(24)]\n        Drains.extend(rg.Brep.CreatePlanarBreps(rg.PolylineCurve(dr + [dr[0]]), TOL) or [])\n        cb = band(ring, RoofT, RoofT + CURB)\n        Curbs.extend(rg.Brep.JoinBreps(cb, TOL) or cb)\n        continue\n    rr = runs(ring)\n    if rr[0][2]:\n        pts = [lift(q, rr[0][0], RoofT + CURB) for q in ring]\n        glass = list(rg.Brep.CreatePlanarBreps(rg.PolylineCurve(pts + [pts[0]]), TOL) or [])\n    else:\n        glass = []\n        for s, seg, closed in rr:\n            pts = outline(seg, s, RoofT + CURB)\n            glass.extend(rg.Brep.CreatePlanarBreps(rg.PolylineCurve(pts + [pts[0]]), TOL) or [])\n    Skylights.extend(rg.Brep.JoinBreps(glass, TOL) or glass)\n    cb = band(ring, RoofT, RoofT + CURB)\n    Curbs.extend(rg.Brep.JoinBreps(cb, TOL) or cb)\nprint(\"roof openings: %s\" % (\", \".join(str(n) for n in OPEN) or \"none\"))\nLevels = [0.0, FF, L2, RIDGE, RIDGE + RoofT / COS, Z_EAVE]\nd = dict(d0)\nd.update(FF=FF, L2=L2, RIDGE=RIDGE, RX=RX, SLOPE=SLOPE, COS=COS, SLAB=Slab, ROOF_T=RoofT, OPEN=OPEN, CF=CF,\n         OPEN_PTS=dict((p[\"no\"], opening_pts(p, fitted(p))) for p in opened))\nData = H60(d)\n",
 "curved": "\"\"\"H60 - 4 Curve ceiling\nThe superellipses stand on the storey base and rise to the roof underside,\neach roof plane moved in by its side's offset along its normal; never below\nthe base (where the roof is too low the wall has no height).\nAn opened piece (box 3's Openings) keeps its curve ceiling, offset like the\nothers; its top has the roof opening's outline as a hole, lined up to the roof\nunderside. The court pieces (13, 14) take the ceiling set on the page\n(COURT): their curve ceiling, a flat ceiling at the storey, or open up to the\nroof - then the flat ceiling opens over it and the walls round it rise from\nthe storey to the roof underside in line with the walls below (CourtWalls),\nabove a flat-ceilinged court piece too (I23 runs on along I27 to I29), to keep\nthe rain out.\nInputs : Data, OffL, OffR (m, normal to the roof)\nOutputs: Data, CurveCeilings, Ceiling (flat at the storey, holed by the\n         curve ceilings), CourtWalls, Bases, Tops\"\"\"\nimport Rhino.Geometry as rg\nimport math\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif OffL is None: OffL = 0.0\nif OffR is None: OffR = 0.0\ngap, ex = d0[\"gap\"], d0[\"n\"]\nL2, RIDGE, RX, SLOPE, COS = d0[\"L2\"], d0[\"RIDGE\"], d0[\"RX\"], d0[\"SLOPE\"], d0[\"COS\"]\nDL, DR = OffL / COS, OffR / COS\n\ndef wall_top(x):\n    return max(L2, min(RIDGE - SLOPE * (RX - x) - DL, RIDGE - SLOPE * (x - RX) - DR))\n\ndef breaks():\n    xc = RX + (DL - DR) / (2 * SLOPE)\n    xl = RX - (RIDGE - L2 - DL) / SLOPE\n    xr = RX + (RIDGE - L2 - DR) / SLOPE\n    b = [xc]\n    if xl < xc - 1e-9: b.append(xl)\n    if xr > xc + 1e-9: b.append(xr)\n    return sorted(b)\n\ndef sgn(v):\n    return (v > 0) - (v < 0)\n\ndef shape_pts(p, N=160):\n    l = p[\"cx\"] - p[\"x0\"] - gap; r = p[\"x1\"] - p[\"cx\"] - gap\n    dn = p[\"cy\"] - p[\"y0\"] - gap; u = p[\"y1\"] - p[\"cy\"] - gap\n    pts = []\n    for i in range(N):\n        th = 2.0 * math.pi * i / N\n        c = math.cos(th); s = math.sin(th)\n        pts.append((p[\"cx\"] + sgn(c) * abs(c) ** (2.0 / ex) * (r if c >= 0 else l),\n                    p[\"cy\"] + sgn(s) * abs(s) ** (2.0 / ex) * (u if s >= 0 else dn)))\n    return pts\n\ndef ring_pts(p):\n    pts, out, bs = shape_pts(p), [], breaks()\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        ts = sorted((x - a[0]) / (b[0] - a[0]) for x in bs if (a[0] - x) * (b[0] - x) < 0)\n        for t in ts:\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\ndef clip_side(poly, x0, keep_above):\n    out = []\n    side = (lambda q: q[0] - x0) if keep_above else (lambda q: x0 - q[0])\n    for i in range(len(poly)):\n        a, b = poly[i], poly[(i + 1) % len(poly)]\n        da, db = side(a), side(b)\n        if da >= -1e-12: out.append(a)\n        if (da > 1e-12 and db < -1e-12) or (da < -1e-12 and db > 1e-12):\n            t = da / (da - db)\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\ndef cap_tris(ring):\n    edges = [None] + breaks() + [None]\n    tris = []\n    for k in range(len(edges) - 1):\n        strip = ring\n        if edges[k] is not None: strip = clip_side(strip, edges[k], True)\n        if edges[k + 1] is not None and strip: strip = clip_side(strip, edges[k + 1], False)\n        for i in range(1, len(strip) - 1):\n            tris.append((strip[0], strip[i], strip[i + 1]))\n    return tris\n\ndef area2(a, b, c):\n    ux, uy, uz = b[0] - a[0], b[1] - a[1], b[2] - a[2]\n    vx, vy, vz = c[0] - a[0], c[1] - a[1], c[2] - a[2]\n    return (uy * vz - uz * vy) ** 2 + (uz * vx - ux * vz) ** 2 + (ux * vy - uy * vx) ** 2\n\ndef mesh(tris):\n    m = rg.Mesh()\n    for a, b, c in tris:\n        if area2(a, b, c) < 1e-14: continue\n        i = m.Vertices.Count\n        for q in (a, b, c): m.Vertices.Add(q[0], q[1], q[2])\n        m.Faces.AddFace(i, i + 1, i + 2)\n    m.Normals.ComputeNormals()\n    m.Compact()\n    return m\n\ndef shaft_ring(p):\n    \"\"\"the shape with a point on the ridge line wherever it crosses it\"\"\"\n    pts = [(RX + 1e-6 if abs(x - RX) < 1e-7 else x, y) for x, y in shape_pts(p)]\n    out = []\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        if (a[0] - RX) * (b[0] - RX) < 0:\n            out.append((RX, a[1] + (RX - a[0]) / (b[0] - a[0]) * (b[1] - a[1])))\n    return out\n\nOPEN = d0.get(\"OPEN\", [])\nOPEN_PTS = d0.get(\"OPEN_PTS\", {})\nunder = lambda x: RIDGE - SLOPE * abs(x - RX)\n\ndef cap_hole_mesh(ring, hole):\n    \"\"\"the cap with the opening cut out: strip by strip between the folds\n    (each strip flat), in plan, meshed and lifted onto the strip's plane\"\"\"\n    out = rg.Mesh()\n    H = rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in hole + [hole[0]]])\n    hx0, hx1 = min(q[0] for q in hole), max(q[0] for q in hole)\n    edges = [None] + breaks() + [None]\n    for k in range(len(edges) - 1):\n        strip = ring\n        if edges[k] is not None: strip = clip_side(strip, edges[k], True)\n        if edges[k + 1] is not None and strip: strip = clip_side(strip, edges[k + 1], False)\n        if len(strip) < 3: continue\n        A = rg.PolylineCurve([rg.Point3d(x, y, 0) for x, y in strip + [strip[0]]])\n        lo = edges[k] if edges[k] is not None else -1e9\n        hi = edges[k + 1] if edges[k + 1] is not None else 1e9\n        if hx1 <= lo or hx0 >= hi: curves = [A]                 # the hole is elsewhere\n        elif lo < hx0 and hx1 < hi: curves = [A, H]              # wholly inside: a hole\n        else: curves = list(rg.Curve.CreateBooleanDifference(A, H, 0.0001) or [A])\n        for b in rg.Brep.CreatePlanarBreps(curves, 0.0001) or []:\n            for m in rg.Mesh.CreateFromBrep(b, rg.MeshingParameters.Default) or []:\n                for i in range(m.Vertices.Count):\n                    v = m.Vertices[i]\n                    m.Vertices.SetVertex(i, v.X, v.Y, wall_top(v.X))\n                out.Append(m)\n    return out\n\ndef with_folds(pts):\n    \"\"\"the outline with a point on every fold of the cap and of the roof\"\"\"\n    xs, out = breaks() + [RX], []\n    for i in range(len(pts)):\n        a, b = pts[i], pts[(i + 1) % len(pts)]\n        out.append(a)\n        for t in sorted((x - a[0]) / (b[0] - a[0]) for x in xs if (a[0] - x) * (b[0] - x) < 0):\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\nCOURT = __COURTMODE__\nNO_CEIL = [n for n in (13, 14) if COURT.get(n, \"curve\") != \"curve\"]\nCurveCeilings, Bases, Tops = [], [], []\nfor p in d0[\"pieces\"]:\n    if p[\"no\"] in NO_CEIL: continue\n    is_open = p[\"no\"] in OPEN and p[\"no\"] in OPEN_PTS\n    ring = ring_pts(p)\n    wr, top_z = ring, wall_top\n    bot = [(x, y, L2) for x, y in wr]\n    top = [(x, y, top_z(x)) for x, y in wr]\n    t = []\n    for i in range(len(wr)):\n        j = (i + 1) % len(wr)\n        if top[i][2] - L2 < 1e-6 and top[j][2] - L2 < 1e-6: continue\n        t.append((bot[i], bot[j], top[j])); t.append((bot[i], top[j], top[i]))\n    if not is_open:\n        for a, b, c in cap_tris(ring):\n            t.append(tuple((q[0], q[1], wall_top(q[0])) for q in (a, b, c)))\n    else:\n        # the lining from the cap up to the roof underside, along the opening\n        h = with_folds(OPEN_PTS[p[\"no\"]])\n        for i in range(len(h)):\n            a, b = h[i], h[(i + 1) % len(h)]\n            if under(a[0]) - wall_top(a[0]) < 1e-6 and under(b[0]) - wall_top(b[0]) < 1e-6: continue\n            a0, b0, a1, b1 = (a[0], a[1], wall_top(a[0])), (b[0], b[1], wall_top(b[0])), (a[0], a[1], under(a[0])), (b[0], b[1], under(b[0]))\n            t.append((a0, b0, b1)); t.append((a0, b1, a1))\n    m = mesh(t)\n    if is_open: m.Append(cap_hole_mesh(ring, list(OPEN_PTS[p[\"no\"]])))\n    CurveCeilings.append(m)\n    Bases.append(rg.PolylineCurve([rg.Point3d(x, y, L2) for x, y in ring + [ring[0]]]))\n    Tops.append(rg.PolylineCurve([rg.Point3d(*q) for q in top + [top[0]]]))\n# the court with its curve ceilings gone: open along E15 (a path from the\n# west edge back to it) or a closed hole\nW, D = d0[\"W\"], d0[\"D\"]\nwl = dict((w[\"id\"], w) for w in d0[\"walls\"])\nx27, x28 = wl[\"I27\"][\"a\"][0], wl[\"I28\"][\"a\"][0]\nyS, yN, y24l = wl[\"I21\"][\"a\"][1], wl[\"I29\"][\"a\"][1], wl[\"I24\"][\"a\"][1]\ny24, y30 = y24l + 0.05, wl[\"I30\"][\"a\"][1] - 0.05   # faces of the centred I24 and I30\na_open, b_open = COURT.get(13) == \"open\", COURT.get(14) == \"open\"\n# the open court's edge; flags: a wall rises on the stretch from that point on\nvoid, closed, rises = None, False, []\nif a_open and b_open:\n    void = [(0, yN), (x27, yN), (x27, y30), (x28, y30), (x28, y24), (x27, y24), (x27, yS), (0, yS)]\n    rises = [True] * len(void)\nelif a_open:\n    void = [(0, yN), (x27, yN), (x27, yS), (0, yS)]\n    rises = [True] * len(void)\nelif b_open:\n    void, closed = [(x27, y24), (x28, y24), (x28, y30), (x27, y30)], True\n    rises = [True] * len(void)\n\ndef inside(q, poly):\n    c, j = False, len(poly) - 1\n    for i in range(len(poly)):\n        a, b = poly[i], poly[j]\n        if (a[1] > q[1]) != (b[1] > q[1]) and q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]: c = not c\n        j = i\n    return c\n\ndef clip_x(poly, x0, keep_above):\n    out = []\n    side = (lambda q: q[0] - x0) if keep_above else (lambda q: x0 - q[0])\n    for i in range(len(poly)):\n        a, b = poly[i], poly[(i + 1) % len(poly)]\n        da, db = side(a), side(b)\n        if da >= -1e-12: out.append(a)\n        if (da > 1e-12 and db < -1e-12) or (da < -1e-12 and db > 1e-12):\n            t = da / (da - db)\n            out.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))\n    return out\n\n# the rising walls: each stretch of the void's edge thickened outward by the\n# wall thickness, mitred at the corners, cut at the ridge, from the storey up\n# to the roof underside\nT = 0.10\nunder = lambda x: RIDGE - SLOPE * abs(x - RX)\nCourtWalls = []\nif void:\n    n = len(void)\n    edges = [(i, (i + 1) % n) for i in range(n)] if closed else [(i, i + 1) for i in range(n - 1)]\n    edges = [e for e in edges if rises[e[0]]]\n    def out_n(e):\n        a, b = void[e[0]], void[e[1]]\n        l = math.hypot(b[0] - a[0], b[1] - a[1])\n        nx, ny = (b[1] - a[1]) / l, (a[0] - b[0]) / l\n        m = ((a[0] + b[0]) / 2 + nx * 0.01, (a[1] + b[1]) / 2 + ny * 0.01)\n        return (-nx, -ny) if inside(m, void) else (nx, ny)\n    ns = [out_n(e) for e in edges]\n    off = []\n    for i in range(n):\n        n1 = [ns[k] for k, e in enumerate(edges) if e[1] == i]\n        n2 = [ns[k] for k, e in enumerate(edges) if e[0] == i]\n        if not n1 and not n2: d = (0.0, 0.0)\n        elif n1 and n2 and abs(n1[0][0] - n2[0][0]) + abs(n1[0][1] - n2[0][1]) > 1e-9: d = (n1[0][0] + n2[0][0], n1[0][1] + n2[0][1])\n        else: d = (n1 or n2)[0]\n        off.append((void[i][0] + T * d[0], void[i][1] + T * d[1]))\n    for i, j in edges:\n        t = []\n        for keep in (False, True):\n            c = clip_x([void[i], void[j], off[j], off[i]], RX, keep)\n            if len(c) < 3: continue\n            for k in range(1, len(c) - 1):\n                t.append(tuple((q[0], q[1], L2) for q in (c[0], c[k], c[k + 1])))\n                t.append(tuple((q[0], q[1], under(q[0])) for q in (c[0], c[k], c[k + 1])))\n            for k in range(len(c)):\n                a, b = c[k], c[(k + 1) % len(c)]\n                t.append(((a[0], a[1], L2), (b[0], b[1], L2), (b[0], b[1], under(b[0]))))\n                t.append(((a[0], a[1], L2), (b[0], b[1], under(b[0])), (a[0], a[1], under(a[0]))))\n        CourtWalls.append(mesh(t))\n\n# the flat ceiling at the storey: the house plan with the bases as holes,\n# and the court's void\nP3 = lambda q: rg.Point3d(q[0], q[1], L2)\nring = [(0, 0), (W, 0), (W, D), (0, D)] + (void if void and not closed else [])\nouter = rg.PolylineCurve([P3(q) for q in ring + [ring[0]]])\nholes = list(Bases)\nif void and closed: holes.append(rg.PolylineCurve([P3(q) for q in void + [void[0]]]))\nCeiling = rg.Brep.CreatePlanarBreps([outer] + holes, 0.001)\nCeiling = list(Ceiling) if Ceiling else []\nd = dict(d0)\nd.update(offL=float(OffL), offR=float(OffR))\nData = H60(d)\n",
 "windows": "\"\"\"H60 - 5 Windows (ground floor)\nOne centred window on every outside wall at least 0.90 m long (rule), or the\nwindows as edited on the web page.\nInputs : Data, WidthPct (share of the wall, %), Height, Sill (above FF),\n         UsePage (1 = windows from the web page, 0 = rule), Show (1/0)\nOutputs: Data, Panes, Frames, WindowIDs  (I28 is a glass door, from the floor)\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif WidthPct is None: WidthPct = 50.0\nif Height is None: Height = 1.2\nif Sill is None: Sill = 0.9\nif UsePage is None: UsePage = 1\nif Show is None: Show = 1\nW, D, FF, L2 = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"]\n# key, facade, wall id, from, to (along the wall axis), sill, height\nPAGE = __WINDOWS__\n# walls that are openings get no window (the page has already left them out)\nHIDE = set(__HIDE__)\n# facades: axis, position across it, length (the house sides, plus the court walls)\nFACES = __FACES__\n# where a facade starts along its axis (court walls do not start at 0)\nFACE_LO = __FACELO__\n# walls whose opening is a glass door: from the floor, DOOR_W x DOOR_H\nDOORS = set(__DOORS__)\nDOOR_W, DOOR_H = __DOORW__, __DOORH__\nMIN_WALL, MIN = 0.9, 0.2\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return rg.Point3d(a, at, z) if axis == \"x\" else rg.Point3d(at, a, z)\n\ndef clamp_win(w):\n    L = FACES[w[\"face\"]][2]\n    w[\"a0\"] = max(FACE_LO.get(w[\"face\"], 0.0), min(L - MIN, w[\"a0\"]))\n    w[\"a1\"] = max(w[\"a0\"] + MIN, min(L, w[\"a1\"]))\n    w[\"sill\"] = max(0.0, min(L2 - FF - MIN, w[\"sill\"]))\n    w[\"h\"] = max(MIN, min(L2 - FF - w[\"sill\"], w[\"h\"]))\n    return w\n\nwins = []\nif int(Show):\n    if int(UsePage):\n        for key, f, wall, a0, a1, sill, h in PAGE:\n            wins.append(clamp_win(dict(key=key, face=f, wall=wall, a0=a0, a1=a1, sill=sill, h=h)))\n    else:\n        for wl in d0[\"walls\"]:\n            if not wl[\"face\"] or wl[\"id\"] in HIDE: continue\n            ln = abs(wl[\"b\"][0] - wl[\"a\"][0]) + abs(wl[\"b\"][1] - wl[\"a\"][1])\n            if ln < MIN_WALL: continue\n            lo = min(wl[\"a\"][0], wl[\"b\"][0]) if FACES[wl[\"face\"]][0] == \"x\" else min(wl[\"a\"][1], wl[\"b\"][1])\n            if wl[\"id\"] in DOORS:\n                dw = min(DOOR_W, ln - 0.1)\n                a0 = lo + (ln - dw) / 2.0\n                wins.append(clamp_win(dict(key=wl[\"id\"], face=wl[\"face\"], wall=wl[\"id\"], a0=a0, a1=a0 + dw, sill=0.0, h=DOOR_H)))\n                continue\n            ww = WidthPct / 100.0 * ln\n            a0 = lo + (ln - ww) / 2.0\n            wins.append(clamp_win(dict(key=wl[\"id\"], face=wl[\"face\"], wall=wl[\"id\"], a0=a0, a1=a0 + ww, sill=float(Sill), h=float(Height))))\n\nPanes, Frames, WindowIDs = [], [], []\nfor w in wins:\n    z0, z1 = FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]\n    c = [face_pt(w[\"face\"], w[\"a0\"], z0), face_pt(w[\"face\"], w[\"a1\"], z0), face_pt(w[\"face\"], w[\"a1\"], z1), face_pt(w[\"face\"], w[\"a0\"], z1)]\n    Panes.append(rg.Brep.CreateFromCornerPoints(c[0], c[1], c[2], c[3], 0.001))\n    Frames.append(rg.PolylineCurve(c + [c[0]]))\n    WindowIDs.append(w[\"key\"])\nd = dict(d0)\nd[\"windows\"] = wins\nData = H60(d)\n",
 "walls": "\"\"\"H60 - 6 Walls\nThe see-through envelope (ground-floor band with the windows cut out, gable\ntriangles) and the ground-floor walls, Thickness thick, as closed Breps:\noutside, one continuous wall per stretch of a facade, standing inside the\noutline (outer face on it), windows cut through; inside, one per segment,\ncentred on its line, run past its ends by half the thickness but never past\nthe outline. Hidden inside walls are not built; hidden outside walls are\nopenings (no wall, no glass, no window).\nInputs : Data, ShowExt (1/0), ShowInt (1/0), Thickness\nOutputs: Envelope, ExtWalls, IntWalls, ExtNames, IntIDs, White\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nd0 = Data.d\nif ShowExt is None: ShowExt = 1\nif ShowInt is None: ShowInt = 1\nif Thickness is None: Thickness = 0.10\nHIDE = set(__HIDE__)\nW, D, FF, L2, RX, RIDGE, SLAB = d0[\"W\"], d0[\"D\"], d0[\"FF\"], d0[\"L2\"], d0[\"RX\"], d0[\"RIDGE\"], d0[\"SLAB\"]\nwins = d0.get(\"windows\", [])\n# facades: axis, position across it, length (the house sides, plus the court walls)\nFACES = __FACES__\nINWARD = __INWARD__\nTOL = 0.001\n\ndef along(f, wl):\n    i = 0 if FACES[f][0] == \"x\" else 1\n    return (min(wl[\"a\"][i], wl[\"b\"][i]), max(wl[\"a\"][i], wl[\"b\"][i]))\n\ndef face_runs(f):\n    iv = sorted(along(f, wl) for wl in d0[\"walls\"] if wl[\"face\"] == f and wl[\"id\"] not in HIDE)\n    runs = []\n    for a, b in iv:\n        if runs and a <= runs[-1][1] + 1e-6: runs[-1][1] = max(runs[-1][1], b)\n        else: runs.append([a, b])\n    return runs\n\ndef face_pt(f, a, z):\n    axis, at, _ = FACES[f]\n    return (a, at, z) if axis == \"x\" else (at, a, z)\n\ndef holes_of(f):\n    return [(w[\"a0\"], w[\"a1\"], FF + w[\"sill\"], FF + w[\"sill\"] + w[\"h\"]) for w in wins if w[\"face\"] == f]\n\ndef hole_quads(lo, hi, z0, z1, holes):\n    xs = sorted(set([lo, hi] + [v for h in holes for v in (h[0], h[1]) if lo < v < hi]))\n    quads = []\n    for i in range(len(xs) - 1):\n        u, v = xs[i], xs[i + 1]\n        if v - u < 1e-6: continue\n        spans = [(z0, z1)]\n        for a0, a1, h0, h1 in holes:\n            if not (a0 <= u + 1e-9 and a1 >= v - 1e-9): continue\n            nxt = []\n            for p, q in spans:\n                for s in ((p, min(q, h0)), (max(p, h1), q)):\n                    if s[1] - s[0] > 1e-6: nxt.append(s)\n            spans = nxt\n        for p, q in spans: quads.append((u, v, p, q))\n    return quads\n\ndef box(horiz, c, lo, hi, n0, n1, z0, z1):\n    # a box lo..hi along the wall axis, c+n0..c+n1 across it, z0..z1 high\n    if horiz: p0, p1 = rg.Point3d(lo, c + n0, z0), rg.Point3d(hi, c + n1, z1)\n    else: p0, p1 = rg.Point3d(c + n0, lo, z0), rg.Point3d(c + n1, hi, z1)\n    return rg.Box(rg.BoundingBox(p0, p1)).ToBrep()\n\ndef wall(horiz, c, lo, hi, holes, t):\n    solid = box(horiz, c, lo, hi, -t / 2.0, t / 2.0, FF, L2)\n    cutters = [box(horiz, c, max(a0, lo), min(a1, hi), -t, t, z0, z1) for a0, a1, z0, z1 in holes if min(a1, hi) - max(a0, lo) > 1e-6]\n    if cutters:\n        cut = rg.Brep.CreateBooleanDifference([solid], cutters, TOL)\n        if cut and len(cut) == 1: return cut[0]\n        print(\"window cut failed on a wall at %.2f..%.2f; kept whole\" % (lo, hi))\n    return solid\n\n# the envelope band, only where the facade is wall\nenv = []\nif not int(ShowExt):\n    for f in FACES:\n        for lo, hi in face_runs(f):\n            for u, v, p, r in hole_quads(lo, hi, FF, L2, holes_of(f)):\n                env.append((face_pt(f, u, p), face_pt(f, v, p), face_pt(f, v, r), face_pt(f, u, r)))\nm = rg.Mesh()\nfor a, b, c, dd in env:\n    i = m.Vertices.Count\n    for q in (a, b, c, dd): m.Vertices.Add(q[0], q[1], q[2])\n    m.Faces.AddFace(i, i + 1, i + 2, i + 3)\nfor y in (0.0, D):\n    i = m.Vertices.Count\n    for q in ((0.0, y, L2), (W, y, L2), (RX, y, RIDGE)): m.Vertices.Add(q[0], q[1], q[2])\n    m.Faces.AddFace(i, i + 1, i + 2)\nm.Normals.ComputeNormals()\nEnvelope = m\n\nSUNK = [\"I21\", \"I23\", \"I29\"]\nCF = d0.get(\"CF\", FF)\nExtWalls, IntWalls, ExtNames, IntIDs = [], [], [], []\nif int(ShowExt):\n    for f in sorted(FACES):\n        axis, at, _ = FACES[f]\n        runs = face_runs(f)\n        for k, (lo, hi) in enumerate(runs):\n            c = at + INWARD[f] * Thickness / 2.0\n            ExtWalls.append(wall(axis == \"x\", c, lo, hi, holes_of(f), Thickness))\n            ExtNames.append(\"Wall \" + f + (str(k + 1) if len(runs) > 1 else \"\"))\n            if f in SUNK:\n                # round the sunk court the wall goes down to the court floor\n                ExtWalls.append(box(axis == \"x\", c, lo, hi, -Thickness / 2.0, Thickness / 2.0, CF, FF))\n                ExtNames.append(\"Wall \" + f + \" footing\")\nif int(ShowInt):\n    for wl in d0[\"walls\"]:\n        if wl[\"face\"] or wl[\"id\"] in HIDE: continue\n        horiz = abs(wl[\"a\"][1] - wl[\"b\"][1]) < 1e-6\n        i = 0 if horiz else 1\n        L = W if horiz else D\n        lo = max(0.0, min(wl[\"a\"][i], wl[\"b\"][i]) - Thickness / 2.0)\n        hi = min(L, max(wl[\"a\"][i], wl[\"b\"][i]) + Thickness / 2.0)\n        IntWalls.append(box(horiz, wl[\"a\"][1] if horiz else wl[\"a\"][0], lo, hi, -Thickness / 2.0, Thickness / 2.0, FF, L2))\n        IntIDs.append(wl[\"id\"])\n\n# the walls take the white (so do box 3's base, slab, stairs and court floor)\nWhite = ExtWalls + IntWalls\n\n# a line in the \"out\" panel so an empty output is never a mystery\nprint(\"outside walls: %d (ShowExt = %d), inside walls: %d (ShowInt = %d), hidden: %s\" % (\n    len(ExtWalls), int(ShowExt), len(IntWalls), int(ShowInt), \", \".join(sorted(HIDE))))\n"
@@ -2239,8 +2300,9 @@ function readSaved() {
 }
 function applySaved(d) {
   for (const k of SAVE_S) if (k in d.S) S[k] = d.S[k];
-  for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = cx; p.cy = cy; } }
-  S.holes = new Set(d.holes || []); S.opening = d.opening || {};
+  // (a saved centre is kept inside its piece, should the pieces have changed)
+  for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, cx)); p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, cy)); } }
+  S.holes = new Set((d.holes || []).filter(n => PIECES.some(q => q.no === n))); S.opening = d.opening || {};
   WIN_OVR = new Map(d.winOvr || []); WIN_EXTRA.splice(0, WIN_EXTRA.length, ...(d.winExtra || [])); XID = d.xid || XID;
   // the sliders show the saved values
   $("n").value = S.n; $("op").value = S.op * 100; $("env").value = S.env * 100; $("offL").value = S.offL; $("offR").value = S.offR;
@@ -2262,7 +2324,7 @@ $("setClear").addEventListener("click", () => {
   $("setNote").textContent = "Cleared — the page opens with its defaults.";
 });
 
-PIECES = findPieces();
+PIECES = editPieces(findPieces());
 S.n = +$("n").value; S.op = +$("op").value / 100; S.env = +$("env").value / 100; S.offL = +$("offL").value; S.offR = +$("offR").value;
 S.winW = +$("winW").value / 100; S.winH = +$("winH").value; S.winSill = +$("winSill").value;
 camFrom = { dir: TOP.dir.clone(), up: TOP.up.clone(), zoom: 1, target: new THREE.Vector3() }; camK = 1;
