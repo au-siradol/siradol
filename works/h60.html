@@ -2266,7 +2266,7 @@ async function ghFile() {
   spec.forEach((sp, k) => {
     // four boxes to a row, so the whole definition fits one screen
     const x = 60 + (k % 4) * 470, y = 80 + Math.floor(k / 4) * 470;
-    const cp = { id: newGuid(), nick: sp.nick, code: codes[k], hidden: !/Display/.test(sp.nick), x: x + 230, y, inputs: [], outputs: sp.outputs, outIds: [newGuid(), ...sp.outputs.map(() => newGuid())] };
+    const cp = { id: newGuid(), nick: sp.nick, code: codes[k], hidden: !/display/i.test(sp.nick), x: x + 230, y, inputs: [], outputs: sp.outputs, outIds: [newGuid(), ...sp.outputs.map(() => newGuid())] };
     const members = [cp.id];
     let sy = y;
     sp.inputs.forEach(([name, hint, min, max, value, digits]) => {
