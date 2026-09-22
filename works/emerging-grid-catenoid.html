@@ -100,6 +100,12 @@
         .panel h4.gap { margin-top: 6px; }
         .panel .note { font-size: 10px; color: #888; line-height: 1.4; margin: -2px 0 0; min-height: 14px; }
 
+        .reference-notes { max-width: 1100px; margin: 18px auto 0; border-top: 1px solid #ddd; padding-top: 10px; font-size: 11px; line-height: 1.6; color: #666; }
+        .reference-notes summary { cursor: pointer; font-size: 10px; color: #444; }
+        .reference-notes a { color: inherit; text-underline-offset: 2px; }
+        .reference-notes p { max-width: 85em; }
+        #floorPick { font: inherit; padding: 6px; border: 1px solid #aaa; background: #fff; color: #111; min-width: 100px; }
+        .floors-row { flex-wrap: wrap; }
         .seg { display: inline-flex; border: 1px solid #111; max-width: 100%; align-self: flex-start; }
         @media (max-width: 860px) { .panels { grid-template-columns: 1fr; } .panel { padding: 14px 0 10px; border-right: none; border-bottom: 1px solid #ddd; } }
         .seg button {
@@ -200,6 +206,7 @@
                 <input type="range" autocomplete="off" id="riseSlider" min="0" max="75" step="1" value="54" disabled>
                 <span class="lbl r">75°</span>
             </div>
+            <p class="note">30% flange and 54° slope are study defaults, not measured project dimensions. Small cells limit the inset to preserve valid edges.</p>
             <h4 class="gap">Relax between levels &middot; <span id="relaxVal">none</span></h4>
             <div class="scrub-row">
                 <span class="lbl">none</span>
@@ -210,26 +217,48 @@
         <section class="panel">
             <h4>Structure</h4>
             <div class="btn-grid3" id="structSwitch">
-                <button class="tog active" data-m="comp" type="button" title="wall thickness from the analysis: 230 mm, thicker where compression needs it">Model</button>
-                <button class="tog" data-m="dd" type="button" title="the book's truss wall: 230 mm, surfaces 115 mm either side of the catenoid">Development</button>
-                <button class="tog" id="mapBtn" type="button" disabled title="finite element analysis of the trimmed shell, designed as reinforced concrete: struts, bars, shear">FEA map</button>
+                <button class="tog active" data-m="comp" type="button" title="Experimental shell sizing, starting at 230 mm; not the building thickness">Model</button>
+                <button class="tog" data-m="dd" type="button" title="Schematic parallel and radial construction guides on a 230 mm study shell">Development</button>
+                <button class="tog" id="mapBtn" type="button" disabled title="Simplified shell FEA: concrete, reinforcement and shear utilisation estimates">FEA map</button>
             </div>
             <p class="note" id="structNote"></p>
             <div class="crit-box" id="critBox" hidden>
-                <h4>Critical points &mdash; most loaded, numbered on the model</h4>
+                <h4>Critical points &mdash; this simplified shell only</h4>
                 <ol class="crit" id="critList"></ol>
             </div>
-            <h4 class="gap">Floors</h4>
+            <h4 class="gap">Floors &mdash; visual only</h4>
             <div class="btn-row floors-row">
                 <button class="tog active" id="floorsBtn" type="button" disabled>Floors on</button>
+                <button class="tog" id="openingsBtn" type="button" disabled aria-pressed="false">Edit openings</button>
                 <div class="scrub-row trim-row" title="height of the roof cut; floors above it are removed">
-                    <span class="lbl">Roof</span>
+                    <span class="lbl">Top cut</span>
                     <input type="range" autocomplete="off" id="roofSlider" min="1500" max="3720" step="5" value="2750" disabled>
                     <span class="lbl r" id="roofVal">+27.50</span>
                 </div>
             </div>
+            <div class="btn-row">
+                <label for="floorPick">Floor</label>
+                <select id="floorPick" aria-label="Floor to edit"></select>
+                <button class="tog" id="undoOpening" type="button" disabled>Undo opening</button>
+            </div>
+            <p class="note" id="openingNote">Click a slab to select; drag to change its height. Edit openings isolates the chosen floor.</p>
         </section>
     </div>
+
+    <details class="reference-notes">
+        <summary>Study scope &amp; project references</summary>
+        <p><b>Generative study.</b> The four stages interpret the book's Emerging Grid sequence. Editable power cells, shared rim levels, catenary-inspired profiles and subdivision are approximations; they do not reproduce C6_B or guarantee a mathematical minimal surface.</p>
+        <p><b>Three different levels.</b> Control grids define the shell; floor levels insert slabs; top/bottom cuts crop the study. The 120 × 60 m envelope, 15 m grid spacing, −15 m base cut and default floors are schematic. Reference drawings from different design stages are not combined into an as-built preset.</p>
+        <p><b>Design development.</b> Void-forming proposals and later solid-concrete construction are distinct. A 2014 project account lists 400–800 mm solid walls and discusses local thickening to 1,000 mm. This study's 230 mm shell is not an as-built thickness map. D13@200 in the supplied detail labels formwork-fixing bars, not a universal truss spacing.</p>
+        <p><b>Built structure.</b> The curved shell works with cores, plug walls, concrete facades and inserted structural systems. Hiding a component visually is different from excluding it from analysis. The current FEA excludes those systems and all displayed floors.</p>
+        <p>References:
+            <a href="https://www.arup.com/en-us/projects/the-national-taichung-theater/" target="_blank" rel="noopener">Arup: project and construction</a> ·
+            <a href="https://www.npac-ntt.org/en/about/architecture/design" target="_blank" rel="noopener">NTT: 58 curved wall units / 29 sound caves</a> ·
+            <a href="https://www.architw.org.tw/ftp/magazine/mag74/74th80.pdf" target="_blank" rel="noopener">2014 digital construction account, p.83</a> ·
+            <a href="https://www.geotech.org.tw/upload/column_zone_file/15_20190910104539349.pdf" target="_blank" rel="noopener">2017 project-team construction account</a> ·
+            <a href="https://www.istructe.org/structural-awards/projects/2017/national-taichung-theatre/" target="_blank" rel="noopener">IStructE: structural project</a>
+        </p>
+    </details>
 
     <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
@@ -371,42 +400,30 @@
             }
             return cleanPoly(out);
         }
-        // the flange [1] -> [1']: every edge moved in by the same distance with
-        // mitred corners, so the flange has one width all round and keeps the
-        // polygon's corner count (a scale about the centre would widen it on long edges)
+        // Convex power-cell inset. Limit one distance for the entire ring before
+        // moving any corner; pairwise repairs can fold adjacent flange faces.
         function offsetPoly(poly, c, d) {
             const n = poly.length;
-            const nrm = poly.map((u, i) => {
-                const v = poly[(i + 1) % n], L = Math.hypot(v.x - u.x, v.z - u.z) || 1;
-                let nx = -(v.z - u.z) / L, nz = (v.x - u.x) / L;
-                if (nx * (c.x - (u.x + v.x) / 2) + nz * (c.z - (u.z + v.z) / 2) < 0) { nx = -nx; nz = -nz; }
-                return { nx, nz };
+            const normals = poly.map((a, i) => {
+                const b = poly[(i + 1) % n], L = Math.hypot(b.x - a.x, b.z - a.z);
+                let x = -(b.z - a.z) / L, z = (b.x - a.x) / L;
+                if (x * (c.x - a.x) + z * (c.z - a.z) < 0) { x = -x; z = -z; }
+                return { x, z };
             });
-            const out = poly.map((p, i) => {
-                const a = nrm[(i - 1 + n) % n], b = nrm[i];
-                let mx = a.nx + b.nx, mz = a.nz + b.nz;
-                const ml = Math.hypot(mx, mz) || 1; mx /= ml; mz /= ml;
-                const len = Math.min(d / Math.max(0.25, mx * a.nx + mz * a.nz), 0.75 * Math.hypot(c.x - p.x, c.z - p.z));
-                return { x: p.x + mx * len, z: p.z + mz * len };
+            const velocity = normals.map((b, i) => {
+                const a = normals[(i + n - 1) % n], den = 1 + a.x * b.x + a.z * b.z;
+                return den > 1e-10 ? { x: (a.x + b.x) / den, z: (a.z + b.z) / den } : { x: 0, z: 0 };
             });
-            // a short edge offset further than it is long would come out reversed,
-            // its two corners crossed, and twist the flange face into a bow tie that
-            // creases the smoothed surface: such an edge keeps a quarter of its
-            // length, centred where its corners met, and never turns round
-            for (let pass = 0; pass < 4; pass++) {
-                let moved = false;
-                for (let k = 0; k < n; k++) {
-                    const a = poly[k], b = poly[(k + 1) % n], L = Math.hypot(b.x - a.x, b.z - a.z) || 1, ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
-                    const p = out[k], q = out[(k + 1) % n], min = 0.25 * L;
-                    if ((q.x - p.x) * ux + (q.z - p.z) * uz >= min - 1e-6) continue;
-                    const mx = (p.x + q.x) / 2, mz = (p.z + q.z) / 2;
-                    out[k] = { x: mx - ux * min / 2, z: mz - uz * min / 2 };
-                    out[(k + 1) % n] = { x: mx + ux * min / 2, z: mz + uz * min / 2 };
-                    moved = true;
-                }
-                if (!moved) break;
+            let distance = Math.max(0, d);
+            for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n, a = poly[i], b = poly[j], v = velocity[i], w = velocity[j];
+                const L = Math.hypot(b.x - a.x, b.z - a.z);
+                const rate = ((w.x - v.x) * (b.x - a.x) + (w.z - v.z) * (b.z - a.z)) / L;
+                if (rate < 0) distance = Math.min(distance, 0.75 * L / -rate);
+                const speed = Math.hypot(v.x, v.z);
+                if (speed > 0) distance = Math.min(distance, 0.75 * Math.hypot(c.x - a.x, c.z - a.z) / speed);
             }
-            return out;
+            return poly.map((a, i) => ({ x: a.x + distance * velocity[i].x, z: a.z + distance * velocity[i].z }));
         }
         function inConvex(p, pt) {
             if (!p || p.length < 3) return false;
@@ -596,10 +613,10 @@
                 return out.length >= 3 && signedArea(out) * signedArea(p) > 0 ? out : [];
             });
         }
-        // a catenoid r = a·cosh((y - y0)/a) can join two rings of radius R a
-        // height h apart only while h/R <= 1.3255; beyond that no minimal
-        // surface spans them and the tube has to work in bending. u = h/2a on
-        // the stable branch, held at its limit when the rings are too far apart
+        // Ideal coaxial, equal circular rings only: the catenoid reference
+        // has a limiting h/R near 1.3255. It does not classify the geometry
+        // or structural behaviour of unequal polygonal rings in this study.
+        // u = h/2a on the wider-neck branch, clamped for profile construction.
         const CAT_LIMIT = 1.3255, CAT_U0 = 1.19968, NECK_MIN = 0.7;
         function catenaryU(h, R) {
             const target = 2 * R / h;
@@ -623,8 +640,8 @@
                 for (let k = 0; k < n; k++) {
                     const ang = a0 + k * 2 * Math.PI / n;
                     const dist = n === 1 ? 0.12 * P * hash(r, c, 3) : (k === 0 ? 0.14 : 0.28) * P;
-                    // every cell is a catenoid, as in the book's 58: a flat plate beside
-                    // sloping flanges folds the smoothed surface. None can still be set
+                    // Default cells form tubes; this procedural population does not
+                    // reproduce the project's 58 curved wall units. None remains editable.
                     const lab = k === 1 ? other : label;
                     SEEDS.push({
                         uid: UID++, label: lab, bud: k > 0, rx: cx, rz: cz, ox: Math.cos(ang), oz: Math.sin(ang),
@@ -679,8 +696,8 @@
             // one rise for all: the slope angle over the flange of an average cell
             const base = baseCells().filter(q => q.length), meanInr = base.reduce((sum, q) => sum + inradius(q, centroid(q)), 0) / Math.max(1, base.length);
             const RISE = Math.min(0.4 * GRID_SP, Math.tan(S.rise * Math.PI / 180) * S.flange * meanInr);
-            // A cell too small for a catenoid (the book's smallest catenoid cells
-            // are about 3 m from centre to edge) is taken out and its neighbours
+            // A cell below this study's 3 m inradius guard is removed; this
+            // numerical threshold is not a measured project dimension. Its neighbours
             // close over it, as the book has no stray flat plates. It goes from both
             // grids its catenoid would join, or the partner would be left with a
             // hole leading nowhere. Cells set to None stay as plates
@@ -718,9 +735,8 @@
                     // [1'] and [2'] are offset in 3D (p.168, C6_B): in towards the
                     // tube in plan and along it in height, so the flange slopes —
                     // up from a grid where the catenoid rises, down where it drops.
-                    // The height is the same for every catenoid, as in 'the design
-                    // of the void': all rims sit at one level, so every piece is the
-                    // same height and the S-curve turns at the same level everywhere
+                    // Shared rim levels are a simplification for this generative
+                    // study, not evidence that all project units have equal height.
                     const hy = up === null ? y : y + (up ? RISE : -RISE) * lift;
                     return { i, n, poly, c, up, hole, y, hy };
                 });
@@ -1037,16 +1053,14 @@
             m.faces.forEach((f, fi) => { const t = m.tags[fi]; if (t >= 0 && byTag[t]) for (const v of f) vt[v] = t; });
             return { byTag, vt };
         }
-        // wall thickness. The book's truss wall is 230 mm, its surfaces offset
-        // 115 mm either side of the catenoid (pp.176-177): Development keeps
-        // that everywhere. Model thickens the wall where the finite element
-        // analysis below needs it, up to 1.4 m
+        // Study assumptions, not as-built dimensions. Development holds 230 mm;
+        // Model performs experimental sizing up to 1.4 m. See reference notes.
         const T_MIN = 0.23, T_MAX = 1.4, T_DD = 0.23, TRUSS_STEP = 1;
         // truss walls (pp.176-177): planar vertical walls between the two
         // surfaces, placed per catenoid on its section polygon. Parallel ones
         // stand perpendicular to each segment, stepped out from its midpoint and
         // stopping at the corner bisectors; radial ones fan round each corner.
-        // Drawn every 1 m so they read here; the book builds them at 200 mm.
+        // Sampled every 1 m for visibility; actual construction spacing is not verified.
         function catenoidTruss(m, C, skin) {
             const { byTag } = tubeOfVertex(m, C);
             const byTri = new Map();
@@ -1508,8 +1522,8 @@
         // lever arm z apart. Each layer is a membrane with orthogonal bars,
         // horizontal and along the slope: bars take the tension, diagonal
         // concrete struts the compression (nu·fcd, cracked concrete). The shear
-        // through the wall goes to the truss walls; it is compared with what the
-        // concrete could carry alone, so over 1 means the truss walls must carry it
+        // through the wall is compared with concrete-only capacity. Exceedance
+        // requires a separate reinforcement check, not performed by this model.
         const RC = { fck: 35, fcd: 0.85 * 35e3 / 1.5, nu: 0.6 * (1 - 35 / 250), fyd: 500e3 / 1.15, cover: 0.04, rhoMax: 0.01 };
         const COMBO_NAMES = ['1.2G+1.6Q', '1.2G+0.5Q+Ex', '1.2G+0.5Q−Ex', '1.2G+0.5Q+Ez', '1.2G+0.5Q−Ez'];
         // one layer (tension positive, kN/m): bar forces in x and y, strut force
@@ -1651,13 +1665,13 @@
         }
         // the most loaded places, at least 10 m apart, with what governs there
         const ADVICE = {
-            c: { base: 'compression at the clamped base — a thicker wall or a wider footing', edge: 'an unsupported edge — needs the facade or the roof slab to hold it', junction: 'where the catenoid turns into the sheet — a thicker wall or a wider flange', sheet: 'the plate spans far between catenoids — a thicker plate or a catenoid below', tube: 'a slender catenoid wall — thicker, or a wider catenoid' },
-            s: { base: 'bending at the clamped base — heavy bars or a thicker wall', edge: 'an unsupported edge — needs the facade or the roof slab to hold it', junction: 'bending where the catenoid turns into the sheet — heavy bars or a wider flange', sheet: 'the plate bends between catenoids — heavy bars or a catenoid below', tube: 'bending in the catenoid wall — heavy bars or a thicker wall' },
-            v: { base: 'shear at the base — truss walls closer than 200 mm', edge: 'shear at a free edge — truss walls closer than 200 mm, or support the edge', junction: 'shear where the catenoid meets the sheet — truss walls closer than 200 mm', sheet: 'shear in the plate — truss walls closer than 200 mm', tube: 'shear in the catenoid wall — truss walls closer than 200 mm' }
+            c: { base: 'Review the assumed base restraint and local compression before changing thickness.', edge: 'Check sensitivity to the omitted edge supports and the cut location.', junction: 'Check junction curvature, mesh convergence and compression.', sheet: 'Check span, shell curvature and omitted floor connections.', tube: 'Check shell curvature, thickness and compression; stability is not verified.' },
+            s: { base: 'Review base moments, assumed restraint and reinforcement demand.', edge: 'Check edge restraint and mesh sensitivity before specifying reinforcement.', junction: 'Review bending and reinforcement orientation across the junction.', sheet: 'Review bending and the omitted floor system.', tube: 'Review bending and reinforcement demand; crack widths are not checked.' },
+            v: { base: 'Review base shear against concrete-only capacity; check shear reinforcement separately.', edge: 'Review the free-edge model and shear reinforcement separately.', junction: 'Review mesh convergence and design junction shear reinforcement separately.', sheet: 'Check transverse shear and reinforcement detailing separately.', tube: 'Check transverse shear and reinforcement detailing separately.' }
         };
-        // Concrete and bars are the limits of the wall itself, so they rank
-        // first (four places); the worst shear is added as a fifth, since the
-        // truss walls can be made denser there
+        // Four concrete/rebar hotspots plus a shear hotspot; these are model
+        // diagnostics, not construction details or verified building locations.
+
         function criticalPoints(model, G, uc, us, uv, gov) {
             const { out } = model, n = out.area.length, order = [];
             for (let e = 0; e < n; e++) order.push([Math.max(uc[e], us[e]), e, uc[e] >= us[e] ? 'c' : 's']);
@@ -2389,10 +2403,9 @@
         /* ---------- 4c: floors at plan levels ---------- */
         // A floor stops at the surface. At its level the surface is cut in plan;
         // the cut lines divide the floor into zones, each a room enclosed by the
-        // shell. A void opens a whole zone. Found on a 0.4 m raster: the cut is
+        // shell. A void opens a whole zone. Found on a 0.25 m raster: the cut is
         // drawn into it, then the free cells are flood-filled into zones.
         const FR = 0.25, FNX = Math.round(W / FR), FNZ = Math.round(D / FR), MIN_ZONE = Math.round(4.8 / (FR * FR));
-        // a floor within 300 mm of a grid is that grid's sheet
         const outOfBuilding = f => f.y < TRIM.y0 + SLAB || f.y > TRIM.y1;
         // The slab stops at the face of the wall, not at its centre: each raster
         // cell keeps its distance to the nearest wall face (negative inside the
@@ -2463,10 +2476,13 @@
         // by the programme cells, taken as their rounded outlines — the same
         // curves the catenoids grow from — so an opening is curved on every
         // side; the bands between the rounded cells always stay as slab
-        let cellRasterCache = { v: -1, cells: null };
-        function cellRaster() {
-            if (cellRasterCache.v === S.version) return cellRasterCache.cells;
-            const polys = baseCells().map(p => { if (!p.length) return []; const r = rounded(p, 0.03 * P, 0.8); return r ? r.pts : []; });
+        function cellRaster(y) {
+            let n = 0;
+            while (n < NL - 2 && y > GRID_Y[n + 1]) n++;
+            const t = clamp01((y - GRID_Y[n]) / (GRID_Y[n + 1] - GRID_Y[n]));
+            const a = levelSeeds(n, 1), b = levelSeeds(n + 1, 1);
+            const seeds = a.map((q, i) => ({ x: lerp(q.x, b[i].x, t), z: lerp(q.z, b[i].z, t), w: lerp(q.w, b[i].w, t) }));
+            const polys = powerCells(seeds, MARGIN).map(p => { if (!p.length) return []; const r = rounded(p, 0.03 * P, 0.8); return r ? r.pts : []; });
             const out = new Int16Array(FNX * FNZ).fill(-1);
             polys.forEach((poly, ci) => {
                 if (poly.length < 3) return;
@@ -2476,23 +2492,46 @@
                 for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++)
                     if (inConvex(poly, { x: (i + 0.5) * FR, z: (j + 0.5) * FR })) out[j * FNX + i] = ci;
             });
-            cellRasterCache = { v: S.version, cells: out };
             return out;
+        }
+        // Split each shell/programme intersection into connected components:
+        // disconnected islands must not disappear together.
+        function floorZones(R, cells) {
+            const zones = new Int32Array(R.lab.length).fill(-1), stack = new Int32Array(R.lab.length);
+            let next = 0;
+            for (let start = 0; start < zones.length; start++) {
+                const label = R.lab[start], cell = cells[start];
+                if (label < 0 || R.sizes[label] < MIN_ZONE) continue;
+                if (cell < 0) { zones[start] = -2; continue; }
+                if (zones[start] >= 0) continue;
+                let top = 0; stack[top++] = start; zones[start] = next;
+                while (top) {
+                    const c = stack[--top], i = c % FNX, j = Math.floor(c / FNX);
+                    for (const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                        const ni = i + di, nj = j + dj, nc = nj * FNX + ni;
+                        if (ni < 0 || nj < 0 || ni >= FNX || nj >= FNZ) continue;
+                        if (zones[nc] === -1 && R.lab[nc] === label && cells[nc] === cell) {
+                            zones[nc] = next; stack[top++] = nc;
+                        }
+                    }
+                }
+                next++;
+            }
+            return zones;
         }
         const rasterCache = new Map();
         function rasterFor(f, M) {
             const key = [M.key, S.struct, M.skinVer, f.y.toFixed(3)].join('|');
             let r = rasterCache.get(f.id);
-            if (!r || r.key !== key) { r = { key, ...floorRaster(f.y, M) }; rasterCache.set(f.id, r); }
+            if (!r || r.key !== key) {
+                r = { key, ...floorRaster(f.y, M) };
+                r.zones = floorZones(r, cellRaster(f.y));
+                rasterCache.set(f.id, r);
+            }
             return r;
         }
         // -1 outside the building or on the shell; -2 the band between rounded cells (slab, never opened)
-        const zoneOfCell = (R, c) => {
-            const l = R.lab[c];
-            if (l < 0 || R.sizes[l] < MIN_ZONE) return -1;
-            const ci = cellRaster()[c];
-            return ci < 0 ? -2 : l * 1024 + ci;
-        };
+        const zoneOfCell = (R, c) => R.zones[c];
         const zoneAt = (R, x, z) => {
             const i = Math.floor(x / FR), j = Math.floor(z / FR);
             if (i < 0 || j < 0 || i >= FNX || j >= FNZ) return -1;
@@ -2500,13 +2539,13 @@
         };
         // the slab edge follows the zones by marching squares over the raster,
         // so it runs diagonally across cells instead of stepping round them
-        function buildFloor(f, R) {
+        function buildFloor(f, R, previewZone = null) {
             const y = f.y, y0 = y - SLAB, tris = [], edges = [];
             const voided = new Set(VOIDS.filter(v => v.fid === f.id).map(v => zoneAt(R, v.x, v.z)).filter(l => l >= 0));
             const solid = (i, j) => {
                 if (i < 0 || j < 0 || i >= FNX || j >= FNZ) return false;
                 const z = zoneOfCell(R, j * FNX + i);
-                return z === -2 || (z >= 0 && !voided.has(z));
+                return previewZone !== null ? z === previewZone : z === -2 || (z >= 0 && !voided.has(z));
             };
             const X = i => Math.min(W, Math.max(0, (i + 0.5) * FR)), Z = j => Math.min(D, Math.max(0, (j + 0.5) * FR));
             const side = (ax, az, bx, bz) => {
@@ -2530,25 +2569,30 @@
                     if (bits === 0) continue;
                     const P = [[X(i), Z(j)], [X(i + 1), Z(j)], [X(i + 1), Z(j + 1)], [X(i), Z(j + 1)]];
                     const CI = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+                    const edgeCut = k => {
+                        const k2 = (k + 1) % 4;
+                        const out = ([ci, cj]) => ci < 0 || cj < 0 || ci >= FNX || cj >= FNZ;
+                        if (out(CI[k])) return P[k];
+                        if (out(CI[k2])) return P[k2];
+                        const da = R.dist[CI[k][1] * FNX + CI[k][0]], db = R.dist[CI[k2][1] * FNX + CI[k2][0]];
+                        const t = (da > 0) !== (db > 0) ? clamp01(da / (da - db)) : 0.5;
+                        return [lerp(P[k][0], P[k2][0], t), lerp(P[k][1], P[k2][1], t)];
+                    };
+                    // Diagonal solid corners are separate components (4-neighbour
+                    // raster). A single polygon fan would bridge across the void.
+                    if (bits === 5 || bits === 10) {
+                        for (let k = 0; k < 4; k++) if (c[k]) {
+                            const a = P[k], b = edgeCut(k), d = edgeCut((k + 3) % 4);
+                            tris.push(a[0], y, a[1], d[0], y, d[1], b[0], y, b[1]);
+                            tris.push(a[0], y0, a[1], b[0], y0, b[1], d[0], y0, d[1]);
+                            side(b[0], b[1], d[0], d[1]);
+                        }
+                        continue;
+                    }
                     const poly = [], mids = [];
                     for (let k = 0; k < 4; k++) {
-                        const k2 = (k + 1) % 4;
                         if (c[k]) poly.push(P[k]);
-                        if (c[k] !== c[k2]) {
-                            // past the facade the slab runs out to the box; at a wall
-                            // it stops where the distance to the face crosses zero;
-                            // elsewhere (an opening) halfway between the cells
-                            const out = ([ci, cj]) => ci < 0 || cj < 0 || ci >= FNX || cj >= FNZ;
-                            let m;
-                            if (out(CI[k])) m = P[k];
-                            else if (out(CI[k2])) m = P[k2];
-                            else {
-                                const da = R.dist[CI[k][1] * FNX + CI[k][0]], db = R.dist[CI[k2][1] * FNX + CI[k2][0]];
-                                const t = (da > 0) !== (db > 0) ? clamp01(da / (da - db)) : 0.5;
-                                m = [lerp(P[k][0], P[k2][0], t), lerp(P[k][1], P[k2][1], t)];
-                            }
-                            poly.push(m); mids.push(m);
-                        }
+                        if (c[k] !== c[(k + 1) % 4]) { const m = edgeCut(k); poly.push(m); mids.push(m); }
                     }
                     for (let k = 1; k < poly.length - 1; k++) {
                         const a = poly[0], b = poly[k], d = poly[k + 1];
@@ -2561,23 +2605,51 @@
             }
             return { tris, edges };
         }
-        let floorsKey = '';
+        let floorsKey = '', openingMode = false, hoverKey = '';
+        const openingHistory = [];
+        const openingPreview = new THREE.Group();
+        mainScene.add(openingPreview);
+        function clearOpeningPreview() {
+            if (hoverKey) { clearGroup(openingPreview); hoverKey = ''; }
+        }
+        function previewOpening(hit) {
+            const key = hit && hit.zone >= 0 ? hit.f.id + ':' + hit.zone : '';
+            if (key === hoverKey) return;
+            clearOpeningPreview();
+            if (!key) { openingNote.textContent = 'Move over the selected floor to preview an opening.'; render(); return; }
+            hoverKey = key;
+            const R = rasterFor(hit.f, surfCache);
+            const closed = VOIDS.some(v => v.fid === hit.f.id && zoneAt(R, v.x, v.z) === hit.zone);
+            const f = buildFloor(hit.f, R, hit.zone);
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(f.tris, 3));
+            const material = new THREE.MeshBasicMaterial({color: closed ? 0x2196f3 : 0xef9b24, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3});
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.userData.ownMat = true; mesh.renderOrder = 5;
+            openingPreview.add(mesh);
+            openingNote.textContent = fmtY(hit.f.y) + ' m — ' + (closed ? 'blue: click to restore this area' : 'orange: click to open this area');
+            render();
+        }
+
         function syncFloors(pr) {
+            clearOpeningPreview();
             const k = pr.trimK;
             if (!S.floors || k < 0.01) { G.floors.visible = false; return; }
             const M = getSurface();
-            const key = [M.key, S.struct, M.skinVer, JSON.stringify(FLOORS), JSON.stringify(VOIDS), S.floorSel].join('#');
+            const key = [M.key, S.struct, M.skinVer, JSON.stringify(FLOORS), JSON.stringify(VOIDS), S.floorSel, openingMode].join('#');
             if (key !== floorsKey) {
                 floorsKey = key;
                 clearGroup(G.floors);
                 for (const fl of FLOORS) {
-                    if (outOfBuilding(fl)) continue;
+                    if (outOfBuilding(fl) || (openingMode && fl.id !== S.floorSel)) continue;
                     const f = buildFloor(fl, rasterFor(fl, M));
                     if (f.tris.length) {
                         const g = new THREE.BufferGeometry();
                         g.setAttribute('position', new THREE.Float32BufferAttribute(f.tris, 3));
                         g.computeVertexNormals();
-                        G.floors.add(new THREE.Mesh(g, fl.id === S.floorSel ? surfMat.slabOn : surfMat.slab));
+                        const mesh = new THREE.Mesh(g, fl.id === S.floorSel ? surfMat.slabOn : surfMat.slab);
+                        mesh.userData.floorId = fl.id;
+                        G.floors.add(mesh);
                     }
                     if (f.edges.length) {
                         const g = new THREE.BufferGeometry();
@@ -2861,7 +2933,7 @@
                     else { el.style.left = lx + 'px'; el.style.transform = ''; }
                     el.style.top = ((1 - v.y) / 2 * ch) + 'px';
                     el.style.visibility = v.y > -0.97 && v.y < 0.97 ? 'visible' : 'hidden';
-                    el.textContent = outOfBuilding(f) ? '' : fmtY(f.y);
+                    el.textContent = outOfBuilding(f) || (openingMode && f.id !== S.floorSel) ? '' : fmtY(f.y);
                     el.classList.toggle('on', f.id === S.floorSel);
                 }
             }
@@ -2889,6 +2961,7 @@
 
         const editable = () => S.t > 0.95 && S.t < 1.08;
         const selectable = () => S.t > 1.55 && S.t < 2.2;
+        const openingsBtn = document.getElementById('openingsBtn'), floorPick = document.getElementById('floorPick'), undoOpening = document.getElementById('undoOpening'), openingNote = document.getElementById('openingNote');
         const floorEditable = () => S.t > 2.99 && S.floors;
 
         const clampFloor = y => Math.max(TRIM.y0 + SLAB + 0.1, Math.min(TRIM.y1 - 0.1, y));
@@ -2901,9 +2974,9 @@
                 const C = getCrude(), n = C.tubes.length;
                 const ok = C.tubes.filter(x => x.ratio <= CAT_LIMIT).length, mid = C.tubes.filter(x => x.ratio > CAT_LIMIT && x.ratio <= 2).length, noPath = C.tubes.filter(x => x.noPath).length;
                 return `<b>3 Per level</b>Every level adjusts its grid; a catenoid links [1] to [2].` +
-                    `<span class="key"><span class="dot" style="background:#2e9e5b"></span>h/R ≤ 1.33, a true catenoid ${ok}` +
+                    `<span class="key"><span class="dot" style="background:#2e9e5b"></span>h/R ≤ 1.33 (ideal equal-ring reference) ${ok}` +
                     `<span class="dot" style="background:#c9a227"></span>≤ 2 ${mid}<span class="dot" style="background:#b0306a"></span>> 2 ${n - ok - mid}` +
-                    `<span class="dash"></span>no load path down ${noPath}</span>`;
+                    `<span class="dash"></span>no tube-chain to base ${noPath}</span>`;
             }
             let map = '';
             if (S.map) {
@@ -2915,10 +2988,10 @@
                     const q = S.mapQ, pct = v => (v * 100 < 1 && v > 0 ? '<1' : Math.round(v * 100)) + '%';
                     const sw = `<span class="qsw">${[['c', 'Concrete'], ['s', 'Reinforcement'], ['v', 'Shear']].map(([k, l]) => `<button data-q="${k}" class="${q === k ? 'on' : ''}">${l}</button>`).join('')}</span>`;
                     const num = q === 's' ? `bars up to ${Math.round(R.maxAs)} mm²/m, limit 1% of the wall per face and direction (${Math.round(RC.rhoMax * FEA.t0 * 1e6)} at 230 mm) · over on ${pct(R.overS)}`
-                        : q === 'v' ? `shear up to ${Math.round(R.maxV)} kN/m, concrete alone ${Math.round(shearCapacity(FEA.t0))} at 230 mm · truss walls needed on ${pct(R.overV)}`
+                        : q === 'v' ? `shear up to ${Math.round(R.maxV)} kN/m, concrete alone ${Math.round(shearCapacity(FEA.t0))} at 230 mm · concrete-only capacity exceeded on ${pct(R.overV)}; shear reinforcement not checked`
                         : `struts up to ${(R.maxSc / 1000).toFixed(1)} MPa, limit ${(RC.nu * RC.fcd / 1000).toFixed(1)} · over on ${pct(R.overC)}`;
                     const refine = !R.fine && !busy ? ' <button data-refine="1" class="refine">Refine</button>' : '';
-                    map = `<span class="key">${sw} 0 <span class="ramp" style="background:linear-gradient(90deg,${grad})"></span> 1 <span class="ramp over"></span> over · ${num}` +
+                    map = `<span class="key">${sw} 0 <span class="ramp" style="background:linear-gradient(90deg,${grad})"></span> 1 <span class="ramp over"></span> over · utilisation (demand / assumed capacity) · ${num}` +
                         ` · deflection G+Q ${(R.umax * 1000).toFixed(0)} mm · ${R.elements} elements${R.fine ? '' : ' (coarse)'}${S.struct === 'comp' && !M.feaRes.comp ? ' (230 mm, before thickening)' : ''}${refine}${busy}` +
                         `${R.lost > 1 ? ` · ${Math.round(R.lost)} m² not reaching the ground left out` : ''}</span>`;
                 }
@@ -2945,23 +3018,35 @@
             structSwitch.classList.toggle('off', S.t < 2.7);
             mapBtn.disabled = S.t < 2.7;
             floorsBtn.disabled = S.t < 2.86;
+            const availableFloors = FLOORS.filter(f => !outOfBuilding(f));
+            if (!availableFloors.some(f => f.id === S.floorSel)) S.floorSel = availableFloors[0]?.id ?? null;
+            const options = availableFloors.slice().sort((a,b) => a.y-b.y).map(f => `<option value="${f.id}">${fmtY(f.y)} m</option>`).join('');
+            if (floorPick.innerHTML !== options) floorPick.innerHTML = options;
+            floorPick.value = String(S.floorSel ?? '');
+            floorPick.disabled = !floorEditable();
+            openingsBtn.disabled = !floorEditable() || !availableFloors.length;
+            openingsBtn.classList.toggle('active', openingMode);
+            openingsBtn.setAttribute('aria-pressed', String(openingMode));
+            undoOpening.disabled = !floorEditable() || !openingHistory.length;
+            openingNote.textContent = openingMode ? 'Only the selected floor is shown. Orange opens; blue restores. Drag to orbit.' : 'Click a slab to select; drag to change its height. Edit openings isolates the chosen floor.';
             roofSlider.disabled = S.t < 2.86;
             roofVal.textContent = fmtY(TRIM.y1);
             floorsBtn.classList.toggle('active', S.floors);
             floorsBtn.textContent = S.floors ? 'Floors on' : 'Floors off';
             const R = surfCache && surfCache.feaRes && surfCache.feaRes[S.struct];
             structNote.textContent = (S.struct === 'comp'
-                ? 'Model — 230 mm where the section works, thicker where the concrete struts or the bars would pass their limits; re-analysed with the new thickness until it settles' +
-                    (R ? ` (${R.rounds} round${R.rounds === 1 ? '' : 's'}: thicker on ${Math.round(R.thickened * 100)}% of the area, up to ${Math.round(R.maxT * 1000)} mm${R.short > 0.005 ? `; still short on ${Math.round(R.short * 100)}%` : ''}).` : feaWanted() ? ' (analysis running).' : ' — open the FEA map to size the walls; 230 mm until then.')
-                : 'Development — the book\'s truss wall: 230 mm, surfaces 115 mm either side of the catenoid; truss walls parallel in red and radial in blue, drawn every 1 m (built at 200 mm).') +
-                (S.map ? ' FEA: linear shell; self-weight, 5 kPa on the near-level parts of the surface, earthquake 0.2 × weight in x and z; 1.2G+1.6Q and 1.2G+0.5Q±E; clamped at the basement cut, facade and roof edges free. Design: reinforced concrete C35 / B500 by the sandwich model — struts within 0.52 f_cd, bars within 1% of the wall per face and direction, shear against the concrete alone (the truss walls take the rest). A design sketch, not a code check.' : '');
+                ? 'Model — experimental shell sizing from 230 mm, capped at 1,400 mm; not a reconstruction of the building thickness.' +
+                    (R ? ` ${R.rounds} analysis rounds; maximum ${Math.round(R.maxT * 1000)} mm; ${Math.round(R.short * 100)}% still exceeds the assumed section limits.` : ' Open FEA map to run; 230 mm until then.')
+                : 'Development — parallel (red) and radial (blue) layout guides, sampled every 1 m on a 230 mm study shell. These lines are not truss members or verified construction spacing.') +
+                (S.map ? ' Linear shell FEA only: assumed C35/B500, self-weight, 5 kPa on near-horizontal shell regions, lateral load 0.2 × (G+0.5Q). Combinations: 1.2G+1.6Q and 1.2G+0.5Q±E. Base cut clamped; other cut edges free. Floors, cores, plug walls, facade stiffness and steel frames are excluded. Colours show section utilisation estimates, not principal-stress paths or a building/code verification. Shear reinforcement capacity is not calculated.' : '');
+
             const crit = S.map && S.t > 2.7 && R && R.crit;
             const PLACE = { base: 'at the base', edge: 'free edge', sheet: 'sheet', junction: 'catenoid meets sheet', tube: 'catenoid wall' }, WHAT = { c: 'concrete', s: 'reinforcement', v: 'shear' };
             critBox.hidden = !crit;
             if (crit) critList.innerHTML = crit.map(p => `<li><b>${WHAT[p.kind]} ${p.u.toFixed(1)}×</b> ${PLACE[p.where]}, ${p.cat}, ${fmtY(p.y)} · ${p.combo}<br><span>${ADVICE[p.kind][p.where]}</span></li>`).join('');
             canvas.classList.toggle('editable', editable() || selectable() || floorEditable());
             if (hintUntil > performance.now()) viewHint.textContent = hintText; else viewHint.textContent = editable() ? 'drag a cell · drag an edge · scroll to resize · double-click to split · click a letter for A → B → none · shift-drag to pan · ctrl-scroll to zoom'
-                : (selectable() ? 'click a catenoid or a cell to select it · ' : floorEditable() ? 'drag a slab to move it, past the roof or basement to remove it · click a zone to open or close it · double-click the surface to add a floor · ' : '') + 'drag to orbit · wheel to zoom · shift-drag to pan · double-click to reset view';
+                : (selectable() ? 'click a catenoid or a cell to select it · ' : floorEditable() ? 'select a slab · Edit openings to cut or restore · drag slab to change height · ' : '') + 'drag to orbit · wheel to zoom · shift-drag to pan · double-click to reset view';
         }
 
         function update() {
@@ -3073,7 +3158,17 @@
             structSwitch.querySelectorAll('button[data-m]').forEach(x => x.classList.toggle('active', x === b));
             update();
         });
-        floorsBtn.addEventListener('click', () => { S.floors = !S.floors; update(); });
+        floorsBtn.addEventListener('click', () => { S.floors = !S.floors; if (!S.floors) openingMode = false; update(); });
+        openingsBtn.addEventListener('click', () => { openingMode = !openingMode; update(); });
+        floorPick.addEventListener('change', () => { S.floorSel = Number(floorPick.value); update(); });
+        undoOpening.addEventListener('click', () => {
+            const last = openingHistory.pop(); if (!last) return;
+            if (FLOORS.some(f => f.id === last.fid)) {
+                VOIDS = VOIDS.filter(v => v.fid !== last.fid).concat(last.voids);
+                S.floorSel = last.fid;
+            }
+            update();
+        });
         // the roof cut moves; floors left above it are removed, and the
         // analysis starts again once the slider is let go
         roofSlider.addEventListener('input', () => {
@@ -3087,7 +3182,7 @@
             const b = e.target.closest('button[data-q]'); if (b) { S.mapQ = b.dataset.q; update(); return; }
             if (e.target.closest('button[data-refine]') && surfCache) { refineFea(surfCache); refreshCaption(); }
         });
-        document.getElementById('resetBtn').addEventListener('click', () => { initSeeds(); edited(); update(); });
+        document.getElementById('resetBtn').addEventListener('click', () => { openingHistory.length = 0; openingMode = false; initSeeds(); edited(); update(); });
 
         /* ---------- flexible grid editing ---------- */
         function powerAt(p) {
@@ -3139,26 +3234,32 @@
             return ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), p) ? { x: p.x, z: p.z, d: p.distanceTo(ray.origin) } : null;
         }
         const worldAt = e => hitY(rayFor(e, mainCam, layout.planW, cw - layout.planW), 0);
-        // the nearest floor under the pointer: a solid zone, or an opened one
-        // (so clicking a void closes it). A floor lying on a grid sheet is the
-        // sheet itself: it can be moved or removed, but has no zones of its own
+        // Normal mode selects actual visible slab triangles, not empty planes.
+        // Opening mode targets only the explicit selected level, including voids.
         function floorHit(e) {
             const ray = rayFor(e, mainCam, layout.planW, cw - layout.planW);
-            const M = surfCache;
-            const hits = FLOORS.map(f => ({ f, h: hitY(ray, f.y) })).filter(o => o.h && o.h.x >= 0 && o.h.x <= W && o.h.z >= 0 && o.h.z <= D).sort((a, b) => a.h.d - b.h.d);
-            for (const { f, h } of hits) {
-                if (outOfBuilding(f)) continue;
-                if (!M) return { f, h, zone: -1 };
-                const R = rasterFor(f, M), zone = zoneAt(R, h.x, h.z);
-                if (zone >= 0 || zone === -2) return { f, h, zone };
+            if (!surfCache) return null;
+            if (openingMode) {
+                const f = FLOORS.find(f => f.id === S.floorSel && !outOfBuilding(f));
+                if (!f) return null;
+                const h = hitY(ray, f.y);
+                if (!h) return null;
+                const zone = zoneAt(rasterFor(f, surfCache), h.x, h.z);
+                return zone >= 0 ? { f, h, zone } : null;
             }
-            return null;
+            const hit = raycaster.intersectObjects(G.floors.children.filter(o => o.isMesh), false)[0];
+            if (!hit) return null;
+            const f = FLOORS.find(f => f.id === hit.object.userData.floorId);
+            if (!f || outOfBuilding(f)) return null;
+            const h = { x: hit.point.x, z: hit.point.z, d: hit.distance };
+            return { f, h, zone: zoneAt(rasterFor(f, surfCache), h.x, h.z) };
         }
         function removeFloor(id) {
             FLOORS = FLOORS.filter(f => f.id !== id);
             VOIDS = VOIDS.filter(v => v.fid !== id);
             rasterCache.delete(id);
-            if (S.floorSel === id) S.floorSel = null;
+            for (let i = openingHistory.length - 1; i >= 0; i--) if (openingHistory[i].fid === id) openingHistory.splice(i, 1);
+            if (S.floorSel === id) S.floorSel = FLOORS.find(f => !outOfBuilding(f))?.id ?? null;
         }
 
         canvas.addEventListener('pointerdown', e => {
@@ -3177,7 +3278,7 @@
                 else drag.mode = { type: 'move', s: SEEDS[a.i], last: p };
             } else if (floorEditable()) {
                 const hit = floorHit(e);
-                if (hit) drag.mode = { type: 'floor', hit };
+                if (hit) drag.mode = { type: openingMode ? 'opening' : 'floor', hit };
             }
         });
         canvas.addEventListener('pointermove', e => {
@@ -3189,12 +3290,18 @@
                         const d = r[1] ? (r[1].pw - r[0].pw) / (2 * Math.hypot(r[0].s.x - r[1].s.x, r[0].s.z - r[1].s.z)) : 9;
                         canvas.style.cursor = labelSpots.some(l => Math.hypot(l.x - p.x, l.z - p.z) < 0.13 * P) ? 'pointer' : d < 0.05 * P ? 'ew-resize' : 'move';
                     }
-                } else if (floorEditable()) canvas.style.cursor = floorHit(e) ? 'ns-resize' : '';
+                } else if (floorEditable()) {
+                    const hit = floorHit(e);
+                    canvas.style.cursor = hit ? openingMode ? 'pointer' : 'ns-resize' : '';
+                    if (openingMode) previewOpening(hit);
+                }
                 else canvas.style.cursor = '';
                 return;
             }
             if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 4) {
                 drag.moved = true; canvas.classList.add('dragging');
+                clearOpeningPreview();
+                if (drag.mode?.type === 'opening') drag.mode = null;
                 if (!drag.pan && !drag.mode) S.userView = true;
             }
             if (!drag.moved) return;
@@ -3254,6 +3361,7 @@
             if (S.dragging) { S.dragging = false; update(); return; }
             if (!d.moved) onClick(e, d);
         });
+        canvas.addEventListener('pointerleave', () => { clearOpeningPreview(); render(); });
         canvas.addEventListener('contextmenu', e => e.preventDefault());
         canvas.addEventListener('wheel', e => {
             e.preventDefault();
@@ -3276,6 +3384,7 @@
                 return;
             }
             if (floorEditable()) {
+                if (openingMode) return;
                 // a new floor at the height where the surface was double-clicked
                 rayFor(e, mainCam, layout.planW, cw - layout.planW);
                 const hit = raycaster.intersectObjects(G.surf.children.filter(o => o.isMesh), false)
@@ -3312,7 +3421,9 @@
                 const hit = d.mode && d.mode.hit;
                 if (!hit) return;
                 S.floorSel = hit.f.id;
-                if (hit.zone >= 0) {
+                if (openingMode && hit.zone >= 0) {
+                    openingHistory.push({ fid: hit.f.id, voids: VOIDS.filter(v => v.fid === hit.f.id).map(v => ({ ...v })) });
+                    if (openingHistory.length > 30) openingHistory.shift();
                     const R = rasterFor(hit.f, surfCache);
                     const same = v => v.fid === hit.f.id && zoneAt(R, v.x, v.z) === hit.zone;
                     if (VOIDS.some(same)) VOIDS = VOIDS.filter(v => !same(v));
