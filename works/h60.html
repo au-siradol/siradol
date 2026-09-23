@@ -108,7 +108,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
     <div id="labels"></div>
-    <p id="updated" title="When this page was last updated">UPDATED 2026-09-22 15:52</p>
+    <p id="updated" title="When this page was last updated">UPDATED 2026-09-23 10:24</p>
   </div>
   <div id="status-text"></div>
 </div>
@@ -203,7 +203,8 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
     <div class="btn-row">
       <button id="saveSkp" class="toggle-btn" title="Collada .dae, one group per layer — File › Import in SketchUp">SketchUp</button>
       <button id="save3dm" class="toggle-btn" title="OBJ + MTL in a .zip, OBJ groups = layers — Import in Rhino">Rhino</button>
-      <button id="saveGh" class="toggle-btn" title="Grasshopper definition for Rhino 7: six GhPython boxes wired to sliders">Grasshopper</button>
+      <button id="saveGh1" class="toggle-btn" title="Grasshopper definition for Rhino 7: geometry only (boxes 1-6), no daylight analysis">Grasshopper_1</button>
+      <button id="saveGh2" class="toggle-btn" title="Grasshopper definition for Rhino 7: geometry plus the daylight/LUX analysis boxes (7-10)">Grasshopper_2</button>
     </div>
     <p class="note" id="toast" role="status"></p>
     <h3>Settings</h3>
@@ -2489,11 +2490,16 @@ const pyLit = v => Array.isArray(v) ? "[" + v.map(pyLit).join(", ") + "]"
   : typeof v === "boolean" ? (v ? "True" : "False")
   : Number.isInteger(v) ? String(v) : String(+v.toFixed(6));
 
-const GH_README = () => `H60 — Grasshopper definition (Rhino 7, GhPython)
+const GH_README = (withLight = true) => `H60 — Grasshopper definition (Rhino 7, GhPython)
 Exported from the web page ${exportStamp().text}
+${withLight ? "Grasshopper_2: geometry plus the daylight/LUX analysis (boxes 7-10)."
+            : "Grasshopper_1: geometry only, boxes 1-6 - no daylight analysis."}
 
-Open h60.gh in Grasshopper. Eight GhPython boxes run left to right, each with its
-sliders, grouped like the panels of the web page:
+Open h60.gh in Grasshopper. GhPython boxes run left to right, each with its
+sliders, grouped like the panels of the web page. The geometry boxes (1-6) and
+the two heatmap displays (8, 9, if present) preview in the viewport by
+default; the daylight run (7) and the study (10) do not - turn their outputs'
+preview on if you want to see their geometry too.
 
   1 Plan           Gap                                  -> Data, PlanLines, Site, Rooms, Circles, WallLines, WallIDs, WallMids
   2 Flexible       Data, n, Seed (0 = centres from the page, other = random)   -> Data, Shapes, Centres
@@ -2504,26 +2510,27 @@ sliders, grouped like the panels of the web page:
                    (the court pieces' ceilings, 13 and 14, as set on the page: curve, flat or open)
   5 Windows        Data, WidthPct, Height, Sill, UsePage (1 = page windows, 0 = rule), Show -> Data, Panes, Frames, WindowIDs
   6 Walls          Data, ShowExt, ShowInt, Thickness    -> Envelope, ExtWalls (with footings round the sunk court), IntWalls, ExtNames, IntIDs, White (the walls; box 3's base, slab and stairs are white too)
-  8 Display        Heatmap + wireframe context + Lux legend. AutoRange=1 takes the range from
-                   the results less the brightest and darkest Clip percent (5 by default);
-                   AutoRange=0 uses MinLux/MaxLux. LogScale=1 spaces the colours by powers of
-                   ten. OnlyRooms ("5, 6, 10" in a Panel) shows those pieces only and scales to them.
-                   Only this component previews by default. Results remain provisional.
-
-  7 Daylight       Data (box 5), CurveCeilings, Ceiling, CourtWalls, Skylights (wired),
+${withLight ? `  7 Daylight       Data (box 5), CurveCeilings, Ceiling, CourtWalls, Skylights (wired),
                    Month, Day, Hour (local standard time), GridSize, SensorZ, Run, Folder, Wea
                    -> Room, Apertures, OpenToSky, Shades, Grid, Points, Report, Results
                    Run = 0 gives the geometry for the Ladybug Tools components
                    (a Room from the solid, the apertures, the grid); Run = 1 also
                    writes a Radiance model to Folder and, if Radiance is there,
                    runs the annual daylight and reads DA, sDA and UDI back.
-
+  8 Display        Heatmap + wireframe context + Lux legend. AutoRange=1 takes the range from
+                   the results less the brightest and darkest Clip percent (5 by default);
+                   AutoRange=0 uses MinLux/MaxLux. LogScale=1 spaces the colours by powers of
+                   ten. OnlyRooms ("5, 6, 10" in a Panel) shows those pieces only and scales to them.
+  9 Ceiling display  The same, reading the sensors on the curve ceilings instead of the floor grid.
+  10 Ceiling study  H60_Ceiling_Optimization: a grid search over the ceiling's n, OffL, OffR
+                    for even ceiling light. See the box's own docstring for the score and inputs.
+` : ""}
 "Data" carries the design from box to box. Units: metres, Z up, origin at the
 lower-left corner of the plan. Slider values start at the page's settings.
 `;
 // the facades as a Python dict: name -> (axis, position across, length)
 const pyFaces = () => "{" + Object.entries(FACES).map(([k, f]) => JSON.stringify(k) + ": (" + JSON.stringify(f.axis) + ", " + pyLit(f.at) + ", " + pyLit(f.len) + ")").join(", ") + "}";
-async function ghFile() {
+async function ghFile(withLight = true) {
   const fill = (src, map) => Object.entries(map).reduce((s, [k, v]) => s.split(k).join(v), src);
   const PY = GH_PY_SOURCES;
   const codes = [
@@ -2543,7 +2550,7 @@ async function ghFile() {
       __FACELO__: "{" + Object.entries(FACES).filter(([, f]) => f.lo).map(([k, f]) => JSON.stringify(k) + ": " + pyLit(f.lo)).join(", ") + "}" }),
     PY.display, PY.display,
     fill(PY.study, { __BUILD__: ($("updated").textContent || "").replace("UPDATED ", "") }),   /* H60_Ceiling_Optimization */
-  ];
+  ].slice(0, withLight ? 10 : 6);
   // components left to right, sliders to the left of each, one group per box
   const F = GHID.hintFloat, I = GHID.hintInt, O = GHID.hintObject;
   // these take every item at once, not one run per item
@@ -2571,14 +2578,17 @@ async function ghFile() {
       ["Skip", O], ["Folder", O], ["Run", I, 0, 1, 0, 0], ["Show", I, 0, 10, 0, 0]],
       outputs: ["Table", "Best", "Ceilings", "Report", "Csv"] },
     /* ===== H60_Ceiling_Optimization - end ===== */
-  ];
+  ].slice(0, withLight ? 10 : 6);
   const COLOURS = [0x50b4c8d2, 0x50c8d2b4, 0x50d2c3b4, 0x50d2b4b4, 0x50b4b4d2, 0x50c3c3c3, 0x50c8c8a0, 0x50c8d2b4, 0x50d2cdb4]; // translucent tints, ARGB
   const comps = [], sliders = [], groups = [], outMap = new Map();
   let prevData = null;
   spec.forEach((sp, k) => {
     // four boxes to a row, so the whole definition fits one screen
     const x = 60 + (k % 4) * 470, y = 80 + Math.floor(k / 4) * 470;
-    const cp = { id: newGuid(), nick: sp.nick, code: codes[k], hidden: !/display/i.test(sp.nick), x: x + 230, y, inputs: [], outputs: sp.outputs, outIds: [newGuid(), ...sp.outputs.map(() => newGuid())] };
+    // the built geometry (1-6) and the two heatmap displays (8, 9) preview by
+    // default; the daylight run (7) and the study (10) stay off - their own
+    // outputs are numbers and reports, not something to look at in the viewport
+    const cp = { id: newGuid(), nick: sp.nick, code: codes[k], hidden: /^7 |^10 /.test(sp.nick), x: x + 230, y, inputs: [], outputs: sp.outputs, outIds: [newGuid(), ...sp.outputs.map(() => newGuid())] };
     const members = [cp.id];
     let sy = y;
     sp.inputs.forEach(([name, hint, min, max, value, digits]) => {
@@ -2625,13 +2635,15 @@ $("saveSkp").addEventListener("click", () => downloads
   ? save(stampName("h60-sketchup", "zip"), zipFiles([{ name: stampName("h60", "dae"), data: daeFile() }]))
   : save(stampName("h60", "dae"), daeFile()));
 $("save3dm").addEventListener("click", () => save(stampName("h60-rhino", "zip"), zipFiles(objFiles())));
-$("saveGh").addEventListener("click", async () => {
+async function saveGhFile(withLight, tag) {
   try {
-    const gh = await ghFile();
-    if (downloads) save(stampName("h60-grasshopper", "zip"), zipFiles([{ name: stampName("h60", "gh"), data: gh }, { name: "README.txt", data: GH_README() }]));
+    const gh = await ghFile(withLight);
+    if (downloads) save(stampName("h60-" + tag, "zip"), zipFiles([{ name: stampName("h60", "gh"), data: gh }, { name: "README.txt", data: GH_README(withLight) }]));
     else save(stampName("h60", "gh"), gh);
   } catch (e) { toast("Could not build the Grasshopper file: " + e.message); }
-});
+}
+$("saveGh1").addEventListener("click", () => saveGhFile(false, "grasshopper-1"));
+$("saveGh2").addEventListener("click", () => saveGhFile(true, "grasshopper-2"));
 
 /* ---------------- saved settings (this browser's local storage) ---------------- */
 // the design (centres, sliders, toggles, roof openings, window edits), the step
