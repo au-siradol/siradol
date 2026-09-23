@@ -108,7 +108,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
     <div id="labels"></div>
-    <p id="updated" title="When this page was last updated">UPDATED 2026-09-23 10:24</p>
+    <p id="updated" title="When this page was last updated">UPDATED 2026-09-23 10:34</p>
   </div>
   <div id="status-text"></div>
 </div>
@@ -2531,6 +2531,19 @@ lower-left corner of the plan. Slider values start at the page's settings.
 // the facades as a Python dict: name -> (axis, position across, length)
 const pyFaces = () => "{" + Object.entries(FACES).map(([k, f]) => JSON.stringify(k) + ": (" + JSON.stringify(f.axis) + ", " + pyLit(f.at) + ", " + pyLit(f.len) + ")").join(", ") + "}";
 async function ghFile(withLight = true) {
+  // export the saved design (Settings > Save), not whatever is on screen and
+  // unsaved - restored again before this returns, so the page itself is
+  // untouched. Nothing saved yet: export the current, live values as before.
+  const saved = readSaved();
+  const snap = saved ? snapshotDesign() : null;
+  if (saved) applyDesignOnly(saved);
+  try {
+    return await ghFileNow(withLight);
+  } finally {
+    if (snap) restoreDesign(snap);
+  }
+}
+async function ghFileNow(withLight = true) {
   const fill = (src, map) => Object.entries(map).reduce((s, [k, v]) => s.split(k).join(v), src);
   const PY = GH_PY_SOURCES;
   const codes = [
@@ -2677,6 +2690,28 @@ function applySaved(d) {
     const v = { dir: new THREE.Vector3(...d.view.dir), up: new THREE.Vector3(...d.view.up), zoom: d.view.zoom, target: new THREE.Vector3(...d.view.target) };
     camFrom = v; camTo = { ...v }; camK = 1;
   }
+}
+// the design half of applySaved/settingsNow, without the camera or the step -
+// used to switch to the saved design for a Grasshopper export and back
+function snapshotDesign() {
+  return {
+    S: Object.fromEntries(SAVE_S.map(k => [k, S[k]])),
+    centres: PIECES.map(p => [p.no, p.cx, p.cy]),
+    holes: new Set(S.holes), opening: { ...S.opening },
+    winOvr: new Map(WIN_OVR), winExtra: WIN_EXTRA.map(x => ({ ...x })), xid: XID,
+  };
+}
+function applyDesignOnly(d) {
+  for (const k of SAVE_S) if (k in d.S) S[k] = d.S[k];
+  for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, cx)); p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, cy)); } }
+  S.holes = new Set((d.holes || []).filter(n => PIECES.some(q => q.no === n))); S.opening = d.opening || {};
+  WIN_OVR = new Map(d.winOvr || []); WIN_EXTRA.splice(0, WIN_EXTRA.length, ...(d.winExtra || [])); XID = d.xid || XID;
+}
+function restoreDesign(snap) {
+  for (const k of SAVE_S) S[k] = snap.S[k];
+  for (const [no, cx, cy] of snap.centres) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = cx; p.cy = cy; } }
+  S.holes = snap.holes; S.opening = snap.opening;
+  WIN_OVR = snap.winOvr; WIN_EXTRA.splice(0, WIN_EXTRA.length, ...snap.winExtra); XID = snap.xid;
 }
 const stamp = t => new Date(t).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 $("setSave").addEventListener("click", () => {
