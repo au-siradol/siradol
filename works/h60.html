@@ -108,7 +108,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
     <div id="labels"></div>
-    <p id="updated" title="When this page was last updated">UPDATED 2026-09-23 16:19</p>
+    <p id="updated" title="When this page was last updated">UPDATED 2026-09-23 21:40</p>
   </div>
   <div id="status-text"></div>
 </div>
@@ -203,6 +203,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
     <div class="btn-row">
       <button id="saveSkp" class="toggle-btn" title="Collada .dae, one group per layer — File › Import in SketchUp">SketchUp</button>
       <button id="save3dm" class="toggle-btn" title="OBJ + MTL in a .zip, OBJ groups = layers — Import in Rhino">Rhino</button>
+      <button id="saveDxf" class="toggle-btn" title="Ground-floor plan for AutoCAD: DXF, millimetres, cut 1.20 above FF, one layer per kind of line">AutoCAD</button>
       <button id="saveGh1" class="toggle-btn" title="Grasshopper definition for Rhino 7: geometry only (boxes 1-6), no daylight analysis">Grasshopper_1</button>
       <button id="saveGh2" class="toggle-btn" title="Grasshopper definition for Rhino 7: geometry plus the daylight/LUX analysis boxes (7-10)">Grasshopper_2</button>
     </div>
@@ -2330,6 +2331,198 @@ function zipFiles(files) {
   return out;
 }
 
+/* ---------------- plan export: AutoCAD (.dxf) ---------------- */
+/* the ground floor cut PLAN_CUT above FF, in millimetres, as a DXF R12 (the
+   version every AutoCAD opens): the walls cut, as one outline and a solid
+   poché; the windows and doors in their openings (frame jambs and glass cut,
+   the wall under a sill seen); what is overhead dashed - the curve ceilings
+   where they meet +3.40, the court's opening, the roof openings, the eaves and
+   the ridge; the stairs, the sunk court, the room numbers and wall ids, and the
+   lines of Drawing1 on their own layer. Local origin, as in the model. */
+const PLAN_CUT = 1.20;
+const DXF_LAYERS = [
+  // name, colour (AutoCAD index), linetype
+  ["WALL", 7, "CONTINUOUS"], ["WALL_POCHE", 252, "CONTINUOUS"], ["WINDOW", 4, "CONTINUOUS"], ["WINDOW_ABOVE", 4, "HIDDEN"],
+  ["STAIR", 3, "CONTINUOUS"], ["COURT", 30, "CONTINUOUS"], ["CEILING_ABOVE", 6, "HIDDEN"], ["SKYLIGHT_ABOVE", 5, "HIDDEN"],
+  ["ROOF_ABOVE", 8, "HIDDEN"], ["RIDGE", 8, "CENTER"], ["SITE", 1, "CONTINUOUS"], ["ROOM_NO", 2, "CONTINUOUS"],
+  ["WALL_ID", 9, "CONTINUOUS"], ["PLAN_SOURCE", 9, "CONTINUOUS"], ["TITLE", 7, "CONTINUOUS"],
+];
+function dxfPlan() {
+  const MM = 1000, E = [];
+  const n = v => String(Math.round(v * MM * 1000) / 1000);       // metres -> mm
+  const put = (...kv) => { for (let i = 0; i < kv.length; i += 2) E.push(kv[i], kv[i + 1]); };
+  const line = (L, a, b) => put(0, "LINE", 8, L, 10, n(a.x), 20, n(a.y), 30, 0, 11, n(b.x), 21, n(b.y), 31, 0);
+  const poly = (L, pts, closed = true) => {
+    if (pts.length < 2) return;
+    put(0, "POLYLINE", 8, L, 66, 1, 10, 0, 20, 0, 30, 0, 70, closed ? 1 : 0);
+    for (const q of pts) put(0, "VERTEX", 8, L, 10, n(q.x), 20, n(q.y), 30, 0);
+    put(0, "SEQEND", 8, L);
+  };
+  const rect = (L, x0, y0, x1, y1) => poly(L, [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }]);
+  const solid = (L, x0, y0, x1, y1) => put(0, "SOLID", 8, L, 10, n(x0), 20, n(y0), 30, 0, 11, n(x1), 21, n(y0), 31, 0, 12, n(x0), 22, n(y1), 32, 0, 13, n(x1), 23, n(y1), 33, 0);
+  const circle = (L, c, r) => put(0, "CIRCLE", 8, L, 10, n(c.x), 20, n(c.y), 30, 0, 40, n(r));
+  const arc = (L, c, r, a0, a1) => put(0, "ARC", 8, L, 10, n(c.x), 20, n(c.y), 30, 0, 40, n(r), 50, a0, 51, a1);
+  const text = (L, q, h, s) => put(0, "TEXT", 8, L, 10, n(q.x), 20, n(q.y), 30, 0, 40, n(h), 1, s, 72, 1, 73, 2, 11, n(q.x), 21, n(q.y), 31, 0);
+  const wins = shownWins(), T = GF_T;
+  const cutsAt = w => w.sill <= PLAN_CUT + 1e-9 && w.sill + w.h >= PLAN_CUT - 1e-9;
+
+  // ---- the walls, cut: every wall a rectangle less its openings at the cut,
+  // then all of them merged (so corners and tees close) into outline and poché
+  const rects = [];
+  const band = (f, a0, a1) => {               // a stretch of an outside wall, a0..a1 along it
+    const F = FACES[f], c0 = F.at, c1 = F.at + INWARD[f] * T;
+    const [p, q] = [Math.min(c0, c1), Math.max(c0, c1)];
+    return F.axis === "x" ? [a0, p, a1, q] : [p, a0, q, a1];
+  };
+  for (const f of Object.keys(FACES)) {
+    const holes = wins.filter(w => w.face === f && cutsAt(w)).map(w => [w.a0, w.a1]).sort((u, v) => u[0] - v[0]);
+    for (const [lo, hi] of faceRuns(f)) {
+      let s = lo;
+      for (const [a0, a1] of holes) {
+        if (a1 <= s || a0 >= hi) continue;
+        if (a0 > s) rects.push(band(f, s, a0));
+        s = Math.max(s, a1);
+      }
+      if (hi > s + 1e-9) rects.push(band(f, s, hi));
+    }
+  }
+  for (const wl of WALLS) {
+    if (wl.face || GF_HIDE.has(wl.id)) continue;
+    const horiz = Math.abs(wl.a.y - wl.b.y) < 1e-6, L = horiz ? W : D;
+    const a = horiz ? Math.min(wl.a.x, wl.b.x) : Math.min(wl.a.y, wl.b.y), b = horiz ? Math.max(wl.a.x, wl.b.x) : Math.max(wl.a.y, wl.b.y);
+    const lo = Math.max(0, a - T / 2), hi = Math.min(L, b + T / 2), c = horiz ? wl.a.y : wl.a.x;
+    rects.push(horiz ? [lo, c - T / 2, hi, c + T / 2] : [c - T / 2, lo, c + T / 2, hi]);
+  }
+  {
+    const key = v => Math.round(v * 1e6) / 1e6;
+    const xs = [...new Set(rects.flatMap(r => [key(r[0]), key(r[2])]))].sort((u, v) => u - v);
+    const ys = [...new Set(rects.flatMap(r => [key(r[1]), key(r[3])]))].sort((u, v) => u - v);
+    const nx = xs.length - 1, ny = ys.length - 1, fill = [];
+    for (let i = 0; i < nx; i++) {
+      fill.push([]);
+      const mx = (xs[i] + xs[i + 1]) / 2;
+      for (let j = 0; j < ny; j++) { const my = (ys[j] + ys[j + 1]) / 2; fill[i].push(rects.some(r => mx > r[0] && mx < r[2] && my > r[1] && my < r[3])); }
+    }
+    const on = (i, j) => i >= 0 && j >= 0 && i < nx && j < ny && fill[i][j];
+    // poché: filled cells, merged along each row, then rows of equal span stacked
+    const runs = new Map();
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      if (!on(i, j) || on(i - 1, j)) continue;
+      let k = i; while (on(k + 1, j)) k++;
+      const id = i + "," + k, r = runs.get(id);
+      if (r && r.j1 === j) r.j1 = j + 1; else { if (r) solid("WALL_POCHE", xs[r.i], ys[r.j0], xs[r.k + 1], ys[r.j1]); runs.set(id, { i, k, j0: j, j1: j + 1 }); }
+    }
+    for (const r of runs.values()) solid("WALL_POCHE", xs[r.i], ys[r.j0], xs[r.k + 1], ys[r.j1]);
+    // outline: the cells' sides between filled and empty, the filled on the
+    // left, chained into loops with the straight runs joined
+    const P = (i, j) => ({ x: xs[i], y: ys[j], k: i + "," + j }), edges = [];
+    for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+      if (!on(i, j)) continue;
+      if (!on(i, j - 1)) edges.push([P(i, j), P(i + 1, j)]);
+      if (!on(i + 1, j)) edges.push([P(i + 1, j), P(i + 1, j + 1)]);
+      if (!on(i, j + 1)) edges.push([P(i + 1, j + 1), P(i, j + 1)]);
+      if (!on(i - 1, j)) edges.push([P(i, j + 1), P(i, j)]);
+    }
+    const from = new Map();
+    for (const e of edges) { if (!from.has(e[0].k)) from.set(e[0].k, []); from.get(e[0].k).push(e); }
+    const used = new Set();
+    for (const e0 of edges) {
+      if (used.has(e0)) continue;
+      const loop = [];
+      let e = e0;
+      while (e && !used.has(e)) { used.add(e); loop.push(e[0]); e = (from.get(e[1].k) || []).find(x => !used.has(x)); }
+      const pts = loop.filter((q, i) => {
+        const a = loop[(i - 1 + loop.length) % loop.length], b = loop[(i + 1) % loop.length];
+        return Math.abs((q.x - a.x) * (b.y - q.y) - (q.y - a.y) * (b.x - q.x)) > 1e-12;
+      });
+      poly("WALL", pts);
+    }
+  }
+
+  // ---- windows and doors: cut ones in their openings, others dashed
+  for (const w of wins) {
+    const F = FACES[w.face], s = INWARD[w.face] || 0, mid = F.at + s * T / 2, d = FR_D / 2;
+    const P = (a, off) => F.axis === "x" ? { x: a, y: mid + off } : { x: mid + off, y: a };
+    const box = (L, a0, a1, o0, o1) => poly(L, [P(a0, o0), P(a1, o0), P(a1, o1), P(a0, o1)]);
+    if (!cutsAt(w)) { box("WINDOW_ABOVE", w.a0, w.a1, -T / 2, T / 2); continue; }
+    box("WINDOW", w.a0, w.a0 + FR_W, -d, d);                               // jambs, cut
+    box("WINDOW", w.a1 - FR_W, w.a1, -d, d);
+    box("WINDOW", w.a0 + FR_W, w.a1 - FR_W, -GLASS_T / 2, GLASS_T / 2);    // glass, cut
+    if (w.sill > 1e-6) for (const o of [-T / 2, T / 2]) line("WINDOW", P(w.a0, o), P(w.a1, o));  // the wall under the sill, seen
+  }
+
+  // ---- overhead, dashed: the curve ceilings where they meet +3.40, the
+  // court's opening in the flat ceiling, the roof openings, the eaves, the ridge
+  for (const p of PIECES) if (!ceilGone(p.no)) poly("CEILING_ABOVE", ringPts(p, 1, S.n, 160));
+  const cv = courtVoid();
+  if (cv) poly("CEILING_ABOVE", cv.path, cv.closed);
+  for (const p of PIECES) if (S.holes.has(p.no)) poly("SKYLIGHT_ABOVE", openingPts(p));
+  rect("ROOF_ABOVE", -EAVE, -GABLE_EAVE, W + EAVE, D + GABLE_EAVE);
+  line("RIDGE", { x: RX, y: -GABLE_EAVE }, { x: RX, y: D + GABLE_EAVE });
+
+  // ---- the entrance spiral: newel, the treads' edges every SP_DEG, its outer
+  // arc, the well, and the way up
+  {
+    const st = STAIR, c = { x: st.cx, y: st.cy }, rad = Math.PI / 180, at = (a, r) => ({ x: c.x + r * Math.cos(a * rad), y: c.y + r * Math.sin(a * rad) });
+    circle("STAIR", c, st.rn);
+    arc("STAIR", c, st.r, 0, 180);
+    for (let a = 0; a <= 180 + 1e-9; a += st.deg) line("STAIR", at(a, st.rn), at(a, st.r));
+    rect("STAIR", 0, st.y0, st.well, st.y1);
+    arc("STAIR", c, st.r * 0.62, 12, 176);                                  // the way up, from the west round to the east
+    line("STAIR", at(12, st.r * 0.62), at(26, st.r * 0.50)); line("STAIR", at(12, st.r * 0.62), at(26, st.r * 0.74));
+    text("STAIR", at(200, st.r * 0.62), 0.12, "UP");
+  }
+  // ---- the court: its sunk floor, its stair down from I27, its level
+  {
+    const cs = COURT.stair, foot = cs.back - (COURT_RISERS - 1) * COURT_TREAD;
+    poly("COURT", COURT.floor);
+    for (let k = 0; k < COURT_RISERS; k++) line("STAIR", { x: foot + k * COURT_TREAD, y: cs.y0 }, { x: foot + k * COURT_TREAD, y: cs.y1 });
+    line("STAIR", { x: foot, y: cs.y0 }, { x: cs.back, y: cs.y0 }); line("STAIR", { x: foot, y: cs.y1 }, { x: cs.back, y: cs.y1 });
+    text("STAIR", { x: (foot + cs.back) / 2, y: (cs.y0 + cs.y1) / 2 }, 0.12, "DN");
+    const f = COURT.floor, cx = (f[0].x + f[1].x) / 2, cy = (f[0].y + f[2].y) / 2;
+    text("COURT", { x: cx, y: cy - 0.35 }, 0.15, "COURT  CF +" + CF.toFixed(2));
+  }
+
+  // ---- labels: room and piece numbers, wall ids, the site, the source lines
+  for (const p of PIECES) {
+    text("ROOM_NO", { x: p.cx, y: p.cy + 0.12 }, 0.22, "ROOM " + p.room);
+    text("ROOM_NO", { x: p.cx, y: p.cy - 0.18 }, 0.12, "piece " + p.no);
+  }
+  for (const w of WALLS) text("WALL_ID", { x: w.mx ?? (w.a.x + w.b.x) / 2, y: w.my ?? (w.a.y + w.b.y) / 2 }, 0.08, w.id);
+  poly("SITE", SITE);
+  for (const l of PLAN) poly("PLAN_SOURCE", l, false);
+  text("TITLE", { x: W / 2, y: -GABLE_EAVE - 0.8 }, 0.30, "H60  GROUND FLOOR PLAN  (FF +" + FF.toFixed(2) + ", CUT +" + (FF + PLAN_CUT).toFixed(2) + ")");
+  text("TITLE", { x: W / 2, y: -GABLE_EAVE - 1.25 }, 0.15, "mm  -  offsets L " + S.offL.toFixed(2) + " / R " + S.offR.toFixed(2) + " m  -  exported " + exportStamp().text);
+
+  // ---- the file: header (millimetres), linetypes, layers, a text style, entities
+  const H = [];
+  const h = (...kv) => { for (let i = 0; i < kv.length; i += 2) H.push(kv[i], kv[i + 1]); };
+  const xsAll = SITE.map(q => q.x).concat([-EAVE, W + EAVE]), ysAll = SITE.map(q => q.y).concat([-GABLE_EAVE - 1.5, D + GABLE_EAVE]);
+  h(999, "H60 ground floor plan, exported from the H60 page " + exportStamp().text + " - millimetres, local origin");
+  h(0, "SECTION", 2, "HEADER", 9, "$ACADVER", 1, "AC1009", 9, "$INSUNITS", 70, 4, 9, "$MEASUREMENT", 70, 1, 9, "$LTSCALE", 40, 1,
+    9, "$EXTMIN", 10, n(Math.min(...xsAll)), 20, n(Math.min(...ysAll)), 30, 0, 9, "$EXTMAX", 10, n(Math.max(...xsAll)), 20, n(Math.max(...ysAll)), 30, 0, 0, "ENDSEC");
+  h(0, "SECTION", 2, "TABLES");
+  h(0, "TABLE", 2, "LTYPE", 70, 3,
+    0, "LTYPE", 2, "CONTINUOUS", 70, 0, 3, "Solid line", 72, 65, 73, 0, 40, 0,
+    0, "LTYPE", 2, "HIDDEN", 70, 0, 3, "Hidden __ __ __", 72, 65, 73, 2, 40, 225, 49, 150, 49, -75,
+    0, "LTYPE", 2, "CENTER", 70, 0, 3, "Center ____ _ ____", 72, 65, 73, 4, 40, 1000, 49, 700, 49, -100, 49, 100, 49, -100, 0, "ENDTAB");
+  h(0, "TABLE", 2, "LAYER", 70, DXF_LAYERS.length);
+  for (const [name, col, lt] of DXF_LAYERS) h(0, "LAYER", 2, name, 70, 0, 62, col, 6, lt);
+  h(0, "ENDTAB", 0, "TABLE", 2, "STYLE", 70, 1, 0, "STYLE", 2, "STANDARD", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "", 0, "ENDTAB", 0, "ENDSEC");
+  h(0, "SECTION", 2, "BLOCKS", 0, "ENDSEC", 0, "SECTION", 2, "ENTITIES");
+  const all = H.concat(E, [0, "ENDSEC", 0, "EOF"]);
+  let s = "";
+  for (let i = 0; i < all.length; i += 2) s += String(all[i]).padStart(3, " ") + "\r\n" + all[i + 1] + "\r\n";
+  return s;
+}
+// what the exports show: the saved design (Settings > Save), not unsaved edits
+// on screen - put back as it was once the export is made. Nothing saved: live.
+async function withSavedDesign(fn) {
+  const saved = readSaved(), snap = saved ? snapshotDesign() : null;
+  if (saved) applyDesignOnly(saved);
+  try { return await fn(); } finally { if (snap) restoreDesign(snap); }
+}
+
 // the six GhPython boxes (IronPython 2.7), one per panel of this page
 const GH_PY_SOURCES = {
 "plan": "\"\"\"H60 - 1 Plan\nThe rooms of Drawing1 as rectangles (the L room cut in two at x = 6.00),\na circle at each centre, as large as the room allows Gap clear of the lines.\nInputs : Gap (m)\nOutputs: Data, PlanLines, Site, Rooms, Circles, WallLines, WallIDs, WallMids\nLocal metres; origin = lower-left corner of the plan.\"\"\"\nimport Rhino.Geometry as rg\n\nclass H60(object):\n    \"\"\"The design state passed along the wires (an object, so Grasshopper\n    keeps it as one item instead of listing a dict's keys).\"\"\"\n    def __init__(self, d): self.d = d\n    def __repr__(self): return \"H60 data: %d pieces, %d walls\" % (len(self.d[\"pieces\"]), len(self.d[\"walls\"]))\n\nif Gap is None: Gap = 0.10\nW, D = 7.5, 21.0\nPLAN = __PLAN__\nSITE = __SITE__\n# no, room, x0, y0, x1, y1, centre x, centre y, split  (centres as set on the web page)\nPIECES = __PIECES__\n# id, facade (S N W E or \"\"), ax, ay, bx, by\nWALLS = __WALLS__\n\ndef P(x, y, z=0.0):\n    return rg.Point3d(x, y, z)\n\ndef closed(pts):\n    return rg.PolylineCurve([P(x, y) for x, y in list(pts) + [pts[0]]])\n\npieces = []\nfor no, room, x0, y0, x1, y1, cx, cy, split in PIECES:\n    pieces.append(dict(no=no, room=room, x0=x0, y0=y0, x1=x1, y1=y1, cx=cx, cy=cy, split=split))\nwalls = [dict(id=i, face=f, a=(ax, ay), b=(bx, by)) for i, f, ax, ay, bx, by in WALLS]\n\ndef circle_r(p):\n    return max(0.0, min(p[\"cx\"] - p[\"x0\"], p[\"x1\"] - p[\"cx\"], p[\"cy\"] - p[\"y0\"], p[\"y1\"] - p[\"cy\"]) - Gap)\n\nPlanLines = [rg.PolylineCurve([P(x, y) for x, y in l]) for l in PLAN]\nSite = closed(SITE)\nRooms = [closed([(p[\"x0\"], p[\"y0\"]), (p[\"x1\"], p[\"y0\"]), (p[\"x1\"], p[\"y1\"]), (p[\"x0\"], p[\"y1\"])]) for p in pieces]\nCircles = [rg.Circle(P(p[\"cx\"], p[\"cy\"]), max(circle_r(p), 0.001)).ToNurbsCurve() for p in pieces]\nWallLines = [rg.LineCurve(P(w[\"a\"][0], w[\"a\"][1]), P(w[\"b\"][0], w[\"b\"][1])) for w in walls]\nWallIDs = [w[\"id\"] for w in walls]\nWallMids = [P((w[\"a\"][0] + w[\"b\"][0]) / 2.0, (w[\"a\"][1] + w[\"b\"][1]) / 2.0) for w in walls]\nData = H60(dict(W=W, D=D, gap=float(Gap), plan=PLAN, site=SITE, pieces=pieces, walls=walls))\n",
@@ -2547,19 +2740,8 @@ lower-left corner of the plan. Slider values start at the page's settings.
 `;
 // the facades as a Python dict: name -> (axis, position across, length)
 const pyFaces = () => "{" + Object.entries(FACES).map(([k, f]) => JSON.stringify(k) + ": (" + JSON.stringify(f.axis) + ", " + pyLit(f.at) + ", " + pyLit(f.len) + ")").join(", ") + "}";
-async function ghFile(withLight = true) {
-  // export the saved design (Settings > Save), not whatever is on screen and
-  // unsaved - restored again before this returns, so the page itself is
-  // untouched. Nothing saved yet: export the current, live values as before.
-  const saved = readSaved();
-  const snap = saved ? snapshotDesign() : null;
-  if (saved) applyDesignOnly(saved);
-  try {
-    return await ghFileNow(withLight);
-  } finally {
-    if (snap) restoreDesign(snap);
-  }
-}
+// the saved design, like the plan (withSavedDesign)
+const ghFile = (withLight = true) => withSavedDesign(() => ghFileNow(withLight));
 async function ghFileNow(withLight = true) {
   const fill = (src, map) => Object.entries(map).reduce((s, [k, v]) => s.split(k).join(v), src);
   const PY = GH_PY_SOURCES;
@@ -2673,6 +2855,14 @@ async function saveGhFile(withLight, tag) {
   } catch (e) { toast("Could not build the Grasshopper file: " + e.message); }
 }
 $("saveGh1").addEventListener("click", () => saveGhFile(false, "grasshopper-1"));
+// Claude's viewer saves only some file types: there the .dxf travels in a .zip
+$("saveDxf").addEventListener("click", async () => {
+  try {
+    const dxf = await withSavedDesign(() => dxfPlan());
+    if (downloads) save(stampName("h60-autocad", "zip"), zipFiles([{ name: stampName("h60-plan", "dxf"), data: dxf }]));
+    else save(stampName("h60-plan", "dxf"), dxf);
+  } catch (e) { toast("Could not build the plan: " + e.message); }
+});
 $("saveGh2").addEventListener("click", () => saveGhFile(true, "grasshopper-2"));
 
 /* ---------------- saved settings (this browser's local storage) ---------------- */
