@@ -108,7 +108,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
     <div id="labels"></div>
-    <p id="updated" title="When this page was last updated">UPDATED 2026-09-23 21:40</p>
+    <p id="updated" title="When this page was last updated">UPDATED 2026-09-24 10:41</p>
   </div>
   <div id="status-text"></div>
 </div>
@@ -302,14 +302,25 @@ const PLAN = [
 const $ = id => document.getElementById(id);
 const S = { addWin: false, t: 1, target: 1, n: 4, op: 1, env: 0.18, offL: 0.65, offR: 0.3, solid: false, below: false, ids: true, gfE: false, gfI: false, win: true, elev: null, winSel: null, winW: 0.5, winH: 1.2, winSill: 0.9, sel: null, opening: {}, holes: new Set([13]), dirty: true };
 let PIECES = [], UNDO = null;
-/* edits to the plan's pieces: the ceiling line between 5 and 6 moves onto the
-   front door's wall (I09, on the I04 line); 8 and 9 share one curve ceiling */
+/* edits to the plan's pieces: 8 and 9 share one curve ceiling; and the
+   ceiling lines of H60_24_sep.dwg (24 Sep 2026): x = 2.45 from the south wall
+   to 10.62 (rooms 1, 2, 3 against 7, 8, 9), x = 5.878 from 8.91 to 16.09, room
+   15 from x = 4.35 and y = 18.245, room 6 to x = 4.35, and room 2 cut at
+   y = 7.415 - its north part the hall, a new piece 18 (room 17). The notch left
+   between room 6 and room 14 (x 4.35-4.775, y 17.09-18.245) has the flat
+   ceiling at +3.40 */
 function editPieces(ps) {
   const P = n => ps.find(q => q.no === n), re = q => { q.cx = (q.x0 + q.x1) / 2; q.cy = (q.y0 + q.y1) / 2; };
-  const x = WALLS.find(w => w.id === "I09").a.x;
-  P(5).x1 = x; P(6).x0 = x; re(P(5)); re(P(6));
-  P(8).x1 = P(9).x1; re(P(8));
-  return ps.filter(q => q.no !== 9);
+  P(8).x1 = P(9).x1;
+  for (const n of [1, 3, 5]) P(n).x1 = 2.45;
+  for (const n of [2, 4, 6]) P(n).x0 = 2.45;
+  P(6).x1 = 5.878; P(7).x0 = 5.878; P(8).x1 = 5.878; P(11).x0 = 5.878; P(12).x1 = 5.878;
+  P(15).y1 = 18.245; P(17).y0 = 18.245; P(17).x0 = 4.35; P(16).x1 = 4.35;
+  const hall = { ...P(3), no: 18, room: Math.max(...ps.map(q => q.room)) + 1, y0: 7.415, split: false };
+  P(3).y1 = 7.415;
+  const out = ps.filter(q => q.no !== 9).concat([hall]);
+  out.forEach(re);
+  return out;
 }
 
 const clamp01 = v => Math.max(0, Math.min(1, v));
@@ -820,23 +831,55 @@ function findWalls() {
 }
 const WALLS = findWalls();
 // edits to the plan's walls: E02-E04 (short bits of the drawing's south line)
-// join E05 as one wall; I09, the front door's wall, moves onto the I04 line
-// (x = 2.80), toward the stair, closing the entrance porch
+// join E05 as one wall
 {
   const ids = ["E02", "E03", "E04", "E05"], ws = WALLS.filter(w => ids.includes(w.id));
   const x0 = Math.min(...ws.flatMap(w => [w.a.x, w.b.x])), x1 = Math.max(...ws.flatMap(w => [w.a.x, w.b.x]));
   const e5 = WALLS.find(w => w.id === "E05");
   Object.assign(e5, { a: { x: x0, y: 0 }, b: { x: x1, y: 0 }, len: x1 - x0, mx: (x0 + x1) / 2 });
   for (const id of ["E02", "E03", "E04"]) WALLS.splice(WALLS.findIndex(w => w.id === id), 1);
-  const i9 = WALLS.find(w => w.id === "I09"), x4 = WALLS.find(w => w.id === "I04").a.x;
-  Object.assign(i9, { a: { x: x4, y: i9.a.y }, b: { x: x4, y: i9.b.y }, mx: x4 });
+}
+/* the walls of H60_24_sep.dwg (24 Sep 2026): walls moved to where that
+   drawing puts them, two new ones round the hall north of room 2, and the
+   walls it leaves out hidden. A door drawn in a wall keeps the wall whole (the
+   model has no door openings); an opening with no door in it is left open.
+   x / y are the walls' lines: inside walls centred on them, I09 (facing the
+   porch) with its face on it. The ceiling lines are set in editPieces. */
+const LAYOUT = "2026-09-24";
+{
+  const W_ = id => WALLS.find(w => w.id === id);
+  const put = (id, ax, ay, bx, by) => {
+    const w = W_(id);
+    Object.assign(w, { a: { x: ax, y: ay }, b: { x: bx, y: by }, len: Math.hypot(bx - ax, by - ay), mx: (ax + bx) / 2, my: (ay + by) / 2 });
+  };
+  const y5 = W_("I05").a.y, y11 = W_("I11").a.y, y12 = W_("I19").a.y, y16 = W_("I25").a.y, y17 = W_("I31").a.y;
+  const yr = W_("I15").a.y, x355 = W_("I12").a.x, x4775 = W_("I13").a.x;
+  const XS = 2.45, XF = 2.40, XB = 5.878, XC = 5.75, YH = 7.415, YN = 18.245, XN = 4.35;
+  // the line between rooms 1-3 and 7-9 moves to 2.45 (walls there stay hidden)
+  put("I01", XS, 0, XS, 5.25); put("I04", XS, 5.25, XS, y5);
+  put("I02", 0, 5.25, XS, 5.25); put("I03", XS, 5.25, W, 5.25);
+  // the front wall onto 2.40-2.50; along y = 8.91 the wall is open from 0.80
+  // to the hall's east wall (the way from the stair), and closed by the
+  // sliding door from there on
+  put("I09", XF, y5, XF, y11);
+  put("I05", 0, y5, 0.80, y5); put("I06", XS, y5, x355, y5); put("I07", x355, y5, XB, y5); put("I08", XB, y5, W, y5);
+  // bathroom 16's west wall onto 5.878, room 13's onto 5.75
+  put("I10", XB, y5, XB, y11); put("I14", XB, y11, XB, yr); put("I15", XB, yr, W, yr);
+  put("I13", 5.259, y11, XB, y11);
+  put("I19", x4775, y12, XC, y12); put("I22", XC, y12, XC, y16); put("I25", x4775, y16, XC, y16); put("I26", XC, y16, W, y16);
+  // bathroom 15 grows west and north: its walls onto x = 4.35 and y = 18.245
+  put("I31", x4775, y17, x4775, YN); put("I32", XN, YN, W, YN); put("I33", XN, YN, XN, D);
+  put("E16", W, y16, W, YN); put("E18", W, YN, W, D); put("E19", 0, D, XN, D); put("E20", XN, D, W, D);
+  // the hall north of room 2: a wall across at 7.415 and one up the 2.45 line
+  WALLS.push({ id: "I34", face: null, a: { x: 0, y: YH }, b: { x: XS, y: YH }, len: XS, mx: XS / 2, my: YH },
+             { id: "I35", face: null, a: { x: XS, y: YH }, b: { x: XS, y: y5 }, len: y5 - YH, mx: XS, my: (YH + y5) / 2 });
 }
 
 // windows: by rule on every outside wall at least 0.90 m long, then edited
 const WIN_MIN_WALL = 0.9, WIN_MIN = 0.2;
 // ground-floor walls, 10 cm: all but these. A hidden inside wall is simply
 // not built; a hidden outside wall is an opening (no wall, no glass, no window)
-const GF_T = 0.10, GF_HIDE = new Set(["I17", "I27", "I04", "I03", "I01", "I02", "I26", "E15", "E11"]);
+const GF_T = 0.10, GF_HIDE = new Set(["I17", "I27", "I04", "I03", "I01", "I02", "I26", "E15", "E11", "I12"]);
 const alongOf = (f, w) => FACES[f].axis === "x" ? [Math.min(w.a.x, w.b.x), Math.max(w.a.x, w.b.x)] : [Math.min(w.a.y, w.b.y), Math.max(w.a.y, w.b.y)];
 // the stretches of a facade that are wall (hidden outside walls left out), merged
 function faceRuns(f) {
@@ -850,9 +893,15 @@ function faceRuns(f) {
 }
 const openings = f => WALLS.filter(w => w.face === f && GF_HIDE.has(w.id)).map(w => alongOf(f, w));
 const inOpening = w => openings(w.face).some(([a, b]) => w.a1 > a + 1e-6 && w.a0 < b - 1e-6);
-// walls whose rule window is left out by default (still addable with Add window)
-const WIN_OFF = ["E02", "E20", "E19", "E17", "E13"];
-let WIN_OVR = new Map(WIN_OFF.map(id => [id, { deleted: true }])), WIN_EXTRA = [], XID = 1;
+// the windows of H60_24_sep.dwg: the standard 2.00 and 1.00 m widths where
+// that drawing puts them (from, to along the facade); I09's is its glazed
+// front, the door height. Every other outside wall has none by default (still
+// addable with Add window); the court's I28 keeps its glass door
+const WIN_DWG = { E05: [4.471, 6.471], E09: [5.312, 7.312], E10: [5.312, 7.312], E12: [9.561, 10.208],
+  E16: [16.2, 18.2], E18: [18.6, 19.6], I21: [0.888, 2.888], I29: [0.888, 2.888], I23: [14.994, 16.044], I09: [8.965, 10.565] };
+const WIN_OFF = WALLS.filter(w => w.face && !(w.id in WIN_DWG)).map(w => w.id);
+const winDefaults = () => new Map([...WIN_OFF.map(id => [id, { deleted: true }]), ...Object.entries(WIN_DWG).map(([id, [a0, a1]]) => [id, { a0, a1 }])]);
+let WIN_OVR = winDefaults(), WIN_EXTRA = [], XID = 1;
 function windows() {
   const out = [];
   for (const w of WALLS) {
@@ -2873,7 +2922,7 @@ const SAVE_S = ["n", "op", "env", "offL", "offR", "solid", "ids", "gfE", "gfI", 
 function settingsNow() {
   const c = camState();
   return {
-    v: 1, at: Date.now(), S: Object.fromEntries(SAVE_S.map(k => [k, S[k]])), step: S.target, below: S.below,
+    v: 1, layout: LAYOUT, at: Date.now(), S: Object.fromEntries(SAVE_S.map(k => [k, S[k]])), step: S.target, below: S.below,
     centres: PIECES.map(p => [p.no, p.cx, p.cy]), holes: [...S.holes], opening: S.opening,
     winOvr: [...WIN_OVR], winExtra: WIN_EXTRA, xid: XID,
     view: { dir: c.dir.toArray(), up: c.up.toArray(), zoom: c.zoom, target: c.target.toArray() },
@@ -2885,9 +2934,13 @@ function readSaved() {
 function applySaved(d) {
   for (const k of SAVE_S) if (k in d.S) S[k] = d.S[k];
   // (a saved centre is kept inside its piece, should the pieces have changed)
-  for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, cx)); p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, cy)); } }
+  // a save from an older wall layout keeps its sliders and openings, but not
+  // its centres or window edits: they belong to walls and rooms since moved
+  const same = d.layout === LAYOUT;
+  if (same) for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, cx)); p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, cy)); } }
   S.holes = new Set((d.holes || []).filter(n => PIECES.some(q => q.no === n))); S.opening = d.opening || {};
-  WIN_OVR = new Map(d.winOvr || []); WIN_EXTRA.splice(0, WIN_EXTRA.length, ...(d.winExtra || [])); XID = d.xid || XID;
+  if (same) { WIN_OVR = new Map(d.winOvr || []); WIN_EXTRA.splice(0, WIN_EXTRA.length, ...(d.winExtra || [])); XID = d.xid || XID; }
+  else { WIN_OVR = winDefaults(); WIN_EXTRA.splice(0, WIN_EXTRA.length); }
   // the sliders show the saved values
   $("n").value = S.n; $("op").value = S.op * 100; $("env").value = S.env * 100; $("offL").value = S.offL; $("offR").value = S.offR;
   $("winW").value = S.winW * 100; $("winH").value = S.winH; $("winSill").value = S.winSill;
@@ -2910,9 +2963,13 @@ function snapshotDesign() {
 }
 function applyDesignOnly(d) {
   for (const k of SAVE_S) if (k in d.S) S[k] = d.S[k];
-  for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, cx)); p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, cy)); } }
+  // a save from an older wall layout keeps its sliders and openings, but not
+  // its centres or window edits: they belong to walls and rooms since moved
+  const same = d.layout === LAYOUT;
+  if (same) for (const [no, cx, cy] of d.centres || []) { const p = PIECES.find(q => q.no === no); if (p) { p.cx = Math.min(p.x1 - KEEP, Math.max(p.x0 + KEEP, cx)); p.cy = Math.min(p.y1 - KEEP, Math.max(p.y0 + KEEP, cy)); } }
   S.holes = new Set((d.holes || []).filter(n => PIECES.some(q => q.no === n))); S.opening = d.opening || {};
-  WIN_OVR = new Map(d.winOvr || []); WIN_EXTRA.splice(0, WIN_EXTRA.length, ...(d.winExtra || [])); XID = d.xid || XID;
+  if (same) { WIN_OVR = new Map(d.winOvr || []); WIN_EXTRA.splice(0, WIN_EXTRA.length, ...(d.winExtra || [])); XID = d.xid || XID; }
+  else { WIN_OVR = winDefaults(); WIN_EXTRA.splice(0, WIN_EXTRA.length); }
 }
 function restoreDesign(snap) {
   for (const k of SAVE_S) S[k] = snap.S[k];
@@ -2934,7 +2991,7 @@ PIECES = editPieces(findPieces());
 S.n = +$("n").value; S.op = +$("op").value / 100; S.env = +$("env").value / 100; S.offL = +$("offL").value; S.offR = +$("offR").value;
 S.winW = +$("winW").value / 100; S.winH = +$("winH").value; S.winSill = +$("winSill").value;
 camFrom = { dir: TOP.dir.clone(), up: TOP.up.clone(), zoom: 1, target: new THREE.Vector3() }; camK = 1;
-{ const saved = readSaved(); if (saved) { applySaved(saved); $("setNote").textContent = "Opened with the settings saved " + stamp(saved.at) + "."; } }
+{ const saved = readSaved(); if (saved) { applySaved(saved); $("setNote").textContent = "Opened with the settings saved " + stamp(saved.at) + (saved.layout === LAYOUT ? "." : " - from before the walls of 24 Sep: its centres and window edits are left out; Save again to keep the rest."); } }
 controlMode();
 ui(); resize(); loop();
 </script>
