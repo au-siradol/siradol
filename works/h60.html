@@ -108,7 +108,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
     <div id="labels"></div>
-    <p id="updated" title="When this page was last updated">UPDATED 2026-09-24 10:41</p>
+    <p id="updated" title="When this page was last updated">UPDATED 2026-09-24 10:47</p>
   </div>
   <div id="status-text"></div>
 </div>
@@ -320,6 +320,26 @@ function editPieces(ps) {
   P(3).y1 = 7.415;
   const out = ps.filter(q => q.no !== 9).concat([hall]);
   out.forEach(re);
+  return out;
+}
+// the plan as it is now: the frames of the ceiling pieces (the rooms), each
+// line merged along its length. Drawing1's own lines (PLAN) are only what the
+// rooms and walls start from - several have since moved (H60_24_sep.dwg), so
+// they are no longer drawn or exported as the plan
+function planLines() {
+  const H = new Map(), Vt = new Map(), r = v => Math.round(v * 1e4) / 1e4, out = [];
+  const add = (m, c, a, b) => { c = r(c); if (!m.has(c)) m.set(c, []); m.get(c).push([Math.min(a, b), Math.max(a, b)]); };
+  for (const p of PIECES) { add(H, p.y0, p.x0, p.x1); add(H, p.y1, p.x0, p.x1); add(Vt, p.x0, p.y0, p.y1); add(Vt, p.x1, p.y0, p.y1); }
+  const merge = (m, mk) => {
+    for (const [c, iv] of [...m].sort((u, v) => u[0] - v[0])) {
+      iv.sort((u, v) => u[0] - v[0]);
+      let cur = null;
+      for (const [a, b] of iv) { if (cur && a <= cur[1] + 1e-6) cur[1] = Math.max(cur[1], b); else { if (cur) out.push(mk(c, cur)); cur = [a, b]; } }
+      if (cur) out.push(mk(c, cur));
+    }
+  };
+  merge(H, (y, [a, b]) => [{ x: a, y }, { x: b, y }]);
+  merge(Vt, (x, [a, b]) => [{ x, y: a }, { x, y: b }]);
   return out;
 }
 
@@ -1530,7 +1550,7 @@ function build() {
   const planPairs = [];
   // a line inside the sunk court lies on the court's floor
   const zc = (a, b) => insidePoly({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, COURT.floor) ? zp - (FF - CF) * k3 : zp;
-  PLAN.forEach(l => { for (let i = 0; i + 1 < l.length; i++) { const z = zc(l[i], l[i + 1]); planPairs.push([V(l[i].x, l[i].y, z), V(l[i + 1].x, l[i + 1].y, z)]); } });
+  planLines().forEach(l => { for (let i = 0; i + 1 < l.length; i++) { const z = zc(l[i], l[i + 1]); planPairs.push([V(l[i].x, l[i].y, z), V(l[i + 1].x, l[i + 1].y, z)]); } });
   // the plan: crisp in plan and wireframe, quiet on the floor of the solid storey
   const quietPlan = (S.solid || S.below) && k3 > 0.5;
   const planObj = segsObj(planPairs, quietPlan ? matFaint : matLine, quietPlan ? (S.below ? 0.3 : 0.45) : undefined);
@@ -2312,7 +2332,7 @@ function objFiles() {
   }
   // the ground-floor plan as polylines
   L.push("o Plan_lines", "g PLAN_GROUND_FLOOR");
-  for (const l of PLAN) {
+  for (const l of planLines()) {
     for (const q of l) L.push(`v ${n6(q.x)} ${n6(q.y)} ${n6(FF)}`);
     L.push("l " + l.map((_, i) => base + i).join(" "));
     base += l.length;
@@ -2387,14 +2407,14 @@ function zipFiles(files) {
    the wall under a sill seen); what is overhead dashed - the curve ceilings
    where they meet +3.40, the court's opening, the roof openings, the eaves and
    the ridge; the stairs, the sunk court, the room numbers and wall ids, and the
-   lines of Drawing1 on their own layer. Local origin, as in the model. */
+   rooms' frames (ROOM_FRAME). Local origin, as in the model. */
 const PLAN_CUT = 1.20;
 const DXF_LAYERS = [
   // name, colour (AutoCAD index), linetype
   ["WALL", 7, "CONTINUOUS"], ["WALL_POCHE", 252, "CONTINUOUS"], ["WINDOW", 4, "CONTINUOUS"], ["WINDOW_ABOVE", 4, "HIDDEN"],
   ["STAIR", 3, "CONTINUOUS"], ["COURT", 30, "CONTINUOUS"], ["CEILING_ABOVE", 6, "HIDDEN"], ["SKYLIGHT_ABOVE", 5, "HIDDEN"],
   ["ROOF_ABOVE", 8, "HIDDEN"], ["RIDGE", 8, "CENTER"], ["SITE", 1, "CONTINUOUS"], ["ROOM_NO", 2, "CONTINUOUS"],
-  ["WALL_ID", 9, "CONTINUOUS"], ["PLAN_SOURCE", 9, "CONTINUOUS"], ["TITLE", 7, "CONTINUOUS"],
+  ["WALL_ID", 9, "CONTINUOUS"], ["ROOM_FRAME", 9, "CONTINUOUS"], ["TITLE", 7, "CONTINUOUS"],
 ];
 function dxfPlan() {
   const MM = 1000, E = [];
@@ -2539,7 +2559,7 @@ function dxfPlan() {
   }
   for (const w of WALLS) text("WALL_ID", { x: w.mx ?? (w.a.x + w.b.x) / 2, y: w.my ?? (w.a.y + w.b.y) / 2 }, 0.08, w.id);
   poly("SITE", SITE);
-  for (const l of PLAN) poly("PLAN_SOURCE", l, false);
+  for (const l of planLines()) poly("ROOM_FRAME", l, false);
   text("TITLE", { x: W / 2, y: -GABLE_EAVE - 0.8 }, 0.30, "H60  GROUND FLOOR PLAN  (FF +" + FF.toFixed(2) + ", CUT +" + (FF + PLAN_CUT).toFixed(2) + ")");
   text("TITLE", { x: W / 2, y: -GABLE_EAVE - 1.25 }, 0.15, "mm  -  offsets L " + S.offL.toFixed(2) + " / R " + S.offR.toFixed(2) + " m  -  exported " + exportStamp().text);
 
@@ -2796,7 +2816,7 @@ async function ghFileNow(withLight = true) {
   const PY = GH_PY_SOURCES;
   const codes = [
     fill(PY.plan, {
-      __PLAN__: pyLit(PLAN.map(l => l.map(q => [q.x, q.y]))),
+      __PLAN__: pyLit(planLines().map(l => l.map(q => [q.x, q.y]))),
       __SITE__: pyLit(SITE.map(q => [q.x, q.y])),
       __PIECES__: "[\n    " + PIECES.map(p => pyLit([p.no, p.room, p.x0, p.y0, p.x1, p.y1, +p.cx.toFixed(4), +p.cy.toFixed(4), !!p.split])).join(",\n    ") + "]",
       __WALLS__: "[\n    " + WALLS.map(w => pyLit([w.id, w.face || "", w.a.x, w.a.y, w.b.x, w.b.y])).join(",\n    ") + "]",
