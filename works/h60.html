@@ -108,7 +108,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
       <button id="vReset" class="toggle-btn">Reset view</button>
     </div>
     <div id="labels"></div>
-    <p id="updated" title="When this page was last updated">UPDATED 2026-09-24 11:16</p>
+    <p id="updated" title="When this page was last updated">UPDATED 2026-09-24 12:45</p>
   </div>
   <div id="status-text"></div>
 </div>
@@ -2279,7 +2279,8 @@ function loop() {
 
 /* ---------------- 3D model export: SketchUp (.dae) and Rhino (.obj + .mtl) ---------------- */
 // the finished storey (step 3) as named triangle meshes on layers, in local
-// metres, z up, following the current toggles (outside/inside walls, windows)
+// metres, z up, following the wall toggles; the windows always (the Windows
+// button only hides them on screen)
 const LAYERS = ["SITE", "BASE", "SLAB", "ENVELOPE_WALL", "ROOF", "WINDOW", "WINDOW_FRAME", "GLASS_BLOCK", "COLUMN", "WALL_OUTSIDE", "WALL_INSIDE", "CURVE_CEILING", "CEILING", "SKYLIGHT", "DRAIN", "STAIR", "COURT_WALL"];
 const MATS = {
   ground: { rgb: [0.93, 0.93, 0.91], a: 1 }, base: { rgb: [1, 1, 1], a: 1 }, slab: { rgb: [1, 1, 1], a: 1 },
@@ -2287,7 +2288,7 @@ const MATS = {
   glass: { rgb: [0.62, 0.74, 0.8], a: 0.3 }, drain: { rgb: [0.33, 0.33, 0.31], a: 1 }, ceiling: { rgb: [0.953, 0.945, 0.925], a: 1 },
 };
 function exportMeshes() {
-  const wins = shownWins(), out = [], P = (x, y, z) => ({ x, y, z });
+  const wins = windows(), out = [], P = (x, y, z) => ({ x, y, z });   // the design's windows, whatever the view shows
   const add = (name, mat, tris, layer) => { if (tris.length) out.push({ name, mat, tris, layer }); };
   const quad = (t, a, b, c, d) => t.push([a, b, c], [a, c, d]);
   const box = (x0, x1, y0, y1, z0, z1) => {
@@ -2471,7 +2472,7 @@ function dxfPlan() {
   const circle = (L, c, r) => put(0, "CIRCLE", 8, L, 10, n(c.x), 20, n(c.y), 30, 0, 40, n(r));
   const arc = (L, c, r, a0, a1) => put(0, "ARC", 8, L, 10, n(c.x), 20, n(c.y), 30, 0, 40, n(r), 50, a0, 51, a1);
   const text = (L, q, h, s) => put(0, "TEXT", 8, L, 10, n(q.x), 20, n(q.y), 30, 0, 40, n(h), 1, s, 72, 1, 73, 2, 11, n(q.x), 21, n(q.y), 31, 0);
-  const wins = shownWins(), T = GF_T;
+  const wins = windows(), T = GF_T;             // the design's windows, whatever the view shows
   const cutsAt = w => w.sill <= PLAN_CUT + 1e-9 && w.sill + w.h >= PLAN_CUT - 1e-9;
 
   // ---- the walls, cut: every wall a rectangle less its openings at the cut,
@@ -2890,7 +2891,7 @@ async function ghFileNow(withLight = true) {
     { nick: "2 Flexible", inputs: [["Data", O], ["n", F, 2, 10, S.n, 1], ["Seed", I, 0, 100, 0, 0]], outputs: ["Data", "Shapes", "Centres"] },
     { nick: "3 Levels & roof", inputs: [["Data", O], ["FF", F, 0, 3, FF, 2], ["Storey", F, 2, 4, L2 - FF, 2], ["RidgeH", F, 3, 10, RIDGE - FF, 2], ["RoofT", F, 0.05, 0.6, ROOF_T, 2], ["EaveSlope", F, 0, 3, 1.2, 2], ["GableEave", F, 0, 3, GABLE_EAVE, 2], ["Slab", F, 0.05, 0.5, SLAB, 2], ["Openings", O], ["FitOpenings", I, 0, 1, 0, 0]], outputs: ["Data", "Site", "Base", "SlabBrep", "Stair", "Roof", "Skylights", "Curbs", "Drains", "Levels"] },
     { nick: "4 Curve ceiling", inputs: [["Data", O], ["OffL", F, 0, 1.5, S.offL, 2], ["OffR", F, 0, 1.5, S.offR, 2]], outputs: ["Data", "CurveCeilings", "Ceiling", "CourtWalls", "Bases", "Tops", "Build"] },
-    { nick: "5 Windows", inputs: [["Data", O], ["WidthPct", F, 20, 90, S.winW * 100, 0], ["Height", F, 0.3, 2.2, S.winH, 2], ["Sill", F, 0, 1.8, S.winSill, 2], ["UsePage", I, 0, 1, 1, 0], ["Show", I, 0, 1, S.win ? 1 : 0, 0]], outputs: ["Data", "Panes", "Frames", "WindowIDs"] },
+    { nick: "5 Windows", inputs: [["Data", O], ["WidthPct", F, 20, 90, S.winW * 100, 0], ["Height", F, 0.3, 2.2, S.winH, 2], ["Sill", F, 0, 1.8, S.winSill, 2], ["UsePage", I, 0, 1, 1, 0], ["Show", I, 0, 1, 1, 0]], outputs: ["Data", "Panes", "Frames", "WindowIDs"] },
     { nick: "6 Walls", inputs: [["Data", O], ["ShowExt", I, 0, 1, 1, 0], ["ShowInt", I, 0, 1, 1, 0], ["Thickness", F, 0.05, 0.4, GF_T, 2]], outputs: ["Envelope", "ExtWalls", "IntWalls", "ExtNames", "IntIDs", "White"] },
     { nick: "7 Daylight", data: 4, inputs: [["Data", O], ["IntWalls", O], ["ExtWalls", O], ["Month", I, 1, 12, 3, 0], ["Day", I, 1, 31, 21, 0], ["Hour", F, 0, 23.5, 12, 1], ["CurveCeilings", O], ["Ceiling", O], ["CourtWalls", O], ["GridSize", F, 0.2, 1, 0.5, 2], ["SensorZ", F, 0.1, 1.5, 0.75, 2], ["Floor", F, 0.05, 0.9, 0.2, 2], ["Wall", F, 0.05, 0.9, 0.5, 2], ["Ceil", F, 0.05, 0.95, 0.85, 2], ["Glass", F, 0.1, 0.9, 0.64, 2], ["FrameInset", F, 0, 0.15, 0, 3], ["Light", I, 0, 1, 0, 0], ["Run", I, 0, 1, 0, 0], ["Folder", O], ["Wea", O]], outputs: ["Room", "Apertures", "OpenToSky", "Shades", "Grid", "Points", "Results", "CourtGrid", "CourtPoints", "CourtResults", "CeilingMesh", "CeilingPoints", "CeilingResults", "OculusMesh", "OculusResults", "Report", "Stamp", "Range", "Evaluate"] },
     { nick: "8 Display", data: 4, inputs: [["Data", O], ["Grid", O], ["Results", O], ["ExtWalls", O], ["IntWalls", O], ["Roof", O], ["CurveCeilings", O], ["Ceiling", O], ["AutoRange", I, 0, 1, 1, 0], ["Clip", F, 0, 25, 5, 0], ["LogScale", I, 0, 1, 1, 0], ["OnlyRooms", O], ["MinLux", F, 0, 10000, 0, 0], ["MaxLux", F, 1, 100000, 1000, 0], ["LegendShift", F, 0, 20, 0, 1], ["Stamp", O], ["Range", O]], outputs: ["Heatmap", "Wireframe", "Legend", "Labels", "Note"] },
