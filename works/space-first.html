@@ -61,6 +61,8 @@
     .slot-h { display: flex; flex-direction: column; gap: 3px; }
     .slot-h select { font-size: 13px; font-weight: bold; border: none; background: transparent; padding: 0; cursor: pointer; max-width: 100%; color: var(--ink); -webkit-appearance: none; appearance: none; }
     .slot-h .sub { font-size: 10px; color: var(--mute); }
+    .slot-h .nomat { font-size: 10px; color: #c62828; }
+    .alt { opacity: 0.45; }
     .slot-h .x { align-self: flex-start; border: none; background: none; color: var(--faint); cursor: pointer; font-size: 10px; padding: 0; }
     .slot-h .x:hover { color: var(--ink); text-decoration: underline; }
     .draw { cursor: zoom-in; position: relative; height: var(--dh, 260px); }
@@ -108,6 +110,13 @@
     .modal .pair .k { margin-bottom: 4px; }
     .modal .big { height: min(46vh, 420px); } .modal .big svg { height: 100%; }
     .modal .side { display: flex; flex-direction: column; gap: 12px; font-size: 11px; color: #444; }
+    .vv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .vvi { cursor: pointer; padding: 4px; border: 1px solid transparent; font-size: 10px; }
+    .vvi:hover { border-color: var(--line); }
+    .vvi.on { border-color: var(--ink); }
+    .vvi svg { width: 100%; height: 70px; display: block; }
+    .vvi b { display: block; font-size: 10.5px; margin-top: 2px; }
+    .vvi small { color: var(--mute); }
     .modal .side ul { margin: 0; padding-left: 14px; line-height: 1.5; }
     .modal .plan svg { width: 100%; height: auto; display: block; }
     @media (max-width: 860px) { .modal .in { grid-template-columns: 1fr; } }
@@ -179,7 +188,7 @@
     <div class="grid" id="grid"></div>
 
     <div class="rank">
-        <div class="hd"><b>All 14 systems</b><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option></select><span id="rankNote"></span></div>
+        <div class="hd"><b>All <span id="nSys"></span> systems</b><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option></select><span id="rankNote"></span></div>
         <svg id="dots"></svg>
     </div>
 
@@ -192,7 +201,7 @@
 <div class="modal" id="modal"><div class="in">
     <div class="hd"><div><b id="mName"></b><span id="mSub"></span></div><button class="btn" id="mClose">Close</button></div>
     <div class="pair"><div><div class="k">Axonometric · drag to turn</div><div class="big" id="mBig"></div></div><div><div class="k">Section</div><div class="sec" id="mSec"></div></div></div>
-    <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul></div>
+    <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
 </div></div>
 
 <script>
@@ -228,6 +237,11 @@
 
     // ---------- the catalogue ----------
     // spans: [min, max] and typical ranges, read from Engel's charts (m)
+    // two-way share: the stiffer, shorter direction takes the larger part (Engel p.200: 1:2 → 8/9)
+    function twoWayShare(L, W) {
+        const a = Math.min(L, W), b = Math.max(L, W), sh = b ** 3 / (a ** 3 + b ** 3);
+        return { short: a, share: sh, k: Math.sqrt(2 * sh) };
+    }
     const SYS = [
         // ===== 1 FORM-ACTIVE =====
         { id: 'cable', fam: 1, code: '1.1.1', name: 'Suspended cable roof', mats: ['cable'],
@@ -266,11 +280,60 @@
                   notes: ['The section wants to be a circle, not a catenary — the air pressure dwarfs the skin weight (ARCH 445, 04b).', 'Blowers run permanently; lose pressure and the hall comes down.']
               };
           } },
+        { id: 'ctruss', fam: 1, code: '1.1 · cable truss', name: 'Cable truss (lenticular)', mats: ['cable'],
+          spans: { cable: { lim: [50, 500], typ: [[80, 500]] } },
+          rule: { cable: 'sag L/15 + hog L/20' },
+          build(L, H, W, m, q) {
+              const f1_ = L / 15, f2_ = L / 20, Hm = H + f1_, a = Hm, c = colW('concrete', Hm + f2_ * 0.3), s = clamp(r05(L / 8), 5, 15);
+              const low = parab(0, L, Hm, -f1_), up = parab(0, L, Hm, f2_), n = Math.max(4, Math.round(L / 4));
+              const struts = []; for (let i = 1; i < n; i++) { const x = L * i / n, t = i / n; struts.push(line([[x, Hm - 4 * f1_ * t * (1 - t)], [x, Hm + 4 * f2_ * t * (1 - t)]], 'thin')); }
+              return {
+                  parts: [rect(-c, 0, 0, Hm), rect(L, 0, L + c, Hm), line(low, 'cable'), line(up, 'cable'), ...struts,
+                          line([[0, Hm], [-a, 0]], 'cable'), line([[L, Hm], [L + a, 0]], 'cable'), rect(-a - 0.6, -0.4, -a + 0.6, 0, 'light'), rect(L + a - 0.6, -0.4, L + a + 0.6, 0, 'light')],
+                  roof: [[-c, 0], [-c, Hm], ...up, [L + c, Hm], [L + c, 0]], foot: [-a - 0.6, L + a + 0.6],
+                  zoneLabel: `sag+hog ${f2(f1_ + f2_)}`, zone: f1_ + f2_, cols: alongSides(W, s), colNote: `masts every ${f1(s)} m, backstays anchored ${f1(a)} m outside`,
+                  thrust: q * L * L / (8 * f1_), thrustNote: 'pull of the carrying cable on the masts, to backstays and anchors',
+                  plan: { kind: 'oneway', s, masts: true, anchors: a },
+                  notes: ['Two cables curved against each other and pretensioned: the sagging one carries gravity, the hogging one carries wind uplift (Engel pp.68–76).', 'Lighter than a single cable with a heavy deck — the pretension, not dead weight, keeps it still.']
+              };
+          } },
+        { id: 'tent', fam: 1, code: '1.2 · indirect peak', name: 'Arch-supported tent', mats: ['membrane'],
+          spans: { membrane: { lim: [20, 150], typ: [[30, 80]] } },
+          rule: { membrane: 'arches rise S/4, membrane between' },
+          build(L, H, W, m, q) {
+              const r = 0.25, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp, x0 = L / 2 - Sp / 2, s = clamp(r05(L / 4), 5, 15), t = Math.max(0.15, Sp / 120);
+              const arch = parab(x0, x0 + Sp, 0, F), valley = parab(x0, x0 + Sp, 0, F * 0.9);
+              return {
+                  parts: [band(arch, t), line(valley, 'thin')],
+                  roof: arch.map(([x, y]) => [x, y + t]), foot: [x0 - 0.5, x0 + Sp + 0.5],
+                  zoneLabel: `rise ${f1(F)}`, zone: F + t - H, cols: 2 * (Math.ceil(W / s) + 1), colNote: `${Math.ceil(W / s) + 1} arches every ${f1(s)} m, membrane saddles between`,
+                  thrust: q * s * Sp * Sp / (8 * F), thrustNote: `arch thrust at each foot (arches ${f1(s)} m apart)`, thrustPerArch: true,
+                  plan: { kind: 'arch', s, x0, S: Sp },
+                  notes: ['Between two arches the membrane is curved both ways (anticlastic): one curve carries gravity, the other uplift (Engel pp.86–96).', 'The membrane itself weighs almost nothing; the arches carry its prestress as well as the roof load.']
+              };
+          } },
+        { id: 'gshell', fam: 1, code: '1.4 · vaulted lattice', name: 'Gridshell (thrust lattice)', mats: ['timber', 'steel'],
+          spans: { timber: { lim: [10, 150], typ: [[20, 90]] }, steel: { lim: [10, 150], typ: [[20, 90]] } },
+          rule: { timber: 'hanging-net form · rise S/4 · laths L/300', steel: 'hanging-net form · rise S/4 · tubes L/300' },
+          build(L, H, W, m, q) {
+              const r = 0.25, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp, x0 = L / 2 - Sp / 2, t = Math.max(0.12, L / 300);
+              const inner = parab(x0, x0 + Sp, 0, F);
+              return {
+                  parts: [band(inner, t)],
+                  roof: inner.map(([x, y]) => [x, y + t]), foot: [x0 - 0.3, x0 + Sp + 0.3],
+                  zoneLabel: `rise ${f1(F)}`, zone: F + t - H, cols: 0, colNote: 'no columns — the net lands on a continuous ground edge',
+                  thrust: q * Sp * Sp / (8 * F) * 0.6, thrustNote: 'at the edge beam, per metre — less than an arch: the double curvature shares the load both ways',
+                  plan: { kind: 'lattice', x0, S: Sp, a: clamp(Sp / 14, 1, 3), round: true, ext: Math.min(W / 2, Sp / 2) },
+                  gshell: { x0, Sp, F },
+                  notes: ['An inverted hanging net: a lattice of equal-length laths, bent into a doubly curved shell and then locked by fixing its angles (Engel pp.120–130; Frei Otto, Mannheim).', `The ends curve down to the ground too, so the shell runs ${f1(Math.min(W / 2, Sp / 2))} m past each end of the hall to keep the full clear height over its whole length.`]
+              };
+          } },
         { id: 'garch', fam: 1, code: '1.4.1', name: 'Arch ribs from the ground', mats: ['steel', 'timber', 'concrete'],
           spans: { steel: { lim: [15, 100], typ: [[25, 70]] }, timber: { lim: [15, 100], typ: [[25, 70]] }, concrete: { lim: [15, 100], typ: [[25, 70]] } },
-          rule: { steel: 'rise F = 0.35 S · rib S/60', timber: 'rise F = 0.35 S · rib S/45', concrete: 'rise F = 0.35 S · rib S/40' },
+          rule: { steel: 'rise F = S/5 (Engel) · rib S/60', timber: 'rise F = S/5 (Engel) · rib S/45', concrete: 'rise F = S/5 (Engel) · rib S/40' },
           build(L, H, W, m, q) {
-              const r = 0.35, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp;
+              const r = 0.2, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp;
+              const F0 = L / 5, clearW = H < F0 ? L * Math.sqrt(1 - H / F0) : 0;
               const t = Sp / ({ steel: 60, timber: 45, concrete: 40 }[m]), x0 = L / 2 - Sp / 2, s = clamp(r05(Sp / 6), 4, 12);
               const inner = parab(x0, x0 + Sp, 0, F);
               return {
@@ -279,22 +342,65 @@
                   zoneLabel: `rise ${f1(F)}`, zone: F + t - H, cols: 2 * (Math.ceil(W / s) + 1), colNote: `${Math.ceil(W / s) + 1} arch ribs every ${f1(s)} m, feet on footings`,
                   thrust: q * Sp * Sp / (8 * F), thrustNote: 'at each foot, into the ground (or a tie under the floor)',
                   plan: { kind: 'arch', s, x0, S: Sp },
-                  notes: [`To keep ${f1(H)} m clear across the full ${f1(L)} m, the arch has to spring ${f1((Sp - L) / 2)} m outside the space on each side.`, 'Funicular for uniform load; uneven load (wind, drifting snow) bends the rib.']
+                  notes: [`At Engel's rise S/5 (p.118–119), keeping ${f1(H)} m clear across the full ${f1(L)} m means springing ${f1((Sp - L) / 2)} m outside the space on each side.`, `Sprung at the edges of the space instead (S = L, rise ${f1(F0)} m), the full ${f1(H)} m would be clear only over the middle ${f1(clearW)} m.`, 'Funicular for uniform load; uneven load (wind, drifting snow) bends the rib.']
+              };
+          } },
+        { id: 'arch3', fam: 1, code: '1.4 · linear arch', name: 'Three-hinged arch', mats: ['steel', 'timber', 'concrete'],
+          spans: { steel: { lim: [15, 100], typ: [[25, 70]] }, timber: { lim: [15, 100], typ: [[25, 70]] }, concrete: { lim: [15, 100], typ: [[25, 70]] } },
+          rule: { steel: 'rise S/5 · rib ≤ S/50', timber: 'rise S/5 · rib ≤ S/35', concrete: 'rise S/5 · rib ≤ S/30' },
+          build(L, H, W, m, q) {
+              const r = 0.2, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp, x0 = L / 2 - Sp / 2, s = clamp(r05(Sp / 6), 4, 12);
+              const tmax = Sp / ({ steel: 50, timber: 35, concrete: 30 }[m]), tmin = tmax * 0.35;
+              const inner = parab(x0, x0 + Sp, 0, F, 60), th = inner.map((_, i) => tmin + (tmax - tmin) * Math.abs(Math.sin(2 * Math.PI * i / 60)));
+              const outer = inner.map(([x, y], i) => [x, y + th[i]]);
+              const hinge = (x, y, k) => poly([[x - k, y], [x, y + k], [x + k, y], [x, y - k]], 'light');
+              const k = Math.max(0.15, tmax * 0.6);
+              return {
+                  parts: [poly([...inner, ...outer.slice().reverse()]), hinge(x0, 0.05, k), hinge(x0 + Sp, 0.05, k), hinge(x0 + Sp / 2, F + tmin / 2, k)],
+                  roof: outer, foot: [x0 - tmax / 2, x0 + Sp + tmax / 2],
+                  zoneLabel: `rise ${f1(F)}`, zone: F + tmin - H, cols: 2 * (Math.ceil(W / s) + 1), colNote: `${Math.ceil(W / s) + 1} arches every ${f1(s)} m, hinged feet on footings`,
+                  thrust: q * Sp * Sp / (8 * F), thrustNote: 'at each foot, into the ground (or a tie under the floor)',
+                  plan: { kind: 'arch', s, x0, S: Sp },
+                  notes: ['A hinge at the crown and at both feet: no moment there, so the rib is thin at the hinges and deepest at the quarter points (Engel p.117).', 'Statically determinate — tolerates settling foundations and temperature change without extra stress.']
               };
           } },
         { id: 'vault', fam: 1, code: '1.4.2', name: 'Barrel vault (short vault)', mats: ['masonry'],
           spans: { masonry: { lim: [4, 30], typ: [[8, 20]] } },
-          rule: { masonry: 'rise f = L/4 · shell L/25 · wall L/5' },
+          rule: { masonry: 'rise L/4 · shell L/50 · thrust taken by buttresses, ties or neighbours' },
           build(L, H, W, m, q) {
-              const f = L / 4, t = Math.max(0.2, L / 25), bw = Math.max(0.4, L / 5);
-              const inner = parab(0, L, H, f);
+              const mode = S.vaultMode || 'buttress', f = L / 4, t = Math.max(0.2, L / 50), bay = clamp(r05(L / 4), 4, 8);
+              const inner = parab(0, L, H, f), Hv = q * L * L / (8 * f);
+              const V = { mode, bay, t, inner, Hv };
+              let parts, foot, cols, colNote, thrustNote, thrust = Hv, perArch = false, notes, tw, bd = 0;
+              if (mode === 'buttress') {
+                  tw = Math.max(0.4, L / 15); bd = Math.max(1, L / 6);
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), poly([[-tw, 0], [-tw - bd, 0], [-tw - bd * 0.35, H * 0.9], [-tw, H * 0.9]], 'light'), poly([[L + tw, 0], [L + tw + bd, 0], [L + tw + bd * 0.35, H * 0.9], [L + tw, H * 0.9]], 'light'), band(inner, t)];
+                  foot = [-tw - bd, L + tw + bd]; cols = 2 * (Math.ceil(W / bay) + 1);
+                  colNote = `walls ${f2(tw)} m + buttresses every ${f1(bay)} m, ${f1(bd)} m deep`;
+                  thrustNote = `per metre, ${f1(Hv * bay)} kN into each buttress`;
+                  notes = [`Buttresses every ${f1(bay)} m take the thrust as leaning masses; between them the wall is ${f2(tw)} m instead of L/5 = ${f2(L / 5)} m (Engel p.113, "buttressed").`, 'The buttresses stand outside the space: they cost ground width, not clear height.'];
+              } else if (mode === 'tie') {
+                  tw = Math.max(0.3, L / 25);
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), line([[0, H], [L, H]], 'tie')];
+                  foot = [-tw, L + tw]; cols = 0; perArch = true; thrust = Hv * bay;
+                  colNote = `walls ${f2(tw)} m, iron ties across every ${f1(bay)} m`;
+                  thrustNote = `force in each tie (${f1(bay)} m apart), at the springing`;
+                  notes = ['Ties across the springing close the arch on itself: the walls carry only weight, so they can be thin (Engel p.113, "tied").', `The ties cross the space at ${f1(H)} m — below the vault, above the clear height.`];
+              } else {
+                  tw = Math.max(0.3, L / 25); const tb = Math.max(0.5, L / 12);
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), band(parab(-L - tw, -tw, H, f), t), band(parab(L + tw, 2 * L + tw, H, f), t),
+                           rect(-L - 2 * tw - tb, 0, -L - tw, H + t, 'light'), rect(2 * L + tw, 0, 2 * L + 2 * tw + tb, H + t, 'light')];
+                  foot = [-tw, L + tw]; cols = 2 * (Math.ceil(W / bay) + 1); thrust = 0;
+                  colNote = `arcades of piers ${f2(tw)} m between vaults — thrusts cancel`;
+                  thrustNote = `balanced: the neighbour's ${Math.round(Hv)} kN/m pushes back; only the outermost walls need mass`;
+                  notes = ['Vaults side by side lean on each other: the thrust of one cancels the next, so the inner supports can be slender piers (Engel p.113, "continuous").', 'Works only if the building repeats the hall; the outermost walls still need buttresses or mass.'];
+              }
+              V.tw = tw; V.bd = bd;
               return {
-                  parts: [rect(-bw, 0, 0, H + t), rect(L, 0, L + bw, H + t), band(inner, t)],
-                  roof: [[-bw, 0], [-bw, H + t], ...inner.map(([x, y]) => [x, y + t]), [L + bw, H + t], [L + bw, 0]], foot: [-bw, L + bw],
-                  zoneLabel: `rise ${f2(f)}`, zone: f + t, cols: 0, colNote: `no columns — continuous bearing walls ${f2(bw)} m thick`,
-                  thrust: q * L * L / (8 * f), thrustNote: 'along the whole length of both walls — mass or buttresses must resist it',
-                  plan: { kind: 'walls', bw }, surface: true, inner, t, bw,
-                  notes: ['Spans ACROSS, like an arch pulled out along the hall: the surface is in compression along the curve.', 'Unlike the tied arch, the thrust is continuous, so the walls get thick (old rule ~L/4–L/5). Unlike the long barrel shell, it cannot stand on corner columns.']
+                  parts, roof: [[-tw, 0], [-tw, H + t], ...inner.map(([x, y]) => [x, y + t]), [L + tw, H + t], [L + tw, 0]], foot,
+                  zoneLabel: `rise ${f2(f)}`, zone: f + t, cols, colNote, thrust: thrust || null, thrustNote, thrustPerArch: perArch,
+                  plan: { kind: 'walls', bw: tw, mode, bay, bd }, surface: true, inner, t, bw: tw, V,
+                  notes: ['Spans ACROSS, like an arch pulled out along the hall: the surface is in compression along the curve.', ...notes, 'Click the drawing to compare buttresses, ties and neighbouring vaults.']
               };
           } },
         { id: 'tarch', fam: 1, code: '1.4.1', name: 'Tied arch on columns', mats: ['steel', 'timber', 'concrete'],
@@ -316,7 +422,7 @@
 
         // ===== 2 VECTOR-ACTIVE =====
         { id: 'truss', fam: 2, code: '2.1.3', name: 'Parallel-chord truss', mats: ['steel', 'timber'],
-          spans: { steel: { lim: [15, 100], typ: [[20, 80]] }, timber: { lim: [10, 60], typ: [[20, 50]] } },
+          spans: { steel: { lim: [20, 100], typ: [[20, 80]] }, timber: { lim: [10, 60], typ: [[20, 50]] } },
           rule: { steel: 'd = L/12', timber: 'd = L/10' },
           build(L, H, W, m, q) {
               const d = L / ({ steel: 12, timber: 10 }[m]), c = colW(m, H), s = clamp(r05(L / 4), 5, 10);
@@ -353,10 +459,10 @@
           } },
         { id: 'space', fam: 2, code: '2.4.1', name: 'Space truss (two-way)', mats: ['steel', 'timber'],
           spans: { steel: { lim: [6, 120], typ: [[25, 100]] }, timber: { lim: [8, 80], typ: [[15, 60]] } },
-          rule: { steel: 'd = L/22', timber: 'd = L/18' },
+          rule: { steel: 'd = Ls/22 · √(2α)', timber: 'd = Ls/18 · √(2α)' },
           twoWay: true,
           build(L, H, W, m, q) {
-              const d = L / ({ steel: 22, timber: 18 }[m]), c = colW(m, H), s = clamp(r05(L / 4), 6, 18);
+              const tw = twoWayShare(L, W), d = tw.short / ({ steel: 22, timber: 18 }[m]) * tw.k, c = colW(m, H), s = clamp(r05(L / 4), 6, 18);
               const a = clamp(d * 1.4, 1.2, 6); const n = Math.max(2, Math.round(L / a)); const p = L / n;
               const web = [];
               for (let i = 0; i < n; i++) web.push(line([[i * p, H + d], [(i + 0.5) * p, H], [(i + 1) * p, H + d]], 'thin'));
@@ -366,13 +472,46 @@
                   roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `d ${f2(d)}`, zone: d, cols: perimeter(L, W, s), colNote: `perimeter columns every ${f1(s)} m, module ${f1(p)} m`,
                   plan: { kind: 'grid', s, a: p },
-                  notes: ['A node pushed down must bend trusses in two or three directions at once (Engel p.156) — hence L/20–L/25.', W / L > 1.5 ? `W/L = ${f1(W / L)}: a long plan makes it work one-way, like parallel trusses.` : 'Near-square plan: true two-way action.']
+                  notes: ['A node pushed down must bend trusses in two or three directions at once (Engel p.156) — hence L/20–L/25 on a square plan.', `Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (stiffness ∝ 1/span³, Engel p.200), so the depth is ×${tw.k.toFixed(2)} of the square-plan value.`]
+              };
+          } },
+
+        { id: 'lamella', fam: 2, code: '2.3 · singly curved', name: 'Lamella barrel roof', mats: ['timber', 'steel'],
+          spans: { timber: { lim: [8, 30], typ: [[12, 25]] }, steel: { lim: [10, 90], typ: [[20, 60]] } },
+          rule: { timber: 'rise L/6 · lamella depth L/60 · tie', steel: 'rise L/6 · lamella depth L/80 · tie' },
+          build(L, H, W, m, q) {
+              const f = L / 6, t = L / ({ timber: 60, steel: 80 }[m]), c = colW(m, H), s = 6;
+              const inner = parab(0, L, H, f);
+              return {
+                  parts: [...columns(L, H, c), band(inner, t), line([[0, H], [L, H]], 'tie')],
+                  roof: [[-c, 0], [-c, H], ...inner.map(([x, y]) => [x, y + t]), [L + c, H], [L + c, 0]], foot: [-c, L + c],
+                  zoneLabel: `rise ${f2(f)}`, zone: f + t, cols: alongSides(W, s), colNote: `edge beams on columns every ${f1(s)} m, ties across`,
+                  thrust: q * s * L * L / (8 * f), thrustNote: `tie force every ${f1(s)} m, at eave height`, thrustPerArch: true,
+                  plan: { kind: 'lattice', x0: 0, S: L, a: clamp(L / 10, 1.5, 4) },
+                  lattice: { f, t },
+                  notes: ['Short identical members (lamellas) cross in a diamond net on a curved surface: every node is shared by two arches, so a point load spreads to its neighbours (Engel pp.152–155).', 'Zollinger’s system: small pieces, one joint type — cheap to make, and the net stiffens the arch against uneven load.']
+              };
+          } },
+        { id: 'geodesic', fam: 2, code: '2.3 · spherical', name: 'Geodesic dome', mats: ['steel', 'timber'],
+          spans: { steel: { lim: [20, 500], typ: [[60, 150]] }, timber: { lim: [20, 200], typ: [[40, 120]] } },
+          rule: { steel: 'hemisphere R = √(H² + L²/4) · depth R/60', timber: 'hemisphere R = √(H² + L²/4) · depth R/40' },
+          build(L, H, W, m, q) {
+              const R = Math.sqrt(H * H + L * L / 4), t = R / ({ steel: 60, timber: 40 }[m]), n = Math.max(1, Math.floor(W / (2 * R)));
+              const pts = []; for (let i = 0; i <= 60; i++) { const a = Math.PI * i / 60; pts.push([L / 2 - R * Math.cos(a), R * Math.sin(a)]); }
+              return {
+                  parts: [band(pts, t)],
+                  roof: pts.map(([x, y]) => [x, y + t]), foot: [L / 2 - R, L / 2 + R],
+                  zoneLabel: `crown ${f1(R)}`, zone: R + t - H, cols: 0, colNote: `${n} dome${n > 1 ? 's' : ''} ${f1(2 * R)} m across, on a ground ring — no columns`,
+                  thrust: null, thrustNote: 'a hemisphere meets the ground vertically — almost no outward thrust at the ring',
+                  plan: { kind: 'geo', R, n },
+                  geo: { R, n },
+                  notes: ['An icosahedron projected onto a sphere: all triangles, so every bar is axial and the net needs no bracing (Engel p.155, geodesic).', `To keep ${f1(H)} m clear across ${f1(L)} m the sphere must be ${f1(2 * R)} m wide — a dome covers a circle, not a long hall.`]
               };
           } },
 
         // ===== 3 SECTION-ACTIVE =====
         { id: 'beam', fam: 3, code: '3.1.1', name: 'Beam on columns', mats: ['steel', 'timber', 'concrete'],
-          spans: { steel: { lim: [5, 25], typ: [[7, 20]] }, timber: { lim: [3, 12], typ: [[4, 8]] }, concrete: { lim: [3, 15], typ: [[4, 10]] } },
+          spans: { steel: { lim: [5, 25], typ: [[7, 20]] }, timber: { lim: [4, 12], typ: [[4, 8]] }, concrete: { lim: [4, 15], typ: [[4, 10]] } },
           rule: { steel: 'd = L/22', timber: 'd = L/17', concrete: 'd = L/14' },
           build(L, H, W, m, q) {
               const d = L / ({ steel: 22, timber: 17, concrete: 14 }[m]), c = colW(m, H), s = { steel: 6, timber: 5, concrete: 6 }[m];
@@ -404,19 +543,34 @@
                   notes: ['The rigid knee lets column and rafter share the moment, so the rafter is much shallower than a beam.', 'Deepest at the knee, where the moment is — the classic tapered frame.']
               };
           } },
+        { id: 'vier', fam: 3, code: '3.2 · storey frame', name: 'Vierendeel girder (storey-deep)', mats: ['steel', 'timber', 'concrete'],
+          spans: { steel: { lim: [15, 90], typ: [[20, 70]] }, timber: { lim: [15, 60], typ: [[20, 50]] }, concrete: { lim: [10, 40], typ: [[15, 30]] } },
+          rule: { steel: 'd = L/10, ≥ 3 m (a usable storey)', timber: 'd = L/10, ≥ 3 m (a usable storey)', concrete: 'd = L/10, ≥ 3 m (a usable storey)' },
+          build(L, H, W, m, q) {
+              const d = Math.max(3, L / 10), c = colW(m, H), s = clamp(r05(L / 5), 6, 12), n = Math.max(3, Math.round(L / d)), p = L / n, ch = Math.max(0.3, d / 9);
+              const posts = [];
+              for (let i = 0; i <= n; i++) { const e = Math.min(i, n - i) / (n / 2), w = ch * (1.6 - 0.9 * e); posts.push(rect(i * p - w / 2, H, i * p + w / 2, H + d)); }
+              return {
+                  parts: [...columns(L, H, c), rect(-c, H, L + c, H + ch), rect(-c, H + d - ch, L + c, H + d), ...posts],
+                  roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
+                  zoneLabel: `d ${f2(d)}`, zone: d, cols: alongSides(W, s), colNote: `girders every ${f1(s)} m — the structure zone is a usable storey`,
+                  plan: { kind: 'oneway', s },
+                  notes: ['A whole storey acts as one deep beam with rigid, open panels — no diagonals, so the storey inside stays usable (Engel pp.194–199).', 'Posts are sized by the shear: stoutest near the supports, slimmest at mid-span.']
+              };
+          } },
         { id: 'grid', fam: 3, code: '3.3.1', name: 'Beam grid (two-way)', mats: ['steel', 'timber', 'concrete'],
-          spans: { steel: { lim: [10, 30], typ: [[12, 25]] }, timber: { lim: [10, 30], typ: [[12, 25]] }, concrete: { lim: [5, 20], typ: [[8, 15]] } },
-          rule: { steel: 'd = L/20', timber: 'd = L/18', concrete: 'd = L/18' },
+          spans: { steel: { lim: [10, 30], typ: [[12, 25]] }, timber: { lim: [10, 30], typ: [[12, 25]] }, concrete: { lim: [5, 20], typ: [[6, 15]] } },
+          rule: { steel: 'd = Ls/20 · √(2α)', timber: 'd = Ls/18 · √(2α)', concrete: 'd = Ls/18 · √(2α)' },
           twoWay: true,
           build(L, H, W, m, q) {
-              const d = L / ({ steel: 20, timber: 18, concrete: 18 }[m]), c = colW(m, H), s = 6, a = clamp(L / Math.round(L / 3), 2, 5);
+              const tw = twoWayShare(L, W), d = tw.short / ({ steel: 20, timber: 18, concrete: 18 }[m]) * tw.k, c = colW(m, H), s = 6, a = clamp(L / Math.round(L / 3), 2, 5);
               const ribs = []; for (let x = a; x < L - 1e-6; x += a) ribs.push(line([[x, H], [x, H + d]], 'thin'));
               return {
                   parts: [...columns(L, H, c), rect(-c, H + d * 0.82, L + c, H + d), line([[-c, H], [L + c, H]], 'member'), ...ribs],
                   roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `d ${f2(d)}`, zone: d, cols: perimeter(L, W, s), colNote: `perimeter columns every ${f1(s)} m, grid ${f1(a)} m`,
                   plan: { kind: 'grid', s, a },
-                  notes: [W / L > 1.5 ? `W/L = ${f1(W / L)}: the short direction does all the work — the grid gains little over one-way beams.` : 'Near-square plan: both directions share the load.']
+                  notes: [`Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (Engel p.200: square 50/50, 1:2 → 8/9), so the depth is ×${tw.k.toFixed(2)} of the square-plan value.`, tw.share > 0.85 ? 'At this ratio the grid works almost one-way — one-way beams would do the same with less.' : 'Both directions share the load: that is what the grid pays for.']
               };
           } },
 
@@ -464,10 +618,42 @@
                   plan: { kind: 'dome' },
                   notes: [W > L * 1.2 ? `Covers a ${f1(L)} m circle only — a ${f1(W)} m long hall needs a row of domes or a barrel.` : 'Near-square plan: one dome covers it.', 'Compression along the meridians, tension round the base — the ring is what keeps it from spreading (ARCH 445 04a).']
               };
+          } },
+        { id: 'hyparT', fam: 4, code: '4.3 · saddle shell', name: 'Hypar roof on side supports + tie', mats: ['concrete', 'timber'],
+          spans: { concrete: { lim: [15, 70], typ: [[25, 60]] }, timber: { lim: [15, 60], typ: [[20, 50]] } },
+          rule: { concrete: 'rise L/6 · shell L/500 · tie at eaves', timber: 'rise L/6 · boarded shell · tie at eaves' },
+          build(L, H, W, m, q) {
+              const f = L / 6, t = Math.max(0.08, L / 500), c = colW('concrete', H), b = clamp(r05(L / 3), 6, 15);
+              const ridge = [[0, H], [L / 2, H + f], [L, H]];
+              return {
+                  parts: [...columns(L, H, c), band(ridge, t * 2), line([[0, H], [L / 2, H + f * 0.3], [L, H]], 'thin'), line([[0, H], [L, H]], 'tie')],
+                  roof: [[-c, 0], [-c, H], ...ridge.map(([x, y]) => [x, y + t * 2]), [L + c, H], [L + c, 0]], foot: [-c, L + c],
+                  zoneLabel: `rise ${f2(f)}`, zone: f + t * 2, cols: 2 * (Math.ceil(W / b) + 1), colNote: `units of 4 hypars, ${f1(b)} m wide, on side columns`,
+                  thrust: q * b * L * L / (8 * f), thrustNote: `tie force per unit (${f1(b)} m wide), across the space at eave height`, thrustPerArch: true,
+                  plan: { kind: 'oneway', s: b },
+                  notes: ['Each hypar works as an arch one way and a hanging cable the other; its straight edges stay free of bending (Engel p.257).', 'Ruled surface: it can be formed with straight boards — why Candela used it (Engel p.347).']
+              };
+          } }
+
+        // ===== 6 HYBRID (superposition, Engel pp.318–327) =====
+        ,{ id: 'cbeam', fam: 6, code: '6 · superposition', name: 'Cable-supported beam', mats: ['steel', 'timber'], spanSrc: true,
+          spans: { steel: { lim: [10, 60], typ: [[15, 45]] }, timber: { lim: [10, 45], typ: [[15, 35]] } },
+          rule: { steel: 'beam L/40 + cable sag L/12', timber: 'beam L/30 + cable sag L/12' },
+          build(L, H, W, m, q) {
+              const d = L / ({ steel: 40, timber: 30 }[m]), f = L / 12, c = colW(m, H + f), s = { steel: 6, timber: 5 }[m], Hb = H + f;
+              const cab = [[0, Hb], [L / 3, H], [2 * L / 3, H], [L, Hb]];
+              return {
+                  parts: [...columns(L, Hb, c), rect(-c, Hb, L + c, Hb + d), line(cab, 'cable'), line([[L / 3, H], [L / 3, Hb]], 'member'), line([[2 * L / 3, H], [2 * L / 3, Hb]], 'member')],
+                  roof: [[-c, 0], [-c, Hb + d], [L + c, Hb + d], [L + c, 0]], foot: [-c, L + c],
+                  zoneLabel: `beam+sag ${f2(d + f)}`, zone: d + f, cols: alongSides(W, s), colNote: `beams every ${f1(s)} m; the cable hangs into the space`,
+                  thrust: q * s * L * L / (8 * f), thrustNote: 'cable force per beam — self-anchored at the beam ends, no thrust on the columns', thrustPerArch: true,
+                  plan: { kind: 'oneway', s },
+                  notes: ['Superposition: the beam bends between the posts, and at the same time is the compression chord of the cable system (Engel p.322).', 'The beam alone would need L/20; the cable lets it be about half as deep — but the clear height is measured under the cable.']
+              };
           } }
     ];
-    const FAM = { 1: 'Form-active', 2: 'Vector-active', 3: 'Section-active', 4: 'Surface-active' };
-    const FAMSUB = { 1: 'redirects forces by its form — single stress, compression or tension', 2: 'splits forces into bars — tension and compression together', 3: 'holds forces inside the section — bending', 4: 'spreads forces over a surface — membrane stresses' };
+    const FAM = { 1: 'Form-active', 2: 'Vector-active', 3: 'Section-active', 4: 'Surface-active', 6: 'Hybrid' };
+    const FAMSUB = { 1: 'redirects forces by its form — single stress, compression or tension', 2: 'splits forces into bars — tension and compression together', 3: 'holds forces inside the section — bending', 4: 'spreads forces over a surface — membrane stresses', 6: 'two families share one load path' };
 
     const matOf = sys => sys.mats.includes(S.mat) ? S.mat : sys.mats[0];
     function status(sys, L, m) {
@@ -487,7 +673,7 @@
         deck: { n: 'concrete deck 10 cm', g: 2.40, concrete: true, maxL: 20 },
         green: { n: 'green roof', g: 3.00, concrete: true, maxL: 20 }
     };
-    const SHELL_ROOF = ['folded', 'barrel', 'dome', 'vault'];
+    const SHELL_ROOF = ['folded', 'barrel', 'dome', 'vault', 'hyparT'];
     function ownWeight(sys, m, L, r0) {   // kN/m² of plan, a first estimate
         const k = m === 'timber' ? 0.8 : 1, t = x => Math.max(0.08, x);
         switch (sys.id) {
@@ -505,14 +691,23 @@
             case 'barrel': return 25 * t(L / 600) * 1.25 + 0.4;
             case 'dome': return 25 * t(L / 500) * 1.15;
             case 'vault': return 20 * r0.t * 1.2;
+            case 'hyparT': return m === 'timber' ? 0.4 : 25 * t(L / 500) * 1.3;
+            case 'ctruss': return 0.05 + 0.0008 * L;
+            case 'tent': return 0.03;
+            case 'arch3': { const c = r0.plan.S / 45; return m === 'concrete' ? 25 * c * c * 0.6 * 1.3 / r0.plan.s : k * (0.05 + 0.003 * r0.plan.S); }
+            case 'vier': return m === 'concrete' ? 2.5 + 0.03 * L : k * (0.15 + 0.009 * L);
+            case 'lamella': return k * (0.06 + 0.0025 * L);
+            case 'geodesic': return k * (0.06 + 0.002 * L);
+            case 'gshell': return k * (0.08 + 0.002 * L);
+            case 'cbeam': return k * (0.06 + 0.003 * L);
         }
         return 0.3;
     }
     function roofLoad(sys, m, L, r0) {
         const own = ownWeight(sys, m, L, r0), svc = sys.id === 'pneu' ? 0 : 0.10;
         let fin, finName, concrete;
-        if (sys.id === 'pneu') { fin = 0; finName = 'membrane'; concrete = false; }
-        else if (SHELL_ROOF.includes(sys.id)) { fin = 0.30; finName = 'waterproofing'; concrete = sys.mats[0] !== 'timber' && m !== 'timber'; }
+        if (sys.id === 'pneu' || sys.id === 'tent') { fin = 0; finName = 'membrane'; concrete = false; }
+        else if (SHELL_ROOF.includes(sys.id)) { fin = 0.30; finName = 'waterproofing'; concrete = m === 'concrete' || m === 'masonry'; }
         else { fin = FINISH[S.finish].g; finName = FINISH[S.finish].n; concrete = !!FINISH[S.finish].concrete; }
         const live = concrete ? 1.0 : 0.3;
         return { own, fin, finName, svc, live, q: own + fin + svc + live };
@@ -582,9 +777,10 @@
     function planSVG(r) {
         const L = S.L, W = S.W, pl = r.plan;
         const x0 = Math.min(0, r.foot[0]), x1 = Math.max(L, r.foot[1]);
-        const pad = (x1 - x0) * 0.06 + 0.5, vw = x1 - x0 + 2 * pad, vh = W + 2 * pad;
+        const ey = pl.ext || (pl.kind === 'geo' ? Math.max(0, pl.R - W / (2 * pl.n)) : 0);
+        const pad = (x1 - x0) * 0.06 + 0.5, vw = x1 - x0 + 2 * pad, vh = W + 2 * ey + 2 * pad;
         const sw = Math.max(vw, vh) / 260, cr = Math.max(vw, vh) / 110;
-        let s = `<svg viewBox="${x0 - pad} ${-pad} ${vw} ${vh}" preserveAspectRatio="xMidYMid meet" style="max-height:220px">`;
+        let s = `<svg viewBox="${x0 - pad} ${-pad - ey} ${vw} ${vh}" preserveAspectRatio="xMidYMid meet" style="max-height:220px">`;
         s += `<rect x="0" y="0" width="${L}" height="${W}" fill="rgba(25,118,210,0.07)" stroke="rgba(25,118,210,0.55)" stroke-dasharray="${sw * 3} ${sw * 3}" stroke-width="${sw}"/>`;
         const ln = (a, b, c, d, w = sw, col = '#111', dash = '') => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col}" stroke-width="${w}" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`;
         const dot = (x, y) => `<rect x="${x - cr / 2}" y="${y - cr / 2}" width="${cr}" height="${cr}" fill="#111"/>`;
@@ -605,8 +801,22 @@
         } else if (pl.kind === 'arch') {
             s += `<rect x="${pl.x0}" y="0" width="${pl.S}" height="${W}" fill="rgba(198,40,40,0.08)"/>`;
             for (const y of ys(pl.s)) { s += ln(pl.x0, y, pl.x0 + pl.S, y, sw * 1.6); s += dot(pl.x0, y) + dot(pl.x0 + pl.S, y); }
+        } else if (pl.kind === 'lattice') {
+            const x0 = pl.x0, x1 = pl.x0 + pl.S, a = pl.a;
+            const ey = pl.ext || 0;
+            s += `<rect x="${x0}" y="${-ey}" width="${pl.S}" height="${W + 2 * ey}" fill="rgba(0,0,0,0.03)" stroke="#111" stroke-width="${sw * 1.2}" ${pl.round ? `rx="${Math.min(pl.S, W + 2 * ey) / 2}"` : ''}/>`;
+            const cid = 'lc' + Math.random().toString(36).slice(2, 8);
+            s += `<clipPath id="${cid}"><rect x="${x0}" y="${-ey}" width="${pl.S}" height="${W + 2 * ey}" ${pl.round ? `rx="${Math.min(pl.S, W + 2 * ey) / 2}"` : ''}/></clipPath><g clip-path="url(#${cid})">`;
+            const HH = W + 2 * ey;
+            for (let c = -HH; c <= pl.S + HH; c += a) { s += ln(x0 + c, -ey, x0 + c + HH * 0.6, W + ey, sw * 0.4, '#777'); s += ln(x0 + c, -ey, x0 + c - HH * 0.6, W + ey, sw * 0.4, '#777'); }
+            s += '</g>';
+        } else if (pl.kind === 'geo') {
+            for (let k = 0; k < pl.n; k++) s += `<circle cx="${L / 2}" cy="${(k + 0.5) * W / pl.n}" r="${pl.R}" fill="rgba(0,0,0,0.03)" stroke="#111" stroke-width="${sw * 1.4}"/>`;
         } else if (pl.kind === 'walls') {
             s += `<rect x="${-pl.bw}" y="0" width="${pl.bw}" height="${W}" fill="#111"/><rect x="${L}" y="0" width="${pl.bw}" height="${W}" fill="#111"/>`;
+            const yb = []; for (let y = 0; y <= W + 1e-6; y += W / Math.max(1, Math.ceil(W / pl.bay))) yb.push(y);
+            if (pl.mode === 'buttress') for (const y of yb) s += `<rect x="${-pl.bw - pl.bd}" y="${y - 0.4}" width="${pl.bd}" height="0.8" fill="#111"/><rect x="${L + pl.bw}" y="${y - 0.4}" width="${pl.bd}" height="0.8" fill="#111"/>`;
+            if (pl.mode === 'tie') for (const y of yb) s += ln(0, y, L, y, sw, '#c62828', `${sw * 3} ${sw * 2}`);
             for (let y = 0; y <= W + 1e-6; y += Math.max(1, W / 16)) s += ln(0, y, L, y, sw * 0.5, '#999', `${sw * 3} ${sw * 3}`);
         } else if (pl.kind === 'pneu') {
             const c = L / 2;
@@ -720,15 +930,123 @@
                 const ψa = Math.PI * j / (2 * nφ), ψb = Math.PI * (j + 1) / (2 * nφ);
                 add('face', [P(half[i], yc, dir, ψa), P(half[i + 1], yc, dir, ψa), P(half[i + 1], yc, dir, ψb), P(half[i], yc, dir, ψb)], 'membrane');
             }
-        } else if (sys === 'vault') {
-            const t = r.t, bw = r.bw, inner = resample(r.inner, 14);
-            box3(add, -bw, 0, 0, W, 0, H + t); box3(add, L, L + bw, 0, W, 0, H + t);
-            const nyv = Math.max(1, Math.round(W / 3));
-            for (let i = 0; i < inner.length - 1; i++) for (let j = 0; j < nyv; j++) {
-                const [xa, za] = inner[i], [xb, zb] = inner[i + 1], ya = W * j / nyv, yb = W * (j + 1) / nyv;
-                add('face', [[xa, ya, za + t], [xb, ya, zb + t], [xb, yb, zb + t], [xa, yb, za + t]], 'shellx');
+        } else if (sys === 'hyparT') {
+            // units of 4 hypars: straight ridge edges between units (gable line, as in the section),
+            // supported edges along the columns, a dip at each unit's centre -> every quadrant is warped
+            const f = r.zone - 0.16, ysu = ysOf(W, pl.s), n = 6;
+            const zc = H + 0.3 * f;
+            for (let k = 0; k < ysu.length - 1; k++) {
+                const y0 = ysu[k], y1 = ysu[k + 1], ym = (y0 + y1) / 2;
+                const quads = [
+                    [[0, y0, H], [L / 2, y0, H + f], [L / 2, ym, zc], [0, ym, H]],
+                    [[L / 2, y0, H + f], [L, y0, H], [L, ym, H], [L / 2, ym, zc]],
+                    [[0, ym, H], [L / 2, ym, zc], [L / 2, y1, H + f], [0, y1, H]],
+                    [[L / 2, ym, zc], [L, ym, H], [L, y1, H], [L / 2, y1, H + f]]
+                ];
+                for (const [a, b, c, d] of quads) {
+                    const P = (u, v) => [0, 1, 2].map(j => (1 - u) * (1 - v) * a[j] + u * (1 - v) * b[j] + u * v * c[j] + (1 - u) * v * d[j]);
+                    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++)
+                        add('face', [P(i / n, j / n), P((i + 1) / n, j / n), P((i + 1) / n, (j + 1) / n), P(i / n, (j + 1) / n)], 'shellx');
+                }
             }
-            add('face', [...inner.map(([x, z]) => [x, 0, z]), ...inner.slice().reverse().map(([x, z]) => [x, 0, z + t])], 'solid');
+            for (const y of ysu) {
+                add('line', [[0, y, H], [L / 2, y, H + f], [L, y, H]], 'member');
+                add('line', [[0, y, H], [L, y, H]], 'tie');
+                for (const x of [0, L]) box3(add, x - 0.15, x + 0.15, y - 0.15, y + 0.15, 0, H);
+            }
+            for (const x of [0, L]) add('line', [[x, 0, H], [x, W, H]], 'member');
+        } else if (sys === 'tent') {
+            // arches every s, the membrane saddles down between them
+            const ysa = ysOf(W, pl.s), arch = resample(r.parts[0].pts.slice(0, r.parts[0].pts.length / 2), 16);
+            for (let k = 0; k < ysa.length - 1; k++) {
+                const y0 = ysa[k], y1 = ysa[k + 1], ym = (y0 + y1) / 2;
+                for (let i = 0; i < arch.length - 1; i++) {
+                    const [xa, za] = arch[i], [xb, zb] = arch[i + 1], sag = z => z * 0.88;
+                    add('face', [[xa, y0, za], [xb, y0, zb], [xb, ym, sag(zb)], [xa, ym, sag(za)]], 'membrane');
+                    add('face', [[xa, ym, sag(za)], [xb, ym, sag(zb)], [xb, y1, zb], [xa, y1, za]], 'membrane');
+                }
+            }
+            for (const y of ysa) add('line', arch.map(([x, z]) => [x, y, z]), 'member');
+        } else if (sys === 'lamella') {
+            const f = r.lattice.f, na = 16, cyl = u => [L * u, H + 4 * f * u * (1 - u)];
+            const a = clamp(L / 10, 1.5, 4), k = Math.max(4, Math.round(W / a)), m2 = Math.max(4, Math.round(L / a));
+            for (let i = 0; i < na; i++) {   // light skin so the net reads
+                const [xa, za] = cyl(i / na), [xb, zb] = cyl((i + 1) / na);
+                add('face', [[xa, 0, za], [xb, 0, zb], [xb, W, zb], [xa, W, za]], 'membrane');
+            }
+            for (let j = -m2; j <= k; j++) for (const dir of [1, -1]) {   // two families of helices -> diamonds
+                const P = [];
+                for (let i = 0; i <= m2; i++) { const u = i / m2, y = (j + dir * i) * W / k; if (y < -1e-6 || y > W + 1e-6) continue; const [x, z] = cyl(u); P.push([x, y, z]); }
+                if (P.length > 1) add('line', P, 'thin');
+            }
+            for (const y of ysOf(W, 6)) { add('line', [[0, y, H], [L, y, H]], 'tie'); for (const x of [0, L]) box3(add, x - 0.15, x + 0.15, y - 0.15, y + 0.15, 0, H); }
+            for (const x of [0, L]) add('line', [[x, 0, H], [x, W, H]], 'member');
+        } else if (sys === 'gshell') {
+            const { x0, Sp, F } = r.gshell, e = Math.min(W / 2, Sp / 2), nu = 18, nv = Math.max(12, Math.round(W / 2));
+            // section is the arch; along the hall the height eases down to the ground over the last e metres
+            const Z = (u, y) => { const g = y < 0 ? Math.cos(Math.PI / 2 * -y / e) : y > W ? Math.cos(Math.PI / 2 * (y - W) / e) : 1; return 4 * F * u * (1 - u) * Math.sqrt(Math.max(0, g)); };
+            const Y0 = -e, WW = W + 2 * e;
+            const X = u => x0 + Sp * u;
+            for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+                const u0 = i / nu, u1 = (i + 1) / nu, y0 = Y0 + WW * j / nv, y1 = Y0 + WW * (j + 1) / nv;
+                add('face', [[X(u0), y0, Z(u0, y0)], [X(u1), y0, Z(u1, y0)], [X(u1), y1, Z(u1, y1)], [X(u0), y1, Z(u0, y1)]], 'membrane');
+            }
+            const n = 22;
+            for (let j = -n; j <= 2 * n; j++) for (const dir of [1, -1]) {
+                const P = [];
+                for (let i = 0; i <= 40; i++) { const u = i / 40, y = Y0 + (j / n + dir * u * Sp / WW * 0.9) * WW; if (y < Y0 || y > W + e) continue; P.push([X(u), y, Z(u, y)]); }
+                if (P.length > 1) add('line', P, 'thin');
+            }
+            add('line', [[x0, Y0, 0], [x0, W + e, 0], [x0 + Sp, W + e, 0], [x0 + Sp, Y0, 0], [x0, Y0, 0]], 'member');
+        } else if (sys === 'geodesic') {
+            const { R, n } = r.geo, ph = (1 + Math.sqrt(5)) / 2;
+            let V = [[-1, ph, 0], [1, ph, 0], [-1, -ph, 0], [1, -ph, 0], [0, -1, ph], [0, 1, ph], [0, -1, -ph], [0, 1, -ph], [ph, 0, -1], [ph, 0, 1], [-ph, 0, -1], [-ph, 0, 1]];
+            const Fc = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+            const nrm = p => { const l = Math.hypot(...p); return p.map(c => c / l); };
+            // rotate so a vertex points up, then subdivide each face 3x (frequency 3)
+            const up = nrm(V[0]), ang = Math.acos(up[2]), ax = nrm([up[1], -up[0], 0]);
+            const rot = p => { const [x, y, z] = p, c = Math.cos(ang), s2 = Math.sin(ang), [ux, uy, uz] = ax, d = ux * x + uy * y + uz * z;
+                return [x * c + (uy * z - uz * y) * s2 + ux * d * (1 - c), y * c + (uz * x - ux * z) * s2 + uy * d * (1 - c), z * c + (ux * y - uy * x) * s2 + uz * d * (1 - c)]; };
+            V = V.map(v => rot(nrm(v)));
+            const fr = 3, tris = [];
+            for (const [a, b, c] of Fc) {
+                const A = V[a], B = V[b], C = V[c], P = (i, j) => nrm(A.map((_, k) => A[k] + (B[k] - A[k]) * i / fr + (C[k] - A[k]) * j / fr));
+                for (let i = 0; i < fr; i++) for (let j = 0; j < fr - i; j++) {
+                    tris.push([P(i, j), P(i + 1, j), P(i, j + 1)]);
+                    if (i + j < fr - 1) tris.push([P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)]);
+                }
+            }
+            for (let k = 0; k < n; k++) {
+                const cx = L / 2, cy = (k + 0.5) * W / n;
+                for (const T of tris) {
+                    if ((T[0][2] + T[1][2] + T[2][2]) / 3 < -0.02) continue;
+                    add('face', T.map(([x, y, z]) => [cx + R * x, cy + R * y, Math.max(0, R * z)]), 'shell');
+                }
+            }
+        } else if (sys === 'vault') {
+            const V = r.V, t = V.t, tw = V.tw, bay = V.bay, inner = resample(V.inner, 14), ys = ysOf(W, bay);
+            const shell = (dx, mode) => {
+                const nyv = Math.max(1, Math.round(W / 3));
+                for (let i = 0; i < inner.length - 1; i++) for (let j = 0; j < nyv; j++) {
+                    const [xa, za] = inner[i], [xb, zb] = inner[i + 1], ya = W * j / nyv, yb = W * (j + 1) / nyv;
+                    add('face', [[xa + dx, ya, za + t], [xb + dx, ya, zb + t], [xb + dx, yb, zb + t], [xa + dx, yb, za + t]], mode);
+                }
+                add('face', [...inner.map(([x, z]) => [x + dx, 0, z]), ...inner.slice().reverse().map(([x, z]) => [x + dx, 0, z + t])], 'solid');
+            };
+            if (V.mode === 'adjacent') {
+                for (const dx of [-L - tw, L + tw]) shell(dx, 'membrane');
+                for (const xw of [-tw, L]) for (let k = 0; k < ys.length; k++) box3(add, xw, xw + tw, ys[k] - tw / 2, ys[k] + tw / 2, 0, H);
+                for (const xw of [-tw, L]) box3(add, xw, xw + tw, 0, W, H - 0.4, H + t);
+            } else {
+                box3(add, -tw, 0, 0, W, 0, H + t); box3(add, L, L + tw, 0, W, 0, H + t);
+            }
+            shell(0, 'shellx');
+            if (V.mode === 'buttress') for (const y of ys) for (const [x0, dir] of [[-tw, -1], [L + tw, 1]]) {
+                const bd = V.bd, bw = Math.max(0.5, L / 30), x1 = x0 + dir * bd, xt = x0 + dir * bd * 0.35, z = H * 0.9;
+                const P = [[x0, y - bw / 2, 0], [x1, y - bw / 2, 0], [xt, y - bw / 2, z], [x0, y - bw / 2, z]], Q = P.map(([x, yy, zz]) => [x, yy + bw, zz]);
+                add('face', P, 'solid'); add('face', Q, 'solid'); add('face', [P[1], P[2], Q[2], Q[1]], 'solid'); add('face', [P[2], P[3], Q[3], Q[2]], 'solid');
+            }
+            if (V.mode === 'tie') for (const y of ys) add('line', [[0, y, H], [L, y, H]], 'tie');
         } else {
             // frames: the section repeated along the hall, tied by longitudinal members
             const s = pl.s || 6, ys = ysOf(W, s);
@@ -808,7 +1126,7 @@
     };
 
     const ROWS = [
-        { t: 'Engel span', tip: 'Where your span sits in Engel’s range for this system and material', f: r => { const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(v) - Math.log(3)) / (Math.log(500) - Math.log(3)); return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini"><span class="lim" style="left:${X(sp.lim[0])}%;width:${X(sp.lim[1]) - X(sp.lim[0])}%"></span>${sp.typ.map(([a, b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6, X(b) - X(a))}%"></span>`).join('')}<span class="me" style="left:${X(S.L)}%"></span></div><small>${sp.lim[0]}–${sp.lim[1]} m · usual ${sp.typ.map(t => t.join('–')).join(', ')}</small>`; } },
+        { t: 'Engel span', tip: 'Where your span sits in Engel’s range for this system and material', f: r => { const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(v) - Math.log(3)) / (Math.log(500) - Math.log(3)); return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini"><span class="lim" style="left:${X(sp.lim[0])}%;width:${X(sp.lim[1]) - X(sp.lim[0])}%"></span>${sp.typ.map(([a, b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6, X(b) - X(a))}%"></span>`).join('')}<span class="me" style="left:${X(S.L)}%"></span></div><small>${sp.lim[0]}–${sp.lim[1]} m · usual ${sp.typ.map(t => t.join('–')).join(', ')}${r.sys.spanSrc ? ' · rule of thumb, not in Engel' : ''}</small>`; } },
         { t: 'Structure zone', tip: 'Height given to structure above the clear height', k: 'zone', f: r => f2(r.zone) + ' m', sub: r => r.sys.rule[r.m] },
         { t: 'Total height', tip: 'Ground to the highest point', k: 'top', f: r => f2(r.top) + ' m' },
         { t: 'Footprint', tip: 'Ground width the system needs, incl. arch feet, anchors, walls', k: 'footW', f: r => f1(r.footW) + ' m', sub: r => r.footW > S.L + 1 ? `${f1(r.footW - S.L)} m beyond the space` : '' },
@@ -821,6 +1139,7 @@
 
     function compute() { RES = SYS.map(evaluate); const pr = projector(); RES.forEach(r => r.P3 = projectScene(scene3D(r), pr)); }
     const byId = id => RES.find(r => r.sys.id === id);
+    const matOk = r => r.sys.mats.includes(S.mat);
     function drawingOf(r, sel, view) {
         if (view === '3d') return axoSVG(r.P3, bounds3(sel.map(x => x.P3)));
         if (view === 'plan') return planSVG(r);
@@ -831,24 +1150,26 @@
         syncFinish(); compute(); syncInputs();
         const sel = slots.map(byId), more = sel.length < 5;
         const g = $('grid'); g.style.setProperty('--n', sel.length + (more ? 1 : 0));
-        const opts = r => [1, 2, 3, 4].map(f => `<optgroup label="${f} ${FAM[f]}">${SYS.filter(s => s.fam === f).map(s => `<option value="${s.id}" ${s.id === r.sys.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</optgroup>`).join('');
+        const opts = r => [1, 2, 3, 4, 6].map(f => `<optgroup label="${f} ${FAM[f]}">${SYS.filter(s => s.fam === f).map(s => `<option value="${s.id}" ${s.id === r.sys.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</optgroup>`).join('');
         const pad = more ? '<div></div>' : '';
-        let h = `<div class="rh"></div>` + sel.map((r, i) => `<div class="slot-h"><span class="k">${r.sys.fam} ${FAM[r.sys.fam]}</span><select data-i="${i}" title="Change system">${opts(r)}</select><span class="sub">${r.sys.code} · ${MATNAME[r.m]}${r.m !== S.mat && !r.sys.mats.includes(S.mat) ? ' (no ' + S.mat + ' version)' : ''}</span>${sel.length > 1 ? `<button class="x" data-rm="${i}">remove</button>` : ''}</div>`).join('') + (more ? `<div class="addslot" id="add">+ add</div>` : '');
+        let h = `<div class="rh"></div>` + sel.map((r, i) => `<div class="slot-h"><span class="k">${r.sys.fam} ${FAM[r.sys.fam]}</span><select data-i="${i}" title="Change system">${opts(r)}</select><span class="sub">${r.sys.code} · ${MATNAME[r.m]}</span>${matOk(r) ? '' : `<span class="nomat">not built in ${S.mat} — shown in ${MATNAME[r.m]} (Engel: ${r.sys.mats.map(x => MATNAME[x]).join(', ')} only)</span>`}${sel.length > 1 ? `<button class="x" data-rm="${i}">remove</button>` : ''}</div>`).join('') + (more ? `<div class="addslot" id="add">+ add</div>` : '');
         const viewName = S.view === 'plan' ? 'Plan' : S.view === '3d' ? 'Axonometric' : 'Section';
-        h += `<div class="rh k" title="All drawn at one scale">${viewName}</div>` + sel.map(r => `<div class="draw ${S.view === '3d' ? 'orbit' : ''}" style="--dh:230px" data-open="${r.sys.id}">${drawingOf(r, sel, S.view)}</div>`).join('') + pad;
+        h += `<div class="rh k" title="All drawn at one scale">${viewName}</div>` + sel.map(r => `<div class="draw ${S.view === '3d' ? 'orbit' : ''} ${matOk(r) ? '' : 'alt'}" style="--dh:230px" data-open="${r.sys.id}">${drawingOf(r, sel, S.view)}</div>`).join('') + pad;
         for (const row of ROWS) {
             const M = row.k && MEASURE[row.k], vals = M ? sel.map(M.v) : null, best = vals ? Math.min(...vals) : null;
             const bv = M ? sel.map(row.barv || M.v) : null, mx = bv ? Math.max(...bv.map(Math.abs), 1e-9) : 1;
-            const mark = i => M && sel.length > 1 && vals[i] === best && vals.some(v => v !== best);
+            const okv = vals ? vals.filter((v, i) => matOk(sel[i])) : [], bestOk = okv.length ? Math.min(...okv) : null;
+            const mark = i => M && sel.length > 1 && matOk(sel[i]) && vals[i] === bestOk && vals.some(v => v !== bestOk);
             h += `<div class="rh k" title="${esc(row.tip)}">${row.t}</div>` + sel.map((r, i) => {
                 const sub = row.sub ? row.sub(r) : '';
-                return `<div class="cell ${mark(i) ? 'best' : ''}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}</div>`;
+                return `<div class="cell ${mark(i) ? 'best' : ''} ${matOk(r) ? '' : 'alt'}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}</div>`;
             }).join('') + pad;
         }
         g.innerHTML = h;
         document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
         const qs = RES.map(r => r.load.q);
         $('qNote').textContent = finishNote || `covering applies to frames, trusses, arches, cables · shells are their own roof`;
+        $('nSys').textContent = RES.length;
         $('suggest').textContent = metric === 'span' ? 'Suggest five' : `Suggest five · ${$('metric').selectedOptions[0].text.replace(/ \(.*\)/, '')}`;
         drawRank();
         if (modalId) drawModal();
@@ -890,13 +1211,14 @@
         el.setAttribute('viewBox', `0 0 ${W} ${H}`); el.setAttribute('height', H); el.innerHTML = s;
         function row(r, y, W) {
             const on = slots.includes(r.sys.id);
-            return `<g data-id="${r.sys.id}" style="cursor:pointer"><rect x="0" y="${y - rowH / 2}" width="${W}" height="${rowH}" fill="${on ? '#e9e9e9' : 'transparent'}"/><text x="6" y="${y + 3.5}" font-size="11" font-weight="${on ? 'bold' : 'normal'}" fill="${r.st === 'out' ? '#aaa' : '#111'}" ${F}>${esc(r.sys.name)} <tspan font-size="9" fill="#aaa" font-weight="normal">${r.sys.code}</tspan></text>`;
+            return `<g data-id="${r.sys.id}" style="cursor:pointer"><rect x="0" y="${y - rowH / 2}" width="${W}" height="${rowH}" fill="${on ? '#e9e9e9' : 'transparent'}"/><text x="6" y="${y + 3.5}" font-size="11" font-weight="${on ? 'bold' : 'normal'}" fill="${r.st === 'out' || !matOk(r) ? '#aaa' : '#111'}" ${F}>${esc(r.sys.name)} <tspan font-size="9" fill="#aaa" font-weight="normal">${r.sys.code}${matOk(r) ? '' : ' · no ' + S.mat}</tspan></text>`;
         }
     }
 
     // the five at the top of the current ranking, skipping systems outside Engel's range
     function suggest() {
-        const feas = sortByMetric(RES).filter(r => r.st !== 'out');
+        // systems that exist in the chosen material first; only then the others
+        const feas = [...sortByMetric(RES).filter(r => r.st !== 'out' && matOk(r)), ...sortByMetric(RES).filter(r => r.st !== 'out' && !matOk(r))];
         slots = (feas.length ? feas : sortByMetric(RES)).slice(0, 5).map(r => r.sys.id);
         render();
     }
@@ -910,8 +1232,18 @@
         $('mStatus').innerHTML = `<span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
         $('mPlan').innerHTML = planSVG(r);
         $('mNotes').innerHTML = r.notes.map(n => `<li>${esc(n)}</li>`).join('');
+        $('mVar').innerHTML = r.sys.id === 'vault' ? vaultVariants() : '';
+    }
+    // the same vault with its thrust taken three ways (Engel p.113)
+    function vaultVariants() {
+        const keep = S.vaultMode || 'buttress', sys = SYS.find(x => x.id === 'vault'), pr = projector();
+        const V = ['buttress', 'tie', 'adjacent'].map(mode => { S.vaultMode = mode; const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return r; });
+        S.vaultMode = keep;
+        const bb = bounds3(V.map(r => r.P3)), name = { buttress: 'Buttresses', tie: 'Ties', adjacent: 'Neighbouring vaults' };
+        return `<div class="k" style="margin:6px 0 4px">Taking the thrust</div><div class="vv">` + V.map(r => `<div class="vvi ${r.V.mode === keep ? 'on' : ''}" data-vmode="${r.V.mode}">${axoSVG(r.P3, bb)}<b>${name[r.V.mode]}</b><small>footprint ${f1(r.footW)} m · wall ${f2(r.V.tw)} m${r.thrust ? '' : ' · thrust balanced'}</small></div>`).join('') + '</div>';
     }
 
+    $('mVar').addEventListener('click', e => { const v = e.target.closest('[data-vmode]'); if (v) { S.vaultMode = v.dataset.vmode; render(); } });
     // ---- inputs ----
     const clampK = (k, v) => Math.min(FIELDS[k].max, Math.max(FIELDS[k].min, v));
     for (const k in FIELDS) {
