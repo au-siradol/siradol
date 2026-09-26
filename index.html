@@ -14,6 +14,7 @@
 --bg: #f4f4f4;
 --paper: #fdfdfd;
 --accent: #d32f2f;
+--wip: #b87400;
 --hover-bg: rgba(0,0,0,0.02);
 }
 @media (prefers-color-scheme: dark) {
@@ -25,6 +26,7 @@
 --bg: #141312;
 --paper: #1c1b19;
 --accent: #ff6a56;
+--wip: #f2b33d;
 --hover-bg: rgba(255,255,255,0.04);
 }
 }
@@ -202,6 +204,24 @@ min-height: 320px;
 
 #list-view.hide, #image-view:not(.show) { display: none; }
 
+/* ===== Under construction: its own colour and a tag ===== */
+.wip .entry-icon svg .fill, .wip .card-icon svg .fill { fill: var(--wip); }
+.wip-tag {
+display: inline-block;
+margin-left: 6px;
+padding: 1px 5px;
+border: 1px solid var(--wip);
+color: var(--wip);
+font-family: 'Courier New', monospace;
+font-size: 10px;
+font-weight: normal;
+letter-spacing: 0.5px;
+text-transform: uppercase;
+vertical-align: 2px;
+white-space: nowrap;
+}
+.card .wip-tag { vertical-align: 4px; }
+
 /* ===== Footer ===== */
 footer.site {
 max-width: 1100px;
@@ -352,7 +372,7 @@ body { padding: 24px; }
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
 </div>
 </a>
-<a class="entry" href="works/h60.html">
+<a class="entry wip" href="works/h60.html">
 <div class="entry-inner">
 <div class="entry-icon">
 <svg viewBox="0 0 120 90">
@@ -361,7 +381,7 @@ body { padding: 24px; }
 <rect x="66" y="42" width="26" height="22" rx="9" fill="var(--paper)"/>
 </svg>
 </div>
-<div class="entry-title">H60</div>
+<div class="entry-title">H60<span class="wip-tag">Under construction</span></div>
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
 </div>
 </a>
@@ -496,7 +516,7 @@ body { padding: 24px; }
 <div class="card-sub">Taichung Opera House — A/B grid, flexible grid, per-level control grid, overlapping catenoids</div>
 </div>
 </a>
-<a class="card" href="works/h60.html">
+<a class="card wip" href="works/h60.html">
 <div>
 <div class="card-idx">10 / STUDY</div>
 <div class="card-icon">
@@ -508,7 +528,7 @@ body { padding: 24px; }
 </div>
 </div>
 <div>
-<div class="card-title">H60</div>
+<div class="card-title">H60<span class="wip-tag">Under construction</span></div>
 <div class="card-sub">Room circles, superellipses in the room frames, a gable-roofed storey — walls &amp; windows</div>
 </div>
 </a>
