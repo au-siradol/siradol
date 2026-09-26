@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truss Lab</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4; color: #111; margin: 0; padding: 0 24px 40px;
+        }
+        .study-bar {
+            max-width: 1100px; width: 100%; margin: 0 auto;
+            padding: 14px 0 8px 0; border-bottom: 1px solid #111;
+            display: flex; align-items: baseline; justify-content: space-between;
+            gap: 14px; flex-wrap: wrap; box-sizing: border-box;
+        }
+        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
+        .study-bar a:hover { color:#1976d2; }
+        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
+        .study-bar .idx { font-family:'Courier New', monospace; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
+        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
+        .study-bar .titleline b { font-weight:bold; color:#111; }
+        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
+        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+
+        .canvas-container { max-width: 1100px; margin: 16px auto 0; position: relative; }
+        canvas#view {
+            display: block; width: 100%; background: #ffffff; border: 1px solid #eaeaea; box-sizing: border-box;
+            cursor: default; touch-action: manipulation;
+        }
+        canvas#view.hot { cursor: pointer; }
+        .view-hint { position: absolute; bottom: 8px; left: 10px; right: 10px; font-size: 9px; color: #999; letter-spacing: 0.4px; pointer-events: none; }
+        .tip {
+            position: absolute; pointer-events: none; display: none; font-family: 'Courier New', monospace; font-size: 10.5px;
+            background: #111; color: #fff; padding: 5px 7px; line-height: 1.45; white-space: nowrap; z-index: 3;
+        }
+
+        .readout { max-width: 1100px; margin: 10px auto 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid #111; background: #fff; }
+        .readout .t { padding: 8px 12px 9px; border-right: 1px solid #ddd; min-width: 0; }
+        .readout .t:last-child { border-right: none; }
+        .readout .k { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px; color: #999; }
+        .readout .v { font-family: 'Courier New', monospace; font-size: 17px; margin-top: 3px; white-space: nowrap; }
+        .readout .s { font-size: 10px; color: #777; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .readout .bad .v, .readout .bad .s { color: #c62828; }
+        .readout .ok .v::after { content: ' \2713'; font-size: 12px; color: #2e7d32; }
+
+        .caption { max-width: 1100px; margin: 8px auto 0; font-size: 11.5px; line-height: 1.5; color: #333; min-height: 18px; }
+        .caption b { font-family: 'Courier New', monospace; font-weight: normal; font-size: 10px; letter-spacing: 1px; color: #999; text-transform: uppercase; margin-right: 8px; }
+        .caption .key { color: #777; margin-left: 10px; font-size: 10.5px; }
+        .caption .sw { display: inline-block; width: 16px; height: 3px; vertical-align: 3px; margin: 0 4px 0 12px; }
+        .caption .ramp { display: inline-block; width: 64px; height: 7px; vertical-align: 0; margin: 0 4px 0 12px; background: linear-gradient(90deg, #b0bec5, #f9a825 60%, #d32f2f); }
+        .caption .ramp.over { width: 10px; background: rgb(107,10,77); margin-left: 2px; }
+        .caption .dash { display: inline-block; width: 16px; border-top: 1.5px dashed #555; margin: 0 4px 0 12px; vertical-align: 3px; }
+
+        .panels { max-width: 1100px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #111; font-size: 11px; }
+        .panel { display: flex; flex-direction: column; gap: 10px; padding: 14px 18px 4px; border-right: 1px solid #ddd; min-width: 0; }
+        .panel:first-child { padding-left: 0; }
+        .panel:last-child { border-right: none; padding-right: 0; }
+        .panel h4 { margin: 0; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px; color: #999; }
+        .panel h4 .n { font-family: 'Courier New', monospace; margin-right: 6px; }
+        .panel h4.gap { margin-top: 6px; }
+        .panel .note { font-size: 10px; color: #888; line-height: 1.4; margin: -2px 0 0; min-height: 14px; }
+        .panel .note.warn { color: #c62828; }
+        @media (max-width: 960px) {
+            .panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .panel:nth-child(2) { border-right: none; padding-right: 0; }
+            .panel:nth-child(3) { padding-left: 0; }
+            .readout { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (max-width: 620px) {
+            body { padding: 0 16px 40px; }
+            .panels { grid-template-columns: 1fr; }
+            .panel { padding: 14px 0 10px; border-right: none; border-bottom: 1px solid #ddd; }
+            .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .readout .t { border-bottom: 1px solid #eee; }
+        }
+
+        .seg { display: inline-flex; border: 1px solid #111; max-width: 100%; align-self: flex-start; }
+        .seg button {
+            height: 26px; border: none; border-right: 1px solid #111; background: #fff; cursor: pointer;
+            padding: 0 9px; font: inherit; font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; color: #111; white-space: nowrap;
+        }
+        .seg button:last-child { border-right: none; }
+        .seg button.active { background: #111; color: #fff; }
+        .seg button:hover:not(.active) { background: #f0f0f0; }
+
+        .scrub-row { display: flex; align-items: center; gap: 8px; height: 20px; }
+        .scrub-row .lbl { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; flex: none; min-width: 46px; }
+        .scrub-row .lbl.r { text-align: right; font-family: 'Courier New', monospace; font-weight: normal; font-size: 10px; color: #111; letter-spacing: 0; min-width: 52px; text-transform: none; }
+        input[type=range] { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; height: 1px; background: #999; outline: none; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #111; cursor: pointer; }
+        input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #111; border: none; cursor: pointer; }
+        input[type=range]::-moz-range-track { height: 1px; background: #999; }
+
+        .btn-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .tog { height: 26px; border: 1px solid #111; background: #fff; cursor: pointer; padding: 0 10px; font: inherit; font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; color: #111; white-space: nowrap; }
+        .tog.active { background: #111; color: #fff; }
+        .tog:hover:not(.active) { background: #f0f0f0; }
+        .tog.primary { background: #111; color: #fff; }
+        .tog.primary:hover { background: #333; }
+        .sel-row { display: flex; align-items: center; gap: 8px; }
+        .sel-row .lbl { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; min-width: 46px; }
+        .sel-row select { flex: 1; min-width: 0; font: inherit; font-size: 10.5px; padding: 3px 4px; border: 1px solid #aaa; background: #fff; color: #111; }
+        .sel-row .u { font-family: 'Courier New', monospace; font-size: 10px; min-width: 38px; text-align: right; }
+
+        .kpanel { max-width: 1100px; margin: 26px auto 0; border-top: 1px solid #111; padding-top: 12px; }
+        .kpanel > h4 { margin: 0 0 4px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px; color: #999; }
+        .kpanel .lead { font-size: 11.5px; line-height: 1.55; color: #444; margin: 0 0 14px; max-width: 70em; }
+        .kpanel .lead code, .steps code { font-family: 'Courier New', monospace; font-size: 11px; }
+        .kgrid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 28px; }
+        @media (max-width: 860px) { .kgrid { grid-template-columns: 1fr; } }
+        .steps { font-size: 11px; line-height: 1.55; }
+        .steps .title { font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+        .steps .title span { font-weight: normal; color: #777; }
+        .steps .empty { color: #999; font-size: 11px; padding: 20px 0; }
+        .steps .st { display: grid; grid-template-columns: 16px 64px minmax(0, 1fr); gap: 6px; padding: 6px 0; border-bottom: 1px solid #e6e6e6; }
+        .steps .st .n { font-family: 'Courier New', monospace; color: #999; }
+        .steps .st .h { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; padding-top: 3px; }
+        .steps .st .b { min-width: 0; overflow-x: auto; }
+        .mono { font-family: 'Courier New', monospace; font-size: 10.5px; }
+        table.kmat { border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 10px; margin-top: 4px; background: #fff; }
+        table.kmat td, table.kmat th { padding: 2px 6px; text-align: right; border: 1px solid #e3e3e3; white-space: nowrap; }
+        table.kmat th { font-weight: normal; color: #1565c0; font-size: 9px; background: #fafafa; }
+        .kcanvas-wrap { position: relative; }
+        #kCanvas { width: 100%; display: block; background: #fff; border: 1px solid #eaeaea; box-sizing: border-box; cursor: crosshair; }
+        .khover { font-family: 'Courier New', monospace; font-size: 10.5px; color: #333; min-height: 30px; margin-top: 6px; line-height: 1.45; }
+        .kkey { font-size: 10px; color: #777; margin-top: 4px; }
+        .kkey i { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin: 0 4px 0 10px; }
+        .kkey i:first-child { margin-left: 0; }
+
+        .mtable-wrap { max-height: 300px; overflow: auto; border: 1px solid #eaeaea; margin-top: 22px; background: #fff; }
+        table.mt { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+        table.mt th { position: sticky; top: 0; background: #fff; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; text-align: right; padding: 7px 8px; border-bottom: 1px solid #111; white-space: nowrap; }
+        table.mt th:nth-child(-n+2), table.mt td:nth-child(-n+2) { text-align: left; }
+        table.mt td { padding: 3px 8px; text-align: right; font-family: 'Courier New', monospace; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+        table.mt tbody tr { cursor: pointer; }
+        table.mt tbody tr:hover td { background: #f3f3f3; }
+        table.mt tbody tr.sel td { background: #111; color: #fff; }
+        table.mt td.t { color: #1565c0; }
+        table.mt td.c { color: #c62828; }
+        table.mt td.over { color: rgb(107,10,77); font-weight: bold; }
+        table.mt tbody tr.sel td.t, table.mt tbody tr.sel td.c, table.mt tbody tr.sel td.over { color: #fff; }
+
+        .reference-notes { max-width: 1100px; margin: 22px auto 0; border-top: 1px solid #ddd; padding-top: 10px; font-size: 11px; line-height: 1.6; color: #666; }
+        .reference-notes summary { cursor: pointer; font-size: 10px; color: #444; }
+        .reference-notes p, .reference-notes li { max-width: 85em; }
+        .reference-notes table { border-collapse: collapse; font-size: 10.5px; margin: 6px 0 10px; }
+        .reference-notes td, .reference-notes th { border-bottom: 1px solid #e3e3e3; padding: 3px 12px 3px 0; text-align: left; vertical-align: top; }
+        .reference-notes th { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="study-bar">
+        <a href="../index.html">&larr; Index</a>
+        <span class="titlegroup">
+            <span class="idx">11</span>
+            <span class="titleline"><b>Truss Lab</b><span class="sep">&mdash;</span><span class="sub">a Karamba-style solver in the browser &middot; space first, then the truss that spans it &middot; direct stiffness method</span></span>
+        </span>
+    </div>
+
+    <div class="canvas-container" id="wrap">
+        <canvas id="view"></canvas>
+        <div class="tip" id="tip"></div>
+        <div class="view-hint">Click a member to follow it through the stiffness matrix below &middot; Hold freezes the deflected line, then change depth, panels or supports to compare</div>
+    </div>
+
+    <div class="readout" id="readout"></div>
+    <div class="caption" id="legend"></div>
+
+    <div class="panels">
+        <div class="panel">
+            <h4><span class="n">01</span>Space</h4>
+            <div class="scrub-row"><span class="lbl">Span</span><input type="range" id="span" min="6" max="48" step="0.5"><span class="lbl r" id="span_v"></span></div>
+            <div class="scrub-row"><span class="lbl">Clear ht</span><input type="range" id="clear" min="2.4" max="12" step="0.1"><span class="lbl r" id="clear_v"></span></div>
+            <div class="scrub-row"><span class="lbl">Spacing</span><input type="range" id="spacing" min="2" max="10" step="0.25"><span class="lbl r" id="spacing_v"></span></div>
+            <p class="note">The room the truss has to clear. Spacing is the distance to the next truss &mdash; it sets how much roof each truss carries.</p>
+            <div class="btn-row"><button class="tog primary" id="fit">Fit truss to space</button></div>
+            <p class="note">Sets depth from the span, panels for ~45&deg; diagonals, then sizes the sections.</p>
+        </div>
+        <div class="panel">
+            <h4><span class="n">02</span>Structure</h4>
+            <div class="seg" data-key="profile"><button data-val="flat">Flat</button><button data-val="gable">Gable</button><button data-val="bow">Bowstring</button></div>
+            <div class="seg" data-key="web"><button data-val="pratt">Pratt</button><button data-val="howe">Howe</button><button data-val="warren">Warren</button></div>
+            <div class="scrub-row"><span class="lbl">Depth</span><input type="range" id="depth" min="0.3" max="8" step="0.05"><span class="lbl r" id="depth_v"></span></div>
+            <p class="note" id="depthNote"></p>
+            <div class="scrub-row"><span class="lbl">Panels</span><input type="range" id="panels" min="2" max="16" step="2"><span class="lbl r" id="panels_v"></span></div>
+            <h4 class="gap">Supports</h4>
+            <div class="seg" data-key="supports"><button data-val="pin-roller">Pin &middot; Roller</button><button data-val="pin-pin">Pin &middot; Pin</button><button data-val="roller-roller">Roller &middot; Roller</button></div>
+            <p class="note" id="supNote"></p>
+        </div>
+        <div class="panel">
+            <h4><span class="n">03</span>Load &amp; Section</h4>
+            <div class="scrub-row"><span class="lbl">Roof q</span><input type="range" id="q" min="0.25" max="5" step="0.05"><span class="lbl r" id="q_v"></span></div>
+            <p class="note" id="wNote"></p>
+            <div class="btn-row">
+                <div class="seg" data-key="pattern"><button data-val="full">Full span</button><button data-val="half">Left half</button></div>
+                <button class="tog" id="selfw">Self weight</button>
+            </div>
+            <div class="seg" data-key="material"><button data-val="steel">Steel S235</button><button data-val="timber">Glulam GL24h</button></div>
+            <div class="sel-row"><span class="lbl">Top</span><select id="sec_top"></select><span class="u" id="u_top"></span></div>
+            <div class="sel-row"><span class="lbl">Bottom</span><select id="sec_bottom"></select><span class="u" id="u_bottom"></span></div>
+            <div class="sel-row"><span class="lbl">Web</span><select id="sec_web"></select><span class="u" id="u_web"></span></div>
+            <div class="btn-row"><button class="tog" id="autosize">Auto-size sections</button></div>
+        </div>
+        <div class="panel">
+            <h4><span class="n">04</span>View</h4>
+            <div class="seg" data-key="colour"><button data-val="force">Force N</button><button data-val="util">Utilisation</button></div>
+            <div class="btn-row"><button class="tog" id="deformed">Deformed</button><button class="tog" id="labels">Values</button></div>
+            <div class="scrub-row"><span class="lbl">Scale</span><input type="range" id="scale" min="0" max="300" step="1"><span class="lbl r" id="scale_v"></span></div>
+            <div class="btn-row"><button class="tog" id="autoscale">Auto scale</button></div>
+            <p class="note">The scale stays fixed while you change the truss, so a longer line means a real, larger deflection.</p>
+            <h4 class="gap">Compare</h4>
+            <div class="btn-row"><button class="tog" id="hold">Hold line</button><button class="tog" id="clearhold">Clear</button></div>
+            <p class="note" id="holdNote"></p>
+        </div>
+    </div>
+
+    <section class="kpanel">
+        <h4>Inside the solver &mdash; K &middot; u = F</h4>
+        <p class="lead">Each member is a spring of stiffness <code>EA/L</code> along its own axis. Rotated into x/y by <code>c = cos&theta;</code> and <code>s = sin&theta;</code> it becomes a 4&times;4 matrix <code>k</code>, which is added into the global matrix <code>K</code> at the rows and columns of its two nodes. Rows and columns held by a support are removed, the remaining system is solved for the displacements <code>u</code>, and each member force is read back from how much its two ends moved apart: <code>N = EA/L &middot; (c&middot;&Delta;u<sub>x</sub> + s&middot;&Delta;u<sub>y</sub>)</code>.</p>
+        <div class="kgrid">
+            <div class="steps" id="steps"></div>
+            <div>
+                <div class="kcanvas-wrap"><canvas id="kCanvas"></canvas></div>
+                <div class="kkey"><i style="background:rgba(17,17,17,0.7)"></i>positive <i style="background:rgba(198,40,40,0.7)"></i>negative <i style="background:#eee;border:1px solid #ccc"></i>removed by a support <i style="border:1.5px solid #1565c0"></i>selected member's k</div>
+                <div class="khover" id="khover">Hover the matrix to read a value and the members that put it there.</div>
+            </div>
+        </div>
+        <div class="mtable-wrap"><table class="mt" id="mtable"></table></div>
+    </section>
+
+    <details class="reference-notes">
+        <summary>Notes &mdash; what this does and does not do, and how it maps to Karamba3D</summary>
+        <p>This page runs the same first step as Karamba3D's <i>Analyze</i> component (first-order theory, linear elastic, small displacements) but only for a pin-jointed plane truss: members carry axial force only, nodes have two degrees of freedom (x, y), and loads are applied at nodes. It is written from scratch in plain JavaScript; the dense solver is Gaussian elimination with partial pivoting, which is fast enough for the few dozen degrees of freedom here.</p>
+        <table>
+            <tr><th>Karamba3D component</th><th>Here</th></tr>
+            <tr><td>LineToBeam</td><td>01 Space + 02 Structure generate the nodes and members; coincident end points are merged into one node</td></tr>
+            <tr><td>Cross Section, Material</td><td>03 section per group (top chord, bottom chord, web) and material</td></tr>
+            <tr><td>Support</td><td>02 supports: a pin holds x and y, a roller holds y only</td></tr>
+            <tr><td>Loads (mesh / line / gravity)</td><td>roof load q &times; spacing as a line load on the roof line, lumped to the nodes by the lever rule; self weight split to the two ends of every member</td></tr>
+            <tr><td>Analyze (Th. I)</td><td>assemble K, remove supported degrees of freedom, solve K&middot;u = F</td></tr>
+            <tr><td>Beam View, Utilization</td><td>04 force / utilisation colours, deformed shape, member table</td></tr>
+            <tr><td>Optimize Cross Section</td><td>Auto-size: the lightest section per group with utilisation &le; 1, repeated because self weight changes with size</td></tr>
+        </table>
+        <p><b>Checks.</b> Tension: N / (A&middot;f<sub>t</sub>). Compression: the larger of N / (A&middot;f<sub>c</sub>) and N / N<sub>cr</sub>, with Euler's N<sub>cr</sub> = &pi;&sup2;EI / L&sup2; for a pin-ended member (effective length = member length). Strengths are characteristic values with no partial factors, and Euler is unconservative for stocky members, where a code buckling curve (EC3 &chi;, EC5 k<sub>c</sub>) would reduce capacity further &mdash; read the utilisation as a design sketch, not a design check. Deflection is compared with L/250 as a common roof guide.</p>
+        <p><b>Verification without Karamba.</b> The equilibrium tile must read zero (reactions balance the applied load). m + r &minus; 2j tells whether the truss is statically determinate (0), indeterminate (&gt; 0) or a mechanism (&lt; 0); a singular K during the solve is reported as a mechanism, as Karamba does. For a determinate truss the member forces do not depend on section size, so they can be checked by hand with the method of joints.</p>
+        <p><b>Not yet:</b> rigid joints and bending (the 6-DOF beam element), second-order theory and system buckling, out-of-plane buckling, connection eccentricity, wind uplift and load combinations.</p>
+    </details>
+
+<script>
+(() => {
+    const $ = id => document.getElementById(id);
+
+    // ---------- materials & sections (units: kN, m) ----------
+    const chs = (D, t) => { const d = D - 2 * t; return { name: `CHS ${D}×${t}`, A: Math.PI * (D * D - d * d) / 4 * 1e-6, I: Math.PI * (D ** 4 - d ** 4) / 64 * 1e-12 }; };
+    const sq = b => ({ name: `${b}×${b}`, A: b * b * 1e-6, I: b ** 4 / 12 * 1e-12 });
+    const MATS = {
+        steel:  { name: 'Steel S235',   E: 210e6,  ft: 235e3,  fc: 235e3, rho: 78.5,
+                  secs: [[42.4, 2.6], [48.3, 3.2], [60.3, 3.2], [76.1, 3.2], [88.9, 4], [114.3, 4], [114.3, 6.3], [139.7, 5], [168.3, 6.3], [193.7, 8], [219.1, 8], [273, 10]].map(a => chs(...a)) },
+        timber: { name: 'Glulam GL24h', E: 11.5e6, ft: 19.2e3, fc: 24e3,  rho: 4.2,
+                  secs: [80, 100, 120, 140, 160, 180, 200, 240, 280, 320].map(sq) }
+    };
+    const GROUPS = ['top', 'bottom', 'web'];
+    const DEFL_LIMIT = 250;
+
+    const S = {
+        span: 18, clear: 4.5, spacing: 6,
+        profile: 'flat', web: 'pratt', depth: 1.5, panels: 12, supports: 'pin-roller',
+        q: 1.5, pattern: 'full', selfWeight: true, material: 'steel', sec: { top: 5, bottom: 4, web: 2 },
+        colour: 'force', deformed: true, labels: false, scale: 50, sel: -1, hold: null
+    };
+    let M = null, R = null;
+
+    // ---------- 01+02: geometry (LineToBeam) ----------
+    function profileH(x) {
+        const L = S.span, d = S.depth;
+        if (S.profile === 'flat') return d;
+        if (S.profile === 'gable') return d * (1 - Math.abs(2 * x / L - 1));
+        return d * 4 * x * (L - x) / (L * L);
+    }
+
+    function buildModel() {
+        const L = S.span, H = S.clear, n = S.panels;
+        const nodes = [], members = [], seen = new Set();
+        const add = (x, y) => { nodes.push({ x, y }); return nodes.length - 1; };
+        const link = (a, b, group, kind) => {
+            if (a === b) return;
+            const k = a < b ? a + '-' + b : b + '-' + a;
+            if (seen.has(k)) return;
+            seen.add(k);
+            members.push({ i: a, j: b, group, kind });
+        };
+        const bot = [];
+        for (let i = 0; i <= n; i++) bot.push(add(i * L / n, H));
+        const top = [];
+        let roof;
+        if (S.web === 'warren') {
+            for (let i = 0; i < n; i++) { const x = (i + 0.5) * L / n; top.push(add(x, H + Math.max(profileH(x), 0.05))); }
+            roof = [bot[0], ...top, bot[n]];
+            for (let i = 0; i < n; i++) link(bot[i], bot[i + 1], 'bottom', 'chord');
+            for (let i = 0; i < n - 1; i++) link(top[i], top[i + 1], 'top', 'chord');
+            for (let i = 0; i < n; i++) { link(bot[i], top[i], 'web', 'diagonal'); link(top[i], bot[i + 1], 'web', 'diagonal'); }
+        } else {
+            for (let i = 0; i <= n; i++) { const x = i * L / n, h = profileH(x); top.push(h < 1e-6 ? bot[i] : add(x, H + h)); }
+            roof = top.slice();
+            for (let i = 0; i < n; i++) link(bot[i], bot[i + 1], 'bottom', 'chord');
+            for (let i = 0; i < n; i++) link(top[i], top[i + 1], 'top', 'chord');
+            for (let i = 0; i <= n; i++) if (top[i] !== bot[i]) link(bot[i], top[i], 'web', 'vertical');
+            for (let i = 0; i < n; i++) {
+                // Pratt: diagonals fall towards mid-span (tension); Howe: they rise towards it (compression)
+                const down = (S.web === 'pratt') === (i < n / 2);
+                if (down) link(top[i], bot[i + 1], 'web', 'diagonal'); else link(bot[i], top[i + 1], 'web', 'diagonal');
+            }
+        }
+
+        // Cross Section + Material
+        const mat = MATS[S.material];
+        for (const m of members) { const s = mat.secs[S.sec[m.group]]; m.sec = s; m.A = s.A; m.I = s.I; }
+
+        // Support: a pin holds x and y, a roller y only
+        const [l, r] = S.supports.split('-');
+        const sup = new Map([[bot[0], [l === 'pin', true]], [bot[n], [r === 'pin', true]]]);
+
+        // Loads: roof line load (lever rule) + self weight
+        const nd = 2 * nodes.length;
+        const Froof = new Float64Array(nd), Fself = new Float64Array(nd);
+        const w = S.q * S.spacing, u0 = 0, v0 = S.pattern === 'full' ? L : L / 2;
+        for (let k = 0; k < roof.length - 1; k++) {
+            const a = roof[k], b = roof[k + 1], xa = nodes[a].x, xb = nodes[b].x;
+            const u = Math.max(xa, u0), v = Math.min(xb, v0);
+            if (v <= u) continue;
+            const P = w * (v - u), c = (u + v) / 2;
+            Froof[2 * a + 1] -= P * (xb - c) / (xb - xa);
+            Froof[2 * b + 1] -= P * (c - xa) / (xb - xa);
+        }
+        if (S.selfWeight) for (const m of members) {
+            const a = nodes[m.i], b = nodes[m.j], W = mat.rho * m.A * Math.hypot(b.x - a.x, b.y - a.y);
+            Fself[2 * m.i + 1] -= W / 2; Fself[2 * m.j + 1] -= W / 2;
+        }
+        const F = Froof.map((v, k) => v + Fself[k]);
+        return { nodes, members, sup, F, Froof, Fself, roof, bot, top, w, mat };
+    }
+
+    // ---------- Analyze: direct stiffness method ----------
+    function solve(md) {
+        const { nodes, members, sup, F, mat } = md;
+        const nd = 2 * nodes.length;
+        const K = new Float64Array(nd * nd);
+        for (const m of members) {
+            const a = nodes[m.i], b = nodes[m.j];
+            const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+            m.L = L; m.c = dx / L; m.s = dy / L; m.k = mat.E * m.A / L;
+            m.dof = [2 * m.i, 2 * m.i + 1, 2 * m.j, 2 * m.j + 1];
+            m.v = [-m.c, -m.s, m.c, m.s];                 // k = EA/L · v vᵀ
+            for (let p = 0; p < 4; p++) for (let q = 0; q < 4; q++) K[m.dof[p] * nd + m.dof[q]] += m.k * m.v[p] * m.v[q];
+        }
+        const fixed = new Uint8Array(nd);
+        for (const [id, [fx, fy]] of sup) { if (fx) fixed[2 * id] = 1; if (fy) fixed[2 * id + 1] = 1; }
+        const free = [];
+        for (let d = 0; d < nd; d++) if (!fixed[d]) free.push(d);
+        const nf = free.length;
+        const A = new Float64Array(nf * nf), b = new Float64Array(nf);
+        for (let r = 0; r < nf; r++) { b[r] = F[free[r]]; for (let c = 0; c < nf; c++) A[r * nf + c] = K[free[r] * nd + free[c]]; }
+
+        let maxDiag = 0;
+        for (let i = 0; i < nf; i++) maxDiag = Math.max(maxDiag, Math.abs(A[i * nf + i]));
+        const tol = 1e-9 * maxDiag;
+        const rowDof = free.slice();
+        let singular = -1;
+        for (let col = 0; col < nf && singular < 0; col++) {
+            let piv = col, best = Math.abs(A[col * nf + col]);
+            for (let r = col + 1; r < nf; r++) { const v = Math.abs(A[r * nf + col]); if (v > best) { best = v; piv = r; } }
+            if (best < tol) { singular = free[col]; break; }
+            if (piv !== col) {
+                for (let c = 0; c < nf; c++) { const t = A[col * nf + c]; A[col * nf + c] = A[piv * nf + c]; A[piv * nf + c] = t; }
+                const t = b[col]; b[col] = b[piv]; b[piv] = t;
+                const td = rowDof[col]; rowDof[col] = rowDof[piv]; rowDof[piv] = td;
+            }
+            const inv = 1 / A[col * nf + col];
+            for (let r = col + 1; r < nf; r++) {
+                const f = A[r * nf + col] * inv;
+                if (f === 0) continue;
+                for (let c = col; c < nf; c++) A[r * nf + c] -= f * A[col * nf + c];
+                b[r] -= f * b[col];
+            }
+        }
+
+        const u = new Float64Array(nd);
+        const res = { nd, K, fixed, free, u, ok: singular < 0, singular };
+        const nr = fixed.reduce((a, v) => a + v, 0);
+        res.determinacy = members.length + nr - 2 * nodes.length;
+        if (!res.ok) { for (const m of members) { m.N = 0; m.util = 0; m.mode = '-'; } return res; }
+
+        const x = new Float64Array(nf);
+        for (let r = nf - 1; r >= 0; r--) {
+            let s = b[r];
+            for (let c = r + 1; c < nf; c++) s -= A[r * nf + c] * x[c];
+            x[r] = s / A[r * nf + r];
+        }
+        for (let r = 0; r < nf; r++) u[free[r]] = x[r];
+
+        // reactions R = K·u − F at the held degrees of freedom
+        const Rf = new Float64Array(nd);
+        for (let d = 0; d < nd; d++) if (fixed[d]) {
+            let s = -F[d];
+            for (let c = 0; c < nd; c++) s += K[d * nd + c] * u[c];
+            Rf[d] = s;
+        }
+        res.R = Rf;
+        let sx = 0, sy = 0;
+        for (let d = 0; d < nd; d++) { const t = Rf[d] + F[d] * 1; if (d % 2) sy += Rf[d] + F[d]; else sx += Rf[d] + F[d]; }
+        res.eqX = sx; res.eqY = sy;
+
+        // member forces and checks
+        for (const m of members) {
+            let e = 0;
+            for (let p = 0; p < 4; p++) e += m.v[p] * u[m.dof[p]];
+            m.N = m.k * e;
+            checkMember(m, m.sec, mat);
+        }
+        let maxD = 0, maxNode = -1;
+        for (let i = 0; i < nodes.length; i++) { const d = -u[2 * i + 1]; if (d > maxD) { maxD = d; maxNode = i; } }
+        res.maxDefl = maxD; res.maxNode = maxNode;
+        let um = 0, umId = -1;
+        members.forEach((m, k) => { if (m.util > um) { um = m.util; umId = k; } });
+        res.maxUtil = um; res.maxUtilId = umId;
+        return res;
+    }
+
+    function checkMember(m, sec, mat) {
+        const N = m.N;
+        m.sigma = N / sec.A;
+        m.Ncr = Math.PI * Math.PI * mat.E * sec.I / (m.L * m.L);
+        m.lambda = m.L / Math.sqrt(sec.I / sec.A);
+        if (Math.abs(N) < 1e-6) { m.util = 0; m.mode = 'zero force'; m.us = m.ub = 0; }
+        else if (N > 0) { m.util = N / (sec.A * mat.ft); m.mode = 'tension'; m.us = m.ub = 0; }
+        else {
+            m.us = -N / (sec.A * mat.fc); m.ub = -N / m.Ncr;
+            m.util = Math.max(m.us, m.ub); m.mode = m.ub > m.us ? 'buckling' : 'crushing';
+        }
+        return m.util;
+    }
+
+    // ---------- Optimize Cross Section ----------
+    function autoSize() {
+        const mat = MATS[S.material];
+        for (let it = 0; it < 5; it++) {
+            const md = buildModel(), r = solve(md);
+            if (!r.ok) return;
+            let changed = false;
+            for (const g of GROUPS) {
+                const ms = md.members.filter(m => m.group === g);
+                let pick = mat.secs.length - 1;
+                for (let s = 0; s < mat.secs.length; s++) {
+                    if (ms.every(m => checkMember({ N: m.N, L: m.L }, mat.secs[s], mat) <= 1)) { pick = s; break; }
+                }
+                if (pick !== S.sec[g]) { S.sec[g] = pick; changed = true; }
+            }
+            if (!changed) return;
+        }
+    }
+
+    function niceScale(v) {
+        const e = Math.floor(Math.log10(v)), f = v / 10 ** e;
+        const m = f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10;
+        return Math.max(1, Math.min(1000, m * 10 ** e));
+    }
+    function autoScale() {
+        const md = buildModel(), r = solve(md);
+        if (r.ok && r.maxDefl > 1e-9) S.scale = niceScale(0.045 * S.span / r.maxDefl);
+    }
+
+    function fitToSpace() {
+        const L = S.span;
+        const ratio = S.profile === 'flat' ? 12 : S.profile === 'gable' ? 5 : 7;
+        S.depth = Math.min(8, Math.max(0.3, Math.round(L / ratio / 0.05) * 0.05));
+        let pw = S.profile === 'flat' ? S.depth : S.depth * 0.65;
+        if (S.web === 'warren') pw *= 1.15;
+        let n = Math.round(L / Math.max(1.2, pw) / 2) * 2;
+        S.panels = Math.min(16, Math.max(2, n));
+        autoSize();
+        autoScale();
+    }
+
+    // ---------- formatting ----------
+    const f = (v, d = 1) => (Math.abs(v) < 0.5 * 10 ** -d ? 0 : v).toFixed(d);
+    const fk = v => { const a = Math.abs(v); return a >= 1e5 ? (v / 1e3).toFixed(0) + 'k' : a >= 1e3 ? (v / 1e3).toFixed(1) + 'k' : v.toFixed(0); };
+    const dofName = d => `${Math.floor(d / 2) + 1}${d % 2 ? 'y' : 'x'}`;
+    const kindName = m => m.group === 'web' ? 'web ' + m.kind : m.group + ' chord';
+    function utilColour(u) {
+        if (u > 1) return 'rgb(107,10,77)';
+        const stops = [[0, [176, 190, 197]], [0.6, [249, 168, 37]], [1, [211, 47, 47]]];
+        let a = stops[0], b = stops[1];
+        if (u > 0.6) { a = stops[1]; b = stops[2]; }
+        const t = Math.max(0, Math.min(1, (u - a[0]) / (b[0] - a[0])));
+        const c = a[1].map((v, k) => Math.round(v + (b[1][k] - v) * t));
+        return `rgb(${c})`;
+    }
+    const TEN = '#1565c0', COMP = '#c62828';
+
+    // ---------- canvas: the space and the truss ----------
+    const cv = $('view');
+    let VIEW = null, hits = [];
+
+    function sizeCanvas(c, w, h) {
+        const dpr = window.devicePixelRatio || 1;
+        c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.height = h + 'px';
+        const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return g;
+    }
+    function arrow(g, x1, y1, x2, y2, head = 5) {
+        g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+        const a = Math.atan2(y2 - y1, x2 - x1);
+        g.beginPath(); g.moveTo(x2, y2);
+        g.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
+        g.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45));
+        g.closePath(); g.fill();
+    }
+    function tag(g, text, x, y, align = 'center', col = '#111', bg = 'rgba(255,255,255,0.88)') {
+        g.font = '10px "Courier New", monospace';
+        const w = g.measureText(text).width;
+        const x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+        g.fillStyle = bg; g.fillRect(x0 - 2, y - 7, w + 4, 13);
+        g.fillStyle = col; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(text, x0, y);
+    }
+    function dimLine(g, X, Y, xa, ya, xb, yb, text, side) {
+        g.strokeStyle = '#999'; g.fillStyle = '#999'; g.lineWidth = 0.8;
+        const p1 = [X(xa), Y(ya)], p2 = [X(xb), Y(yb)];
+        g.beginPath(); g.moveTo(...p1); g.lineTo(...p2); g.stroke();
+        const vert = Math.abs(p1[0] - p2[0]) < 1;
+        for (const p of [p1, p2]) {
+            g.beginPath();
+            if (vert) { g.moveTo(p[0] - 4, p[1]); g.lineTo(p[0] + 4, p[1]); } else { g.moveTo(p[0], p[1] - 4); g.lineTo(p[0], p[1] + 4); }
+            g.stroke();
+        }
+        const mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2;
+        if (vert) tag(g, text, mx + (side === 'left' ? -6 : 6), my, side === 'left' ? 'right' : 'left', '#555', '#fff');
+        else tag(g, text, mx, my, 'center', '#555', '#fff');
+    }
+
+    function drawView() {
+        const W = cv.clientWidth, Hc = Math.max(300, Math.round(W * 0.5));
+        const g = sizeCanvas(cv, W, Hc);
+        g.clearRect(0, 0, W, Hc);
+        const L = S.span, H = S.clear;
+        const x0 = -2.6, x1 = L + 2.6, y0 = -1.2, y1 = H + Math.max(S.depth, L * 0.22) + 1.6;
+        const sc = Math.min((W - 24) / (x1 - x0), (Hc - 26) / (y1 - y0));
+        const ox = (W - (x1 - x0) * sc) / 2 - x0 * sc, oy = Hc - (Hc - (y1 - y0) * sc) / 2 + y0 * sc - 8;
+        const X = x => ox + x * sc, Y = y => oy - y * sc;
+        VIEW = { X, Y, sc };
+        const { nodes, members } = M;
+
+        // ground
+        g.strokeStyle = '#111'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(X(x0 + 0.4), Y(0)); g.lineTo(X(x1 - 0.4), Y(0)); g.stroke();
+        g.strokeStyle = '#ccc'; g.lineWidth = 0.7;
+        for (let x = x0 + 0.6; x < x1 - 0.4; x += 0.45) { g.beginPath(); g.moveTo(X(x), Y(0)); g.lineTo(X(x - 0.28), Y(-0.28)); g.stroke(); }
+
+        // the clear space
+        g.fillStyle = 'rgba(25,118,210,0.055)';
+        g.fillRect(X(0.15), Y(H), (L - 0.3) * sc, H * sc);
+        g.setLineDash([3, 3]); g.strokeStyle = 'rgba(25,118,210,0.45)'; g.lineWidth = 0.8;
+        g.strokeRect(X(0.15), Y(H), (L - 0.3) * sc, H * sc); g.setLineDash([]);
+        g.font = '9px Helvetica Neue, Arial'; g.fillStyle = 'rgba(25,118,210,0.8)'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(`CLEAR SPACE  ${f(L - 0.3, 1)} × ${f(H, 1)} m`, X(L / 2), Y(H / 2));
+        // columns / walls — context only
+        g.fillStyle = '#e2e2e2';
+        for (const xc of [0, L]) g.fillRect(X(xc - 0.15), Y(H), 0.3 * sc, H * sc);
+        // person for scale
+        const px = Math.min(L * 0.2, 4), pr = 0.11;
+        g.strokeStyle = '#888'; g.lineWidth = 1.1; g.fillStyle = '#888';
+        g.beginPath(); g.arc(X(px), Y(1.62), pr * sc, 0, Math.PI * 2); g.fill();
+        g.beginPath();
+        g.moveTo(X(px), Y(1.5)); g.lineTo(X(px), Y(0.88));
+        g.moveTo(X(px), Y(0.88)); g.lineTo(X(px - 0.16), Y(0));
+        g.moveTo(X(px), Y(0.88)); g.lineTo(X(px + 0.16), Y(0));
+        g.moveTo(X(px - 0.24), Y(0.95)); g.lineTo(X(px), Y(1.42)); g.lineTo(X(px + 0.24), Y(0.95));
+        g.stroke();
+
+        // dimensions
+        const topY = H + Math.max(...members.map(m => Math.max(nodes[m.i].y, nodes[m.j].y))) - H;
+        dimLine(g, X, Y, 0, -0.75, L, -0.75, `L = ${f(L, 2)} m`);
+        dimLine(g, X, Y, -1.1, 0, -1.1, H, `H ${f(H, 2)}`, 'left');
+        dimLine(g, X, Y, L + 1.1, H, L + 1.1, topY, `d ${f(topY - H, 2)}`, 'right');
+
+        const P = id => {
+            const n = nodes[id];
+            if (!S.deformed || !R.ok) return [X(n.x), Y(n.y)];
+            return [X(n.x + S.scale * R.u[2 * id]), Y(n.y + S.scale * R.u[2 * id + 1])];
+        };
+
+        // held line
+        if (S.hold) {
+            g.setLineDash([4, 3]); g.strokeStyle = 'rgba(17,17,17,0.55)'; g.lineWidth = 1;
+            g.beginPath();
+            for (const s of S.hold.segs) {
+                g.moveTo(X(s[0] + S.scale * s[4]), Y(s[1] + S.scale * s[5]));
+                g.lineTo(X(s[2] + S.scale * s[6]), Y(s[3] + S.scale * s[7]));
+            }
+            g.stroke(); g.setLineDash([]);
+        }
+
+        // undeformed geometry, thin, under the deformed one
+        if (S.deformed && R.ok) {
+            g.strokeStyle = '#cfcfcf'; g.lineWidth = 1;
+            g.beginPath();
+            for (const m of members) { g.moveTo(X(nodes[m.i].x), Y(nodes[m.i].y)); g.lineTo(X(nodes[m.j].x), Y(nodes[m.j].y)); }
+            g.stroke();
+        }
+
+        // members
+        const maxN = Math.max(1e-9, ...members.map(m => Math.abs(m.N)));
+        hits = [];
+        g.lineCap = 'round';
+        members.forEach((m, k) => {
+            const a = P(m.i), b = P(m.j);
+            hits.push([a[0], a[1], b[0], b[1]]);
+            let col, wdt;
+            if (!R.ok) { col = '#999'; wdt = 1.5; }
+            else if (S.colour === 'util') { col = utilColour(m.util); wdt = 1.6 + 3.2 * Math.min(1.2, m.util); }
+            else { const t = Math.abs(m.N) / maxN; col = t < 1e-3 ? '#bdbdbd' : m.N > 0 ? TEN : COMP; wdt = 1.2 + 5 * t; }
+            if (k === S.sel) {
+                g.strokeStyle = 'rgba(21,101,192,0.22)'; g.lineWidth = wdt + 9;
+                g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke();
+            }
+            g.strokeStyle = col; g.lineWidth = wdt;
+            g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke();
+        });
+        g.lineCap = 'butt';
+
+        // nodes
+        g.fillStyle = '#111';
+        nodes.forEach((n, i) => { const p = P(i); g.beginPath(); g.arc(p[0], p[1], 2.1, 0, Math.PI * 2); g.fill(); });
+
+        // member values
+        if (S.labels && R.ok) members.forEach(m => {
+            const a = P(m.i), b = P(m.j);
+            const v = S.colour === 'util' ? m.util.toFixed(2) : f(m.N, 1);
+            tag(g, v, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 'center', S.colour === 'util' ? '#111' : (m.N > 0 ? TEN : COMP));
+        });
+
+        // applied loads on the roof line
+        const Fy = M.F;
+        let maxF = 0;
+        for (let i = 0; i < nodes.length; i++) maxF = Math.max(maxF, -Fy[2 * i + 1]);
+        g.strokeStyle = '#777'; g.fillStyle = '#777'; g.lineWidth = 1;
+        if (maxF > 0) for (let i = 0; i < nodes.length; i++) {
+            const Fv = -Fy[2 * i + 1];
+            if (Fv < 1e-6) continue;
+            const n = nodes[i], len = 8 + 26 * Fv / maxF;
+            const ex = X(n.x), ey = Y(n.y) - 5;
+            arrow(g, ex, ey - len, ex, ey, 4);
+        }
+        const r0 = M.roof[0];
+        tag(g, `w = q·s = ${f(M.w, 1)} kN/m${S.pattern === 'half' ? ' on the left half' : ''}${S.selfWeight ? ' + self weight' : ''}`, X(0), Y(Math.max(...nodes.map(n => n.y))) - 46, 'left', '#555', 'rgba(255,255,255,0)');
+
+        // supports and reactions
+        for (const [id, [fx]] of M.sup) {
+            const n = nodes[id], sx = X(n.x), sy = Y(n.y);
+            g.fillStyle = '#fff'; g.strokeStyle = '#111'; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(sx, sy + 2); g.lineTo(sx - 7, sy + 13); g.lineTo(sx + 7, sy + 13); g.closePath(); g.fill(); g.stroke();
+            if (!fx) {
+                g.beginPath(); g.arc(sx - 4, sy + 16, 2.4, 0, Math.PI * 2); g.arc(sx + 4, sy + 16, 2.4, 0, Math.PI * 2); g.stroke();
+                g.beginPath(); g.moveTo(sx - 10, sy + 19.5); g.lineTo(sx + 10, sy + 19.5); g.stroke();
+            } else {
+                g.beginPath(); g.moveTo(sx - 10, sy + 13); g.lineTo(sx + 10, sy + 13); g.stroke();
+            }
+            if (!R.ok) continue;
+            const Ry = R.R[2 * id + 1], Rx = R.R[2 * id];
+            g.fillStyle = '#2e7d32'; g.strokeStyle = '#2e7d32'; g.lineWidth = 1.4;
+            if (Math.abs(Ry) > 1e-6) {
+                const y2 = sy + 24, y1 = y2 + 26;
+                if (Ry > 0) arrow(g, sx, y1, sx, y2, 5); else arrow(g, sx, y2, sx, y1, 5);
+                tag(g, `R ${f(Ry, 1)} kN`, sx + (n.x < L / 2 ? 8 : -8), y1 - 4, n.x < L / 2 ? 'left' : 'right', '#2e7d32');
+            }
+            if (fx && Math.abs(Rx) > 0.05) {
+                const dir = Math.sign(Rx), xx = n.x < L / 2 ? sx - 14 : sx + 14;
+                const xa = xx - dir * 24;
+                arrow(g, xa, sy + 8, xx, sy + 8, 5);
+                tag(g, `H ${f(Math.abs(Rx), 1)}`, n.x < L / 2 ? Math.min(xa, xx) - 4 : Math.max(xa, xx) + 4, sy + 8, n.x < L / 2 ? 'right' : 'left', '#2e7d32');
+            }
+        }
+
+        // max deflection
+        if (R.ok && R.maxNode >= 0 && R.maxDefl > 1e-9) {
+            const p = P(R.maxNode);
+            g.strokeStyle = '#111'; g.lineWidth = 1;
+            g.beginPath(); g.arc(p[0], p[1], 5, 0, Math.PI * 2); g.stroke();
+            tag(g, `δ ${f(R.maxDefl * 1000, 1)} mm`, p[0] + 9, p[1] + 14, 'left', '#111');
+        }
+
+        if (!R.ok) {
+            const n = Math.floor(R.singular / 2), p = P(n);
+            g.strokeStyle = COMP; g.lineWidth = 2;
+            g.beginPath(); g.arc(p[0], p[1], 9, 0, Math.PI * 2); g.stroke();
+            tag(g, 'UNSTABLE — K is singular: the truss is a mechanism', 14, 18, 'left', COMP);
+            tag(g, mechanismReason(), 14, 34, 'left', COMP);
+        }
+
+        // scale stamp
+        if (S.deformed && R.ok) tag(g, `deformation ×${S.scale}`, W - 12, 16, 'right', '#999', 'rgba(255,255,255,0)');
+    }
+
+    function mechanismReason() {
+        if (S.supports === 'roller-roller') return 'nothing holds it horizontally — make one support a pin';
+        if (R.determinacy < 0) return `m + r − 2j = ${R.determinacy}: too few members or restraints`;
+        return 'a panel can fold — check the web pattern';
+    }
+
+    // ---------- readouts ----------
+    function drawReadout() {
+        const el = $('readout');
+        if (!R.ok) {
+            el.innerHTML = `<div class="t bad"><div class="k">Solve</div><div class="v">mechanism</div><div class="s">K singular at dof ${dofName(R.singular)}</div></div>
+            <div class="t"><div class="k">Deflection</div><div class="v">&mdash;</div><div class="s">&nbsp;</div></div>
+            <div class="t"><div class="k">Utilisation</div><div class="v">&mdash;</div><div class="s">&nbsp;</div></div>
+            <div class="t bad"><div class="k">m + r &minus; 2j</div><div class="v">${R.determinacy}</div><div class="s">${detText(R.determinacy)}</div></div>
+            <div class="t"><div class="k">Weight</div><div class="v">${weight().kg.toFixed(0)} kg</div><div class="s">&nbsp;</div></div>`;
+            return;
+        }
+        const lim = S.span / DEFL_LIMIT, d = R.maxDefl, wt = weight();
+        const um = R.maxUtil, mu = M.members[R.maxUtilId];
+        const eq = Math.hypot(R.eqX, R.eqY);
+        el.innerHTML = `
+            <div class="t ${d > lim ? 'bad' : 'ok'}"><div class="k">Max deflection</div><div class="v">${f(d * 1000, 1)} mm</div><div class="s">L/${d > 0 ? Math.round(S.span / d) : '∞'} &middot; limit L/${DEFL_LIMIT} = ${f(lim * 1000, 0)} mm</div></div>
+            <div class="t ${um > 1 ? 'bad' : 'ok'}"><div class="k">Max utilisation</div><div class="v">${um.toFixed(2)}</div><div class="s">member ${R.maxUtilId + 1} &middot; ${mu ? kindName(mu) + ', ' + mu.mode : ''}</div></div>
+            <div class="t ${eq > 1e-6 ? 'bad' : 'ok'}"><div class="k">Equilibrium &Sigma;R + &Sigma;F</div><div class="v">${eq < 1e-6 ? '0.000' : eq.toExponential(1)} kN</div><div class="s">reactions ${f(-M.F.filter((v, k) => k % 2).reduce((a, v) => a + v, 0), 1)} kN up</div></div>
+            <div class="t"><div class="k">m + r &minus; 2j</div><div class="v">${M.members.length} + ${R.fixed.reduce((a, v) => a + v, 0)} &minus; ${2 * M.nodes.length} = ${R.determinacy}</div><div class="s">${detText(R.determinacy)}</div></div>
+            <div class="t"><div class="k">Weight</div><div class="v">${wt.kg.toFixed(0)} kg</div><div class="s">${wt.perM2.toFixed(1)} kg/m&sup2; of roof</div></div>`;
+    }
+    const detText = d => d === 0 ? 'statically determinate' : d > 0 ? `indeterminate, degree ${d}` : 'mechanism by count';
+    function weight() {
+        const rho = MATS[S.material].rho;
+        const kN = M.members.reduce((a, m) => a + rho * m.A * Math.hypot(M.nodes[m.j].x - M.nodes[m.i].x, M.nodes[m.j].y - M.nodes[m.i].y), 0);
+        const kg = kN * 1000 / 9.81;
+        return { kg, perM2: kg / (S.span * S.spacing) };
+    }
+
+    function drawLegend() {
+        let h = '<b>Legend</b>';
+        if (S.colour === 'force') h += `<span class="sw" style="background:${TEN}"></span>tension<span class="sw" style="background:${COMP}"></span>compression<span class="sw" style="background:#bdbdbd"></span>zero force<span class="key">line width &prop; |N|</span>`;
+        else h += `<span class="ramp"></span>0 &rarr; 1<span class="ramp over"></span>&gt; 1 over capacity<span class="key">compression uses the larger of crushing and Euler buckling</span>`;
+        h += `<span class="sw" style="background:#cfcfcf"></span>undeformed`;
+        if (S.hold) h += `<span class="dash"></span>held line`;
+        h += `<span class="sw" style="background:#2e7d32"></span>reactions`;
+        $('legend').innerHTML = h;
+    }
+
+    // ---------- the matrix panel ----------
+    const kc = $('kCanvas');
+    let KL = null;
+    function drawK() {
+        const W = kc.clientWidth, nd = R.nd, lab = 30;
+        const cols = nd + 4;
+        const cell = Math.max(3, Math.min(34, Math.floor((W - lab - 6) / cols)));
+        const Hh = lab + nd * cell + 6;
+        const g = sizeCanvas(kc, W, Hh);
+        g.clearRect(0, 0, W, Hh);
+        KL = { lab, cell, nd };
+        const K = R.K;
+        let maxK = 0;
+        for (let i = 0; i < K.length; i++) maxK = Math.max(maxK, Math.abs(K[i]));
+        const sel = S.sel >= 0 ? M.members[S.sel] : null;
+        const X = c => lab + c * cell, Y = r => lab + r * cell;
+
+        for (let r = 0; r < nd; r++) for (let c = 0; c < nd; c++) {
+            const v = K[r * nd + c];
+            if (R.fixed[r] || R.fixed[c]) { g.fillStyle = '#eeeeee'; g.fillRect(X(c), Y(r), cell, cell); }
+            if (v === 0) continue;
+            const t = Math.sqrt(Math.abs(v) / maxK);
+            const a = (R.fixed[r] || R.fixed[c]) ? 0.25 : 1;
+            g.fillStyle = v > 0 ? `rgba(17,17,17,${(0.1 + 0.8 * t) * a})` : `rgba(198,40,40,${(0.12 + 0.8 * t) * a})`;
+            g.fillRect(X(c), Y(r), cell, cell);
+            if (cell >= 30) {
+                g.fillStyle = t > 0.45 && a === 1 ? '#fff' : '#333';
+                g.font = '8px "Courier New", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+                g.fillText(fk(v / 1000), X(c) + cell / 2, Y(r) + cell / 2);
+            }
+        }
+        // node grid
+        g.strokeStyle = 'rgba(0,0,0,0.08)'; g.lineWidth = 1;
+        for (let k = 0; k <= nd; k += 2) {
+            g.beginPath(); g.moveTo(X(k) + 0.5, Y(0)); g.lineTo(X(k) + 0.5, Y(nd)); g.stroke();
+            g.beginPath(); g.moveTo(X(0), Y(k) + 0.5); g.lineTo(X(nd), Y(k) + 0.5); g.stroke();
+        }
+        g.strokeStyle = '#111'; g.strokeRect(X(0) + 0.5, Y(0) + 0.5, nd * cell, nd * cell);
+
+        // u and F columns
+        const cu = nd + 1, cf = nd + 3;
+        const maxU = Math.max(1e-12, ...Array.from(R.u, Math.abs)), maxFv = Math.max(1e-12, ...Array.from(M.F, Math.abs));
+        for (let r = 0; r < nd; r++) {
+            const uv = R.u[r], fv = M.F[r];
+            const tu = Math.sqrt(Math.abs(uv) / maxU), tf = Math.sqrt(Math.abs(fv) / maxFv);
+            g.fillStyle = R.fixed[r] ? '#eee' : '#fff'; g.fillRect(X(cu), Y(r), cell, cell); g.fillRect(X(cf), Y(r), cell, cell);
+            if (Math.abs(uv) > 1e-12) { g.fillStyle = uv > 0 ? `rgba(21,101,192,${0.1 + 0.8 * tu})` : `rgba(198,40,40,${0.1 + 0.8 * tu})`; g.fillRect(X(cu), Y(r), cell, cell); }
+            if (Math.abs(fv) > 1e-12) { g.fillStyle = fv > 0 ? `rgba(21,101,192,${0.1 + 0.8 * tf})` : `rgba(198,40,40,${0.1 + 0.8 * tf})`; g.fillRect(X(cf), Y(r), cell, cell); }
+        }
+        g.strokeStyle = '#111';
+        g.strokeRect(X(cu) + 0.5, Y(0) + 0.5, cell, nd * cell);
+        g.strokeRect(X(cf) + 0.5, Y(0) + 0.5, cell, nd * cell);
+
+        // selected member's k
+        if (sel) {
+            g.strokeStyle = '#1565c0'; g.lineWidth = Math.max(1, Math.min(2, cell / 5));
+            for (const r of sel.dof) for (const c of sel.dof) g.strokeRect(X(c) + 0.5, Y(r) + 0.5, cell - 1, cell - 1);
+            g.fillStyle = 'rgba(21,101,192,0.18)';
+            for (const d of sel.dof) { g.fillRect(X(d), 2, cell, lab - 4); g.fillRect(2, Y(d), lab - 4, cell); }
+        }
+
+        // labels
+        g.fillStyle = '#777'; g.font = '8px "Courier New", monospace'; g.textBaseline = 'middle';
+        const every = cell >= 11 ? 1 : cell * 2 >= 12 ? 2 : Math.ceil(14 / cell / 2) * 2;
+        for (let d = 0; d < nd; d += every) {
+            const t = every === 1 ? dofName(d) : String(Math.floor(d / 2) + 1);
+            g.textAlign = 'center';
+            g.save(); g.translate(X(d) + (every === 1 ? cell / 2 : cell), lab - 8); g.fillText(t, 0, 0); g.restore();
+            g.textAlign = 'right';
+            g.fillText(t, lab - 4, Y(d) + (every === 1 ? cell / 2 : cell));
+        }
+        g.textAlign = 'center'; g.fillStyle = '#111'; g.font = 'bold 9px "Courier New", monospace';
+        g.fillText('u', X(cu) + cell / 2, lab - 8);
+        g.fillText('F', X(cf) + cell / 2, lab - 8);
+        g.font = '9px "Courier New", monospace'; g.fillStyle = '#999';
+        g.fillText('=', X(nd + 2) + cell / 2, Y(nd / 2));
+    }
+
+    kc.addEventListener('mousemove', e => {
+        if (!KL) return;
+        const rect = kc.getBoundingClientRect();
+        const c = Math.floor((e.clientX - rect.left - KL.lab) / KL.cell), r = Math.floor((e.clientY - rect.top - KL.lab) / KL.cell);
+        const nd = KL.nd, out = $('khover');
+        if (r < 0 || r >= nd || c < 0) return;
+        const held = R.fixed[r] ? ' — held by a support, removed before solving' : '';
+        if (c < nd) {
+            const v = R.K[r * nd + c];
+            const from = M.members.map((m, k) => (m.dof.includes(r) && m.dof.includes(c)) ? k + 1 : 0).filter(Boolean);
+            out.innerHTML = `K[${dofName(r)}, ${dofName(c)}] = ${f(v, 0)} kN/m${R.fixed[r] || R.fixed[c] ? ' (removed by a support)' : ''}<br>` +
+                (from.length ? `sum of k from member${from.length > 1 ? 's' : ''} ${from.join(', ')}` : 'no member joins these two degrees of freedom → 0');
+        } else if (c === nd + 1) {
+            out.innerHTML = `u[${dofName(r)}] = ${f(R.u[r] * 1000, 3)} mm${held}<br>node ${Math.floor(r / 2) + 1} moves this far in ${r % 2 ? 'y' : 'x'}`;
+        } else if (c === nd + 3) {
+            out.innerHTML = `F[${dofName(r)}] = ${f(M.F[r], 2)} kN${held}<br>roof ${f(M.Froof[r], 2)} + self weight ${f(M.Fself[r], 2)}`;
+        }
+    });
+    kc.addEventListener('click', e => {
+        if (!KL) return;
+        const rect = kc.getBoundingClientRect();
+        const c = Math.floor((e.clientX - rect.left - KL.lab) / KL.cell), r = Math.floor((e.clientY - rect.top - KL.lab) / KL.cell);
+        if (r < 0 || c < 0 || r >= KL.nd || c >= KL.nd) return;
+        const k = M.members.findIndex(m => m.dof.includes(r) && m.dof.includes(c));
+        if (k >= 0) { S.sel = k; render(); }
+    });
+
+    function drawSteps() {
+        const el = $('steps');
+        if (S.sel < 0 || !M.members[S.sel]) {
+            el.innerHTML = '<div class="empty">Click a member in the drawing, the table or the matrix to follow it step by step: its geometry, its 4&times;4 stiffness matrix, where that lands in K, and the force read back after the solve.</div>';
+            return;
+        }
+        const m = M.members[S.sel], mat = M.mat, a = M.nodes[m.i], b = M.nodes[m.j];
+        const c = m.c, s = m.s;
+        const kl = [[c * c, c * s, -c * c, -c * s], [c * s, s * s, -c * s, -s * s], [-c * c, -c * s, c * c, c * s], [-c * s, -s * s, c * s, s * s]];
+        const dn = m.dof.map(dofName);
+        let tbl = `<table class="kmat"><tr><th></th>${dn.map(d => `<th>${d}</th>`).join('')}</tr>`;
+        kl.forEach((row, p) => { tbl += `<tr><th>${dn[p]}</th>${row.map(v => `<td>${f(m.k * v, 0)}</td>`).join('')}</tr>`; });
+        tbl += '</table>';
+        const ui = [R.u[m.dof[0]], R.u[m.dof[1]]], uj = [R.u[m.dof[2]], R.u[m.dof[3]]];
+        const dux = uj[0] - ui[0], duy = uj[1] - ui[1];
+        const sec = m.sec, E_GPa = mat.E / 1e6;
+        let check;
+        if (!R.ok) check = 'no result — the truss is a mechanism';
+        else if (m.mode === 'zero force') check = 'zero-force member under this load \u2014 it still braces the panel (remove it and K turns singular)';
+        else if (m.N >= 0) check = `tension: &sigma; = N/A = ${f(m.sigma / 1000, 1)} MPa &divide; f<sub>t</sub> ${f(mat.ft / 1000, 1)} = <b>${m.util.toFixed(2)}</b>`;
+        else check = `crushing: |N|/(A&middot;f<sub>c</sub>) = ${m.us.toFixed(2)}<br>Euler: N<sub>cr</sub> = &pi;&sup2;EI/L&sup2; = &pi;&sup2; &middot; ${f(E_GPa, 1)} GPa &middot; ${f(sec.I * 1e8, 1)} cm&#8308; / ${f(m.L, 2)}&sup2; = ${f(m.Ncr, 1)} kN &rarr; |N|/N<sub>cr</sub> = ${m.ub.toFixed(2)}<br>slenderness L/i = ${f(m.lambda, 0)} &middot; governs: <b>${m.mode} ${m.util.toFixed(2)}</b>`;
+        el.innerHTML = `
+            <div class="title">Member ${S.sel + 1} <span>&middot; ${kindName(m)} &middot; node ${m.i + 1} &rarr; node ${m.j + 1} &middot; ${sec.name}</span></div>
+            <div class="st"><span class="n">1</span><span class="h">Geometry</span><span class="b mono">L = ${f(m.L, 3)} m &nbsp; c = ${f(c, 3)} &nbsp; s = ${f(s, 3)}</span></div>
+            <div class="st"><span class="n">2</span><span class="h">Axial k</span><span class="b mono">EA/L = ${f(E_GPa, 1)} GPa &middot; ${f(sec.A * 1e4, 2)} cm&sup2; / ${f(m.L, 3)} m = ${f(m.k, 0)} kN/m</span></div>
+            <div class="st"><span class="n">3</span><span class="h">k (kN/m)</span><span class="b">EA/L &middot; [c&sup2; cs &minus;c&sup2; &minus;cs &hellip;], rows and columns named by the global degrees of freedom it will land in:${tbl}</span></div>
+            <div class="st"><span class="n">4</span><span class="h">Assemble</span><span class="b">These 16 numbers are added into K at ${dn.join(', ')} (outlined in blue). Where two members share a node their numbers add up, which is why diagonal cells of K are larger.</span></div>
+            <div class="st"><span class="n">5</span><span class="h">Solve</span><span class="b mono">u${m.i + 1} = (${f(ui[0] * 1000, 2)}, ${f(ui[1] * 1000, 2)}) mm<br>u${m.j + 1} = (${f(uj[0] * 1000, 2)}, ${f(uj[1] * 1000, 2)}) mm</span></div>
+            <div class="st"><span class="n">6</span><span class="h">Force</span><span class="b mono">${!R.ok ? 'no displacements to read back \u2014 K could not be solved' : `N = EA/L &middot; (c&middot;&Delta;u<sub>x</sub> + s&middot;&Delta;u<sub>y</sub>)<br>= ${f(m.k, 0)} &middot; (${f(c, 3)}&middot;${f(dux * 1000, 3)} + ${f(s, 3)}&middot;${f(duy * 1000, 3)}) / 1000<br>= <b style="color:${m.N >= 0 ? TEN : COMP}">${f(m.N, 2)} kN ${Math.abs(m.N) < 1e-3 ? '(zero force)' : m.N > 0 ? '(tension)' : '(compression)'}</b>`}</span></div>
+            <div class="st"><span class="n">7</span><span class="h">Check</span><span class="b mono">${check}</span></div>`;
+    }
+
+    function drawTable() {
+        const t = $('mtable');
+        let h = '<thead><tr><th>#</th><th>Member</th><th>Nodes</th><th>L m</th><th>Section</th><th>N kN</th><th>&sigma; MPa</th><th>L/i</th><th>N<sub>cr</sub> kN</th><th>Util</th><th>Governs</th></tr></thead><tbody>';
+        M.members.forEach((m, k) => {
+            const cls = !R.ok ? '' : Math.abs(m.N) < 1e-3 ? '' : m.N > 0 ? 't' : 'c';
+            h += `<tr data-k="${k}" class="${k === S.sel ? 'sel' : ''}"><td>${k + 1}</td><td>${kindName(m)}</td><td>${m.i + 1}&ndash;${m.j + 1}</td><td>${f(m.L, 2)}</td><td>${m.sec.name}</td>` +
+                `<td class="${cls}">${R.ok ? f(m.N, 1) : '&mdash;'}</td><td>${R.ok ? f(m.sigma / 1000, 1) : '&mdash;'}</td><td>${f(m.L / Math.sqrt(m.I / m.A), 0)}</td>` +
+                `<td>${R.ok && m.N < 0 ? f(m.Ncr, 0) : '&mdash;'}</td><td class="${m.util > 1 ? 'over' : ''}">${R.ok ? m.util.toFixed(2) : '&mdash;'}</td><td>${R.ok ? m.mode : '&mdash;'}</td></tr>`;
+        });
+        t.innerHTML = h + '</tbody>';
+    }
+    $('mtable').addEventListener('click', e => {
+        const tr = e.target.closest('tr[data-k]');
+        if (!tr) return;
+        S.sel = +tr.dataset.k; render();
+    });
+
+    // ---------- interaction on the drawing ----------
+    function hitTest(mx, my) {
+        let best = -1, bd = 7;
+        hits.forEach((s, k) => {
+            const [x1, y1, x2, y2] = s, dx = x2 - x1, dy = y2 - y1;
+            const t = Math.max(0, Math.min(1, ((mx - x1) * dx + (my - y1) * dy) / (dx * dx + dy * dy || 1)));
+            const d = Math.hypot(mx - x1 - t * dx, my - y1 - t * dy);
+            if (d < bd) { bd = d; best = k; }
+        });
+        return best;
+    }
+    cv.addEventListener('mousemove', e => {
+        const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+        const k = hitTest(mx, my), tip = $('tip');
+        cv.classList.toggle('hot', k >= 0);
+        if (k < 0 || !R.ok) { tip.style.display = 'none'; return; }
+        const m = M.members[k];
+        tip.innerHTML = `#${k + 1} ${kindName(m)} &middot; ${m.sec.name}<br>N ${f(m.N, 1)} kN &middot; util ${m.util.toFixed(2)} (${m.mode})`;
+        tip.style.display = 'block';
+        const w = tip.offsetWidth;
+        tip.style.left = Math.min(mx + 14, cv.clientWidth - w - 4) + 'px';
+        tip.style.top = (my + 16) + 'px';
+    });
+    cv.addEventListener('mouseleave', () => { $('tip').style.display = 'none'; });
+    cv.addEventListener('click', e => {
+        const r = cv.getBoundingClientRect();
+        const k = hitTest(e.clientX - r.left, e.clientY - r.top);
+        S.sel = k === S.sel ? -1 : k;
+        render();
+    });
+
+    // ---------- controls ----------
+    const sliders = {
+        span:    v => `${f(v, 1)} m`,
+        clear:   v => `${f(v, 1)} m`,
+        spacing: v => `${f(v, 2)} m`,
+        depth:   v => `${f(v, 2)} m`,
+        panels:  v => `${v}`,
+        q:       v => `${f(v, 2)} kN/m²`
+    };
+    for (const key in sliders) {
+        $(key).addEventListener('input', e => { S[key] = +e.target.value; if (key !== 'q' && key !== 'spacing') S.sel = -1; render(); });
+    }
+    const scaleToSlider = s => Math.round(Math.log10(s) * 100);
+    $('scale').addEventListener('input', e => { S.scale = Math.round(10 ** (+e.target.value / 100)); render(); });
+
+    document.querySelectorAll('.seg').forEach(seg => {
+        seg.addEventListener('click', e => {
+            const b = e.target.closest('button');
+            if (!b) return;
+            const key = seg.dataset.key;
+            S[key] = b.dataset.val;
+            if (key === 'material') autoSize();
+            if (key === 'profile' || key === 'web') S.sel = -1;
+            render();
+        });
+    });
+    $('fit').addEventListener('click', () => { S.sel = -1; fitToSpace(); render(); });
+    $('autosize').addEventListener('click', () => { autoSize(); render(); });
+    $('autoscale').addEventListener('click', () => { autoScale(); render(); });
+    $('selfw').addEventListener('click', () => { S.selfWeight = !S.selfWeight; render(); });
+    $('deformed').addEventListener('click', () => { S.deformed = !S.deformed; render(); });
+    $('labels').addEventListener('click', () => { S.labels = !S.labels; render(); });
+    $('hold').addEventListener('click', () => {
+        if (!R.ok) return;
+        S.hold = {
+            segs: M.members.map(m => { const a = M.nodes[m.i], b = M.nodes[m.j]; return [a.x, a.y, b.x, b.y, R.u[2 * m.i], R.u[2 * m.i + 1], R.u[2 * m.j], R.u[2 * m.j + 1]]; }),
+            defl: R.maxDefl, desc: `${S.profile} ${S.web}, d ${f(S.depth, 2)} m, ${S.panels} panels, ${S.supports.replace('-', '·')}`
+        };
+        render();
+    });
+    $('clearhold').addEventListener('click', () => { S.hold = null; render(); });
+    GROUPS.forEach(gp => $('sec_' + gp).addEventListener('change', e => { S.sec[gp] = +e.target.value; render(); }));
+
+    function syncUI() {
+        for (const key in sliders) { $(key).value = S[key]; $(key + '_v').textContent = sliders[key](S[key]); }
+        $('scale').value = scaleToSlider(S.scale); $('scale_v').textContent = '×' + S.scale;
+        document.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', S[seg.dataset.key] === b.dataset.val)));
+        $('selfw').classList.toggle('active', S.selfWeight);
+        $('deformed').classList.toggle('active', S.deformed);
+        $('labels').classList.toggle('active', S.labels);
+        const secs = MATS[S.material].secs;
+        GROUPS.forEach(gp => {
+            const sel = $('sec_' + gp);
+            const opts = secs.map((s, k) => `<option value="${k}">${s.name}</option>`).join('');
+            if (sel.dataset.mat !== S.material) { sel.innerHTML = opts; sel.dataset.mat = S.material; }
+            sel.value = S.sec[gp];
+            const us = M.members.filter(m => m.group === gp).map(m => m.util);
+            const u = R.ok && us.length ? Math.max(...us) : NaN;
+            const el = $('u_' + gp);
+            el.textContent = isNaN(u) ? '' : u.toFixed(2);
+            el.style.color = u > 1 ? 'rgb(107,10,77)' : '#111';
+        });
+        const ld = S.span / S.depth, band = S.profile === 'flat' ? [10, 15] : S.profile === 'gable' ? [4, 6] : [6, 8];
+        const dn = $('depthNote');
+        dn.textContent = `L/d = ${f(ld, 1)} · typical ${band[0]}–${band[1]} for a ${S.profile === 'bow' ? 'bowstring' : S.profile} truss`;
+        dn.classList.toggle('warn', ld < band[0] * 0.8 || ld > band[1] * 1.2);
+        $('wNote').textContent = `line load on the truss w = q · spacing = ${f(S.q, 2)} × ${f(S.spacing, 2)} = ${f(S.q * S.spacing, 2)} kN/m`;
+        $('supNote').textContent = S.supports === 'pin-roller' ? 'One end free to slide: the truss is determinate and the chords take the bending couple.'
+            : S.supports === 'pin-pin' ? 'Both ends held sideways: one extra restraint, so the supports share the chord force — note the H reactions.'
+            : 'Nothing holds it sideways: K is singular and the solver refuses.';
+        $('holdNote').textContent = S.hold ? `held: ${S.hold.desc} · δ ${f(S.hold.defl * 1000, 1)} mm` : 'Hold, then change depth, panels or supports: the dashed line stays.';
+    }
+
+    function render() {
+        M = buildModel();
+        R = solve(M);
+        if (S.sel >= M.members.length) S.sel = -1;
+        syncUI();
+        drawView();
+        drawReadout();
+        drawLegend();
+        drawSteps();
+        drawK();
+        drawTable();
+    }
+
+    let rt = 0;
+    new ResizeObserver(() => { cancelAnimationFrame(rt); rt = requestAnimationFrame(() => { if (M) { drawView(); drawK(); } }); }).observe(document.body);
+
+    fitToSpace();
+    render();
+})();
+</script>
+</body>
+</html>
