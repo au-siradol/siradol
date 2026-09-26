@@ -208,19 +208,28 @@ min-height: 320px;
 .wip .entry-icon svg .fill, .wip .card-icon svg .fill { fill: var(--wip); }
 .wip-tag {
 display: inline-block;
-margin-left: 6px;
-padding: 1px 5px;
-border: 1px solid var(--wip);
+margin-left: 8px;
 color: var(--wip);
-font-family: 'Courier New', monospace;
-font-size: 10px;
+font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+font-size: 11px;
 font-weight: normal;
-letter-spacing: 0.5px;
-text-transform: uppercase;
-vertical-align: 2px;
+letter-spacing: 0.3px;
+text-decoration: underline;
+text-underline-offset: 3px;
 white-space: nowrap;
 }
-.card .wip-tag { vertical-align: 4px; }
+.card .wip-tag { font-size: 12px; }
+/* a cross through the row, like a void on a drawing */
+.entry.wip { position: relative; }
+.entry.wip::before {
+content: "";
+position: absolute; inset: 0;
+pointer-events: none;
+background:
+linear-gradient(to top right, transparent calc(50% - 0.6px), var(--hair) calc(50% - 0.6px), var(--hair) calc(50% + 0.6px), transparent calc(50% + 0.6px)),
+linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--hair) calc(50% - 0.6px), var(--hair) calc(50% + 0.6px), transparent calc(50% + 0.6px));
+}
+.entry.wip .entry-inner { position: relative; }
 
 /* ===== Footer ===== */
 footer.site {
@@ -385,7 +394,7 @@ body { padding: 24px; }
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
 </div>
 </a>
-<a class="entry" href="works/truss-lab.html">
+<a class="entry wip" href="works/truss-lab.html">
 <div class="entry-inner">
 <div class="entry-icon">
 <svg viewBox="0 0 120 90">
@@ -396,11 +405,11 @@ body { padding: 24px; }
 <polygon fill="var(--paper)" points="76,66 96,66 76,47"/>
 </svg>
 </div>
-<div class="entry-title">Truss Lab: a Karamba-style Solver</div>
+<div class="entry-title">Truss Lab: a Karamba-style Solver<span class="wip-tag">Under construction</span></div>
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
 </div>
 </a>
-<a class="entry" href="works/space-first.html">
+<a class="entry wip" href="works/space-first.html">
 <div class="entry-inner">
 <div class="entry-icon">
 <svg viewBox="0 0 120 90">
@@ -408,7 +417,7 @@ body { padding: 24px; }
 <rect class="fill" x="34" y="50" width="52" height="26" fill="var(--ink)"/>
 </svg>
 </div>
-<div class="entry-title">Heino Engel: Space First</div>
+<div class="entry-title">Heino Engel: Space First<span class="wip-tag">Under construction</span></div>
 <div class="entry-open"><span class="arrow">&rarr;</span></div>
 </div>
 </a>
@@ -559,7 +568,7 @@ body { padding: 24px; }
 <div class="card-sub">Room circles, superellipses in the room frames, a gable-roofed storey — walls &amp; windows</div>
 </div>
 </a>
-<a class="card" href="works/truss-lab.html">
+<a class="card wip" href="works/truss-lab.html">
 <div>
 <div class="card-idx">11 / STUDY</div>
 <div class="card-icon">
@@ -573,11 +582,11 @@ body { padding: 24px; }
 </div>
 </div>
 <div>
-<div class="card-title">Truss Lab: a Karamba-style Solver</div>
+<div class="card-title">Truss Lab: a Karamba-style Solver<span class="wip-tag">Under construction</span></div>
 <div class="card-sub">Direct stiffness method in the browser — clear space first, deflected line, stiffness matrix, Euler buckling</div>
 </div>
 </a>
-<a class="card" href="works/space-first.html">
+<a class="card wip" href="works/space-first.html">
 <div>
 <div class="card-idx">12 / STUDY</div>
 <div class="card-icon">
@@ -588,7 +597,7 @@ body { padding: 24px; }
 </div>
 </div>
 <div>
-<div class="card-title">Heino Engel: Space First</div>
+<div class="card-title">Heino Engel: Space First<span class="wip-tag">Under construction</span></div>
 <div class="card-sub">Set a column-free hall, compare 14 structure systems — depth, columns, footprint, thrust, Engel span ranges, 3D</div>
 </div>
 </a>

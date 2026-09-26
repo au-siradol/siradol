@@ -151,6 +151,32 @@
     </style>
 </head>
 <body>
+<!-- gate: same password as H60 -->
+<div id="h60gate" style="position:fixed;inset:0;z-index:2147483647;background:#fdfdfd;display:flex;align-items:center;justify-content:center;font:14px/1.4 -apple-system,system-ui,sans-serif;color:#222">
+  <form id="h60gateForm" style="display:flex;flex-direction:column;gap:10px;width:240px">
+    <div style="font-weight:600;letter-spacing:.12em">Truss Lab</div>
+    <input id="h60gatePw" type="password" placeholder="Password" autocomplete="current-password" style="padding:9px 10px;border:1px solid #bbb;border-radius:4px;font:inherit">
+    <button type="submit" style="padding:9px;border:0;background:#222;color:#fff;border-radius:4px;font:inherit;cursor:pointer">Enter</button>
+    <div id="h60gateMsg" style="color:#b33;min-height:1.3em"></div>
+  </form>
+</div>
+<script>
+(() => {
+  const H = "4b761be9db1390854617809c27a357a88929900dba51aa8d858bf6ba0faf57f1", K = "h60-gate", gate = document.getElementById("h60gate");
+  const open = () => gate.remove();
+  try { if (localStorage.getItem(K) === H) { open(); return; } } catch (e) {}
+  const form = document.getElementById("h60gateForm"), pw = document.getElementById("h60gatePw");
+  const sha = async t => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+  form.addEventListener("keydown", e => e.stopPropagation());   // the page's own keys stay out of the box
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (await sha(pw.value) === H) { try { localStorage.setItem(K, H); } catch (e) {} open(); }
+    else { document.getElementById("h60gateMsg").textContent = "Wrong password"; pw.select(); }
+  });
+  pw.focus();
+})();
+</script>
+<!-- /gate -->
     <div class="study-bar">
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
