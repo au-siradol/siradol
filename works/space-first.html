@@ -113,6 +113,16 @@
     .fsec .fsum { display: none; color: #555; }
     .fsec.folded .fsum { display: inline; }
     .fsec.folded .fopen { display: none; }
+    .sgrp { display: inline-flex; align-items: center; gap: 6px; }
+    .sgrp select { font: inherit; font-size: 12px; border: 0; border-bottom: 1px solid #111; background: none; padding: 2px 0; }
+    .basis { font-size: 11px; color: #777; margin-left: 10px; }
+    .then { font-size: 11px; color: #888; }
+    .basis.own { color: #b26a00; }
+    /* the row the five were chosen by */
+    .rh.sorted { color: #111; font-weight: 700; }
+    .rh.sorted::after { content: attr(data-lab); display: block; font-weight: 400; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: #888; margin-top: 2px; }
+    .rh.sorted, .cell.sorted { background: #f4f4f4; }
+    .why.tim { margin-top: 6px; color: #333; } .why.tim small { display: block; color: #888; font-size: 9px; margin-top: 2px; line-height: 1.35; }
     .draw .wait, .dr:empty, .vd:empty { width: 100%; height: 100%; min-height: 60px; background: linear-gradient(90deg, #fafafa, #f2f2f2, #fafafa); }
     .draw svg { width: 100%; height: auto; display: block; }
     .cell { font-size: 14px; }
@@ -155,6 +165,10 @@
     .modal .pair { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
     .modal .pair .k { margin-bottom: 4px; }
     .modal .big { height: min(46vh, 420px); } .modal .big svg { height: 100%; }
+    .modal .views2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .modal .views2 .big { height: min(40vh, 360px); }
+    .modal .big.eye { background: #fcfcfc; outline: 1px solid #eee; overflow: hidden; }
+    @media (max-width: 860px) { .modal .views2 { grid-template-columns: 1fr; } }
     .modal .side { display: flex; flex-direction: column; gap: 12px; font-size: 11px; color: #444; }
     .vv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .vvi { cursor: pointer; padding: 4px; border: 1px solid transparent; font-size: 10px; }
@@ -234,14 +248,14 @@
     <section class="fsec" data-sec="cmp">
     <div class="bar">
         <p class="lead"><button class="fold" type="button">Comparison</button> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value in each row is underlined · click a drawing to enlarge it and turn it</span></p>
-        <button class="btn" id="suggest">Suggest five</button>
+        <span class="sgrp"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion (50%) — the same list as the ranking of all systems"></select><span class="then">then</span><select id="crit2" title="Second criterion (30%), optional"></select><span class="then">then</span><select id="crit3" title="Third criterion (20%), optional"></select></span><span class="basis" id="cmpBasis"></span>
         <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div>
     </div>
     <div class="grid fbody" id="grid"></div>
     </section>
 
     <div class="rank fsec" data-sec="rank">
-        <div class="hd"><button class="fold" type="button">All <span id="nSys"></span> systems</button><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option></select><span class="fbody" id="rankNote"></span></div>
+        <div class="hd"><button class="fold" type="button">All <span id="nSys"></span> systems</button><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option><option value="calm">calm ceiling (least structure seen)</option><option value="busy">busy ceiling (most structure seen)</option></select><span class="fbody" id="rankNote"></span></div>
         <svg id="dots" class="fbody"></svg>
     </div>
 
@@ -253,7 +267,7 @@
 
 <div class="modal" id="modal"><div class="in">
     <div class="hd"><div><b id="mName"></b><span id="mSub"></span></div><button class="btn" id="mClose">Close</button></div>
-    <div class="pair"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Section</div><div class="sec" id="mSec"></div></div></div>
+    <div class="pair"><div class="views2"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Inside, at eye height · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div></div><div><div class="k">Section</div><div class="sec" id="mSec"></div></div></div>
     <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
 </div></div>
 
@@ -271,7 +285,7 @@
     const fromL = L => Math.round(1000 * Math.log(L / Lmin) / Math.log(Lmax / Lmin));
 
     const S = { L: 24, W: 48, H: 6, q: 1.5, mat: 'steel', sel: 'truss', hold: null, sort: 'zone', asc: true, view: '3d', rot: 30, elev: 28, finish: 'insulated' };
-    const MATNAME = { steel: 'steel', timber: 'glulam', concrete: 'concrete', membrane: 'membrane', cable: 'steel cable', masonry: 'masonry' };
+    const MATNAME = { steel: 'steel', timber: 'timber', concrete: 'concrete', membrane: 'membrane', cable: 'steel cable', masonry: 'masonry' };
 
     // ---------- geometry helpers (metres, y up) ----------
     const rect = (x0, y0, x1, y1, c = 'solid') => ({ t: 'poly', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], c });
@@ -763,6 +777,7 @@
             plan: { kind: 'surf', mods: o.mods, posts: o.posts || [], anchors: o.anchors || [], boxes: o.boxes || [], segs: o.planSegs, ext: Math.max(0, -Math.min(...ys), Math.max(...ys) - S.W) }
         };
     }
+    let surfGroup = 0;
     function drawSurface(r, add) {
         const o = r.surf;
         for (const m of o.mods) {
@@ -774,7 +789,8 @@
             // the skin draws no lines of its own (the cables are the lines), with cables one way the membrane keeps its lines across them
             const ki = m.li || ni, kj = m.lj || nj;
             if (net) { ni = 2 * ki; nj = 2 * kj; } else if (cab) { ni = ki * Math.max(1, Math.round(ni / ki)); nj = kj * Math.max(1, Math.round(nj / kj)); }
-            if (kind !== 'net') for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add('face', [P(i, j, ni, nj), P(i + 1, j, ni, nj), P(i + 1, j + 1, ni, nj), P(i, j + 1, ni, nj)], net ? 'skin' : kind);
+            const grp = ++surfGroup;
+            if (kind !== 'net') for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add('face', [P(i, j, ni, nj), P(i + 1, j, ni, nj), P(i + 1, j + 1, ni, nj), P(i, j + 1, ni, nj)], net ? 'skin' : kind, undefined, grp);
             if (kind === 'net' || m.cables) {
                 const dir = m.dir || 'both', cs = m.cstyle || 'thin', si = cab ? ni : 48, sj = cab ? nj : 48;
                 if (dir !== 'x') for (let i = 0; i <= ki; i++) { const pts = []; for (let t = 0; t <= sj; t++) pts.push(P(i * ni / ki, t * nj / sj, ni, nj)); add('line', pts, cs); }
@@ -1812,7 +1828,8 @@
               const F = L / 8, g = Math.min(W / 12, L / 4), r0 = (L * L / 4 + F * F) / (2 * F), zc = H + F - r0, c = (W / 2) / Math.sqrt(((r0 + g) / r0) ** 2 - 1), rad = y => r0 * Math.sqrt(1 + ((y - W / 2) / c) ** 2);
               const z = (x, y) => zc + Math.sqrt(Math.max(0, rad(y) ** 2 - (x - L / 2) ** 2)), s = 6, P = [];
               for (const y of ysOf(W, s)) P.push([0, y, z(0, y)], [L, y, z(L, y)]);
-              const lines3 = [0, L].map(x => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const y = W * i / 24; return [x, y, z(x, y)]; }) }));
+              const ey = [...new Set([...Array.from({ length: 25 }, (_, i) => W * i / 24), ...ysOf(W, s)].map(v => +v.toFixed(4)))].sort((p_, q_) => p_ - q_);   // the edge passes through every column head
+              const lines3 = [0, L].map(x => ({ c: 'member', pts: ey.map(y => [x, y, z(x, y)]) }));
               const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 14, nj: 24 }], posts: P, lines3, secY: W / 2,
                   secParts: [rect(-0.3, 0, 0, z(0, W / 2)), rect(L, 0, L + 0.3, z(L, W / 2)), line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin')] });
               return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides on columns that rise towards the ends',
@@ -1824,7 +1841,8 @@
           build(L, H, W, m, q) {
               const F = L / 8, g = W / 16, z = (x, y) => H + F * (1 - (2 * x / L - 1) ** 2) + g * (2 * y / W - 1) ** 2, s = 6, P = [];
               for (const y of ysOf(W, s)) P.push([0, y, z(0, y)], [L, y, z(L, y)]);
-              const lines3 = [0, L].map(x => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const y = W * i / 24; return [x, y, z(x, y)]; }) }));
+              const ey = [...new Set([...Array.from({ length: 25 }, (_, i) => W * i / 24), ...ysOf(W, s)].map(v => +v.toFixed(4)))].sort((p_, q_) => p_ - q_);   // the edge passes through every column head
+              const lines3 = [0, L].map(x => ({ c: 'member', pts: ey.map(y => [x, y, z(x, y)]) }));
               const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 14, nj: 24 }], posts: P, lines3, secY: W / 2,
                   secParts: [rect(-0.3, 0, 0, z(0, W / 2)), rect(L, 0, L + 0.3, z(L, W / 2)), line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin')] });
               return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides; the eaves rise towards the ends',
@@ -2714,7 +2732,7 @@
     }
     function scene3D(r) {
         const L = S.L, W = S.W, H = S.H, it = [];
-        const add = (t, pts, c = 'member', e) => it.push(e ? { t, pts, c, e } : { t, pts, c });
+        const add = (t, pts, c = 'member', e, g) => it.push(g != null ? { t, pts, c, e, g } : e ? { t, pts, c, e } : { t, pts, c });   // g: the smooth surface a face belongs to
         const sys = r.sys.id, pl = r.plan;
         // floor hatch inside the clear space, like Engel's plates
         const nh = Math.max(6, Math.round(W / 2.5));
@@ -2902,6 +2920,73 @@
     function projectScene(items, pr) {
         return items.map(o => { const P = o.pts.map(pr); return Object.assign({}, o, { P, depth: P.reduce((a, p) => a + p[2], 0) / P.length }); });
     }
+    // the view from inside: an eye at (ex, ey, ez) turned by yaw (0 = along the hall, +y) and pitch (up +); returns items with
+    // screen points P = [x/z, −y/z, −z] and camera points Q, everything behind the near plane cut away
+    function eyeScene(items, cam) {
+        const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+        const f = [sy * cp, cy * cp, sp], rt = [cy, -sy, 0], up = [-sy * sp, -cy * sp, cp], near = 0.25;
+        const toCam = p => { const d = [p[0] - cam.x, p[1] - cam.y, p[2] - cam.z]; return [d[0] * rt[0] + d[1] * rt[1] + d[2] * rt[2], d[0] * up[0] + d[1] * up[1] + d[2] * up[2], d[0] * f[0] + d[1] * f[1] + d[2] * f[2]]; };
+        const cut = (a, b) => { const t = (near - a[2]) / (b[2] - a[2]); return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, near]; };
+        const scr = q => [q[0] / q[2], -q[1] / q[2], -q[2]];
+        const out = [];
+        for (const o of items) {
+            if (o.c === 'box' || o.t === 'person') continue;
+            const Q0 = o.pts.map(toCam);
+            if (o.t === 'line') {   // cut each segment at the near plane
+                let run = [];
+                const flush = () => { if (run.length > 1) out.push(Object.assign({}, o, { Q: run, P: run.map(scr), depth: -run.reduce((s_, q) => s_ + q[2], 0) / run.length })); run = []; };
+                for (let i = 0; i < Q0.length; i++) {
+                    const a = Q0[i], b = Q0[i + 1];
+                    if (a[2] >= near) { if (!run.length) run.push(a); }
+                    if (!b) break;
+                    if (a[2] >= near && b[2] >= near) run.push(b);
+                    else if (a[2] >= near) { run.push(cut(a, b)); flush(); }
+                    else if (b[2] >= near) { run = [cut(a, b), b]; }
+                }
+                flush();
+            } else {   // Sutherland–Hodgman against the near plane, keeping which edges are real
+                const e0 = o.e || Q0.map(() => true), Q = [], E = [];
+                for (let i = 0; i < Q0.length; i++) {
+                    const a = Q0[i], b = Q0[(i + 1) % Q0.length], ina = a[2] >= near, inb = b[2] >= near;
+                    if (ina) { Q.push(a); E.push(inb ? e0[i] : e0[i]); }
+                    if (ina !== inb) { Q.push(cut(a, b)); E.push(ina ? false : e0[i]); }
+                }
+                if (Q.length < 3) continue;
+                const clipped = Q.length !== Q0.length || Q.some((q, i) => q !== Q0[i]);
+                out.push(Object.assign({}, o, { Q, P: Q.map(scr), e: (o.e || clipped) ? E : undefined, depth: -Q.reduce((s_, q) => s_ + q[2], 0) / Q.length }));
+            }
+        }
+        // keep only what reaches the view (±1.2 across, ±1 up and down, generous)
+        return out.filter(o => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of o.P) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); } const ay = (cam.ay || 1) + 0.2; return x1 > -1.2 && x0 < 1.2 && y1 > -ay && y0 < ay; });
+    }
+    // the ceiling seen from below, in plan over the hall: a raster of the cells that structure covers. From it,
+    // dens = visible line length per m² (the covered area's outline ÷ 2, so parts stacked above one another count once).
+    // Our reading of Moussavi's 'affects', measured from the geometry — not a figure from her book.
+    function ceilingStats(r) {
+        if (r._ceil) return r._ceil;
+        const L = S.L, W = S.W, H = S.H, cell = Math.max(0.1, Math.sqrt(L * W / 50000)), nx = Math.ceil(L / cell), ny = Math.ceil(W / cell), gl = new Uint8Array(nx * ny);   // cells under lines and webs
+        const WID = { member: 0.25, thin: 0.12, cable: 0.06, tie: 0.06, post: 0 }; let crease = 0;
+        const put = (x, y) => { const i = Math.floor(x / cell), j = Math.floor(y / cell); if (i >= 0 && j >= 0 && i < nx && j < ny) gl[j * nx + i] = 1; };
+        const band = (a, b, w) => { const lx = b[0] - a[0], ly = b[1] - a[1], len = Math.hypot(lx, ly), n = Math.max(1, Math.ceil(len / (cell * 0.7))), k = Math.max(0, Math.round(w / 2 / cell - 0.5));
+            const ux = len ? -ly / len : 0, uy = len ? lx / len : 0;   // k cells either side: a thin member is one cell wide
+            for (let t = 0; t <= n; t++) { const x = a[0] + lx * t / n, y = a[1] + ly * t / n; for (let s_ = -k; s_ <= k; s_++) put(x + ux * s_ * cell, y + uy * s_ * cell); } };
+        for (const o of scene3D(r)) {
+            if (o.c === 'hatch' || o.c === 'box' || o.c === 'post' || o.t === 'person') continue;
+            if (Math.max(...o.pts.map(p => p[2])) < H - 0.05) continue;   // below the ceiling: footings, low walls
+            if (o.t === 'line') { const w = WID[o.c] != null ? WID[o.c] : 0.12; if (w) for (let i = 0; i < o.pts.length - 1; i++) band(o.pts[i], o.pts[i + 1], w); continue; }
+            const P = o.pts; let nx_ = 0, ny_ = 0, nz_ = 0;
+            for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; nx_ += (a[1] - b[1]) * (a[2] + b[2]); ny_ += (a[2] - b[2]) * (a[0] + b[0]); nz_ += (a[0] - b[0]) * (a[1] + b[1]); }
+            const vert = Math.abs(nz_) < 0.2 * Math.hypot(nx_, ny_, nz_);
+            if (vert) { let a = P[0], b = P[0], m = 0; for (const p of P) for (const q of P) { const d = Math.hypot(p[0] - q[0], p[1] - q[1]); if (d > m) { m = d; a = p; b = q; } } band(a, b, 0.25); }
+            else if (o.c === 'fold1' || o.c === 'fold2') { for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length];   // folds read as lines: half of each edge (shared by two plates)
+                    const ax = clamp(a[0], 0, L), bx = clamp(b[0], 0, L), ay = clamp(a[1], 0, W), by = clamp(b[1], 0, W); crease += Math.hypot(bx - ax, by - ay) / 2; } }
+        }
+        let edges = 0;
+        for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const k = j * nx + i, v = gl[k];
+            if (i + 1 < nx && v !== gl[k + 1]) edges++; if (j + 1 < ny && v !== gl[k + nx]) edges++; }
+        const dens = (edges * cell / 2 + crease) / (L * W);
+        return (r._ceil = { dens });
+    }
     const boxCache = new WeakMap(), bodyCache = new WeakMap();   // per projected scene: its screen box and its drawing
     function bounds3(scenes) {
         let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
@@ -2918,23 +3003,31 @@
     function paintOrder(proj) {
         const items = [];
         for (const o of proj) {
-            if (o.t === 'line' && o.P.length > 2) for (let i = 0; i < o.P.length - 1; i++) { const P = [o.P[i], o.P[i + 1]]; items.push(Object.assign({}, o, { P, depth: (P[0][2] + P[1][2]) / 2, seg: true })); }
+            if (o.t === 'line' && o.P.length > 2) for (let i = 0; i < o.P.length - 1; i++) { const P = [o.P[i], o.P[i + 1]]; items.push(Object.assign({}, o, { P, Q: o.Q && [o.Q[i], o.Q[i + 1]], depth: (P[0][2] + P[1][2]) / 2, seg: true })); }
             else items.push(o);
         }
         const n = items.length, box = items.map(o => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of o.P) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); } return [x0, y0, x1, y1]; });
         // plane of each face in screen space (orthographic, so the axes are orthonormal): unit normal turned to the viewer, n·p = d
+        // in a perspective the planes are taken in camera space (viewer at the origin); in an axonometric in screen space
+        const persp = items.length && !!items[0].Q, pts = o => persp ? o.Q : o.P;
         const plane = items.map(o => { if (o.t !== 'face' || o.P.length < 3) return null;
+            if (persp) { const Q = o.Q; let nx = 0, ny = 0, nz = 0; for (let i = 0; i < Q.length; i++) { const a = Q[i], b = Q[(i + 1) % Q.length]; nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]); }
+                const l = Math.hypot(nx, ny, nz); if (!l) return null; nx /= l; ny /= l; nz /= l; let d = Q.reduce((s_, q) => s_ + nx * q[0] + ny * q[1] + nz * q[2], 0) / Q.length;
+                if (Math.abs(d) < 1e-3) return null;   // the plane passes through the eye: seen edge-on
+                return d > 0 ? [-nx, -ny, -nz, -d] : [nx, ny, nz, d]; }   // the eye on the positive side
             let nx = 0, ny = 0, nz = 0; const P = o.P; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]); }
             const l = Math.hypot(nx, ny, nz); if (!l) return null; if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; } nx /= l; ny /= l; nz /= l;
             if (nz < 0.02) return null;   // seen edge-on: nothing to hide
             return [nx, ny, nz, P.reduce((s_, p) => s_ + nx * p[0] + ny * p[1] + nz * p[2], 0) / P.length]; });
         const span = Math.max(1e-6, ...box.map(b => Math.max(b[2] - b[0], b[3] - b[1]))), eps = 1e-4 * span;
-        const size = box.map(b => Math.hypot(b[2] - b[0], b[3] - b[1]));
-        const tol = (g, f) => plane[g] ? eps : Math.max(eps, 0.04 * size[f]);   // a line on a curved skin runs within a few % of the facet size
+        const size = persp ? items.map(o => { const Q = o.Q; let m = 0; for (const a of Q) for (const b of Q) m = Math.max(m, Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])); return m; }) : box.map(b => Math.hypot(b[2] - b[0], b[3] - b[1]));
+        const epsD = persp ? 1e-3 : eps;
+        const tol = (g, f) => plane[g] ? epsD : Math.max(epsD, 0.04 * size[f]);   // a line on a curved skin runs within a few % of the facet size
         const dist = (p, pl) => pl[0] * p[0] + pl[1] * p[1] + pl[2] * p[2] - pl[3];
-        const front = (g, f) => { const pl = plane[f], e = tol(g, f); return items[g].P.every(p => dist(p, pl) >= -e); };   // g on the viewer's side of f's plane
-        const back = (g, f) => { const pl = plane[f], e = tol(g, f); return items[g].P.every(p => dist(p, pl) <= e); };
+        const front = (g, f) => { const pl = plane[f], e = tol(g, f); return pts(items[g]).every(p => dist(p, pl) >= -e); };   // g on the viewer's side of f's plane
+        const back = (g, f) => { const pl = plane[f], e = tol(g, f); return pts(items[g]).every(p => dist(p, pl) <= e); };
         // spatial hash of the faces, to test only pairs that overlap on screen
+        if (persp) for (const b of box) { b[0] = clamp(b[0], -1.5, 1.5); b[2] = clamp(b[2], -1.5, 1.5); b[1] = clamp(b[1], -2, 2); b[3] = clamp(b[3], -2, 2); }   // off-screen parts don't matter for overlaps
         let X0 = 1e9, Y0 = 1e9, X1 = -1e9, Y1 = -1e9; for (const b of box) { X0 = Math.min(X0, b[0]); Y0 = Math.min(Y0, b[1]); X1 = Math.max(X1, b[2]); Y1 = Math.max(Y1, b[3]); }
         const G = 48, cw = (X1 - X0) / G || 1, ch = (Y1 - Y0) / G || 1, cells = new Map(), key = (i, j) => i * 1000 + j;
         const range = b => [Math.max(0, Math.floor((b[0] - X0) / cw)), Math.min(G - 1, Math.floor((b[2] - X0) / cw)), Math.max(0, Math.floor((b[1] - Y0) / ch)), Math.min(G - 1, Math.floor((b[3] - Y0) / ch))];
@@ -2945,6 +3038,7 @@
             const [a, b, c, d] = range(box[g]);
             for (let u = a; u <= b; u++) for (let v = c; v <= d; v++) for (const f of cells.get(key(u, v)) || []) {
                 if (f === g) continue; const pk = f < g ? f * n + g : g * n + f; if (seen.has(pk)) continue; seen.add(pk);
+                if (persp && items[f].g != null && items[f].g === items[g].g) continue;   // seen from inside, one smooth surface does not cover itself
                 const B = box[f], A = box[g]; if (A[2] < B[0] - eps || B[2] < A[0] - eps || A[3] < B[1] - eps || B[3] < A[1] - eps) continue;
                 const gf = front(g, f), gb = back(g, f);
                 if (plane[g]) { const fg = front(f, g), fb = back(f, g);
@@ -2972,12 +3066,13 @@
     function axoSVG(proj, bb, ghost = null) { return axoFrame(axoBody(proj), bb, ghost ? ghostPaths(ghost) : ''); }
     const pathD = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');
     const ghostPaths = ghost => ghost.filter(o => o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box').map(o => `<path d="${pathD(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`).join('');
-    function axoBody(proj) {
+    // quick = while a view is being dragged: order by depth only (cheap); the full plane-based order is drawn on release
+    function axoBody(proj, quick = false) {
         const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');   // metres: 1 cm is plenty
         // B: the drawing of a scene is made once and reused wherever the same scene is shown (only the frame differs)
-        let s = bodyCache.get(proj);
+        let s = quick ? null : bodyCache.get(proj);
         if (s == null) { s = '';
-        for (const o of paintOrder(proj)) {
+        for (const o of (quick ? proj.slice().sort((a, b) => a.depth - b.depth) : paintOrder(proj))) {
             if (o.t === 'face' && o.e) {
                 // a piece of a larger face: filled, its seams hidden, and only the edges flagged in o.e drawn — in its own place in the depth order
                 const st = (STYLE3.face[o.c] || STYLE3.face.solid).match(/stroke="([^"]*)" stroke-width="([^"]*)"/), fill = (STYLE3.face[o.c] || STYLE3.face.solid).match(/fill="([^"]*)"/)[1];
@@ -2990,7 +3085,7 @@
             else if (o.t === 'face') s += `<path d="${path(o.P)}Z" ${STYLE3.face[o.c] || STYLE3.face.solid} stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
             else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member}${o.seg ? ' stroke-linecap="round"' : ''} vector-effect="non-scaling-stroke"/>`;
         }
-        bodyCache.set(proj, s); }
+        if (!quick) bodyCache.set(proj, s); }
         return s;
     }
 
@@ -3000,9 +3095,32 @@
     const AXO = { rot: 38, elev: 32 };
     S.view = '3d'; S.rot = AXO.rot; S.elev = AXO.elev;
     let slots = ['truss', 'portal', 'tarch', 'vault', 'barrel'], selType = null, metric = 'span', RES = [], modalId = null;
+    let basis = null;   // what the last Suggest picked, and by which criteria
+    // up to three criteria: each ranks all systems (ties share the average rank); the ranks, scaled 0–1, are weighted 50/30/20
+    // by the order the criteria were chosen in (renormalised when fewer are chosen); lower score = better
+    let crit2 = '', crit3 = '';
+    const WEIGHT = [0.5, 0.3, 0.2], critList = () => [...new Set([metric, crit2, crit3].filter(Boolean))];
+    const critW = () => { const w = WEIGHT.slice(0, critList().length), t = w.reduce((a, b) => a + b, 0); return w.map(x => x / t); };
+    let mixCache = { key: '', map: null };
+    function mixScore() {
+        const cl = critList(), key = resKey + '|' + cl.join() + '|' + CEIL.size;
+        if (mixCache.key === key) return mixCache.map;
+        const all = resAll(), N = all.length, w = critW(), map = new Map(all.map(r => [r.sys.id, 0]));
+        cl.forEach((c, k) => {
+            const vals = all.map(r => [r.sys.id, MEASURE[c].v(r)]).sort((a, b) => a[1] - b[1]);
+            for (let i = 0; i < N;) { let j = i; while (j + 1 < N && vals[j + 1][1] === vals[i][1]) j++; const rk = (i + j) / 2 / Math.max(1, N - 1);
+                for (let t = i; t <= j; t++) map.set(vals[t][0], map.get(vals[t][0]) + w[k] * rk); i = j + 1; }
+        });
+        return (mixCache = { key, map }).map;
+    }
+    const MIX = { v: r => mixScore().get(r.sys.id), show: r => 100 * (1 - mixScore().get(r.sys.id)), fmt: v => Math.round(v) };
+    const needCeil = () => critList().some(c => CEILM.includes(c));
+    const critName = c => { const o = [...$('metric').options].find(o_ => o_.value === c); return o ? o.text.replace(/ \(.*\)/, '') : c; };
+    const SORTROW = { span: 'Engel span', zone: 'zone', top: 'top', footW: 'footW', eff: 'eff', cols: 'cols', q: 'q', calm: 'calm', busy: 'calm' };
     // the three sections fold away when not in use; each viewer's choice is kept in this browser, and a folded section is not drawn
     const FOLD_KEY = 'space-first-folded'; let folded = {};
-    try { folded = JSON.parse(localStorage.getItem(FOLD_KEY)) || {}; } catch (_) { folded = {}; }
+    const FOLD0 = { tree: true, cmp: true, rank: true };   // first visit: all three folded
+    try { folded = JSON.parse(localStorage.getItem(FOLD_KEY)) || { ...FOLD0 }; } catch (_) { folded = { ...FOLD0 }; }
     function applyFold() {
         document.querySelectorAll('.fsec').forEach(sec => { const f = !!folded[sec.dataset.sec]; sec.classList.toggle('folded', f); const b = sec.querySelector('.fold'); if (b) { b.setAttribute('aria-expanded', String(!f)); b.title = f ? 'Show' : 'Hide'; } });
     }
@@ -3029,19 +3147,87 @@
         footW: { v: r => r.footW, fmt: v => f1(v) },
         eff:   { v: r => -r.eff, show: r => r.eff * 100, fmt: v => Math.round(v) + '%' },
         cols:  { v: r => r.cols, fmt: v => Math.round(v) },
-        q:     { v: r => r.load.q, fmt: v => f2(v) }
+        q:     { v: r => r.load.q, fmt: v => f2(v) },
+        calm:  { v: r => { const c = CEIL.get(r.sys.id); return c ? c.dens : 1e9; }, show: r => (CEIL.get(r.sys.id) || { dens: 0 }).dens, fmt: v => f2(v) },
+        busy:  { v: r => { const c = CEIL.get(r.sys.id); return c ? -c.dens : 1e9; }, show: r => (CEIL.get(r.sys.id) || { dens: 0 }).dens, fmt: v => f2(v) }
     };
 
+    // timber: which engineered-timber product each system needs, with a first section worked out from statics
+    // (design load 1.35G + 1.5Q; design strength kmod·f_k/γM). A first estimate — no buckling, no connection design.
+    const TIMBER_SRC = {
+        glulam: 'EN 14080 (GL28h: f_m,k = f_c,0,k = 28 N/mm²) · EN 1995-1-1 (γM = 1.25 for glulam, Table 2.3; kmod = 0.8 for medium-term load, Table 3.1) · EN 1990 (1.35G + 1.5Q) · Swedish Wood, About glulam (laminates 45 mm straight, about 33 mm curved)',
+        curved: 'EN 1995-1-1 eq. 6.49: a curved member keeps its full strength when the inner radius ÷ laminate thickness ≥ 240',
+        clt: 'Stora Enso, CLT technical brochure: panels up to 2.95 × 16 m and 320 mm thick',
+        lath: 'Happold & Liddell, The Structural Engineer 53 (1975): Mannheim Multihalle, 50 × 50 mm hemlock laths on a 0.5 m grid, in two layers',
+        fold: 'EPFL IBOIS: Saint-Loup chapel, Pompaples (2008) — a folded plate of 60 mm cross-laminated panels; Vidy-Lausanne theatre pavilion (2017) — double-layer CLT folded plate, 45 mm plates, column-free up to 20 m, panels joined by wood-wood through-tenon joints',
+        ruled: 'Geometry: the hyperbolic paraboloid and the one-sheet hyperboloid are doubly ruled surfaces — straight lines lie on them in two directions'
+    };
+    const WIDTHS = [0.09, 0.115, 0.14, 0.165, 0.19, 0.215, 0.24];
+    const up45 = h => Math.ceil(h / 0.045 - 1e-9) * 0.045;
+    function glulamFor(M, N) {   // kNm, kN → { b, h } in m: the narrowest standard width that keeps the section compact
+        const f = 0.8 * 28 / 1.25 * 1000;   // design strength, kN/m²
+        if (M) { const Wn = M / f; for (const b of WIDTHS) { const h = Math.sqrt(6 * Wn / b); if (h <= 7 * b) return { b, h: Math.max(up45(h), 0.09) }; } return { b: 0.24, h: up45(Math.sqrt(6 * Wn / 0.24)) }; }
+        const A = N / f; for (const b of WIDTHS) { const h = A / b; if (h <= 2 * b) return { b, h: Math.max(up45(h), b) }; } return { b: 0.24, h: up45(A / 0.24) };
+    }
+    const mm = v => Math.round(v * 1000);
+    const secTxt = (x, what) => `${what} ${mm(x.b)} × ${mm(x.h)} mm${x.h > 2 ? ' — deeper than a glulam beam is usually made: at this span a glulam truss (2.1) is the usual answer, or twin / block-glued beams' : ''}`;
+    const GROUP = [
+        ['plate', /^p_/], ['vbeam', /^fl_/], ['clt', /^(fb_|fp_|fi_)|^folded$/], ['board', /^(hyparT|ss_rot|ss_trans)$/], ['lath', /^(gshell|g_arch)$/], ['lamella', /^lamella$/],
+        ['space', /^(space|st_|sf_fold|sv_|sl_)/], ['node', /^(cy_int$|sa_|dm_long$|sd_|geodesic$)/], ['arch', /^(tarch|garch|arch3|tl_arch)$/],
+        ['truss', /^(truss|ptruss|tt_|tb_|tc_|tk_|tl_|tf_|ti_)/], ['beam', /./]
+    ];
+    function timberNote(r) {
+        if (r.m !== 'timber') return null;
+        const id = r.sys.id, L = S.L, g = r.load, qd = 1.35 * (g.own + g.fin + g.svc) + 1.5 * g.live, s = (r.plan && r.plan.s) || 6;
+        const grp = GROUP.find(([, re]) => re.test(id))[0];
+        const say = (t, src) => ({ t, src: src.join(' · ') });
+        const joints = L > 16 ? ' A CLT panel is at most about 2.95 × 16 m, so each plate here is several panels, spliced with screwed plates or glued joints.' : ' A CLT panel is at most about 2.95 × 16 m.';
+        if (grp === 'plate') return say(`CLT wall-plates working as deep beams, 5–7 layers (about 160–240 mm).${joints} Not CLT alone: the joints between panels cannot carry the tension along the bottom edge, so a glulam or steel tension chord runs along it, and the plates sit on glulam or steel posts.`, [TIMBER_SRC.clt]);
+        if (grp === 'vbeam') return say(`V- or trough-section members folded from LVL or CLT plates, screwed and glued along the fold.${L > 16 ? ' Longer than one panel: made in lengths and spliced.' : ''} For a timber version a glulam beam or truss usually does the same with less work.`, [TIMBER_SRC.clt]);
+        if (grp === 'clt') {
+            const far = L > 20;
+            return say(`CLT folded plate, about 5 layers (120–200 mm) — it has been built (Saint-Loup chapel; the Vidy pavilion, double-layer, up to 20 m).${joints} Not CLT alone: the folds must be joined all along — screwed steel plates or wood-wood tenon joints — and the base edges need glulam or steel ties.${far ? ` This span (${f1_(L)} m) is beyond any built CLT folded plate: add glulam ribs along the folds so the panels span only between them, or use trusses in the fold planes (Engel 2.2.2).` : ''}`, [TIMBER_SRC.clt, TIMBER_SRC.fold]);
+        }
+        if (grp === 'board') {
+            const N = qd * L * L / (8 * Math.max(0.1, r.zone)) , t = N / (0.8 * 28 / 1.25 * 1000);
+            return say(`A shell of straight boards in two or three crossing layers — possible because this surface is ruled: straight lines lie on it both ways, so boards or glulam laths follow them without bending in two directions. It needs glulam edge beams (and the tie or supports shown). The membrane force (about ${Math.round(N)} kN/m) needs ${t < 0.01 ? 'under 10' : Math.round(t * 1000)} mm of timber in compression — the real thickness is set by buckling and by how the boards are laid, which this page does not work out.`, [TIMBER_SRC.ruled, TIMBER_SRC.glulam]);
+        }
+        if (grp === 'lath') return say(`A gridshell of slender laths bent into shape on site, in two layers — the precedent is 50 × 50 mm hemlock at 0.5 m; laths this small only work at close spacing, with shear blocks or cables for in-plane stiffness.`, [TIMBER_SRC.lath]);
+        if (grp === 'lamella') { const t = r.lattice ? r.lattice.t : L / 60; return say(`Short identical lamellas of glulam or sawn timber, about ${mm(WIDTHS.find(b => b >= 0.3 * up45(t)) || 0.24)} × ${mm(up45(t))} mm, bolted where they cross (Zollinger system).`, [TIMBER_SRC.glulam]); }
+        if (grp === 'space' || grp === 'node') {
+            const a = grp === 'space' ? Math.max(1.5, L / 12) : Math.max(2, L / 10), d = Math.max(0.5, r.zone), N = qd * a * L * L / (8 * d) / (grp === 'space' ? 2 : 1);
+            const x = glulamFor(0, N);
+            return say(`${grp === 'space' ? 'A double-layer grid' : 'A single-layer net'} of glulam bars between steel node connectors; the most loaded bars need about ${mm(x.b)} × ${mm(x.h)} mm (${Math.round(N)} kN, axial only — buckling will call for more).`, [TIMBER_SRC.glulam]);
+        }
+        if (grp === 'arch') {
+            const H0 = r.thrust != null ? r.thrust * (r.thrustPerArch ? 1 : s) : g.q * s * L * L / (8 * Math.max(0.1, r.zone)), N = H0 * qd / g.q;   // the arch's thrust, at design load
+            const x = glulamFor(0, N), f = r.zone, R = (L * L / 4 + f * f) / (2 * f), ok = R / 0.033 >= 240;
+            return say(`Curved glulam arches, about ${mm(x.b)} × ${mm(x.h)} mm from the thrust alone (${Math.round(N)} kN) — uneven load adds bending, so expect deeper. Radius ≈ ${f1_(R)} m, ${ok ? 'gentle enough for 33 mm laminates at full strength' : 'tight: thinner laminates or reduced strength'}. Long arches are made in pieces and joined on site (a hinge at the crown is the usual joint); the feet need steel shoes and the thrust a tie or abutments.`, [TIMBER_SRC.glulam, TIMBER_SRC.curved]);
+        }
+        if (grp === 'truss') {
+            const d = Math.max(0.3, r.zone), N = qd * s * L * L / (8 * d), x = glulamFor(0, N);
+            return say(`Glulam (or LVL) chords, about ${mm(x.b)} × ${mm(x.h)} mm for the chord force of ${Math.round(N)} kN (axial only — buckling and the joints will call for more); diagonals and posts sawn or glulam of the same width, joined with slotted-in steel plates and dowels.`, [TIMBER_SRC.glulam]);
+        }
+        // beams, frames, grids: bending
+        const k = id === 'cbeam' ? 1 / 90 : /^k_uni$/.test(id) ? 1 / 2 : /^(cb_|gb_|portal|f_|mf_|sf_|vier)/.test(id) ? 1 / 10 : /^(g_|gg_|gc_|grid)/.test(id) ? 1 / 16 : 1 / 8;
+        const M = k * qd * s * L * L, x = glulamFor(M, 0);
+        const extra = /^(g_|gg_|gc_|grid)/.test(id) ? ' A two-way timber grid needs purpose-made crossings: usually one direction runs through and the other is hung on steel hangers, which makes it act closer to one-way.'
+            : /^(vier|sf_)/.test(id) ? ' Every panel joint must be rigid — in timber that means glued-in steel rods or steel moment plates at each post, the costly part of this system.'
+            : /^(portal|f_fix|mf_)/.test(id) ? ' The rigid knees are made with a ring of dowels or finger-jointed glulam corners.'
+            : /^k_uni$/.test(id) ? ' The back span must be held down: steel tie rods to a ground anchor.' : '';
+        return say(`Glulam GL28h ${/^(portal|f_|mf_)/.test(id) ? 'frames' : 'beams'}, ${secTxt(x, 'about')} for M = ${Math.round(M)} kNm (${k === 1 / 90 ? 'continuous over the two cable posts, spans of L/3' : k === 1 / 2 ? 'cantilever' : k === 1 / 10 ? 'continuous or framed' : k === 1 / 16 ? 'two-way grid' : 'simple span'}, every ${f1_(s)} m).${extra}`, [TIMBER_SRC.glulam]);
+    }
     const ROWS = [
         { t: 'Engel span', tip: 'Where your span sits in Engel’s range for this system and material', f: r => { const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(v) - Math.log(3)) / (Math.log(500) - Math.log(3)); return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini"><span class="lim" style="left:${X(sp.lim[0])}%;width:${X(sp.lim[1]) - X(sp.lim[0])}%"></span>${sp.typ.map(([a, b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6, X(b) - X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${r.spanUsed ? (r.spanLabel || `needs Ø${f1(r.spanUsed)} m`) + ' · ' : ''}${sp.lim[0]}–${sp.lim[1]} m · usual ${sp.typ.map(t => t.join('–')).join(', ')}${r.sys.spanSrc ? ' · rule of thumb, not in Engel' : ''}${r.sys.spanNote ? ' · ' + r.sys.spanNote : ''}</small>`; } },
         { t: 'Structure zone', tip: 'Height given to structure above the clear height', k: 'zone', f: r => f2(r.zone) + ' m', sub: r => r.sys.rule[r.m] },
         { t: 'Total height', tip: 'Ground to the highest point', k: 'top', f: r => f2(r.top) + ' m' },
         { t: 'Footprint', tip: 'Ground width the system needs, incl. arch feet, anchors, walls', k: 'footW', f: r => f1(r.footW) + ' m', sub: r => r.footW > S.L + 1 ? `${f1(r.footW - S.L)} m beyond the space` : '' },
         { t: 'Space efficiency', tip: 'Clear section L×H ÷ the whole enclosed section', k: 'eff', f: r => Math.round(r.eff * 100) + '%', barv: r => r.eff },
+        { t: 'Ceiling from below', tip: 'Length of structure seen from below, per m² of floor — low is a calm ceiling, high a busy one. Parts stacked above each other count once. Our reading of Moussavi, measured from the geometry', k: 'calm', f: r => { const c = ceilOf(r); return c ? f2(c.dens) + ' m/m²' : '<span class="cwait">…</span>'; }, sub: r => { const c = CEIL.get(r.sys.id); return !c ? '' : c.dens < 0.02 ? 'a smooth surface' : `like one line every ${f1(1 / c.dens)} m`; } },
         { t: 'Columns', tip: 'Count for the whole hall', k: 'cols', f: r => r.cols || '—', sub: r => r.colNote },
         { t: 'Roof load', tip: 'Automatic: own weight + covering + services + Thai live load', k: 'q', f: r => f2(r.load.q) + ' kN/m²', sub: r => `own ${f2(r.load.own)} + ${r.load.finName} ${f2(r.load.fin)} + services ${f2(r.load.svc)} + live ${f2(r.load.live)}` },
         { t: 'Thrust / tie', tip: 'Horizontal force that a tie, walls, anchors or a ring must take', f: r => r.thrust == null ? '—' : Math.round(r.thrust) + (r.thrustPerArch || r.thrustIsRing ? ' kN' : ' kN/m'), sub: r => r.thrust == null ? '' : r.thrustNote, sub2: r => r.thrust == null ? '' : THRUST_SRC[r.sys.id] ? 'Source: ' + THRUST_SRC[r.sys.id] : '' },
-        { t: 'Why', tip: '', f: r => `<div class="why">${esc(r.notes[0])}</div>` }
+        { t: 'Why', tip: '', f: r => { const tn = timberNote(r); return `<div class="why">${esc(r.notes[0])}</div>` + (tn ? `<div class="why tim"><b>Timber:</b> ${esc(tn.t)}<small title="${esc(tn.src)}">Sources: ${esc(tn.src)}</small></div>` : ''); } }
     ];
 
     // results are built on demand and kept until the hall or the load changes: what is on screen first,
@@ -3051,7 +3237,7 @@
         PR = projector();
         const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, S.vaultMode, S.q]);
         if (k === resKey) return;
-        resKey = k; EV = new Map(); RES = []; clearTimeout(restJob); DRAW.clear(); asked.clear(); drawJob++;
+        resKey = k; EV = new Map(); RES = []; clearTimeout(restJob); DRAW.clear(); asked.clear(); CEIL.clear(); askedC.clear(); drawJob++;
         let i = 0; const key = k;
         const step = () => { if (key !== resKey) return; const t0 = performance.now(); while (i < SYS.length && performance.now() - t0 < 8) byId(SYS[i++].id);
             if (i < SYS.length) restJob = setTimeout(step, 0); else { resAll(); drawRank(); } };
@@ -3064,8 +3250,10 @@
     // orders and writes the paths, and sends back only text; the page places it. Without workers everything is drawn here.
     const DRAW = new Map(), asked = new Set(); let drawJob = 0;
     const worker = (() => { try {
-        const glue = `\nself.onmessage = e => { const { job, s, ids } = e.data; Object.assign(S, s); PR = projector();
-            for (const id of ids) { const sys = SYS.find(x => x.id === id); if (!sys) continue; try { const r = evaluate(sys), P = r.P3; postMessage({ job, id, body: axoBody(P), box: bounds3([P]) }); } catch (err) { postMessage({ job, id, err: String(err) }); } } };`;
+        const glue = `\nself.onmessage = e => { const { job, s, ids, what } = e.data; Object.assign(S, s); PR = projector();
+            for (const id of ids) { const sys = SYS.find(x => x.id === id); if (!sys) continue;
+                try { const r = evaluate(sys); if (what === 'ceil') postMessage({ job, id, ceil: ceilingStats(r) }); else { const P = r.P3; postMessage({ job, id, body: axoBody(P), box: bounds3([P]) }); } }
+                catch (err) { postMessage({ job, id, what, err: String(err) }); } } };`;
         const w = new Worker(URL.createObjectURL(new Blob([document.getElementById('engine').textContent + glue], { type: 'text/javascript' })));
         w.onmessage = e => drawArrived(e.data); w.onerror = () => {}; return w; } catch (_) { return null; } })();
     function wantDraw(ids) {
@@ -3074,8 +3262,24 @@
         need.forEach(id => asked.add(id)); worker.postMessage({ job: drawJob, s: Object.assign({}, S), ids: need });
     }
     const unionBox = ids => { const b = ids.map(id => DRAW.get(id).box); return { x0: Math.min(...b.map(q => q.x0)), x1: Math.max(...b.map(q => q.x1)), y0: Math.min(...b.map(q => q.y0)), y1: Math.max(...b.map(q => q.y1)) }; };
+    // ceilings (roof light, structure seen from below) are measured in the worker too
+    const CEIL = new Map(), askedC = new Set(), CEILM = ['calm', 'busy']; let afterCeil = null, ceilFrame = 0;
+    function wantCeil(ids) {
+        const need = ids.filter(id => !CEIL.has(id) && !askedC.has(id)); if (!need.length) return;
+        if (!worker) { for (const id of need) CEIL.set(id, ceilingStats(byId(id))); return; }
+        need.forEach(id => askedC.add(id)); worker.postMessage({ job: drawJob, s: Object.assign({}, S), ids: need, what: 'ceil' });
+    }
+    const ceilOf = r => { const c = CEIL.get(r.sys.id); if (!c) wantCeil([r.sys.id]); return c; };
+    const allCeil = () => SYS.every(s_ => CEIL.has(s_.id));
+    function ceilArrived(m) {
+        CEIL.set(m.id, m.ceil || ceilingStats(byId(m.id)));
+        if (!ceilFrame) ceilFrame = setTimeout(() => { ceilFrame = 0;   // batched; a timer, not a frame, so it also runs in a hidden tab
+            if (!folded.cmp && document.querySelector('#grid .cwait')) render(true);
+            if (allCeil()) { if (needCeil()) drawRank(); if (afterCeil) { const f = afterCeil; afterCeil = null; f(); } } }, 30);
+    }
     function drawArrived(m) {
         if (m.job !== drawJob) return;
+        if (m.ceil || m.what === 'ceil') return ceilArrived(m);
         if (m.err) { const r = byId(m.id); m = { id: m.id, body: axoBody(r.P3), box: bounds3([r.P3]) }; }   // fall back to drawing it here
         DRAW.set(m.id, { body: m.body, box: m.box });
         document.querySelectorAll(`[data-draw="${m.id}"]`).forEach(el => { el.innerHTML = axoFrame(m.body, m.box); el.removeAttribute('data-draw'); });
@@ -3103,9 +3307,11 @@
             const bv = M ? sel.map(row.barv || M.v) : null, mx = bv ? Math.max(...bv.map(Math.abs), 1e-9) : 1;
             const okv = vals ? vals.filter((v, i) => matOk(sel[i])) : [], bestOk = okv.length ? Math.min(...okv) : null;
             const mark = i => M && sel.length > 1 && matOk(sel[i]) && vals[i] === bestOk && vals.some(v => v !== bestOk);
-            h += `<div class="rh k" title="${esc(row.tip)}">${row.t}</div>` + sel.map((r, i) => {
+            const ci = critList().findIndex(c => SORTROW[c] === (row.k || row.t)), on = ci >= 0 ? 'sorted' : '';   // ข: the rows of the criteria
+            const lab = ci < 0 ? '' : critList().length > 1 ? `criterion ${ci + 1} · ${Math.round(critW()[ci] * 100)}%` : 'sorted by';
+            h += `<div class="rh k ${on}" data-lab="${lab}" title="${esc(row.tip)}">${row.t}</div>` + sel.map((r, i) => {
                 const sub = row.sub ? row.sub(r) : '', sub2 = row.sub2 ? row.sub2(r) : '';
-                return `<div class="cell ${mark(i) ? 'best' : ''} ${matOk(r) ? '' : 'alt'}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}${sub2 ? `<small class="src" title="${esc(sub2)}">${esc(sub2)}</small>` : ''}</div>`;
+                return `<div class="cell ${on} ${mark(i) ? 'best' : ''} ${matOk(r) ? '' : 'alt'}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}${sub2 ? `<small class="src" title="${esc(sub2)}">${esc(sub2)}</small>` : ''}</div>`;
             }).join('') + pad;
         }
         if (!folded.cmp) g.innerHTML = h;
@@ -3113,7 +3319,13 @@
         document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
         $('qNote').textContent = finishNote || `covering applies to frames, trusses, arches, cables · shells are their own roof`;
         $('nSys').textContent = SYS.length;
-        $('suggest').textContent = metric === 'span' ? 'Suggest five' : `Suggest five · ${$('metric').selectedOptions[0].text.replace(/ \(.*\)/, '')}`;
+        $('suggest').textContent = 'Suggest five by';
+        if (!$('metric2').options.length) { $('metric2').innerHTML = $('metric').innerHTML; for (const k of ['crit2', 'crit3']) $(k).innerHTML = '<option value="">—</option>' + $('metric').innerHTML; }
+        $('metric').value = $('metric2').value = metric; $('crit2').value = crit2; $('crit3').value = crit3;
+        // ง: say whether the five on the table are still the ones this criterion picked
+        const cl = critList(), mName = cl.map(critName).join(', then '), own = !(basis && basis.crit === cl.join() && basis.slots.join() === slots.join());
+        $('cmpBasis').textContent = own ? (basis ? 'your own selection — changed after the suggestion' : 'your own selection') : `the best five by ${mName}${cl.length > 1 ? ` (weighted ${critW().map(w => Math.round(w * 100)).join('/')})` : ''}, of ${SYS.length}`;
+        $('cmpBasis').classList.toggle('own', own && !!basis);
         applyFold();
         if (!light) { drawTree(); if (RES.length === SYS.length) drawRank(); }
         if (modalId) drawModal();
@@ -3181,14 +3393,16 @@
         document.querySelectorAll('#presets button').forEach(b => { const p = PRESETS[+b.dataset.p]; b.classList.toggle('on', p.L === S.L && p.W === S.W && p.H === S.H); });
     }
 
-    const sortByMetric = list => list.slice().sort((a, b) => MEASURE[metric].v(a) - MEASURE[metric].v(b) || RANKST[a.st] - RANKST[b.st]);
+    const sortByMetric = list => { const M = critList().length > 1 ? MIX : MEASURE[metric]; return list.slice().sort((a, b) => M.v(a) - M.v(b) || RANKST[a.st] - RANKST[b.st]); };
     function drawRank() {
         if (RES.length !== SYS.length || folded.rank) return;   // drawn once every system is built, and only when open
+        if (needCeil() && !allCeil()) { wantCeil(SYS.map(s_ => s_.id)); $('rankNote').textContent = 'measuring the ceilings of all systems…'; return; }
+        const multi = critList().length > 1;
         const el = $('dots'), W = el.clientWidth || 1000, rowH = 22, lab = 190, top = 22, H = top + RES.length * rowH + 8;
         const F = 'font-family="Helvetica Neue, Helvetica, Arial, sans-serif"';
         let s = '';
         const rows = sortByMetric(RES);
-        if (metric === 'span') {
+        if (metric === 'span' && !multi) {
             const lo = Math.log(3), hi = Math.log(500), X = v => lab + (W - lab - 20) * (Math.log(v) - lo) / (hi - lo);
             for (const t of [3, 5, 10, 20, 30, 50, 100, 200, 500]) s += `<line x1="${X(t)}" x2="${X(t)}" y1="${top - 6}" y2="${H}" stroke="#e6e6e6"/><text x="${X(t)}" y="${top - 10}" font-size="9" fill="#aaa" text-anchor="middle" ${F}>${t} m</text>`;
             rows.forEach((r, i) => {
@@ -3198,13 +3412,13 @@
             s += `<line x1="${X(S.L)}" x2="${X(S.L)}" y1="${top - 4}" y2="${H}" stroke="#c62828"/>`;
             $('rankNote').textContent = 'line = possible, bar = usual, red = your span, red circle = the larger span a system itself needs (arch feet, enclosing circle) · pp. 62, 138, 176, 216 · click a row to add or remove it';
         } else {
-            const M = MEASURE[metric], show = M.show || M.v, mx = Math.max(...rows.map(show)) * 1.08 || 1, X = v => lab + (W - lab - 60) * v / mx;
+            const M = multi ? MIX : MEASURE[metric], show = M.show || M.v, mx = multi ? 100 : Math.max(...rows.map(show)) * 1.08 || 1, X = v => lab + (W - lab - 60) * v / mx;
             for (let t = 0; t <= 4; t++) { const v = mx * t / 4; s += `<line x1="${X(v)}" x2="${X(v)}" y1="${top - 4}" y2="${H}" stroke="#e6e6e6"/><text x="${X(v)}" y="${top - 8}" font-size="9" fill="#aaa" text-anchor="middle" ${F}>${M.fmt(v)}</text>`; }
             rows.forEach((r, i) => {
                 const y = top + i * rowH + rowH / 2, v = show(r), c = r.st === 'out' ? '#bbb' : '#111';
                 s += row(r, y, W) + `<line x1="${X(0)}" x2="${X(v)}" y1="${y}" y2="${y}" stroke="#ddd"/><circle cx="${X(v)}" cy="${y}" r="3.5" fill="${r.st === 'typ' ? c : '#fff'}" stroke="${c}"/><text x="${X(v) + 8}" y="${y + 3.5}" font-size="10" fill="#777" ${F}>${M.fmt(v)}</text></g>`;
             });
-            $('rankNote').textContent = 'filled = usual span · ring = possible · grey = outside Engel’s range · click a row to add or remove it';
+            $('rankNote').textContent = (multi ? `combined score 0–100: ${critList().map((c, k) => `${critName(c)} ${Math.round(critW()[k] * 100)}%`).join(' + ')} — each ranks all systems, the ranks are weighted · ` : '') + 'filled = usual span · ring = possible · grey = outside Engel’s range · click a row to add or remove it';
         }
         el.setAttribute('viewBox', `0 0 ${W} ${H}`); el.setAttribute('height', H); el.innerHTML = s;
         function row(r, y, W) {
@@ -3215,10 +3429,12 @@
 
     // the five at the top of the current ranking, skipping systems outside Engel's range
     function suggest() {
+        if (needCeil() && !allCeil()) { afterCeil = suggest; wantCeil(SYS.map(s_ => s_.id)); $('suggest').textContent = 'Measuring ceilings…'; return; }
         setFold('cmp', false);   // show what was suggested
         // systems that exist in the chosen material first; only then the others
         resAll(); const feas = [...sortByMetric(RES).filter(r => r.st !== 'out' && matOk(r)), ...sortByMetric(RES).filter(r => r.st !== 'out' && !matOk(r))];
         slots = (feas.length ? feas : sortByMetric(RES)).slice(0, 5).map(r => r.sys.id);
+        basis = { crit: critList().join(), slots: slots.slice() };
         render();
     }
 
@@ -3226,11 +3442,12 @@
         const r = byId(modalId);
         $('mName').textContent = r.sys.name;
         $('mSub').textContent = `${r.sys.code} · ${FAM[r.sys.fam]} · ${MATNAME[r.m]}`;
-        drawBig();
+        drawBig(); drawEye();
         $('mSec').innerHTML = sectionSVG(r, frameBox([r]), { big: true });
         $('mStatus').innerHTML = `<span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
         $('mPlan').innerHTML = planSVG(r);
-        $('mNotes').innerHTML = r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${THRUST_SRC[r.sys.id] ? `<br><i>Source: ${esc(THRUST_SRC[r.sys.id])}</i>` : ''}</li>` : '');
+        const tn = timberNote(r);
+        $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${THRUST_SRC[r.sys.id] ? `<br><i>Source: ${esc(THRUST_SRC[r.sys.id])}</i>` : ''}</li>` : '');
         $('mVar').innerHTML = r.sys.id === 'vault' ? vaultVariants() : '';
     }
     // the same vault with its thrust taken three ways (Engel p.113)
@@ -3292,6 +3509,9 @@
 
     // ---- ranking ----
     $('metric').addEventListener('change', e => { metric = e.target.value; render(); });
+    $('metric2').addEventListener('change', e => { metric = e.target.value; render(); });
+    $('crit2').addEventListener('change', e => { crit2 = e.target.value; render(); });
+    $('crit3').addEventListener('change', e => { crit3 = e.target.value; render(); });
     $('dots').addEventListener('click', e => {
         const g = e.target.closest('[data-id]'); if (!g) return; const id = g.dataset.id;
         if (slots.includes(id)) { if (slots.length > 1) slots = slots.filter(x => x !== id); }
@@ -3303,18 +3523,33 @@
     // ---- enlarged view ----
     let mdrag = null, bigFrame = 0;
     const MV = { rot: AXO.rot, elev: AXO.elev };   // the enlarged view's own angle
-    function openModal(id) { modalId = id; MV.rot = AXO.rot; MV.elev = AXO.elev; bigFit = null; $('modal').classList.add('show'); drawModal(); }
+    function openModal(id) { modalId = id; MV.rot = AXO.rot; MV.elev = AXO.elev; bigFit = null; EYE.yaw = EYE0.yaw; EYE.pitch = EYE0.pitch; $('modal').classList.add('show'); drawModal(); }
+    // the view from inside: standing still at eye height a quarter of the way along the hall, looking down its length and a little up;
+    // dragging only turns the head (the scene follows the hand), 90° across the width of the view
+    const EYE0 = { yaw: 0, pitch: 20 * Math.PI / 180 }, EYE = { ...EYE0 }; let edrag = null, eyeFrame = 0;
+    function drawEye() {
+        const r = byId(modalId); if (!r) return;
+        const el = $('mEye'), a = (el.clientHeight || 300) / (el.clientWidth || 480);
+        const P = eyeScene(r._sc || (r._sc = scene3D(r)), { x: S.L / 2, y: S.W / 4, z: 1.6, yaw: EYE.yaw, pitch: EYE.pitch, ay: a });
+        el.innerHTML = axoFrame(axoBody(P, !!edrag), { x0: -1, x1: 1, y0: -a, y1: a });
+    }
+    $('mEye').addEventListener('pointerdown', e => { edrag = { x: e.clientX, y: e.clientY, yaw: EYE.yaw, pitch: EYE.pitch, w: $('mEye').clientWidth || 480 }; try { $('mEye').setPointerCapture(e.pointerId); } catch (_) {} });
+    $('mEye').addEventListener('pointermove', e => { if (!edrag) return; const k = (Math.PI / 2) / edrag.w;
+        EYE.yaw = edrag.yaw - (e.clientX - edrag.x) * k; EYE.pitch = clamp(edrag.pitch + (e.clientY - edrag.y) * k, -60 * Math.PI / 180, 88 * Math.PI / 180);
+        if (!eyeFrame) eyeFrame = requestAnimationFrame(() => { eyeFrame = 0; drawEye(); }); });
+    $('mEye').addEventListener('pointerup', () => { if (edrag) { edrag = null; drawEye(); } });   // full drawing on release
+    $('mEyeReset').addEventListener('click', () => { EYE.yaw = EYE0.yaw; EYE.pitch = EYE0.pitch; drawEye(); });
     // the big drawing at the view's angle; the frame's size is fitted once, when the view opens (or is reset), and then only
     // follows the model's centre — so turning never rescales it
     let bigFit = null;
     function drawBig(refit = false) {
         const r = byId(modalId); if (!r) return;
-        const pr = projector(MV.rot, MV.elev), P3 = projectScene(scene3D(r), pr);
+        const pr = projector(MV.rot, MV.elev), P3 = projectScene(r._sc || (r._sc = scene3D(r)), pr);
         if (!r._c) { const P = P3.length ? scene3D(r).flatMap(o => o.pts) : [[0, 0, 0]]; const lo = [0, 1, 2].map(k => Math.min(...P.map(p => p[k]))), hi = [0, 1, 2].map(k => Math.max(...P.map(p => p[k]))); r._c = lo.map((v, k) => (v + hi[k]) / 2); }
         const pc = pr(r._c);
         if (refit || !bigFit || bigFit.id !== r.sys.id) { const b = bounds3([P3]); bigFit = { id: r.sys.id, w: (b.x1 - b.x0) * 1.15, h: (b.y1 - b.y0) * 1.15, dx: (b.x0 + b.x1) / 2 - pc[0], dy: (b.y0 + b.y1) / 2 - pc[1] }; }
         const cx = pc[0] + bigFit.dx, cy = pc[1] + bigFit.dy;
-        $('mBig').innerHTML = axoSVG(P3, { x0: cx - bigFit.w / 2, x1: cx + bigFit.w / 2, y0: cy - bigFit.h / 2, y1: cy + bigFit.h / 2 });
+        $('mBig').innerHTML = axoFrame(axoBody(P3, !!mdrag), { x0: cx - bigFit.w / 2, x1: cx + bigFit.w / 2, y0: cy - bigFit.h / 2, y1: cy + bigFit.h / 2 });
     }
     // closing the enlarged view always brings the drawings back to the standard axonometric angle
     const closeModal = () => { if (!$('modal').classList.contains('show')) return; modalId = null; $('modal').classList.remove('show'); mdrag = null; };
@@ -3326,7 +3561,7 @@
     $('mBig').addEventListener('pointermove', e => { if (!mdrag) return; const k = 180 / mdrag.w;
         MV.rot = ((mdrag.r - (e.clientX - mdrag.x) * k) % 360 + 540) % 360 - 180; MV.elev = clamp(mdrag.e + (e.clientY - mdrag.y) * k, 5, 85);
         if (!bigFrame) bigFrame = requestAnimationFrame(() => { bigFrame = 0; drawBig(); }); });
-    $('mBig').addEventListener('pointerup', () => mdrag = null);
+    $('mBig').addEventListener('pointerup', () => { if (mdrag) { mdrag = null; drawBig(); } });   // full drawing on release
 
     render();
 })();
