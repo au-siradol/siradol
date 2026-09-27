@@ -399,12 +399,19 @@
               const V = { mode, bay, t, inner, Hv };
               let parts, foot, cols, colNote, thrustNote, thrust = Hv, perArch = false, notes, tw, bd = 0;
               if (mode === 'buttress') {
-                  tw = Math.max(0.4, L / 15); bd = Math.max(1, L / 6);
-                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), poly([[-tw, 0], [-tw - bd, 0], [-tw - bd * 0.35, H * 0.9], [-tw, H * 0.9]], 'light'), poly([[L + tw, 0], [L + tw + bd, 0], [L + tw + bd * 0.35, H * 0.9], [L + tw, H * 0.9]], 'light'), band(inner, t)];
+                  tw = Math.max(0.4, L / 15);
+                  // buttress depth from statics: per bay, the resultant of thrust, vault reaction and the weight of wall + buttress
+                  // must fall inside the middle third of the base (masonry: no tension at the joints)
+                  const g = 20, bw = Math.max(0.5, L / 30), hW = H + t, Vv = q * L / 2 * bay, Hb = Hv * bay;
+                  const resultant = b_ => { const B = tw + b_, Ww = g * tw * hW * bay, a = b_, c = 0.35 * b_, Wb = g * (a + c) / 2 * hW * bw, xb = b_ - (a * a + a * c + c * c) / (3 * (a + c));
+                      const N = Ww + Wb + Vv; return { B, e: (Ww * (b_ + tw / 2) + Wb * xb + Vv * B - Hb * hW) / N }; };
+                  bd = Math.max(1, L / 10); while (resultant(bd).e < resultant(bd).B / 3 && bd < L) bd += 0.1;
+                  const R_ = resultant(bd); V.check = R_;
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), poly([[-tw, 0], [-tw - bd, 0], [-tw - bd * 0.35, hW], [-tw, hW]], 'light'), poly([[L + tw, 0], [L + tw + bd, 0], [L + tw + bd * 0.35, hW], [L + tw, hW]], 'light'), band(inner, t)];
                   foot = [-tw - bd, L + tw + bd]; cols = 2 * (Math.ceil(W / bay) + 1);
                   colNote = `walls ${f2(tw)} m + buttresses every ${f1(bay)} m, ${f1(bd)} m deep`;
                   thrustNote = `per metre, ${f1(Hv * bay)} kN into each buttress`;
-                  notes = [`Buttresses every ${f1(bay)} m take the thrust as leaning masses; between them the wall is ${f2(tw)} m instead of L/5 = ${f2(L / 5)} m (Engel p.113, "buttressed").`, 'The buttresses stand outside the space: they cost ground width, not clear height.'];
+                  notes = [`Buttresses every ${f1(bay)} m take the thrust as leaning masses; between them the wall is ${f2(tw)} m instead of L/5 = ${f2(L / 5)} m (Engel p.113, "buttressed").`, `Buttress depth from statics, not a rule of thumb: per bay the thrust ${Math.round(Hb)} kN at ${f1(hW)} m, the vault's ${Math.round(Vv)} kN and the masonry's weight give a resultant ${f2(R_.e)} m in from the outer edge of the ${f2(R_.B)} m base — inside the middle third, so no joint opens (masonry rule, J. Heyman, The Stone Skeleton, 1995).`, 'The buttresses stand outside the space: they cost ground width, not clear height.'];
               } else if (mode === 'tie') {
                   tw = Math.max(0.3, L / 25);
                   parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), line([[0, H], [L, H]], 'tie')];
@@ -484,7 +491,7 @@
               };
           } },
         { id: 'space', fam: 2, code: '2.4.1', name: 'Space truss (two-way)', mats: ['steel', 'timber'],
-          spans: { steel: { lim: [6, 120], typ: [[25, 100]] }, timber: { lim: [8, 80], typ: [[15, 60]] } },
+          spans: { steel: { lim: [6, 130], typ: [[25, 100]] }, timber: { lim: [8, 80], typ: [[15, 60]] } },
           rule: { steel: 'd = Ls/22 · √(2α)', timber: 'd = Ls/18 · √(2α)' },
           twoWay: true,
           build(L, H, W, m, q) {
@@ -494,7 +501,7 @@
               for (let i = 0; i < n; i++) web.push(line([[i * p, H + d], [(i + 0.5) * p, H], [(i + 1) * p, H + d]], 'thin'));
               const ch = Math.max(0.06, d / 16);
               return {
-                  parts: [...columns(L, H, c), rect(-c, H + d - ch, L + c, H + d), line([[0.5 * p, H], [L - 0.5 * p, H]], 'member'), ...web],
+                  parts: [...columns(L, H + d, c), rect(-c, H + d - ch, L + c, H + d), line([[0.5 * p, H], [L - 0.5 * p, H]], 'member'), ...web],   // supported at the top-chord nodes
                   roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `d ${f2(d)}`, zone: d, cols: perimeter(L, W, s), colNote: `perimeter columns every ${f1(s)} m, module ${f1(p)} m`,
                   plan: { kind: 'grid', s, a: p },
@@ -503,7 +510,7 @@
           } },
 
         { id: 'lamella', fam: 2, code: '2.3 · singly curved', name: 'Lamella barrel roof', mats: ['timber', 'steel'],
-          spans: { timber: { lim: [8, 30], typ: [[12, 25]] }, steel: { lim: [10, 90], typ: [[20, 60]] } },
+          spans: { timber: { lim: [8, 30], typ: [[12, 25]] }, steel: { lim: [10, 90], typ: [[20, 80]] } },
           rule: { timber: 'rise L/6 · lamella depth L/60 · tie', steel: 'rise L/6 · lamella depth L/80 · tie' },
           build(L, H, W, m, q) {
               const f = L / 6, t = L / ({ timber: 60, steel: 80 }[m]), c = colW(m, H), s = 6;
@@ -518,23 +525,6 @@
                   notes: ['Short identical members (lamellas) cross in a diamond net on a curved surface: every node is shared by two arches, so a point load spreads to its neighbours (Engel pp.152–155).', 'Zollinger’s system: small pieces, one joint type — cheap to make, and the net stiffens the arch against uneven load.']
               };
           } },
-        { id: 'geodesic', fam: 2, code: '2.3 · spherical', name: 'Geodesic dome', mats: ['steel', 'timber'],
-          spans: { steel: { lim: [20, 500], typ: [[60, 150]] }, timber: { lim: [20, 200], typ: [[40, 120]] } },
-          rule: { steel: 'hemisphere R = √(H² + L²/4) · depth R/60', timber: 'hemisphere R = √(H² + L²/4) · depth R/40' },
-          build(L, H, W, m, q) {
-              const R = Math.sqrt(H * H + L * L / 4), t = R / ({ steel: 60, timber: 40 }[m]), n = Math.max(1, Math.floor(W / (2 * R)));
-              const pts = []; for (let i = 0; i <= 60; i++) { const a = Math.PI * i / 60; pts.push([L / 2 - R * Math.cos(a), R * Math.sin(a)]); }
-              return {
-                  parts: [band(pts, t)],
-                  roof: pts.map(([x, y]) => [x, y + t]), foot: [L / 2 - R, L / 2 + R],
-                  zoneLabel: `crown ${f1(R)}`, zone: R + t - H, cols: 0, colNote: `${n} dome${n > 1 ? 's' : ''} ${f1(2 * R)} m across, on a ground ring — no columns`,
-                  thrust: null, thrustNote: 'a hemisphere meets the ground vertically — almost no outward thrust at the ring',
-                  plan: { kind: 'geo', R, n },
-                  geo: { R, n },
-                  notes: ['An icosahedron projected onto a sphere: all triangles, so every bar is axial and the net needs no bracing (Engel p.155, geodesic).', `To keep ${f1(H)} m clear across ${f1(L)} m the sphere must be ${f1(2 * R)} m wide — a dome covers a circle, not a long hall.`]
-              };
-          } },
-
         // ===== 3 SECTION-ACTIVE =====
         { id: 'beam', fam: 3, code: '3.1.1', name: 'Beam on columns', mats: ['steel', 'timber', 'concrete'],
           spans: SP_BEAM1,
@@ -901,7 +891,8 @@
               for (const [x0, y0, x1, y1] of rs) { const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rh = Math.max(0.6, L * 0.04), zt = H + e + F;
                   o.posts.push([cx, cy, zt + 0.6]);
                   o.lines3.push(ringLine([cx, cy, rh], zt, 'member'), ...[0, 1, 2, 3].map(k => ({ c: 'thin', pts: [[cx, cy, zt + 0.6], [cx + rh * Math.cos(k * Math.PI / 2), cy + rh * Math.sin(k * Math.PI / 2), zt]] })));
-                  for (const [x, y] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1], [x0, cy], [x1, cy]]) o.posts.push([x, y, H + e]); }
+                  const mz = o.mods[rs.findIndex(q => q[1] === y0)].z;   // edge posts reach the membrane where it meets them
+                  for (const [x, y] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1], [x0, cy], [x1, cy]]) o.posts.push([x, y, mz(x, y)]); }
               o.posts = uniq(o.posts);
               const r = surfaceHall(o);
               return Object.assign(r, { zone: e + F, cols: o.posts.length, colNote: `${rs.length} mast${rs.length > 1 ? 's' : ''} inside the space + edge posts`, thrust: null, thrustNote: 'membrane anchored to the edge posts all round',
@@ -1194,7 +1185,8 @@
     function threeSpan(L, H, W, m, q, o) {
         const a = L / 2, c = colW(m, H), s = spacing3(m), d = L / o.ratio(m), X = [-a, 0, L, L + a];
         const b = beamBand(o.zu, d, -a - c, L + a + c, [0, L, L / 2]);
-        const parts = [rect(-a - c, 0, -a, o.zu(-a)), rect(-c, 0, 0, o.zu(0)), rect(L, 0, L + c, o.zu(L)), rect(L + a, 0, L + a + c, o.zu(L + a)), b.part];
+        const col = (x0, x1) => poly([[x0, 0], [x1, 0], [x1, o.zu(x1)], [x0, o.zu(x0)]]);   // column heads follow the beam's underside
+        const parts = [col(-a - c, -a), col(-c, 0), col(L, L + c), col(L + a, L + a + c), b.part];
         for (const x of o.hinges || []) parts.push(hingeAt(x, o.zu(x) + d / 2, Math.max(0.15, d * 0.45)));
         return {
             parts, roof: [[-a - c, 0], ...b.top, [L + a + c, 0]], foot: [-a - c, L + a + c],
@@ -1251,7 +1243,7 @@
           own: (m, L) => beamOwn(m, L, L / R3(m, 22, 17, 14), spacing3(m)),
           build(L, H, W, m, q) {
               const d = L / R3(m, 22, 17, 14), c = colW(m, H), s = spacing3(m), zu = x => H + x / 6, b = beamBand(zu, d, -c, L + c, [0, L]);
-              return { parts: [rect(-c, 0, 0, zu(0)), rect(L, 0, L + c, zu(L)), b.part], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
+              return { parts: [poly([[-c, 0], [0, 0], [0, zu(0)], [-c, zu(-c)]]), poly([[L, 0], [L + c, 0], [L + c, zu(L + c)], [L, zu(L)]]), b.part], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
                   zone: L / 6 + d, cols: alongSides(W, s), colNote: `beams every ${f1_(s)} m; the high side is ${f1_(L / 6)} m taller`, plan: { kind: 'oneway', s },
                   notes: ['A straight beam laid on a slope: it still spans by bending, so it needs the depth of a level beam; the slope only drains the roof (Engel 3.1.1.2).'] };
           } },
@@ -1259,7 +1251,7 @@
           own: (m, L) => beamOwn(m, L, L / R3(m, 22, 17, 14), spacing3(m)),
           build(L, H, W, m, q) {
               const d = L / R3(m, 22, 17, 14), c = colW(m, H), s = spacing3(m), xk = 0.4 * L, zu = x => H + Math.min(x, xk) / 4, b = beamBand(zu, d, -c, L + c, [0, xk, L]);
-              return { parts: [rect(-c, 0, 0, zu(0)), rect(L, 0, L + c, zu(L)), b.part], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
+              return { parts: [poly([[-c, 0], [0, 0], [0, zu(0)], [-c, zu(-c)]]), poly([[L, 0], [L + c, 0], [L + c, zu(L + c)], [L, zu(L)]]), b.part], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
                   zone: xk / 4 + d, cols: alongSides(W, s), colNote: `beams every ${f1_(s)} m`, plan: { kind: 'oneway', s },
                   notes: ['A beam with a kink: the kink must be rigid, because the bending moment passes through it (Engel 3.1.1.3).'] };
           } },
@@ -1360,7 +1352,8 @@
                 const top = x => H + dh + tan * (L / 2 - Math.abs(x - L / 2));
                 const dep = x => { const e0 = Math.min(Math.abs(x), Math.abs(x - L)); let dd = e0 < 0.12 * L ? dh - (dh - dr) * e0 / (0.12 * L) : dr; const eo = Math.min(Math.abs(x + a), Math.abs(x - L - a)); if (eo < 0.12 * L) dd = Math.max(dd, 1.5 * dr - 0.5 * dr * eo / (0.12 * L)); return dd; };
                 const zu = x => top(x) - dep(x), b = beamBand(zu, dep, -a - w, L + a + w, [-a, 0, L / 2, L, L + a]);
-                const parts = [rect(-a - w, 0, -a, zu(-a)), rect(-w, 0, 0, zu(0)), rect(L, 0, L + w, zu(L)), rect(L + a, 0, L + a + w, zu(L + a)), b.part];
+                const col = (x0, x1) => poly([[x0, 0], [x1, 0], [x1, zu(x1)], [x0, zu(x0)]]);   // the column head follows the haunch above it
+                const parts = [col(-a - w, -a), col(-w, 0), col(L, L + w), col(L + a, L + a + w), b.part];
                 const k = Math.max(0.15, dr * 0.5);
                 if (kind === 'pin') for (const x of [-a - w / 2, L + a + w / 2]) parts.push(hingeAt(x, zu(x > 0 ? L + a : -a) - k, k), hingeAt(x, k, k));
                 if (kind === 'continuous') for (const x of [-a - w / 2, -w / 2, L + w / 2, L + a + w / 2]) parts.push(hingeAt(x, k, k));
@@ -1815,6 +1808,505 @@
     ];
     for (const s of FAM4) SYS.push(Object.assign({ code: '' }, s));
 
+    // ---------- family 2 variants (Engel pp.48–49; spans p.138) ----------
+    const SP2 = {
+        flat1: { steel: { lim: [10, 50], typ: [[15, 30]] }, timber: { lim: [8, 40], typ: [[15, 30]] } },
+        flat2: { steel: { lim: [20, 100], typ: [[20, 80]] }, timber: { lim: [10, 60], typ: [[20, 50]] } },
+        flat3: { steel: { lim: [10, 35], typ: [[12, 25]] }, timber: { lim: [6, 25], typ: [[10, 20]] } },
+        tr1: { steel: { lim: [15, 120], typ: [[25, 100]] }, timber: { lim: [15, 60], typ: [[20, 50]] } },
+        tr2: { steel: { lim: [10, 90], typ: [[20, 80]] }, timber: { lim: [8, 30], typ: [[12, 25]] } },
+        tr3: { steel: { lim: [15, 80], typ: [[15, 60]] }, timber: { lim: [8, 45], typ: [[15, 35]] } },
+        cu1: { steel: { lim: [10, 90], typ: [[20, 80]] }, timber: { lim: [8, 30], typ: [[12, 25]] } },
+        cu3: { steel: { lim: [20, 500], typ: [[50, 190]] }, timber: { lim: [20, 200], typ: [[40, 160]] } },
+        sp1: { steel: { lim: [6, 130], typ: [[25, 100]] }, timber: { lim: [8, 80], typ: [[15, 60]] } },
+        sp3: { steel: { lim: [15, 150], typ: [[25, 120]] }, timber: { lim: [15, 70], typ: [[20, 50]] } }
+    };
+    const MAT2 = ['steel', 'timber'], K2 = m => m === 'timber' ? 0.8 : 1, S2 = m => m === 'timber' ? 4 : 6;
+    const rowNote2 = {
+        flat2: 'p.138 has three rows for four flat-truss subtypes; bottom-chord and two-chord trusses use the second (parallel-chord) row',
+        cu2: 'p.138 second curved-truss row (drawn as a barrel with rounded ends): used for saddle and dome-shaped trusses',
+        sp2: 'p.138 second space-truss row (drawn curved): used for folded and curved space trusses' };
+    const nPan = (L, d) => Math.max(4, Math.round(L / clamp(d * 1.1, 1.2, 5) / 2) * 2);
+    const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    const add3 = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
+
+    // members of a plane truss between an inner and an outer chord with the same number of nodes;
+    // web 'pratt' = posts + diagonals falling towards mid-length, 'warren' = zigzag only
+    function trussMembers(In, Out, web = 'pratt') {
+        const n = In.length - 1, M = [{ c: 'member', pts: In }, { c: 'member', pts: Out }], far = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-3;
+        for (let i = 0; i <= n; i++) if ((web === 'pratt' || i === 0 || i === n) && far(In[i], Out[i])) M.push({ c: 'thin', pts: [In[i], Out[i]] });
+        for (let i = 0; i < n; i++) { const d = web === 'warren' ? (i % 2 ? [Out[i], In[i + 1]] : [In[i], Out[i + 1]]) : (i < n / 2 ? [Out[i], In[i + 1]] : [In[i], Out[i + 1]]); if (far(d[0], d[1])) M.push({ c: 'thin', pts: d }); }
+        return M;
+    }
+    const chordsOf = (zb, zt, xa, xb, n) => { const X = Array.from({ length: n + 1 }, (_, i) => xa + (xb - xa) * i / n); return { In: X.map(x => [x, zb(x)]), Out: X.map(x => [x, zt(x)]) }; };
+    // node lists along straight segment pairs [[inA, inB, outA, outB, n], …], corners shared
+    function segNodes(segs) {
+        const In = [], Out = [];
+        segs.forEach(([a, b, c, d, n], k) => { for (let i = k ? 1 : 0; i <= n; i++) { In.push(lerp2(a, b, i / n)); Out.push(lerp2(c, d, i / n)); } });
+        return { In, Out };
+    }
+    // plane trusses repeated every s across the hall; the outer chord is the roof line
+    function trussHall(L, H, W, o) {
+        const ys = o.ys || ysOf(W, o.s), M = trussMembers(o.In, o.Out, o.web), lines3 = [], sup = o.sup;
+        for (const y of ys) for (const mb of M) lines3.push({ c: mb.c, pts: mb.pts.map(([x, z]) => [x, y, z]) });
+        o.Out.forEach(([x, z], i) => { if (i % 2 === 0 || i === o.Out.length - 1) lines3.push({ c: 'thin', pts: [[x, ys[0], z], [x, ys[ys.length - 1], z]] }); });
+        const posts = ys.flatMap(y => sup.map(([x, z]) => [x, y, z])), xs = [...o.In, ...o.Out].map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+        const r = surfaceHall({ kind: 'none', mods: [{ rect: [x0, 0, x1, W], z: () => H, ni: 1, nj: 1 }], lines3, posts, secY: ys[0], sec: o.Out,
+            secParts: [...M.slice(1).map(mb => line(mb.pts, mb.c)), ...sup.map(([x, z]) => rect(x - 0.15, 0, x + 0.15, z))], planSegs: ys.map(y => [x0, y, x1, y, 1]) });
+        return Object.assign(r, { zone: r.topOverride - H, cols: posts.length });
+    }
+    // a pitched plane truss standing in the plane of base C1–C2 and apex A (3D), n panels
+    function faceTruss(C1, C2, A, n, lines3, cl = 'member') {
+        const B = t => add3(C1, [C2[0] - C1[0], C2[1] - C1[1], C2[2] - C1[2]], t), T = t => t <= 0.5 ? add3(C1, [A[0] - C1[0], A[1] - C1[1], A[2] - C1[2]], 2 * t) : add3(A, [C2[0] - A[0], C2[1] - A[1], C2[2] - A[2]], 2 * t - 1);
+        const In = Array.from({ length: n + 1 }, (_, i) => B(i / n)), Out = Array.from({ length: n + 1 }, (_, i) => T(i / n));
+        lines3.push({ c: cl, pts: In }, { c: cl, pts: Out });
+        for (let i = 1; i < n; i++) lines3.push({ c: 'thin', pts: [In[i], Out[i]] });
+        for (let i = 0; i < n; i++) lines3.push({ c: 'thin', pts: i < n / 2 ? [Out[i], In[i + 1]] : [In[i], Out[i + 1]] });
+    }
+    // unit normal of a surface F(u, v) by central differences, turned away from the point C
+    const normalAt = (F, u, v, C) => {
+        const e = 1e-4, a = F(Math.min(1, u + e), v), b = F(Math.max(0, u - e), v), c = F(u, Math.min(1, v + e)), d = F(u, Math.max(0, v - e));
+        const du = [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dv = [c[0] - d[0], c[1] - d[1], c[2] - d[2]];
+        let n = [du[1] * dv[2] - du[2] * dv[1], du[2] * dv[0] - du[0] * dv[2], du[0] * dv[1] - du[1] * dv[0]]; const l = Math.hypot(...n) || 1; n = n.map(x => x / l);
+        const p = F(u, v); return (n[0] * (p[0] - C[0]) + n[1] * (p[1] - C[1]) + n[2] * (p[2] - C[2])) < 0 ? n.map(x => -x) : n;
+    };
+    // a double-layer grid over the surface F: top nodes F + d·n at the grid points, bottom nodes on F at the cell centres (semi-octahedral);
+    // noBotY: bottom chords one way only (prismatic packing)
+    function spaceNet(F, nu, nv, d, C, lines3, noBotY = false) {
+        const top = (i, j) => add3(F(i / nu, j / nv), normalAt(F, i / nu, j / nv, C), d), bot = (i, j) => F((i + 0.5) / nu, (j + 0.5) / nv);
+        for (let i = 0; i <= nu; i++) lines3.push({ c: 'member', pts: Array.from({ length: nv + 1 }, (_, j) => top(i, j)) });
+        for (let j = 0; j <= nv; j++) lines3.push({ c: 'member', pts: Array.from({ length: nu + 1 }, (_, i) => top(i, j)) });
+        if (!noBotY) for (let i = 0; i < nu; i++) if (nv > 1) lines3.push({ c: 'thin', pts: Array.from({ length: nv }, (_, j) => bot(i, j)) });
+        for (let j = 0; j < nv; j++) if (nu > 1) lines3.push({ c: 'thin', pts: Array.from({ length: nu }, (_, i) => bot(i, j)) });
+        for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) { const b = bot(i, j); for (const [di, dj] of [[0, 0], [1, 0], [1, 1], [0, 1]]) lines3.push({ c: 'thin', pts: [b, top(i + di, j + dj)] }); }
+        const jm = Math.floor(nv / 2);   // a section row for the 2D view
+        return { secTop: Array.from({ length: nu + 1 }, (_, i) => top(i, jm)).map(p => [p[0], p[2]]), secBot: Array.from({ length: nu }, (_, i) => bot(i, jm)).map(p => [p[0], p[2]]) };
+    }
+    // a single-layer triangulated net over F(u, v)
+    function triNet(F, nu, nv, lines3, cl = 'member') {
+        for (let i = 0; i <= nu; i++) lines3.push({ c: cl, pts: Array.from({ length: nv * 2 + 1 }, (_, j) => F(i / nu, j / (2 * nv))) });
+        for (let j = 0; j <= nv; j++) lines3.push({ c: cl, pts: Array.from({ length: nu * 2 + 1 }, (_, i) => F(i / (2 * nu), j / nv)) });
+        for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) lines3.push({ c: 'thin', pts: (i + j) % 2 ? [F(i / nu, j / nv), F((i + 1) / nu, (j + 1) / nv)] : [F((i + 1) / nu, j / nv), F(i / nu, (j + 1) / nv)] });
+    }
+    // a triangular-section truss along an x–z path at y: bottom chord on the path, two top chords offset outward by d at y ± b/2
+    function triTruss(path, y, b, d, lines3) {
+        const n = path.length - 1, nrm = i => { const a = path[Math.max(0, i - 1)], c = path[Math.min(n, i + 1)], dx = c[0] - a[0], dz = c[1] - a[1], l = Math.hypot(dx, dz); return [-dz / l, dx / l]; };
+        const T = s_ => path.map((p, i) => { const k = nrm(i); return [p[0] + k[0] * d, y + s_ * b / 2, p[1] + k[1] * d]; });
+        const tA = T(-1), tB = T(1), B = path.slice(0, -1).map((p, i) => { const q = path[i + 1]; return [(p[0] + q[0]) / 2, y, (p[1] + q[1]) / 2]; });
+        // the bottom chord runs on to the end nodes, where the truss bears on its support, with an end frame up to the top chords
+        const E0 = [path[0][0], y, path[0][1]], E1 = [path[n][0], y, path[n][1]];
+        lines3.push({ c: 'member', pts: tA }, { c: 'member', pts: tB }, { c: 'member', pts: [E0, ...B, E1] }, { c: 'thin', pts: [tA[0], E0, tB[0]] }, { c: 'thin', pts: [tA[n], E1, tB[n]] });
+        for (let i = 0; i <= n; i++) lines3.push({ c: 'thin', pts: [tA[i], tB[i]] });
+        B.forEach((p, i) => { for (const t of [tA, tB]) lines3.push({ c: 'thin', pts: [t[i], p, t[i + 1]] }); });
+        return { top: tA.map(p => [p[0], p[2]]), bot: [E0, ...B, E1].map(p => [p[0], p[2]]) };
+    }
+    // resample a polyline at roughly spacing a, keeping its corners
+    const resamplePath = (P, a) => { const out = [P[0]]; for (let i = 0; i < P.length - 1; i++) { const n = Math.max(1, Math.round(Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]) / a)); for (let k = 1; k <= n; k++) out.push(lerp2(P[i], P[i + 1], k / n)); } return out; };
+    // a spherical cap over the hall's circle: base radius R at height H, rise f
+    function capOf(L, W, H, fr = 1 / 3) {
+        const d = hallDisk(L, W), R = d[2], f = R * fr, Rs = (R * R + f * f) / (2 * f), zc = H + f - Rs;
+        return { d, R, f, Rs, zc, P: (rho, th) => [d[0] + rho * Math.cos(th), d[1] + rho * Math.sin(th), zc + Math.sqrt(Math.max(0, Rs * Rs - rho * rho))] };
+    }
+    function domeHall(L, H, W, m, q, cap, lines3, o) {
+        const { d, R, Rs } = cap, posts = ringPosts(d, H), phi0 = Math.asin(R / Rs), ring = q * Rs / 2 * Math.cos(phi0) * R;
+        lines3.push(ringLine(d, H));
+        const r = surfaceHall({ kind: 'none', mods: [{ disk: d, z: (x, y) => cap.P(Math.hypot(x - d[0], y - d[1]), 0)[2], ni: 1, nj: 8 }], lines3, posts, secY: d[1],
+            sec: Array.from({ length: 25 }, (_, i) => { const x = d[0] - R + 2 * R * i / 24; return [x, cap.P(Math.abs(x - d[0]), 0)[2]]; }), secParts: [rect(d[0] - R - 0.3, 0, d[0] - R, H), rect(d[0] + R, 0, d[0] + R + 0.3, H)] });
+        return Object.assign(r, { zone: r.topOverride - H, spanUsed: 2 * R, cols: posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the hall; ring beam on columns`,
+            thrust: ring, thrustNote: 'tension in the ring beam, treating the net as the spherical cap it follows', thrustIsRing: true, notes: o.notes });
+    }
+    // columns under the top-layer nodes along the two long edges (u = 0 and 1), about every s
+    function edgeNodes(F, nu, nv, d, C, s, W) {
+        const k = Math.max(1, Math.round(s / (W / nv))), P = [];
+        for (let j = 0; j <= nv; j++) if (j % k === 0 || j === nv) for (const u of [0, 1]) P.push(add3(F(u, j / nv), normalAt(F, u, j / nv, C), d));
+        return P;
+    }
+    // a space-truss hall over F with posts
+    function spaceHall(L, H, W, o) {
+        const lines3 = [], s2 = spaceNet(o.F, o.nu, o.nv, o.d, o.C, lines3, o.noBotY);
+        const zig = []; s2.secBot.forEach((b, i) => zig.push(s2.secTop[i], b)); zig.push(s2.secTop[s2.secTop.length - 1]);
+        const r = surfaceHall({ kind: 'none', mods: o.mods, lines3, posts: o.posts, anchors: o.anchors, secY: W / 2, sec: s2.secTop,
+            secParts: [line(s2.secBot, 'thin'), line(zig, 'thin'), ...(o.secPosts || [])], planSegs: o.planSegs });
+        return Object.assign(r, { zone: r.topOverride - H, cols: o.posts.length });
+    }
+
+    const FAM2 = [
+        // --- 2.1.1 top-chord trusses: straight bottom chord at the eaves ---
+        { id: 'tt_bow', fam: 2, name: 'Bowstring truss', mats: MAT2, spans: SP2.flat1, rule: { steel: 'parabolic top chord, rise L/7', timber: 'parabolic top chord, rise L/6' },
+          own: (m, L) => K2(m) * (0.07 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const f = L / (m === 'timber' ? 6 : 7), n = nPan(L, f), { In, Out } = chordsOf(() => H, x => H + 4 * f * (x / L) * (1 - x / L), 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H], [L, H]] }), { colNote: `trusses every ${f1_(S2(m))} m on columns`,
+                  notes: ['The curved top chord follows the thrust line of a uniform load, so the web carries little (Engel 2.1.1.2).'] });
+          } },
+        { id: 'tt_trap', fam: 2, name: 'Trapezoidal truss', mats: MAT2, spans: SP2.flat1, rule: { steel: 'd = L/10, sloped end panels', timber: 'd = L/8, sloped end panels' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 8 : 10), n = nPan(L, d), p = L / n, { In, Out } = chordsOf(() => H, x => H + d * Math.min(1, Math.min(x, L - x) / p), 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H], [L, H]] }), { colNote: `trusses every ${f1_(S2(m))} m on columns`,
+                  notes: ['Parallel chords over the span, sloping down in the end panels to meet at the supports (Engel 2.1.1.3).'] });
+          } },
+        // --- 2.1.2 bottom-chord trusses: straight top chord, the bottom chord hangs ---
+        { id: 'tb_v', fam: 2, name: 'Inverted two-pitch truss', mats: MAT2, spans: SP2.flat2, spanNote: rowNote2.flat2, rule: { steel: 'straight top chord, bottom sags L/8', timber: 'straight top chord, bottom sags L/6' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 6 : 8), n = nPan(L, d), { In, Out } = chordsOf(x => H + d * Math.abs(2 * x / L - 1), () => H + d, 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H + d], [L, H + d]] }), { colNote: `trusses every ${f1_(S2(m))} m; columns reach the top chord, ${f1_(H + d)} m`,
+                  notes: ['The top chord is the flat roof; the bottom chord, in tension, hangs down to mid-span (Engel 2.1.2.1).', 'The clear height is kept at the lowest point, so the columns are taller.'] });
+          } },
+        { id: 'tb_cat', fam: 2, name: 'Fish-belly truss', mats: MAT2, spans: SP2.flat2, spanNote: rowNote2.flat2, rule: { steel: 'straight top chord, bottom sags L/8 (parabola)', timber: 'straight top chord, bottom sags L/6 (parabola)' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 6 : 8), n = nPan(L, d), { In, Out } = chordsOf(x => H + d * (2 * x / L - 1) ** 2, () => H + d, 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H + d], [L, H + d]] }), { colNote: `trusses every ${f1_(S2(m))} m; columns reach the top chord, ${f1_(H + d)} m`,
+                  notes: ['The hanging chord follows a catenary-like curve — the funicular of the load (Engel 2.1.2.2).'] });
+          } },
+        { id: 'tb_trap', fam: 2, name: 'Inverted trapezoidal truss', mats: MAT2, spans: SP2.flat2, spanNote: rowNote2.flat2, rule: { steel: 'straight top chord, bottom L/10 lower, sloped end panels', timber: 'straight top chord, bottom L/8 lower, sloped end panels' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 8 : 10), n = nPan(L, d), p = L / n, { In, Out } = chordsOf(x => H + d * (1 - Math.min(1, Math.min(x, L - x) / p)), () => H + d, 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H + d], [L, H + d]] }), { colNote: `trusses every ${f1_(S2(m))} m; columns reach the top chord, ${f1_(H + d)} m`,
+                  notes: ['Parallel chords hung from the roof line, sloping up in the end panels (Engel 2.1.2.3).'] });
+          } },
+        // --- 2.1.3 two-chord trusses ---
+        { id: 'tc_rhomb', fam: 2, name: 'Rhombus truss', mats: MAT2, spans: SP2.flat2, spanNote: rowNote2.flat2, rule: { steel: 'top rises L/12, bottom falls L/12 from the supports', timber: 'top rises L/10, bottom falls L/10 from the supports' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const r = L / (m === 'timber' ? 10 : 12), e = H + r, n = nPan(L, 2 * r), t = x => 1 - Math.abs(2 * x / L - 1), { In, Out } = chordsOf(x => e - r * t(x), x => e + r * t(x), 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, e], [L, e]] }), { colNote: `trusses every ${f1_(S2(m))} m; supports at mid-depth, ${f1_(e)} m`,
+                  notes: ['Both chords bend away from the supports: deepest at mid-span where the moment is (Engel 2.1.3.1).'] });
+          } },
+        { id: 'tc_lens', fam: 2, name: 'Lenticular truss', mats: MAT2, spans: SP2.flat2, spanNote: rowNote2.flat2, rule: { steel: 'two parabolas, ± L/12', timber: 'two parabolas, ± L/10' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const r = L / (m === 'timber' ? 10 : 12), e = H + r, n = nPan(L, 2 * r), t = x => 4 * (x / L) * (1 - x / L), { In, Out } = chordsOf(x => e - r * t(x), x => e + r * t(x), 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, e], [L, e]] }), { colNote: `trusses every ${f1_(S2(m))} m; supports at mid-depth, ${f1_(e)} m`,
+                  notes: ['An arch and a hanging chord tied at their ends: the lens is self-anchored, so the supports get no thrust (Engel 2.1.3.2).'] });
+          } },
+        // --- 2.1.4 cambered trusses: the bottom chord rises too ---
+        { id: 'tk_sciss', fam: 2, name: 'Scissors truss', mats: MAT2, spans: SP2.flat3, rule: { steel: 'top rise L/5, bottom rise L/10', timber: 'top rise L/4, bottom rise L/8' },
+          own: (m, L) => K2(m) * (0.06 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const r = L / (m === 'timber' ? 4 : 5), n = nPan(L, r / 2), t = x => 1 - Math.abs(2 * x / L - 1), { In, Out } = chordsOf(x => H + r / 2 * t(x), x => H + r * t(x), 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H], [L, H]] }), { colNote: `trusses every ${f1_(S2(m))} m on columns`,
+                  notes: ['The bottom chord is raised into a second pitch: a higher room under a pitched roof (Engel 2.1.4.1).', 'The shallower the truss, the more it spreads — the web must stay triangulated.'] });
+          } },
+        { id: 'tk_cresc', fam: 2, name: 'Crescent truss', mats: MAT2, spans: SP2.flat3, rule: { steel: 'top parabola L/5, bottom parabola L/9', timber: 'top parabola L/4, bottom parabola L/7' },
+          own: (m, L) => K2(m) * (0.06 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const r1 = L / (m === 'timber' ? 4 : 5), r2 = L / (m === 'timber' ? 7 : 9), n = nPan(L, r1 - r2), t = x => 4 * (x / L) * (1 - x / L), { In, Out } = chordsOf(x => H + r2 * t(x), x => H + r1 * t(x), 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'warren', s: S2(m), sup: [[0, H], [L, H]] }), { colNote: `trusses every ${f1_(S2(m))} m on columns`,
+                  notes: ['Two arcs of different rise meet at the supports: a curved truss that works like a tied arch without a tie (Engel 2.1.4.2).'] });
+          } },
+        { id: 'tk_mans', fam: 2, name: 'Mansard truss', mats: MAT2, spans: SP2.flat3, rule: { steel: 'steep sides to L/7 at L/5, flat top', timber: 'steep sides to L/6 at L/5, flat top' },
+          own: (m, L) => K2(m) * (0.06 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const k = L / (m === 'timber' ? 6 : 7), a = L / 5, n = nPan(L, k), zt = x => H + k * Math.min(1, Math.min(x, L - x) / a), { In, Out } = chordsOf(() => H, zt, 0, L, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'pratt', s: S2(m), sup: [[0, H], [L, H]] }), { colNote: `trusses every ${f1_(S2(m))} m on columns`,
+                  notes: ['A mansard outline: steep sides and a flat top, the roof space usable (Engel 2.1.4.3).'] });
+          } },
+        // --- 2.2.1 linear transmitted trusses ---
+        { id: 'tl_beam', fam: 2, name: 'Trussed beam with cantilevers', mats: MAT2, spans: SP2.tr1, rule: { steel: 'd = L/14, cantilevers L/6, camber L/60', timber: 'd = L/11, cantilevers L/6, camber L/60' },
+          own: (m, L) => K2(m) * (0.09 + 0.004 * L) * 1.2,
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 11 : 14), c = L / 6, cam = L / 60, g = x => 1 - (2 * (x + c) / (L + 2 * c) - 1) ** 2, zb = x => H + cam * (g(x) - g(0)) + (x < 0 ? d * 0.4 * (-x / c) : x > L ? d * 0.4 * ((x - L) / c) : 0);
+              const n = nPan(L + 2 * c, d), { In, Out } = chordsOf(zb, x => H + d + cam * (g(x) - g(0)), -c, L + c, n);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'warren', s: S2(m), sup: [[0, H], [L, H]] }), { colNote: `trusses every ${f1_(S2(m))} m, cantilevering ${f1_(c)} m past the columns`,
+                  notes: ['The truss used as a continuous beam: cantilevers relieve the mid-span moment (Engel 2.2.1.1).'] });
+          } },
+        { id: 'tl_frame', fam: 2, name: 'Trussed frame', mats: MAT2, spans: SP2.tr1, rule: { steel: 'rafter and legs d = L/15', timber: 'rafter and legs d = L/12' },
+          own: (m, L) => K2(m) * (0.09 + 0.004 * L) * 1.35,
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 12 : 15), nl = Math.max(2, Math.round(H / (d * 1.1))), nr = nPan(L, d);
+              const { In, Out } = segNodes([[[0, 0], [0, H], [-d, 0], [-d, H + d], nl], [[0, H], [L, H], [-d, H + d], [L + d, H + d], nr], [[L, H], [L, 0], [L + d, H + d], [L + d, 0], nl]]);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'warren', s: S2(m), sup: [[-d / 2, 0], [L + d / 2, 0]] }), { cols: 2 * ysOf(W, S2(m)).length, colNote: `trussed frames every ${f1_(S2(m))} m — the legs are trusses too`,
+                  notes: ['Rafter and legs are trusses joined rigidly at the knees (Engel 2.2.1.2).'] });
+          } },
+        { id: 'tl_arch', fam: 2, name: 'Trussed arch', mats: MAT2, spans: SP2.tr1, rule: { steel: 'half-circle from the ground, d = S/30', timber: 'half-circle from the ground, d = S/25' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L) * 1.3,
+          build(L, H, W, m, q) {
+              const sp = semiPoly(L, H, 16), R = sp.R, d = 2 * R / (m === 'timber' ? 25 : 30), s = S2(m);
+              const Out = sp.ang.map(a => [L / 2 + (R + d) * Math.cos(a), (R + d) * Math.sin(a)]);
+              return Object.assign(trussHall(L, H, W, { In: sp.pts, Out, web: 'warren', s, sup: [] }), { spanUsed: 2 * R, spanLabel: `the arch spans ${f1_(2 * R)} m`, cols: 2 * ysOf(W, s).length, colNote: `trussed arches every ${f1_(s)} m, feet ${f1_(R - L / 2)} m outside the hall`,
+                  thrust: q * s * R / 2, thrustNote: `at each foot, per arch (${f1_(s)} m apart): H = qsS²/8f with S = 2R, f = R, so H = qsR/2`, thrustPerArch: true,
+                  notes: ['The arch made of a truss: depth for stiffness against uneven load, little material (Engel 2.2.1.3).'] });
+          } },
+        { id: 'tl_irreg', fam: 2, name: 'Trussed irregular frame', mats: MAT2, spans: SP2.tr1, rule: { steel: 'asymmetric: ridge at L/3, rise L/5, one leaning leg · d = L/15', timber: 'asymmetric: ridge at L/3, rise L/5, one leaning leg · d = L/12' },
+          own: (m, L) => K2(m) * (0.09 + 0.004 * L) * 1.4,
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 12 : 15), lean = H / 3, xr = L / 3, zr = H + L / 5, zR = H + L / 12, nl = Math.max(2, Math.round(H / (d * 1.1)));
+              const A = [0, H], Rg = [xr, zr], E = [L, zR], ex = d * 0.7;
+              const { In, Out } = segNodes([[[-lean, 0], A, [-lean - d, 0], [-d, H + d * 0.8], nl], [A, Rg, [-d, H + d * 0.8], [xr, zr + d], Math.max(2, Math.round(xr / d))],
+                  [Rg, E, [xr, zr + d], [L + ex, zR + d], Math.max(2, Math.round((L - xr) / d))], [E, [L, 0], [L + ex, zR + d], [L + ex, 0], Math.max(2, Math.round(zR / (d * 1.1)))]]);
+              return Object.assign(trussHall(L, H, W, { In, Out, web: 'warren', s: S2(m), sup: [] }), { cols: 2 * ysOf(W, S2(m)).length, colNote: `irregular trussed frames every ${f1_(S2(m))} m; one leg leans out ${f1_(lean)} m`,
+                  notes: ['Trusses can follow any outline: an asymmetric roof with one leaning leg, as in Engel 2.2.1.4.', 'No thrust figure: a rigid irregular frame is statically indeterminate.'] });
+          } },
+        // --- 2.2.2 folded trusses ---
+        { id: 'tf_par', fam: 2, name: 'Folded trusses (parallel)', mats: MAT2, spans: SP2.tr2, rule: { steel: 'folds L/10 high, trusses in the fold planes', timber: 'folds L/8 high, trusses in the fold planes' },
+          own: (m, L) => K2(m) * (0.10 + 0.004 * L),
+          build(L, H, W, m, q) { return foldTrusses(L, H, W, m, () => 1, ['Inclined trusses lean on each other at the ridges and valleys, like a folded plate made of trusses (Engel 2.2.2.1).']); } },
+        { id: 'tf_taper', fam: 2, name: 'Folded trusses (tapered)', mats: MAT2, spans: SP2.tr2, rule: { steel: 'folds L/10 high at mid-span, a third of it at the ends', timber: 'folds L/8 high at mid-span, a third of it at the ends' },
+          own: (m, L) => K2(m) * (0.10 + 0.004 * L),
+          build(L, H, W, m, q) { return foldTrusses(L, H, W, m, u => 0.35 + 0.65 * (1 - (2 * u - 1) ** 2), ['The folds are deepest at mid-span, where the moment is, and flatten towards the supports (Engel 2.2.2.3).']); } },
+        { id: 'tf_poly', fam: 2, name: 'Pyramid of trusses', mats: MAT2, spans: SP2.tr2, rule: { steel: 'one pyramid per square bay, rise L/4 · edge ties', timber: 'one pyramid per square bay, rise L/4 · edge ties' },
+          own: (m, L) => K2(m) * (0.10 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const f = L / 4, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], lines3 = [], P = [];
+              for (const [x0, y0, x1, y1] of rs) { const A = [(x0 + x1) / 2, (y0 + y1) / 2, H + f], C = [[x0, y0, H], [x1, y0, H], [x1, y1, H], [x0, y1, H]];
+                  C.forEach((c, i) => { faceTruss(c, C[(i + 1) % 4], A, 6, lines3); lines3.push({ c: 'member', pts: [c, A] }); P.push(c); }); }
+              const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H, ni: 1, nj: 1 })), lines3, posts: uniq(P), secY: b / 2, sec: [[0, H], [L / 2, H + f], [L, H]],
+                  secParts: [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H), line([[0, H], [L, H]], 'thin')], planSegs: rs.flatMap(([x0, y0, x1, y1]) => [[x0, y0, x1, y1, 1], [x1, y0, x0, y1, 1]]) });
+              return Object.assign(r, { zone: f, cols: uniq(P).length, colNote: `one pyramid per ${f1_(L)} × ${f1_(b)} m bay, on its corners`,
+                  thrust: q * L * L * b / (16 * f), thrustNote: `tension in each base edge — minimum thrust with the line of thrust through the apex: T = qL²b/16f`, thrustPerArch: true,
+                  notes: ['Four triangular trusses lean together into a pyramid (Engel 2.2.2.2).'] });
+          } },
+        // --- 2.2.3 intersecting trusses ---
+        { id: 'ti_2', fam: 2, name: 'Crossing trusses (two-way)', mats: MAT2, spans: SP2.tr3, rule: { steel: 'two pitched trusses corner to corner, rise L/6', timber: 'two pitched trusses corner to corner, rise L/6' },
+          own: (m, L) => K2(m) * (0.10 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const f = L / 6, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], lines3 = [], P = [];
+              for (const [x0, y0, x1, y1] of rs) { const A = [(x0 + x1) / 2, (y0 + y1) / 2, H + f], C = [[x0, y0, H], [x1, y0, H], [x1, y1, H], [x0, y1, H]];
+                  faceTruss(C[0], C[2], A, 8, lines3); faceTruss(C[1], C[3], A, 8, lines3); lines3.push({ c: 'member', pts: [...C, C[0]] });
+                  for (const [a, c] of [[C[0], C[1]], [C[1], C[2]], [C[2], C[3]], [C[3], C[0]]]) lines3.push({ c: 'thin', pts: [[(a[0] + c[0]) / 2, (a[1] + c[1]) / 2, H], A] });
+                  P.push(...C); }
+              const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H, ni: 1, nj: 1 })), lines3, posts: uniq(P), secY: b / 2, sec: [[0, H], [L / 2, H + f], [L, H]],
+                  secParts: [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H)], planSegs: rs.flatMap(([x0, y0, x1, y1]) => [[x0, y0, x1, y1, 1], [x1, y0, x0, y1, 1]]) });
+              return Object.assign(r, { zone: f, cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay on its corners`,
+                  notes: ['Two pitched trusses cross on the diagonals and prop each other at the top (Engel 2.2.3.1).', 'No thrust figure: the corners are tied by the edge members.'] });
+          } },
+        { id: 'ti_3', fam: 2, name: 'Crossing trusses (three-way)', mats: MAT2, spans: SP2.tr3, rule: { steel: 'hexagon round the hall · three pitched trusses at 60°, rise a/4', timber: 'hexagon round the hall · three pitched trusses at 60°, rise a/4' },
+          own: (m, L) => K2(m) * (0.10 + 0.004 * L),
+          build(L, H, W, m, q) {
+              const aY = Math.max(L / Math.sqrt(3), W / 2 + L / (2 * Math.sqrt(3))), aX = Math.max(W / Math.sqrt(3), L / 2 + W / (2 * Math.sqrt(3))), a = Math.min(aX, aY), a0 = aY <= aX ? Math.PI / 2 : 0;
+              const cx = L / 2, cy = W / 2, f = a / 4, A = [cx, cy, H + f], C = Array.from({ length: 6 }, (_, i) => [cx + a * Math.cos(a0 + i * Math.PI / 3), cy + a * Math.sin(a0 + i * Math.PI / 3), H]), lines3 = [];
+              for (let i = 0; i < 3; i++) faceTruss(C[i], C[i + 3], A, 10, lines3);
+              lines3.push({ c: 'member', pts: [...C, C[0]] });
+              const r = surfaceHall({ kind: 'none', mods: [polyMod(C.map(p => [p[0], p[1]]), () => H)], lines3, posts: C, secY: cy, sec: [[cx - a, H], [cx, H + f], [cx + a, H]],
+                  secParts: [rect(cx - a - 0.3, 0, cx - a, H), rect(cx + a, 0, cx + a + 0.3, H)], planSegs: [0, 1, 2].map(i => [C[i][0], C[i][1], C[i + 3][0], C[i + 3][1], 1]) });
+              return Object.assign(r, { zone: f, spanUsed: 2 * a, spanLabel: `needs a hexagon ${f1_(2 * a)} m corner to corner`, cols: 6, colNote: 'one hexagon round the hall; six corner supports',
+                  notes: ['Three pitched trusses cross at 60° and share the top node (Engel 2.2.3.2).', 'No thrust figure: the corners are tied by the edge ring.'] });
+          } },
+        // --- 2.3 curved trusses (single-layer nets) ---
+        { id: 'cy_int', fam: 2, name: 'Intersecting barrel nets', mats: MAT2, spans: SP2.cu1, rule: { steel: 'two barrels crossing per bay, rise L/5 · on corners', timber: 'two barrels crossing per bay, rise L/5 · on corners' },
+          own: (m, L) => K2(m) * (0.07 + 0.0025 * L),
+          build(L, H, W, m, q) {
+              const f = L / 5, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], lines3 = [], P = [], n = clamp(Math.round(L / 3), 6, 16);
+              for (const [x0, y0, x1, y1] of rs) { const F = (u, v) => [x0 + L * u, y0 + b * v, H + f * Math.max(4 * u * (1 - u), 4 * v * (1 - v))]; triNet(F, n, n, lines3); P.push([x0, y0, H], [x1, y0, H], [x1, y1, H], [x0, y1, H]);
+                  lines3.push({ c: 'member', pts: Array.from({ length: 2 * n + 1 }, (_, i) => F(i / (2 * n), i / (2 * n))) }, { c: 'member', pts: Array.from({ length: 2 * n + 1 }, (_, i) => F(1 - i / (2 * n), i / (2 * n))) }); }
+              const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H, ni: 1, nj: 1 })), lines3, posts: uniq(P), secY: b / 2,
+                  sec: Array.from({ length: 25 }, (_, i) => [L * i / 24, H + f]), secParts: [line(Array.from({ length: 25 }, (_, i) => [L * i / 24, H + f * 4 * (i / 24) * (1 - i / 24)]), 'thin'), rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H)] });
+              return Object.assign(r, { zone: f, cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay on its corners`,
+                  thrust: q * L * L * b / (8 * f), thrustNote: 'interior corner, across the hall: Hx = qL²b/8f (both bays push the same way)', thrustPerArch: true,
+                  notes: ['Two triangulated barrel nets cross like a groin vault and gather the load along the groins into four corners (Engel 2.3.1.2).'] });
+          } },
+        { id: 'sa_arch', fam: 2, name: 'Saddle net between end arches', mats: MAT2, spans: SP2.cu1, spanNote: rowNote2.cu2, rule: { steel: 'end arches L/5 above the corners, long edges sag W/16', timber: 'end arches L/5 above the corners, long edges sag W/16' },
+          own: (m, L) => K2(m) * (0.07 + 0.0025 * L),
+          build(L, H, W, m, q) {
+              const F = L / 5, g = W / 16, z = (x, y) => H + g * (2 * y / W - 1) ** 2 + F * (1 - (2 * x / L - 1) ** 2), Fn = (u, v) => [L * u, W * v, z(L * u, W * v)], lines3 = [];
+              triNet(Fn, clamp(Math.round(L / 3), 6, 16), clamp(Math.round(W / 3), 6, 30), lines3);
+              for (const v of [0, 1]) lines3.push({ c: 'post', pts: Array.from({ length: 25 }, (_, i) => Fn(i / 24, v)) });
+              for (const u of [0, 1]) lines3.push({ c: 'post', pts: Array.from({ length: 25 }, (_, i) => Fn(u, i / 24)) });
+              const P = [[0, 0, H + g], [L, 0, H + g], [L, W, H + g], [0, W, H + g]];
+              const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z, ni: 1, nj: 1 }], lines3, posts: P, secY: W / 2,
+                  secParts: [line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin'), rect(-0.3, 0, 0, H + g), rect(L, 0, L + 0.3, H + g)] });
+              return Object.assign(r, { zone: r.topOverride - H, cols: 4, colNote: 'four corner supports; end arches and sagging edge members',
+                  notes: ['A triangulated saddle hung between two end arches: it arches across and sags along (Engel 2.3.2.1).', 'No thrust figure: the end arches and edge members share the load in proportions set by their stiffness.'] });
+          } },
+        { id: 'sa_beam', fam: 2, name: 'Hypar net on straight edge beams', mats: MAT2, spans: SP2.cu1, spanNote: rowNote2.cu2, rule: { steel: 'two corners raised L/4 per bay, straight edges', timber: 'two corners raised L/4 per bay, straight edges' },
+          own: (m, L) => K2(m) * (0.07 + 0.0025 * L),
+          build(L, H, W, m, q) {
+              const A = L / 8, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], lines3 = [], P = [];
+              rs.forEach(([x0, y0, x1, y1], k) => { const sg = k % 2 ? -1 : 1, F = (u, v) => [x0 + L * u, y0 + b * v, H + A + sg * A * (2 * u - 1) * (2 * v - 1)];
+                  triNet(F, clamp(Math.round(L / 3), 6, 14), clamp(Math.round(b / 3), 6, 14), lines3);
+                  const C = [F(0, 0), F(1, 0), F(1, 1), F(0, 1)]; lines3.push({ c: 'post', pts: [...C, C[0]] }); P.push(...C); });
+              const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H, ni: 1, nj: 1 })), lines3, posts: uniq(P), secY: b / 2,
+                  sec: [[0, H + A], [L, H + A]], secParts: [line([[0, H], [L, H + 2 * A]], 'thin'), rect(-0.3, 0, 0, H + 2 * A), rect(L, 0, L + 0.3, H + 2 * A)] });
+              return Object.assign(r, { zone: 2 * A, cols: uniq(P).length, colNote: 'corner columns, two high and two low per bay',
+                  notes: ['A hypar: its straight edges take straight beams, and the net between can be made of straight bars (Engel 2.3.2.2).', 'No thrust figure: the edge beams take the shear from the net.'] });
+          } },
+        { id: 'dm_long', fam: 2, name: 'Dome-shaped truss net', mats: MAT2, spans: SP2.cu1, spanNote: rowNote2.cu2, rule: { steel: 'barrel rise L/5 with rounded ends · columns along the sides', timber: 'barrel rise L/5 with rounded ends · columns along the sides' },
+          own: (m, L) => K2(m) * (0.07 + 0.0025 * L),
+          build(L, H, W, m, q) {
+              const F = L / 5, k = Math.max(0, 1 - L / W), zf = (u, v) => { const a = (2 * u - 1) ** 2, bb = Math.max(0, (Math.abs(2 * v - 1) - k) / (1 - k)) ** 2; return H + F * Math.max(0, 1 - a - bb); };
+              const Fn = (u, v) => [L * u, W * v, zf(u, v)], lines3 = [], s = 6;
+              triNet(Fn, clamp(Math.round(L / 3), 6, 14), clamp(Math.round(W / 3), 6, 30), lines3);
+              const P = ysOf(W, s).flatMap(y => [[0, y, H], [L, y, H]]);
+              lines3.push({ c: 'post', pts: [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H], [0, 0, H]] });
+              const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: (x, y) => zf(x / L, y / W), ni: 1, nj: 1 }], lines3, posts: P, secY: W / 2,
+                  sec: Array.from({ length: 25 }, (_, i) => [L * i / 24, zf(i / 24, 0.5)]) });
+              return Object.assign(r, { zone: F, cols: P.length, colNote: `ring beam on columns every ${f1_(s)} m round the hall`,
+                  thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
+                  notes: ['A barrel whose ends round off into quarter-domes: the net is curved both ways over a long plan (Engel 2.3.3).'] });
+          } },
+        // --- 2.3.4 spherical trusses: one dome over the hall's circle, on a ring of columns ---
+        { id: 'sd_schw', fam: 2, name: 'Schwedler dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · meridians, rings, one diagonal per field', timber: 'Ø = hall diagonal · rise Ø/6 · meridians, rings, one diagonal per field' },
+          own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
+          build(L, H, W, m, q) {
+              const cap = capOf(L, W, H), N = 24, K = 6, rho = k => cap.R * (1 - k / (K + 0.6)), lines3 = [];
+              for (let k = 1; k <= K; k++) lines3.push({ c: 'member', pts: Array.from({ length: N + 1 }, (_, i) => cap.P(rho(k), 2 * Math.PI * i / N)) });
+              for (let i = 0; i < N; i++) { lines3.push({ c: 'member', pts: Array.from({ length: K + 1 }, (_, k) => cap.P(rho(k), 2 * Math.PI * i / N)) });
+                  for (let k = 0; k < K; k++) lines3.push({ c: 'thin', pts: [cap.P(rho(k), 2 * Math.PI * i / N), cap.P(rho(k + 1), 2 * Math.PI * (i + 1) / N)] }); }
+              return domeHall(L, H, W, m, q, cap, lines3, { notes: ['Meridians and rings, braced by one diagonal in each field; an open compression ring at the top (Engel 2.3.4.1).'] });
+          } },
+        { id: 'sd_lat', fam: 2, name: 'Lattice dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · rings with triangles between', timber: 'Ø = hall diagonal · rise Ø/6 · rings with triangles between' },
+          own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
+          build(L, H, W, m, q) {
+              const cap = capOf(L, W, H), N = 24, K = 6, rho = k => cap.R * (1 - k / (K + 0.6)), node = (k, i) => cap.P(rho(k), 2 * Math.PI * (i + 0.5 * (k % 2)) / N), lines3 = [];
+              for (let k = 1; k <= K; k++) lines3.push({ c: 'member', pts: Array.from({ length: N + 1 }, (_, i) => node(k, i)) });
+              for (let k = 0; k < K; k++) for (let i = 0; i < N; i++) lines3.push({ c: 'thin', pts: [node(k, i), node(k + 1, k % 2 ? i + 1 : i), node(k, i + 1)] });
+              return domeHall(L, H, W, m, q, cap, lines3, { notes: ['Rings joined by a zigzag of bars into triangles — no meridians (Engel 2.3.4.2).'] });
+          } },
+        { id: 'sd_par', fam: 2, name: 'Parallel lattice dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · three-way grid projected on the sphere', timber: 'Ø = hall diagonal · rise Ø/6 · three-way grid projected on the sphere' },
+          own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
+          build(L, H, W, m, q) {
+              const cap = capOf(L, W, H), [cx, cy, R] = cap.d, a = 2 * R / 12, lines3 = [];
+              for (const t of [0, 60, 120]) { const th = t * Math.PI / 180, ux = Math.cos(th), uy = Math.sin(th);
+                  for (let k = -6; k <= 6; k++) { const c = k * a * Math.sqrt(3) / 2, h = Math.sqrt(Math.max(0, R * R - c * c)); if (h < 0.5) continue;
+                      lines3.push({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const s_ = -h + 2 * h * i / 24, x = cx - uy * c + ux * s_, y = cy + ux * c + uy * s_; return cap.P(Math.hypot(x - cx, y - cy), Math.atan2(y - cy, x - cx)); }) }); } }
+              return domeHall(L, H, W, m, q, cap, lines3, { notes: ['A flat three-way grid projected onto the sphere: three families of parallel bars (Engel 2.3.4.3).'] });
+          } },
+        { id: 'sd_lam', fam: 2, name: 'Lamella dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · diamond net of short bars', timber: 'Ø = hall diagonal · rise Ø/6 · diamond net of short bars' },
+          own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
+          build(L, H, W, m, q) {
+              const cap = capOf(L, W, H), N = 24, K = 7, rho = k => cap.R * (1 - k / (K + 0.6)), node = (k, i) => cap.P(rho(k), 2 * Math.PI * (i + 0.5 * (k % 2)) / N), lines3 = [];
+              for (let k = 0; k < K; k++) for (let i = 0; i < N; i++) { const j = k % 2 ? i + 1 : i; lines3.push({ c: 'member', pts: [node(k, i), node(k + 1, j)] }, { c: 'member', pts: [node(k, i + 1), node(k + 1, j)] }); }
+              lines3.push({ c: 'member', pts: Array.from({ length: N + 1 }, (_, i) => node(K, i)) });
+              return domeHall(L, H, W, m, q, cap, lines3, { notes: ['Short bars of one length meet in diamonds that spiral both ways up the dome (Engel 2.3.4.4).'] });
+          } },
+        { id: 'geodesic', fam: 2, name: 'Geodesic dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · icosahedron, frequency 6', timber: 'Ø = hall diagonal · rise Ø/6 · icosahedron, frequency 6' },
+          own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
+          build(L, H, W, m, q) {
+              const cap = capOf(L, W, H), { Rs, zc } = cap, [cx, cy] = cap.d, zb = H - zc, lines3 = [], seen = new Set(), t = (1 + Math.sqrt(5)) / 2, fq = 6;
+              const V = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(p => { const l = Math.hypot(...p); return [p[0] / l, p[2] / l, p[1] / l]; });
+              const Fc = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+              const S_ = p => { const l = Math.hypot(...p); return [p[0] / l * Rs, p[1] / l * Rs, p[2] / l * Rs]; }, W3 = p => [cx + p[0], cy + p[1], zc + p[2]];
+              const edge = (a, b) => { const k = [a, b].map(p => p.map(v => v.toFixed(3)).join(',')).sort().join('|'); if (seen.has(k)) return; seen.add(k);
+                  if (a[2] < zb && b[2] < zb) return; let p = a, q_ = b; if (p[2] < zb || q_[2] < zb) { if (p[2] < zb) [p, q_] = [q_, p]; const u = (p[2] - zb) / (p[2] - q_[2]); q_ = [p[0] + (q_[0] - p[0]) * u, p[1] + (q_[1] - p[1]) * u, zb]; }
+                  lines3.push({ c: 'member', pts: [W3(p), W3(q_)] }); };
+              for (const [i, j, k] of Fc) { const A = V[i], B = V[j], C = V[k], P = (a, b) => S_([A[0] + (B[0] - A[0]) * a / fq + (C[0] - A[0]) * b / fq, A[1] + (B[1] - A[1]) * a / fq + (C[1] - A[1]) * b / fq, A[2] + (B[2] - A[2]) * a / fq + (C[2] - A[2]) * b / fq]);
+                  for (let a = 0; a < fq; a++) for (let b = 0; a + b < fq; b++) { edge(P(a, b), P(a + 1, b)); edge(P(a, b), P(a, b + 1)); edge(P(a + 1, b), P(a, b + 1)); } }
+              return domeHall(L, H, W, m, q, cap, lines3, { notes: ['An icosahedron subdivided and projected onto the sphere: all triangles, every bar axial (Engel 2.3.4.5, p.155).', 'The bars cut by the base plane end on the ring beam.'] });
+          } },
+        // --- 2.4 space trusses ---
+        { id: 'st_tetra', fam: 2, name: 'Space truss (tetrahedral)', mats: MAT2, spans: SP2.sp1, rule: { steel: 'd = Ls/22 · √(2α) · triangular grids', timber: 'd = Ls/18 · √(2α) · triangular grids' }, twoWay: true,
+          own: (m, L) => K2(m) * (0.11 + 0.003 * L),
+          build(L, H, W, m, q) {
+              const tw = twoWayShare(L, W), d = tw.short / (m === 'timber' ? 18 : 22) * tw.k, a = clamp(Math.max(d * 1.5, L / 12), 1.5, 6), h = a * Math.sqrt(3) / 2, lines3 = [], zt = H + d;
+              const ny = Math.round(W / h), hy = W / ny, nx = Math.round(L / a), ax = L / nx, T = (i, j) => [i * ax + (j % 2) * ax / 2, j * hy, zt], inX = p => p[0] >= -1e-6 && p[0] <= L + 1e-6;
+              const Bn = (i, j) => [i * ax + (j % 2) * ax / 2 + ax / 2, (j + 1 / 3) * hy, H];
+              for (let j = 0; j <= ny; j++) { lines3.push({ c: 'member', pts: [[0, j * hy, zt], [L, j * hy, zt]] }); }
+              for (let j = 0; j < ny; j++) for (let i = -1; i <= nx; i++) { const a0 = T(i, j), a1 = T(i + 1, j), up = [a0[0] + ax / 2, (j + 1) * hy, zt];
+                  for (const [p, r_] of [[a0, up], [a1, up]]) if (inX(p) && inX(r_)) lines3.push({ c: 'member', pts: [p, r_] });
+                  const b = Bn(i, j); if (b[0] > 0 && b[0] < L) { for (const p of [a0, a1, up]) if (inX(p)) lines3.push({ c: 'thin', pts: [b, p] });
+                      const bn = Bn(i + 1, j); if (bn[0] < L) lines3.push({ c: 'thin', pts: [b, bn] });
+                      if (j + 1 < ny) for (const di of [-1, 0]) { const bu = Bn(i + di + (j % 2), j + 1); if (bu[0] > 0 && bu[0] < L) lines3.push({ c: 'thin', pts: [b, bu] }); } } }
+              for (const x of [0, L]) lines3.push({ c: 'member', pts: [[x, 0, zt], [x, W, zt]] });
+              const s = clamp(r05(L / 4), 6, 18), kx = Math.max(1, Math.round(s / ax)), ky = Math.max(1, Math.round(s / hy)), posts = [];
+              // columns under top-layer nodes: along the two long edges at every kx-th node, along the ends where each row line ends
+              for (const j of [0, ny]) for (let i = 0; i <= nx; i++) { const p = T(i, j); if (inX(p) && (i % kx === 0 || i === nx)) posts.push([p[0], p[1], H]); }
+              for (let j = ky; j < ny; j += ky) posts.push([0, j * hy, H], [L, j * hy, H]);
+              for (const p of posts) p[2] = zt;
+              const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: () => zt, ni: 1, nj: 1 }], lines3, posts, secY: W / 2, sec: [[0, zt], [L, zt]],
+                  secParts: [line([[ax / 2, H], [L - ax / 2, H]], 'thin'), line(Array.from({ length: 2 * nx + 1 }, (_, i) => [i * ax / 2, i % 2 ? H : zt]), 'thin'), rect(-0.3, 0, 0, zt), rect(L, 0, L + 0.3, zt)] });
+              return Object.assign(r, { zone: d, cols: posts.length, colNote: `perimeter columns every ~${f1_(s)} m up to the top-layer nodes, triangles ${f1_(a)} m a side`,
+                  notes: ['Two triangular grids, the lower one shifted to the centres of the upper triangles, joined into tetrahedra (Engel 2.4.1.2).'] });
+          } },
+        { id: 'st_prism', fam: 2, name: 'Space truss (prismatic)', mats: MAT2, spans: SP2.sp1, rule: { steel: 'd = L/20 · triangular prisms across the span', timber: 'd = L/16 · triangular prisms across the span' },
+          own: (m, L) => K2(m) * (0.10 + 0.003 * L),
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 16 : 20), a = clamp(Math.max(d * 1.4, L / 12), 1.2, 6), nu = Math.max(2, Math.round(L / a)), nv = Math.max(2, Math.round(W / a)), s = clamp(r05(L / 4), 6, 18);
+              const F = (u, v) => [L * u, W * v, H], ki = Math.max(1, Math.round(s / (L / nu))), kj = Math.max(1, Math.round(s / (W / nv))), posts = [];
+              for (let j = 0; j <= nv; j++) for (const i of [0, nu]) if (j % kj === 0 || j === nv) posts.push([L * i / nu, W * j / nv, H + d]);
+              for (let i = ki; i < nu; i += ki) for (const j of [0, nv]) posts.push([L * i / nu, W * j / nv, H + d]);
+              const r = spaceHall(L, H, W, { F, nu, nv, d, C: [L / 2, W / 2, 0], noBotY: true, mods: [{ rect: [0, 0, L, W], z: () => H + d, ni: 1, nj: 1 }], posts, secPosts: [rect(-0.3, 0, 0, H + d), rect(L, 0, L + 0.3, H + d)] });
+              return Object.assign(r, { colNote: `perimeter columns every ~${f1_(s)} m up to the top-layer nodes; prisms span the ${f1_(L)} m way`,
+                  notes: ['Triangular prisms, each a two-chord truss leaning on its neighbour, side by side across the hall (Engel 2.4.1.3).'] });
+          } },
+        { id: 'sf_fold', fam: 2, name: 'Folded space truss', mats: MAT2, spans: SP2.sp1, spanNote: rowNote2.sp2, rule: { steel: 'd = L/30 · leaning legs, pitched roof L/5', timber: 'd = L/24 · leaning legs, pitched roof L/5' },
+          own: (m, L) => K2(m) * (0.12 + 0.003 * L),
+          build(L, H, W, m, q) {
+              const d = L / (m === 'timber' ? 24 : 30), e = H / 4, a = clamp(Math.max(d * 1.5, L / 10), 1.5, 6), path = resamplePath([[-e, 0], [0, H], [L / 2, H + L / 5], [L, H], [L + e, 0]], a), nu = path.length - 1, nv = Math.max(2, Math.round(W / a));
+              const cum = [0]; for (let i = 1; i <= nu; i++) cum.push(i);
+              const F = (u, v) => { const t = u * nu, i = Math.min(nu - 1, Math.floor(t)), p = lerp2(path[i], path[i + 1], t - i); return [p[0], W * v, p[1]]; };
+              const r = spaceHall(L, H, W, { F, nu, nv, d, C: [L / 2, W / 2, H / 2], mods: [{ rect: [-e, 0, L + e, W], z: () => H, ni: 1, nj: 1 }], posts: [], planSegs: [[0, 0, 0, W, 0.5], [L, 0, L, W, 0.5], [L / 2, 0, L / 2, W, 1]] });
+              return Object.assign(r, { cols: 0, colNote: 'a folded double-layer grid from ground to ground — legs, roof and folds in one', foot: [-e - d, L + e + d],
+                  notes: ['A space truss folded like a folded plate: the folds give depth, the double layer makes each plane stiff (Engel 2.4.2.1).', 'No thrust figure: a rigid folded frame is statically indeterminate.'] });
+          } },
+        { id: 'sv_barrel', fam: 2, name: 'Curved space truss (barrel)', mats: MAT2, spans: SP2.sp1, spanNote: rowNote2.sp2, rule: { steel: 'rise L/6 · d = L/40 · ties', timber: 'rise L/6 · d = L/30 · ties' },
+          own: (m, L) => K2(m) * (0.10 + 0.003 * L),
+          build(L, H, W, m, q) {
+              const f = L / 6, d = L / (m === 'timber' ? 30 : 40), a = clamp(Math.max(d * 1.8, L / 12), 1.5, 6), nu = Math.max(4, Math.round(L / a)), nv = Math.max(2, Math.round(W / a)), s = 6;
+              const F = (u, v) => [L * u, W * v, H + 4 * f * u * (1 - u)], C = [L / 2, W / 2, H - L], posts = edgeNodes(F, nu, nv, d, C, s, W), e0 = posts[0];
+              const r = spaceHall(L, H, W, { F, nu, nv, d, C, mods: [{ rect: [0, 0, L, W], z: () => H, ni: 1, nj: 1 }], posts, secPosts: [rect(e0[0] - 0.3, 0, e0[0], e0[2]), rect(L - e0[0], 0, L - e0[0] + 0.3, e0[2]), line([[e0[0], e0[2]], [L - e0[0], e0[2]]], 'tie')] });
+              return Object.assign(r, { colNote: `edge beams on columns every ${f1_(s)} m, ties across`,
+                  thrust: q * L * L / (8 * f), thrustNote: 'tie force per metre of hall at the eaves: H = qL²/8f',
+                  notes: ['A double-layer grid bent into a barrel: it arches across, so the eaves need ties (Engel 2.4.3.1).'] });
+          } },
+        { id: 'sv_double', fam: 2, name: 'Curved space truss (doubly curved)', mats: MAT2, spans: SP2.sp1, spanNote: rowNote2.sp2, rule: { steel: 'rise L/6 across + W/16 along · d = L/40', timber: 'rise L/6 across + W/16 along · d = L/30' },
+          own: (m, L) => K2(m) * (0.10 + 0.003 * L),
+          build(L, H, W, m, q) {
+              const f = L / 6, g = W / 16, d = L / (m === 'timber' ? 30 : 40), a = clamp(Math.max(d * 1.8, L / 12), 1.5, 6), nu = Math.max(4, Math.round(L / a)), nv = Math.max(2, Math.round(W / a)), s = 6;
+              const F = (u, v) => [L * u, W * v, H + 4 * f * u * (1 - u) + 4 * g * v * (1 - v)], C = [L / 2, W / 2, H - L], posts = edgeNodes(F, nu, nv, d, C, s, W), em = posts.find(p => Math.abs(p[1] - W / 2) < W / nv) || posts[0];
+              const r = spaceHall(L, H, W, { F, nu, nv, d, C, mods: [{ rect: [0, 0, L, W], z: () => H, ni: 1, nj: 1 }], posts, secPosts: [rect(em[0] - 0.3, 0, em[0], em[2]), rect(L - em[0], 0, L - em[0] + 0.3, em[2])] });
+              return Object.assign(r, { colNote: `edge beams on columns every ${f1_(s)} m that rise to mid-length`,
+                  thrust: q * L * L / (8 * f), thrustNote: 'per metre at the ends, across the hall: H = qL²/8f — the arching direction alone, an upper bound',
+                  notes: ['The double-layer grid is curved both ways, like a translational shell (Engel 2.4.3.2).'] });
+          } },
+        { id: 'sv_sphere', fam: 2, name: 'Curved space truss (spherical)', mats: MAT2, spans: SP2.sp1, spanNote: rowNote2.sp2, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · d = Ø/50', timber: 'Ø = hall diagonal · rise Ø/6 · d = Ø/40' },
+          own: (m, L, r0) => K2(m) * (0.10 + 0.0025 * r0.spanUsed),
+          build(L, H, W, m, q) {
+              const cap = capOf(L, W, H), R = cap.R, d = 2 * R / (m === 'timber' ? 40 : 50), n = clamp(Math.round(2 * R / clamp(d * 1.8, 2, 7)), 8, 24);
+              const F = (u, v) => { const a = 2 * u - 1, b = 2 * v - 1, x = a * Math.sqrt(1 - b * b / 2), y = b * Math.sqrt(1 - a * a / 2), rho = R * Math.hypot(x, y); return cap.P(rho, Math.atan2(y, x)); };
+              const lines3 = [], s2 = spaceNet(F, n, n, d, [cap.d[0], cap.d[1], cap.zc], lines3), posts = ringPosts(cap.d, H), phi0 = Math.asin(R / cap.Rs);
+              lines3.push(ringLine(cap.d, H));
+              const r = surfaceHall({ kind: 'none', mods: [{ disk: cap.d, z: () => H, ni: 1, nj: 8 }], lines3, posts, secY: cap.d[1], sec: s2.secTop, secParts: [line(s2.secBot, 'thin'), rect(cap.d[0] - R - 0.3, 0, cap.d[0] - R, H), rect(cap.d[0] + R, 0, cap.d[0] + R + 0.3, H)] });
+              return Object.assign(r, { zone: r.topOverride - H, spanUsed: 2 * R, cols: posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the hall; ring beam on columns`,
+                  thrust: q * cap.Rs / 2 * Math.cos(phi0) * R, thrustNote: 'tension in the ring beam, treating the grid as the spherical cap it follows', thrustIsRing: true,
+                  notes: ['A double-layer dome: the second layer lets a very flat, very large dome resist buckling (Engel 2.4.3.3).'] });
+          } },
+        { id: 'sl_beam', fam: 2, name: 'Space-truss beams', mats: MAT2, spans: SP2.sp3, rule: { steel: 'triangular section, d = L/15', timber: 'triangular section, d = L/12' },
+          own: (m, L) => K2(m) * (0.09 + 0.004 * L),
+          build(L, H, W, m, q) { return linSpace(L, H, W, m, q, 'beam'); } },
+        { id: 'sl_frame', fam: 2, name: 'Space-truss frames', mats: MAT2, spans: SP2.sp3, rule: { steel: 'triangular section, rafter and legs d = L/15', timber: 'triangular section, rafter and legs d = L/12' },
+          own: (m, L) => K2(m) * (0.09 + 0.004 * L) * 1.3,
+          build(L, H, W, m, q) { return linSpace(L, H, W, m, q, 'frame'); } },
+        { id: 'sl_arch', fam: 2, name: 'Space-truss arches', mats: MAT2, spans: SP2.sp3, rule: { steel: 'triangular section, half-circle from the ground, d = S/30', timber: 'triangular section, half-circle from the ground, d = S/25' },
+          own: (m, L) => K2(m) * (0.08 + 0.004 * L) * 1.3,
+          build(L, H, W, m, q) { return linSpace(L, H, W, m, q, 'arch'); } }
+    ];
+    // folded trusses: folds along the span, each fold plane a truss between a valley and a ridge
+    function foldTrusses(L, H, W, m, shape, notes) {
+        const h0 = L / (m === 'timber' ? 8 : 10), F = foldYs(W, clamp(h0 * 1.6, 2, 6)), n = nPan(L, h0), lines3 = [], P = [];
+        const zr = x => H + h0 * shape(x / L), node = (k, x) => [x, F.ys[k], k % 2 ? zr(x) : H];
+        for (let k = 0; k <= F.n; k++) lines3.push({ c: 'member', pts: Array.from({ length: n + 1 }, (_, i) => node(k, L * i / n)) });
+        for (let k = 0; k < F.n; k++) for (let i = 0; i < n; i++) lines3.push({ c: 'thin', pts: (i + k) % 2 ? [node(k, L * i / n), node(k + 1, L * (i + 1) / n)] : [node(k + 1, L * i / n), node(k, L * (i + 1) / n)] });
+        for (let i = 0; i <= n; i++) lines3.push({ c: i === 0 || i === n ? 'member' : 'thin', pts: Array.from({ length: F.n + 1 }, (_, k) => node(k, L * i / n)) });
+        for (let k = 0; k <= F.n; k += 2) P.push([0, F.ys[k], H], [L, F.ys[k], H]);
+        const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: () => H, ni: 1, nj: 1 }], lines3, posts: P, secY: F.bb,
+            sec: Array.from({ length: n + 1 }, (_, i) => [L * i / n, zr(L * i / n)]), secParts: [line([[0, H], [L, H]], 'thin'), rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H)],
+            planSegs: F.ys.map((y, k) => [0, y, L, y, k % 2 ? 1 : 0.3]) });
+        return Object.assign(r, { zone: r.topOverride - H, cols: P.length, colNote: `valleys on columns every ${f1_(2 * F.bb)} m; folds ${f1_(F.bb)} m wide`, notes });
+    }
+    // linear space trusses of triangular section: beams, frames or arches
+    function linSpace(L, H, W, m, q, kind) {
+        const s = S2(m), B = bays(W, s, 0.5), lines3 = [];
+        let path, d, extra = {};
+        if (kind === 'arch') { const sp = semiPoly(L, H, 16); path = sp.pts; d = 2 * sp.R / (m === 'timber' ? 25 : 30);
+            extra = { spanUsed: 2 * sp.R, spanLabel: `the arch spans ${f1_(2 * sp.R)} m`, thrust: q * B.p * sp.R / 2, thrustNote: `at each foot, per arch (${f1_(B.p)} m apart): H = qsS²/8f with S = 2R, f = R, so H = qsR/2`, thrustPerArch: true }; }
+        else { d = L / (m === 'timber' ? 12 : 15); const a = clamp(d * 1.2, 1.2, 5);
+            path = kind === 'beam' ? resamplePath([[0, H], [L, H]], a) : resamplePath([[0, 0], [0, H], [L, H], [L, 0]], a); }
+        if (kind === 'arch') path = resamplePath(path, clamp(d * 1.2, 1.2, 5));
+        let sec; for (const y of B.ys) sec = triTruss(path, y, Math.min(B.b, d * 1.2), d, lines3);
+        const posts = kind === 'beam' ? B.ys.flatMap(y => [[0, y, H], [L, y, H]]) : [], xs = sec.top.map(p => p[0]);
+        const r = surfaceHall({ kind: 'none', mods: B.ys.map(y => ({ rect: [Math.min(...xs), y - B.b / 2, Math.max(...xs), y + B.b / 2], z: () => H, ni: 1, nj: 1 })), lines3, posts, secY: B.ys[0], sec: sec.top,
+            secParts: [line(sec.bot, 'thin'), ...(posts.length ? [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H)] : [])] });
+        return Object.assign(r, { zone: r.topOverride - H, cols: kind === 'beam' ? posts.length : 2 * B.n,
+            colNote: `${B.n} ${kind === 'beam' ? 'beams' : kind === 'frame' ? 'frames' : 'arches'} ${f1_(B.p)} m apart${kind === 'beam' ? ', on end columns' : ''}; a light roof spans between`,
+            notes: [kind === 'beam' ? 'Two top chords and one bottom chord make a triangular truss that is stable on its own, without bracing (Engel 2.4.4.1).'
+                : kind === 'frame' ? 'Rafter and legs of one triangular-section truss, rigid at the knees (Engel 2.4.4.2).' : 'An arch of triangular-section truss: stiff sideways as well as in its plane (Engel 2.4.4.3).'], ...extra });
+    }
+    for (const s of FAM2) SYS.push(Object.assign({ code: '' }, s));
+
     // where each thrust figure comes from: Engel first, and the formula's origin when it is not in the book
     const EHALF = 'Engel p.114: thrust grows as the rise falls · half-circle of six facets: H = qS²/8f with S = 2R, f = R, i.e. qR/2, by moment equilibrium about the crown, taking hinges at the crown and feet (three-hinged arch; statics, not in Engel)';
     const E114 = 'Engel p.114: thrust grows as the rise falls (rise ½ of span → 1, ⅓ → 1½, ¼ → 2, ⅛ → 4) · H = qL²/8f: moment equilibrium of a parabolic arch at the crown (standard statics, not in Engel)';
@@ -1843,7 +2335,13 @@
         k_uni: 'Not in Engel · hold-down force T = qsL²/2a: moment equilibrium of the cantilever about the column line (statics)',
         f_3h: 'Engel pp.186–192: frames push out at the feet; three hinges make it determinate · H = qsL²/8h (statics)',
         p_can1: 'Not in Engel · hold-down force T = qsL²/2a: moment equilibrium of the cantilever plate about its support line (statics)',
-        fb_barrel: EHALF, fl_arch: EHALF,
+        fb_barrel: EHALF, fl_arch: EHALF, tl_arch: EHALF, sl_arch: EHALF,
+        sd_schw: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sd_lat: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sd_par: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sd_lam: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', geodesic: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sv_sphere: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)',
+        tf_poly: 'Not in Engel (p.49 shows the form only) · minimum thrust: moment equilibrium of half the pyramid with the line of thrust through the apex, T = qL²b/16f per edge tie (method: J. Heyman, The Stone Skeleton, 1995)',
+        cy_int: 'Not in Engel (p.49 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
+        dm_long: 'Engel p.152: a curved truss net arches across like a vault · H = qL²/8F per metre, taking the arching direction alone — an upper bound (statics)',
+        sv_barrel: 'Engel p.157: a curved space truss arches across · tie force H = qL²/8f per metre by moment equilibrium of a parabolic arch at the crown (statics, not in Engel)',
+        sv_double: 'Engel p.157: a curved space truss arches across · H = qL²/8f per metre, taking the arching direction alone — an upper bound (statics)',
         fp_pyr: 'Not in Engel (p.53 shows the form only) · minimum thrust: moment equilibrium of half the pyramid with the line of thrust through the apex, T = qL²b/16f per edge tie (method: J. Heyman, The Stone Skeleton, 1995)',
         fp_tri: 'Engel pp.245–248 (domes) · treated as the spherical cap it approximates: ring T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)',
         fi_2: 'Not in Engel (p.53 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
@@ -1872,21 +2370,21 @@
         '1.4': ['Arch structures', { '1.4.1': ['linear arches', ['funicular arch', 'two-hinged arch', 'three-hinged arch'], { 1: 'tarch', 2: 'garch', 3: 'arch3' }],
             '1.4.2': ['vaults', ['barrel vault', 'cross vault', 'cloister vault', 'arch-supported vault', 'pendentive dome', 'squinch dome'], { 1: 'vault', 2: 'v_cross', 3: 'v_cloister', 4: 'v_arch', 5: 'v_pend', 6: 'v_squinch' }],
             '1.4.3': ['thrust lattices', ['flat boundary cut', 'boundary mesh arch'], { 1: 'gshell', 2: 'g_arch' }] }],
-        '2.1': ['Flat trusses', { '2.1.1': ['top chord trusses', ['double-pitched truss', 'segmental (bow) truss', 'parallel-chord truss'], { 1: 'ptruss' }],
-            '2.1.2': ['bottom chord trusses', ['inverted two-pitch truss', 'segmental (catenary) truss', 'parallel-chord truss']],
-            '2.1.3': ['two-chord trusses', ['rhombus-shape truss', 'concave-chord truss', 'parallel-chord truss'], { 3: 'truss' }],
-            '2.1.4': ['cambered trusses', ['scissors truss', 'crescent (curved) truss', 'mansard truss']] }],
-        '2.2': ['Transmitted flat trusses', { '2.2.1': ['linear trusses', ['trussed beam', 'trussed frame', 'trussed arch', 'trussed irregular forms']],
-            '2.2.2': ['folded trusses', ['parallel folding', 'polyhedral folding', 'tapered folding']],
-            '2.2.3': ['intersecting trusses', ['biaxial intersection', 'three-axial intersection']] }],
-        '2.3': ['Curved trusses', { '2.3.1': ['cylindrical trusses', ['one-way form', 'intersecting form'], { 1: 'lamella' }],
-            '2.3.2': ['saddle-shape trusses', ['boundary arch', 'straight boundary beam']],
-            '2.3.3': ['dome-shape trusses', []],
-            '2.3.4': ['spherical trusses', ['Schwedler dome', 'lattice dome', 'parallel lattice dome', 'lamella dome', 'geodesic dome'], { 5: 'geodesic' }] }],
-        '2.4': ['Space trusses', { '2.4.1': ['flat space trusses', ['semi-octahedral packing', 'tetrahedral packing', 'prismatic packing'], { 1: 'space' }],
-            '2.4.2': ['folded space trusses', ['parallel folding']],
-            '2.4.3': ['curved space trusses', ['singly curved', 'doubly curved', 'spherical shape']],
-            '2.4.4': ['linear space trusses', ['space truss beam', 'space truss frame', 'space truss arch']] }],
+        '2.1': ['Flat trusses', { '2.1.1': ['top chord trusses', ['double-pitched truss', 'segmental (bow) truss', 'parallel-chord truss'], { 1: 'ptruss', 2: 'tt_bow', 3: 'tt_trap' }],
+            '2.1.2': ['bottom chord trusses', ['inverted two-pitch truss', 'segmental (catenary) truss', 'parallel-chord truss'], { 1: 'tb_v', 2: 'tb_cat', 3: 'tb_trap' }],
+            '2.1.3': ['two-chord trusses', ['rhombus-shape truss', 'concave-chord truss', 'parallel-chord truss'], { 1: 'tc_rhomb', 2: 'tc_lens', 3: 'truss' }],
+            '2.1.4': ['cambered trusses', ['scissors truss', 'crescent (curved) truss', 'mansard truss'], { 1: 'tk_sciss', 2: 'tk_cresc', 3: 'tk_mans' }] }],
+        '2.2': ['Transmitted flat trusses', { '2.2.1': ['linear trusses', ['trussed beam', 'trussed frame', 'trussed arch', 'trussed irregular forms'], { 1: 'tl_beam', 2: 'tl_frame', 3: 'tl_arch', 4: 'tl_irreg' }],
+            '2.2.2': ['folded trusses', ['parallel folding', 'polyhedral folding', 'tapered folding'], { 1: 'tf_par', 2: 'tf_poly', 3: 'tf_taper' }],
+            '2.2.3': ['intersecting trusses', ['biaxial intersection', 'three-axial intersection'], { 1: 'ti_2', 2: 'ti_3' }] }],
+        '2.3': ['Curved trusses', { '2.3.1': ['cylindrical trusses', ['one-way form', 'intersecting form'], { 1: 'lamella', 2: 'cy_int' }],
+            '2.3.2': ['saddle-shape trusses', ['boundary arch', 'straight boundary beam'], { 1: 'sa_arch', 2: 'sa_beam' }],
+            '2.3.3': ['dome-shape trusses', ['elongated dome'], { 1: 'dm_long' }],
+            '2.3.4': ['spherical trusses', ['Schwedler dome', 'lattice dome', 'parallel lattice dome', 'lamella dome', 'geodesic dome'], { 1: 'sd_schw', 2: 'sd_lat', 3: 'sd_par', 4: 'sd_lam', 5: 'geodesic' }] }],
+        '2.4': ['Space trusses', { '2.4.1': ['flat space trusses', ['semi-octahedral packing', 'tetrahedral packing', 'prismatic packing'], { 1: 'space', 2: 'st_tetra', 3: 'st_prism' }],
+            '2.4.2': ['folded space trusses', ['parallel folding'], { 1: 'sf_fold' }],
+            '2.4.3': ['curved space trusses', ['singly curved', 'doubly curved', 'spherical shape'], { 1: 'sv_barrel', 2: 'sv_double', 3: 'sv_sphere' }],
+            '2.4.4': ['linear space trusses', ['space truss beam', 'space truss frame', 'space truss arch'], { 1: 'sl_beam', 2: 'sl_frame', 3: 'sl_arch' }] }],
         '3.1': ['Beam structures', { '3.1.1': ['one-bay beam', ['horizontal beam', 'pitched beam', 'angled beam', 'curved beam'], { 1: 'beam', 2: 'b_pitch', 3: 'b_angle', 4: 'b_curve' }],
             '3.1.2': ['continuous beam', ['horizontal beam', 'pitched beam', 'angled beam'], { 1: 'cb_h', 2: 'cb_p', 3: 'cb_a' }], '3.1.3': ['pin-jointed beam', ['horizontal beam', null, null, 'curved beam'], { 1: 'gb_h', 4: 'gb_c' }],
             '3.1.4': ['cantilever beam', ['unilateral cantilever beam', 'bilateral cantilever beam'], { 1: 'k_uni', 2: 'k_bi' }] }],
@@ -1971,7 +2469,6 @@
             case 'arch3': { const c = r0.plan.S / 45; return m === 'concrete' ? 25 * c * c * 0.6 * 1.3 / r0.plan.s : k * (0.05 + 0.003 * r0.plan.S); }
             case 'vier': return m === 'concrete' ? 2.5 + 0.03 * L : k * (0.15 + 0.009 * L);
             case 'lamella': return k * (0.06 + 0.0025 * L);
-            case 'geodesic': return k * (0.06 + 0.002 * L);
             case 'gshell': return k * (0.08 + 0.002 * L);
             case 'cbeam': return k * (0.06 + 0.003 * L);
         }
@@ -2132,13 +2629,22 @@
         }
         return chain.reduce((b, p) => Math.abs(p[0] - x) < Math.abs(b[0] - x) ? p : b)[1];
     }
+    // a flat quad A B C D cut into pieces no longer than smax, each drawing only its share of the outline,
+    // so the depth sort compares small pieces with small pieces
+    function quadPieces(add, A, B, C, D, c = 'solid', smax = 3) {
+        const nu = Math.max(1, Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]) / smax)), nv = Math.max(1, Math.ceil(Math.hypot(D[0] - A[0], D[1] - A[1], D[2] - A[2]) / smax));
+        if (nu === 1 && nv === 1) { add('face', [A, B, C, D], c); return; }
+        const P = (u, v) => [0, 1, 2].map(k => A[k] * (1 - u) * (1 - v) + B[k] * u * (1 - v) + C[k] * u * v + D[k] * (1 - u) * v);
+        for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++)
+            add('face', [P(i / nu, j / nv), P((i + 1) / nu, j / nv), P((i + 1) / nu, (j + 1) / nv), P(i / nu, (j + 1) / nv)], c, [j === 0, i === nu - 1, j === nv - 1, i === 0]);
+    }
     function box3(add, x0, x1, y0, y1, z0, z1, c = 'solid') {
         const P = (x, y, z) => [x, y, z];
-        add('face', [P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1)], c);
-        add('face', [P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1)], c);
-        add('face', [P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1)], c);
-        add('face', [P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1)], c);
-        add('face', [P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)], c);
+        quadPieces(add, P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1), c);
+        quadPieces(add, P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1), c);
+        quadPieces(add, P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1), c);
+        quadPieces(add, P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1), c);
+        quadPieces(add, P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1), c);
     }
     function resample(chain, n) {
         const xa = chain[0][0], xb = chain[chain.length - 1][0], out = [];
@@ -2281,31 +2787,6 @@
                 if (P.length > 1) add('line', P, 'thin');
             }
             add('line', [[x0, Y0, 0], [x0, W + e, 0], [x0 + Sp, W + e, 0], [x0 + Sp, Y0, 0], [x0, Y0, 0]], 'member');
-        } else if (sys === 'geodesic') {
-            const { R, n } = r.geo, ph = (1 + Math.sqrt(5)) / 2;
-            let V = [[-1, ph, 0], [1, ph, 0], [-1, -ph, 0], [1, -ph, 0], [0, -1, ph], [0, 1, ph], [0, -1, -ph], [0, 1, -ph], [ph, 0, -1], [ph, 0, 1], [-ph, 0, -1], [-ph, 0, 1]];
-            const Fc = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
-            const nrm = p => { const l = Math.hypot(...p); return p.map(c => c / l); };
-            // rotate so a vertex points up, then subdivide each face 3x (frequency 3)
-            const up = nrm(V[0]), ang = Math.acos(up[2]), ax = nrm([up[1], -up[0], 0]);
-            const rot = p => { const [x, y, z] = p, c = Math.cos(ang), s2 = Math.sin(ang), [ux, uy, uz] = ax, d = ux * x + uy * y + uz * z;
-                return [x * c + (uy * z - uz * y) * s2 + ux * d * (1 - c), y * c + (uz * x - ux * z) * s2 + uy * d * (1 - c), z * c + (ux * y - uy * x) * s2 + uz * d * (1 - c)]; };
-            V = V.map(v => rot(nrm(v)));
-            const fr = 3, tris = [];
-            for (const [a, b, c] of Fc) {
-                const A = V[a], B = V[b], C = V[c], P = (i, j) => nrm(A.map((_, k) => A[k] + (B[k] - A[k]) * i / fr + (C[k] - A[k]) * j / fr));
-                for (let i = 0; i < fr; i++) for (let j = 0; j < fr - i; j++) {
-                    tris.push([P(i, j), P(i + 1, j), P(i, j + 1)]);
-                    if (i + j < fr - 1) tris.push([P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)]);
-                }
-            }
-            for (let k = 0; k < n; k++) {
-                const cx = L / 2, cy = (k + 0.5) * W / n;
-                for (const T of tris) {
-                    if ((T[0][2] + T[1][2] + T[2][2]) / 3 < -0.02) continue;
-                    add('face', T.map(([x, y, z]) => [cx + R * x, cy + R * y, Math.max(0, R * z)]), 'shell');
-                }
-            }
         } else if (sys === 'vault') {
             const V = r.V, t = V.t, tw = V.tw, bay = V.bay, inner = resample(V.inner, 14), ys = ysOf(W, bay);
             const shell = (dx, mode) => {
@@ -2314,7 +2795,7 @@
                     const [xa, za] = inner[i], [xb, zb] = inner[i + 1], ya = W * j / nyv, yb = W * (j + 1) / nyv;
                     add('face', [[xa + dx, ya, za + t], [xb + dx, ya, zb + t], [xb + dx, yb, zb + t], [xa + dx, yb, za + t]], mode);
                 }
-                add('face', [...inner.map(([x, z]) => [x + dx, 0, z]), ...inner.slice().reverse().map(([x, z]) => [x + dx, 0, z + t])], 'solid');
+                for (const ye of [0, W]) add('face', [...inner.map(([x, z]) => [x + dx, ye, z]), ...inner.slice().reverse().map(([x, z]) => [x + dx, ye, z + t])], 'solid');
             };
             if (V.mode === 'adjacent') {
                 for (const dx of [-L - tw, L + tw]) shell(dx, 'membrane');
@@ -2325,9 +2806,9 @@
             }
             shell(0, 'shellx');
             if (V.mode === 'buttress') for (const y of ys) for (const [x0, dir] of [[-tw, -1], [L + tw, 1]]) {
-                const bd = V.bd, bw = Math.max(0.5, L / 30), x1 = x0 + dir * bd, xt = x0 + dir * bd * 0.35, z = H * 0.9;
+                const bd = V.bd, bw = Math.max(0.5, L / 30), x1 = x0 + dir * bd, xt = x0 + dir * bd * 0.35, z = H + t;   // up to the impost, where the thrust enters the wall
                 const P = [[x0, y - bw / 2, 0], [x1, y - bw / 2, 0], [xt, y - bw / 2, z], [x0, y - bw / 2, z]], Q = P.map(([x, yy, zz]) => [x, yy + bw, zz]);
-                add('face', P, 'solid'); add('face', Q, 'solid'); add('face', [P[1], P[2], Q[2], Q[1]], 'solid'); add('face', [P[2], P[3], Q[3], Q[2]], 'solid');
+                quadPieces(add, ...P); quadPieces(add, ...Q); quadPieces(add, P[1], Q[1], Q[2], P[2]); quadPieces(add, P[3], P[2], Q[2], Q[3]);
             }
             if (V.mode === 'tie') for (const y of ys) add('line', [[0, y, H], [L, y, H]], 'tie');
         } else {
