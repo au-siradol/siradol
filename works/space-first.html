@@ -205,8 +205,8 @@
             <span class="titlegroup"><span class="idx">12</span><span class="titleline"><b>Space First</b><span class="sep">&mdash;</span><span class="sub">set the column-free hall, then compare the structures that can span it &middot; after Heino Engel, <i>Structure Systems</i></span></span></span>
         </div>
         <div class="fields">
-            <div class="fld"><span class="k">Span — column-free</span><span class="line"><input id="L" type="number" min="3" max="300" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
-            <div class="fld"><span class="k">Length</span><span class="line"><input id="W" type="number" min="6" max="200" step="1"><span class="u">m</span></span><input id="rW" type="range" min="6" max="200" step="1"></div>
+            <div class="fld"><span class="k">Span — column-free</span><span class="line"><input id="L" type="number" min="3" max="200" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
+            <div class="fld"><span class="k">Length · ≥ span</span><span class="line"><input id="W" type="number" min="3" max="200" step="1"><span class="u">m</span></span><input id="rW" type="range" min="3" max="200" step="1"></div>
             <div class="fld"><span class="k">Clear height</span><span class="line"><input id="H" type="number" min="2.5" max="30" step="0.5"><span class="u">m</span></span><input id="rH" type="range" min="2.5" max="30" step="0.5"></div>
             <div class="fld" title="Roof load is worked out per system: its own weight (estimated) + the roof covering + services 0.10 + live load from the Thai Ministerial Regulation No. 6 (B.E. 2527): 30 kg/m² on a roof, 100 kg/m² on a concrete roof"><span class="k">Roof covering · load auto</span><span class="line"><select id="finish"></select></span><span class="third u" id="qNote"></span></div>
             <div class="fld"><span class="k">Material</span><span class="line"><select id="mat"><option value="steel">steel</option><option value="timber">timber</option><option value="concrete">concrete</option></select></span><span class="third"></span></div>
@@ -253,7 +253,7 @@
     const r05 = v => Math.round(v * 2) / 2;
 
     // span slider: 3 m … 300 m on a log scale
-    const Lmin = 3, Lmax = 300;
+    const Lmin = 3, Lmax = 200;
     const toL = s => { const v = Lmin * Math.pow(Lmax / Lmin, s / 1000); return v < 20 ? r05(v) : Math.round(v); };
     const fromL = L => Math.round(1000 * Math.log(L / Lmin) / Math.log(Lmax / Lmin));
 
@@ -336,21 +336,6 @@
                   thrust: q * L * L / (8 * f1_), thrustNote: 'pull of the carrying cable on the masts, to backstays and anchors',
                   plan: { kind: 'oneway', s, masts: true, anchors: a },
                   notes: ['Two cables curved against each other and pretensioned: the sagging one carries gravity, the hogging one carries wind uplift (Engel pp.68–76).', 'Lighter than a single cable with a heavy deck — the pretension, not dead weight, keeps it still.']
-              };
-          } },
-        { id: 'tent', fam: 1, code: '1.2 · indirect peak', name: 'Arch-supported tent', mats: ['membrane'],
-          spans: { membrane: { lim: [20, 150], typ: [[30, 80]] } },
-          rule: { membrane: 'arches rise S/4, membrane between' },
-          build(L, H, W, m, q) {
-              const r = 0.25, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp, x0 = L / 2 - Sp / 2, s = clamp(r05(L / 4), 5, 15), t = Math.max(0.15, Sp / 120);
-              const arch = parab(x0, x0 + Sp, 0, F), valley = parab(x0, x0 + Sp, 0, F * 0.9);
-              return {
-                  parts: [band(arch, t), line(valley, 'thin')],
-                  roof: arch.map(([x, y]) => [x, y + t]), foot: [x0 - 0.5, x0 + Sp + 0.5],
-                  zoneLabel: `rise ${f1(F)}`, zone: F + t - H, cols: 2 * (Math.ceil(W / s) + 1), colNote: `${Math.ceil(W / s) + 1} arches every ${f1(s)} m, membrane saddles between`,
-                  thrust: q * s * Sp * Sp / (8 * F), thrustNote: `arch thrust at each foot (arches ${f1(s)} m apart)`, thrustPerArch: true,
-                  plan: { kind: 'arch', s, x0, S: Sp },
-                  notes: ['Between two arches the membrane is curved both ways (anticlastic): one curve carries gravity, the other uplift (Engel pp.86–96).', 'The membrane itself weighs almost nothing; the arches carry its prestress as well as the roof load.']
               };
           } },
         { id: 'gshell', fam: 1, code: '1.4 · vaulted lattice', name: 'Gridshell (thrust lattice)', mats: ['timber', 'steel'],
@@ -717,6 +702,8 @@
     const cushionP = q => q + 0.3;
     const rowDisks = (L, W) => { const n = Math.max(1, Math.floor(W / L)); return Array.from({ length: n }, (_, k) => [L / 2, (k + 0.5) * W / n, L / 2]); };
     const UV = (x, y, r) => [2 * (x - r[0]) / (r[2] - r[0]) - 1, 2 * (y - r[1]) / (r[3] - r[1]) - 1];
+    // polar parameter t over a w × h rectangle, piecewise so that t = 1/8, 3/8, 5/8, 7/8 fall exactly on its corners
+    const angT = (t, w, h) => { const c = Math.atan2(h, w), K = [0, c, Math.PI / 2, Math.PI - c, Math.PI, Math.PI + c, 1.5 * Math.PI, 2 * Math.PI - c, 2 * Math.PI], u = ((t % 1) + 1) % 1 * 8, k = Math.min(7, Math.floor(u)); return K[k] + (K[k + 1] - K[k]) * (u - k) + (t >= 1 ? 2 * Math.PI : 0); };
     const RHO = (x, y, d) => [Math.min(1, Math.hypot(x - d[0], y - d[1]) / d[2]), Math.atan2(y - d[1], x - d[0])];
     const wave = (y, p) => 0.5 - 0.5 * Math.cos(2 * Math.PI * y / p);
     const uniq = pts => { const seen = new Set(); return pts.filter(p => { const k = p.map(v => v.toFixed(2)).join(','); if (seen.has(k)) return false; seen.add(k); return true; }); };
@@ -1074,11 +1061,11 @@
         { id: 'v_arch', fam: 1, name: 'Sail vault on four arches', ...M(SP.vault, ['masonry']), rule: { masonry: 'one sphere through the four corners, cut by the four sides' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
               const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], R1 = Math.hypot(L / 2, b / 2), tp = Math.max(0.8, L / 12);
-              const redge = t => { const th = 2 * Math.PI * t; return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
+              const redge = t => { const th = angT(t, L, b); return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
               const mods = [], lines3 = [];
               for (const r0 of rs) {
                   const [x0, y0, x1, y1] = r0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, zs = (x, y) => H + Math.sqrt(Math.max(0, R1 * R1 - (x - cx) ** 2 - (y - cy) ** 2));
-                  mods.push({ rect: r0, map: (s_, t) => { const th = 2 * Math.PI * t, rr = s_ * redge(t); return [cx + rr * Math.cos(th), cy + rr * Math.sin(th)]; }, z: zs, ni: 10, nj: 48 });
+                  mods.push({ rect: r0, map: (s_, t) => { const th = angT(t, L, b), rr = s_ * redge(t); return [cx + rr * Math.cos(th), cy + rr * Math.sin(th)]; }, z: zs, ni: 10, nj: 48 });
                   for (const [ax, ay, bx, by] of [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]]) lines3.push({ c: 'post', pts: Array.from({ length: 25 }, (_, i) => { const x = ax + (bx - ax) * i / 24, y = ay + (by - ay) * i / 24; return [x, y, zs(x, y)]; }) });
               }
               const o = { kind: 'shellx', mods, lines3, secY: (rs[0][1] + rs[0][3]) / 2,
@@ -1095,8 +1082,8 @@
               const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], a = Math.min(L, b), R1 = Math.hypot(L / 2, b / 2), z1 = Math.sqrt(Math.max(0, R1 * R1 - (a / 2) ** 2)), tp = Math.max(0.8, L / 12), c = z1 + a / 2;
               const mods = [], lines3 = [];
               for (const r0 of rs) {
-                  const [x0, y0, x1, y1] = r0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, redge = t => { const th = 2 * Math.PI * t; return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
-                  mods.push({ rect: r0, map: (s, t) => { const th = 2 * Math.PI * t, rr = a / 2 + s * (redge(t) - a / 2); return [cx + rr * Math.cos(th), cy + rr * Math.sin(th)]; }, z: (x, y) => H + Math.sqrt(Math.max(0, R1 * R1 - (x - cx) ** 2 - (y - cy) ** 2)), ni: 6, nj: 48 });
+                  const [x0, y0, x1, y1] = r0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, redge = t => { const th = angT(t, L, b); return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
+                  mods.push({ rect: r0, map: (s, t) => { const th = angT(t, L, b), rr = a / 2 + s * (redge(t) - a / 2); return [cx + rr * Math.cos(th), cy + rr * Math.sin(th)]; }, z: (x, y) => H + Math.sqrt(Math.max(0, R1 * R1 - (x - cx) ** 2 - (y - cy) ** 2)), ni: 6, nj: 48 });
                   mods.push({ disk: [cx, cy, a / 2], z: (x, y) => H + z1 + Math.sqrt(Math.max(0, (a / 2) ** 2 - (x - cx) ** 2 - (y - cy) ** 2)), ni: 8, nj: 32 });
                   for (const [ax, ay, bx, by] of [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]]) lines3.push({ c: 'post', pts: Array.from({ length: 25 }, (_, i) => { const x = ax + (bx - ax) * i / 24, y = ay + (by - ay) * i / 24; return [x, y, H + Math.sqrt(Math.max(0, R1 * R1 - (x - cx) ** 2 - (y - cy) ** 2))]; }) });
                   lines3.push(ringLine([cx, cy, a / 2], H + z1, 'post'));
@@ -1174,7 +1161,6 @@
                   notes: ['The lattice ends in arches instead of running down to the ground, so the ends stay open (Engel 1.4.3.2).'] });
           } }
     ];
-    for (let i = SYS.length - 1; i >= 0; i--) if (SYS[i].id === 'tent') SYS.splice(i, 1);
     for (const s of FAM1) SYS.push(Object.assign({ code: '' }, s));
 
     // ---------- family 3 variants (Engel pp.50–51; spans p.176) ----------
@@ -1982,7 +1968,6 @@
             case 'vault': return 20 * r0.t * 1.2;
             case 'hyparT': return m === 'timber' ? 0.4 : 25 * t(L / 500) * 1.3;
             case 'ctruss': return 0.05 + 0.0008 * L;
-            case 'tent': return 0.03;
             case 'arch3': { const c = r0.plan.S / 45; return m === 'concrete' ? 25 * c * c * 0.6 * 1.3 / r0.plan.s : k * (0.05 + 0.003 * r0.plan.S); }
             case 'vier': return m === 'concrete' ? 2.5 + 0.03 * L : k * (0.15 + 0.009 * L);
             case 'lamella': return k * (0.06 + 0.0025 * L);
@@ -2083,7 +2068,7 @@
                 if (m.disk) s += `<circle cx="${m.disk[0]}" cy="${m.disk[1]}" r="${m.disk[2]}" fill="rgba(0,0,0,0.03)" stroke="#111" stroke-width="${sw * 1.2}"/>`;
                 else {
                     // outline of the (s, t) square, densely sampled; a side that collapses to a point or runs back along its opposite side (the seam of a polar map) is filled but not stroked
-                    const N = m.rect && !m.map ? 1 : 60, E = [[0, 0, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 0, 0]], side = ([s0, t0, s1, t1]) => Array.from({ length: N + 1 }, (_, i) => modPt(m, s0 + (s1 - s0) * i / N, t0 + (t1 - t0) * i / N));
+                    const N = m.rect && !m.map ? 1 : 64, E = [[0, 0, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 0, 0]], side = ([s0, t0, s1, t1]) => Array.from({ length: N + 1 }, (_, i) => modPt(m, s0 + (s1 - s0) * i / N, t0 + (t1 - t0) * i / N));
                     const S4 = E.map(side), same = (A, B) => A.every((p, i) => Math.hypot(p[0] - B[N - i][0], p[1] - B[N - i][1]) < 1e-6), point = A => A.every(p => Math.hypot(p[0] - A[0][0], p[1] - A[0][1]) < 1e-6);
                     const seam = [same(S4[0], S4[2]), same(S4[1], S4[3])], P = S4.flatMap(A => A.slice(0, -1));
                     s += `<path d="M${P.map(p => p.join(',')).join('L')}Z" fill="rgba(0,0,0,0.03)" stroke="none"/>`;
@@ -2265,18 +2250,6 @@
                 for (const x of [0, L]) box3(add, x - 0.15, x + 0.15, y - 0.15, y + 0.15, 0, H);
             }
             for (const x of [0, L]) add('line', [[x, 0, H], [x, W, H]], 'member');
-        } else if (sys === 'tent') {
-            // arches every s, the membrane saddles down between them
-            const ysa = ysOf(W, pl.s), arch = resample(r.parts[0].pts.slice(0, r.parts[0].pts.length / 2), 16);
-            for (let k = 0; k < ysa.length - 1; k++) {
-                const y0 = ysa[k], y1 = ysa[k + 1], ym = (y0 + y1) / 2;
-                for (let i = 0; i < arch.length - 1; i++) {
-                    const [xa, za] = arch[i], [xb, zb] = arch[i + 1], sag = z => z * 0.88;
-                    add('face', [[xa, y0, za], [xb, y0, zb], [xb, ym, sag(zb)], [xa, ym, sag(za)]], 'membrane');
-                    add('face', [[xa, ym, sag(za)], [xb, ym, sag(zb)], [xb, y1, zb], [xa, y1, za]], 'membrane');
-                }
-            }
-            for (const y of ysa) add('line', arch.map(([x, z]) => [x, y, z]), 'member');
         } else if (sys === 'lamella') {
             const f = r.lattice.f, na = 16, cyl = u => [L * u, H + 4 * f * u * (1 - u)];
             const a = clamp(L / 10, 1.5, 4), k = Math.max(4, Math.round(W / a)), m2 = Math.max(4, Math.round(L / a));
@@ -2428,7 +2401,7 @@
         { n: 'Hangar, wide-body', L: 80, W: 85, H: 21 },
         { n: 'Indoor arena', L: 120, W: 140, H: 25 }
     ];
-    const FIELDS = { L: { min: 3, max: 300, log: true }, W: { min: 6, max: 200 }, H: { min: 2.5, max: 30 } };
+    const FIELDS = { L: { min: 3, max: 200, log: true }, W: { min: 3, max: 200 }, H: { min: 2.5, max: 30 } };
     const RANKST = { typ: 0, pos: 1, out: 2 };
     const qTxt = r => `${f2(r.load.q)}`;
 
@@ -2606,10 +2579,16 @@
     $('mVar').addEventListener('click', e => { const v = e.target.closest('[data-vmode]'); if (v) { S.vaultMode = v.dataset.vmode; render(); } });
     // ---- inputs ----
     const clampK = (k, v) => Math.min(FIELDS[k].max, Math.max(FIELDS[k].min, v));
+    // the span is the short side: the length never drops below it — whichever was just set, the other follows
+    function keepOrder(k) {
+        if (S.W >= S.L) return;
+        if (k === 'W') S.L = S.W; else S.W = S.L;
+        for (const j of ['L', 'W']) { if (document.activeElement !== $(j)) $(j).value = S[j]; $('r' + j).value = FIELDS[j].log ? fromL(S[j]) : S[j]; }
+    }
     for (const k in FIELDS) {
-        $(k).addEventListener('input', e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { S[k] = clampK(k, v); render(); } });
+        $(k).addEventListener('input', e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { S[k] = clampK(k, v); keepOrder(k); render(); } });
         $(k).addEventListener('change', () => syncInputs());
-        $('r' + k).addEventListener('input', e => { S[k] = FIELDS[k].log ? toL(+e.target.value) : +e.target.value; render(); });
+        $('r' + k).addEventListener('input', e => { S[k] = FIELDS[k].log ? toL(+e.target.value) : +e.target.value; keepOrder(k); syncInputs(); render(); });
     }
     let finishNote = '';
     function syncFinish() {
