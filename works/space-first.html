@@ -2888,9 +2888,14 @@
     function projectScene(items, pr) {
         return items.map(o => { const P = o.pts.map(pr); return Object.assign({}, o, { P, depth: P.reduce((a, p) => a + p[2], 0) / P.length }); });
     }
+    const boxCache = new WeakMap(), bodyCache = new WeakMap();   // per projected scene: its screen box and its drawing
     function bounds3(scenes) {
         let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-        for (const sc of scenes) for (const o of sc) for (const p of o.P) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+        for (const sc of scenes) {
+            let b = boxCache.get(sc);
+            if (!b) { b = [1e9, -1e9, 1e9, -1e9]; for (const o of sc) for (const p of o.P) { b[0] = Math.min(b[0], p[0]); b[1] = Math.max(b[1], p[0]); b[2] = Math.min(b[2], p[1]); b[3] = Math.max(b[3], p[1]); } boxCache.set(sc, b); }
+            x0 = Math.min(x0, b[0]); x1 = Math.max(x1, b[1]); y0 = Math.min(y0, b[2]); y1 = Math.max(y1, b[3]);
+        }
         y0 -= 2.2; // room for people's heads
         return { x0, x1, y0, y1 };
     }
@@ -2947,15 +2952,17 @@
     }
     function axoSVG(proj, bb, ghost = null) {
         const w = bb.x1 - bb.x0, h = bb.y1 - bb.y0, pad = Math.max(w, h) * 0.04;
-        let s = `<svg viewBox="${bb.x0 - pad} ${bb.y0 - pad} ${w + 2 * pad} ${h + 2 * pad}" preserveAspectRatio="xMidYMid meet">`;
-        const sorted = paintOrder(proj);
-        const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(3)},${p[1].toFixed(3)}`).join('');
-        for (const o of sorted) {
+        const head = `<svg viewBox="${bb.x0 - pad} ${bb.y0 - pad} ${w + 2 * pad} ${h + 2 * pad}" preserveAspectRatio="xMidYMid meet">`;
+        const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');   // metres: 1 cm is plenty
+        // B: the drawing of a scene is made once and reused wherever the same scene is shown (only the frame differs)
+        let s = bodyCache.get(proj);
+        if (s == null) { s = '';
+        for (const o of paintOrder(proj)) {
             if (o.t === 'face' && o.e) {
                 // a piece of a larger face: filled, its seams hidden, and only the edges flagged in o.e drawn — in its own place in the depth order
                 const st = (STYLE3.face[o.c] || STYLE3.face.solid).match(/stroke="([^"]*)" stroke-width="([^"]*)"/), fill = (STYLE3.face[o.c] || STYLE3.face.solid).match(/fill="([^"]*)"/)[1];
                 // fill; hide only the seams to its sibling pieces (a fill-coloured stroke on the outer edges would erase neighbours' lines)
-                const segP = on => o.e.map((f, i) => f === on ? `M${o.P[i][0].toFixed(3)},${o.P[i][1].toFixed(3)}L${o.P[(i + 1) % o.P.length][0].toFixed(3)},${o.P[(i + 1) % o.P.length][1].toFixed(3)}` : '').join('');
+                const segP = on => o.e.map((f, i) => f === on ? `M${o.P[i][0].toFixed(2)},${o.P[i][1].toFixed(2)}L${o.P[(i + 1) % o.P.length][0].toFixed(2)},${o.P[(i + 1) % o.P.length][1].toFixed(2)}` : '').join('');
                 s += `<path d="${path(o.P)}Z" fill="${fill}" stroke="none"/>`;
                 const d = segP(true);
                 if (d) s += `<path d="${d}" fill="none" stroke="${st[1]}" stroke-width="${st[2]}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
@@ -2963,6 +2970,8 @@
             else if (o.t === 'face') s += `<path d="${path(o.P)}Z" ${STYLE3.face[o.c] || STYLE3.face.solid} stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
             else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member}${o.seg ? ' stroke-linecap="round"' : ''} vector-effect="non-scaling-stroke"/>`;
         }
+        bodyCache.set(proj, s); }
+        s = head + s;
         if (ghost) for (const o of ghost) if (o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box')
             s += `<path d="${path(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`;
         return s + '</svg>';
@@ -3010,15 +3019,21 @@
         { t: 'Why', tip: '', f: r => `<div class="why">${esc(r.notes[0])}</div>` }
     ];
 
-    // the systems are rebuilt only when the hall or the load changes; turning the drawing only re-projects them
-    let resKey = '';
+    // results are built on demand and kept until the hall or the load changes: what is on screen first,
+    // the rest in short slices of idle time (the ranking needs them all and is drawn when they are done)
+    let resKey = '', EV = new Map(), restJob = 0;
     function compute() {
         PR = projector();
         const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, S.vaultMode, S.q]);
-        if (k === resKey && RES && RES.length) { for (const r of RES) r.P3 = null; return; }
-        resKey = k; RES = SYS.map(evaluate);
+        if (k === resKey) return;
+        resKey = k; EV = new Map(); RES = []; clearTimeout(restJob);
+        let i = 0; const key = k;
+        const step = () => { if (key !== resKey) return; const t0 = performance.now(); while (i < SYS.length && performance.now() - t0 < 8) byId(SYS[i++].id);
+            if (i < SYS.length) restJob = setTimeout(step, 0); else { resAll(); drawRank(); } };
+        restJob = setTimeout(step, 40);
     }
-    const byId = id => RES.find(r => r.sys.id === id);
+    function resAll() { if (RES.length !== SYS.length) RES = SYS.map(s_ => byId(s_.id)); return RES; }
+    const byId = id => { let r = EV.get(id); if (!r) { const sys = SYS.find(s_ => s_.id === id); if (!sys) return undefined; r = evaluate(sys); EV.set(id, r); } return r; };
     const matOk = r => r.sys.mats.includes(S.mat);
     function drawingOf(r, sel, view) {
         if (view === '3d') return axoSVG(r.P3, bounds3(sel.map(x => x.P3)));
@@ -3047,31 +3062,41 @@
         }
         g.innerHTML = h;
         document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
-        const qs = RES.map(r => r.load.q);
         $('qNote').textContent = finishNote || `covering applies to frames, trusses, arches, cables · shells are their own roof`;
-        $('nSys').textContent = RES.length;
+        $('nSys').textContent = SYS.length;
         $('suggest').textContent = metric === 'span' ? 'Suggest five' : `Suggest five · ${$('metric').selectedOptions[0].text.replace(/ \(.*\)/, '')}`;
-        if (!light) { drawTree(); drawRank(); }
+        if (!light) { drawTree(); if (RES.length === SYS.length) drawRank(); }
         if (modalId) drawModal();
     }
 
+    let treeKey = '';
     function drawTree() {
+        const tk = resKey + '|' + selType;
+        if (tk === treeKey) {   // same hall, same open type: only the markers change
+            document.querySelectorAll('#types .tcard').forEach(c => c.classList.toggle('on', c.dataset.type === selType));
+            document.querySelectorAll('#types .vi[data-add]').forEach(v => { const on = slots.includes(v.dataset.add); v.classList.toggle('in', on); const sm = v.querySelector('small'); if (sm) sm.textContent = sm.textContent.replace(/ · (in comparison|click to compare)$/, on ? ' · in comparison' : ' · click to compare'); });
+            return;
+        }
+        treeKey = tk;
         let h = '';
         for (const f of [1, 2, 3, 4, 5]) {
             const types = Object.keys(TREE).filter(t => t[0] === String(f));
             h += `<div class="famrow"><div class="fh">${f} ${FAMILY[f]}<small>${FAMSUB[f] || 'gathers and grounds storey loads'}</small></div>`;
             for (const t of types) {
-                const [name, subs, why] = TREE[t], mods = RES.filter(r => r.sys.type === t);
+                const [name, subs, why] = TREE[t], mods = SYS.filter(s_ => s_.type === t);
                 let nv = 0; for (const st in subs) nv += Math.max(1, subs[st][1].filter(Boolean).length);
                 h += `<div class="tcard ${t === selType ? 'on' : ''} ${why ? 'out' : ''}" data-type="${t}" title="${esc(why || '')}"><div class="tn"><span class="code">${t}</span>${esc(name)}</div>` +
-                     (mods.length ? `<div class="dr">${axoSVG(mods[0].P3, bounds3([mods[0].P3]))}</div>` : `<div class="dr none">${why ? 'outside a hall' : 'no model yet'}</div>`) +
+                     (mods.length ? `<div class="dr" data-lazy="${mods[0].id}"></div>` : `<div class="dr none">${why ? 'outside a hall' : 'no model yet'}</div>`) +
                      `<div class="cnt">${Object.keys(subs).length} subtypes · ${mods.length} of ${nv} variants drawn</div></div>`;
             }
             if (selType && selType[0] === String(f)) h += variantPanel(selType);
             h += '</div>';
         }
         $('types').innerHTML = h;
+        document.querySelectorAll('#types [data-lazy]').forEach(el => thumbIO.observe(el));
     }
+    // E: a card or variant drawing is made when it comes near the screen
+    const thumbIO = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { thumbIO.unobserve(e.target); const r = byId(e.target.dataset.lazy); if (r) e.target.innerHTML = axoSVG(r.P3, bounds3([r.P3])); } }, { rootMargin: '300px' });
     function variantPanel(t) {
         const [name, subs, why] = TREE[t];
         let h = `<div class="vpanel"><div class="vh"><div><span class="code">${t}</span> <b>${esc(name)}</b> ${why ? `<span class="why">${esc(why)}</span>` : ''}</div><button data-close="1">close</button></div><div class="vcols">`;
@@ -3082,7 +3107,7 @@
             vars.forEach((v, k) => {
                 if (!v) return;
                 const id = mm && mm[k + 1], r = id && byId(id);
-                if (r) h += `<div class="vi mod ${slots.includes(id) ? 'in' : ''}" data-add="${id}"><span class="n">${k + 1}</span><span><div class="vd">${axoSVG(r.P3, bounds3([r.P3]))}</div><span class="nm">${esc(v)}<small>${st}.${k + 1} · ${CHIP[r.st]}${slots.includes(id) ? ' · in comparison' : ' · click to compare'}</small></span></span></div>`;
+                if (r) h += `<div class="vi mod ${slots.includes(id) ? 'in' : ''}" data-add="${id}"><span class="n">${k + 1}</span><span><div class="vd" data-lazy="${id}"></div><span class="nm">${esc(v)}<small>${st}.${k + 1} · ${CHIP[r.st]}${slots.includes(id) ? ' · in comparison' : ' · click to compare'}</small></span></span></div>`;
                 else h += `<div class="vi nomod"><span class="n">${k + 1}</span><span class="nm">${esc(v)}<small>${st}.${k + 1} · no model yet</small></span></div>`;
             });
             h += '</div>';
@@ -3107,6 +3132,7 @@
 
     const sortByMetric = list => list.slice().sort((a, b) => MEASURE[metric].v(a) - MEASURE[metric].v(b) || RANKST[a.st] - RANKST[b.st]);
     function drawRank() {
+        if (RES.length !== SYS.length) return;   // drawn once every system is built
         const el = $('dots'), W = el.clientWidth || 1000, rowH = 22, lab = 190, top = 22, H = top + RES.length * rowH + 8;
         const F = 'font-family="Helvetica Neue, Helvetica, Arial, sans-serif"';
         let s = '';
@@ -3139,7 +3165,7 @@
     // the five at the top of the current ranking, skipping systems outside Engel's range
     function suggest() {
         // systems that exist in the chosen material first; only then the others
-        const feas = [...sortByMetric(RES).filter(r => r.st !== 'out' && matOk(r)), ...sortByMetric(RES).filter(r => r.st !== 'out' && !matOk(r))];
+        resAll(); const feas = [...sortByMetric(RES).filter(r => r.st !== 'out' && matOk(r)), ...sortByMetric(RES).filter(r => r.st !== 'out' && !matOk(r))];
         slots = (feas.length ? feas : sortByMetric(RES)).slice(0, 5).map(r => r.sys.id);
         render();
     }
@@ -3167,6 +3193,9 @@
     $('mVar').addEventListener('click', e => { const v = e.target.closest('[data-vmode]'); if (v) { S.vaultMode = v.dataset.vmode; render(); } });
     // ---- inputs ----
     const clampK = (k, v) => Math.min(FIELDS[k].max, Math.max(FIELDS[k].min, v));
+    // C: while a size is being dragged or typed only the numbers follow; the hall is rebuilt when the hand stops (90 ms) or lets go
+    let soonT = 0;
+    const renderSoon = () => { clearTimeout(soonT); soonT = setTimeout(render, 90); }, renderNow = () => { clearTimeout(soonT); render(); };
     // the span is the short side: the length never drops below it — whichever was just set, the other follows
     function keepOrder(k) {
         if (S.W >= S.L) return;
@@ -3174,9 +3203,10 @@
         for (const j of ['L', 'W']) { if (document.activeElement !== $(j)) $(j).value = S[j]; $('r' + j).value = FIELDS[j].log ? fromL(S[j]) : S[j]; }
     }
     for (const k in FIELDS) {
-        $(k).addEventListener('input', e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { S[k] = clampK(k, v); keepOrder(k); render(); } });
-        $(k).addEventListener('change', () => syncInputs());
-        $('r' + k).addEventListener('input', e => { S[k] = FIELDS[k].log ? toL(+e.target.value) : +e.target.value; keepOrder(k); syncInputs(); render(); });
+        $(k).addEventListener('input', e => { const v = parseFloat(e.target.value); if (!isNaN(v)) { S[k] = clampK(k, v); keepOrder(k); renderSoon(); } });
+        $(k).addEventListener('change', () => { syncInputs(); renderNow(); });
+        $('r' + k).addEventListener('input', e => { S[k] = FIELDS[k].log ? toL(+e.target.value) : +e.target.value; keepOrder(k); syncInputs(); renderSoon(); });
+        $('r' + k).addEventListener('change', renderNow);
     }
     let finishNote = '';
     function syncFinish() {
@@ -3200,7 +3230,7 @@
     $('grid').addEventListener('change', e => { const s = e.target.closest('select[data-i]'); if (s) { slots[+s.dataset.i] = s.value; render(); } });
     $('grid').addEventListener('click', e => {
         const rm = e.target.closest('[data-rm]'); if (rm) { slots.splice(+rm.dataset.rm, 1); render(); return; }
-        if (e.target.closest('#add')) { const next = sortByMetric(RES).find(r => !slots.includes(r.sys.id) && r.st !== 'out') || RES.find(r => !slots.includes(r.sys.id)); if (next) { slots.push(next.sys.id); render(); } }
+        if (e.target.closest('#add')) { resAll(); const next = sortByMetric(RES).find(r => !slots.includes(r.sys.id) && r.st !== 'out') || RES.find(r => !slots.includes(r.sys.id)); if (next) { slots.push(next.sys.id); render(); } }
     });
     let drag = null;
     document.addEventListener('pointerdown', e => { const d = e.target.closest('.wrap .draw'); if (!d) return; drag = { x: e.clientX, y: e.clientY, r: S.rot, e: S.elev, id: d.dataset.open, moved: false }; });
