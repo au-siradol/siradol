@@ -101,7 +101,7 @@
     .draw { cursor: zoom-in; position: relative; height: var(--dh, 260px); }
     .draw svg { width: 100% !important; height: 100% !important; max-height: none !important; }
     .grid > .draw { padding: 4px 2px; }
-    .draw.orbit { cursor: grab; }
+    .draw.orbit { cursor: zoom-in; }
     .draw svg { width: 100%; height: auto; display: block; }
     .cell { font-size: 14px; }
     .cell .b { height: 1px; background: var(--line); margin-top: 4px; }
@@ -220,10 +220,9 @@
     </section>
 
     <div class="bar">
-        <p class="lead">Up to five systems at one scale · the best value in each row is underlined · drag a 3D drawing to turn them all, click one to enlarge</p>
+        <p class="lead">Up to five systems at one scale · the best value in each row is underlined · click a drawing to enlarge it and turn it</p>
         <button class="btn" id="suggest">Suggest five</button>
         <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div>
-        <button class="btn" id="resetView" title="Back to the axonometric angle">Reset angle</button>
     </div>
     <div class="grid" id="grid"></div>
 
@@ -290,10 +289,10 @@
           rule: { cable: 'sag f = L/12' },
           build(L, H, W, m, q) {
               const f = L / 12, deck = Math.max(0.25, L / 250), Hm = H + deck + f, a = Hm, c = colW('concrete', Hm), s = clamp(r05(L / 8), 5, 15);
-              const cab = parab(0, L, Hm, -f);
+              const cab = parab(-c / 2, L + c / 2, Hm, -f);   // hung from the mast axes
               return {
                   parts: [rect(-c, 0, 0, Hm), rect(L, 0, L + c, Hm), band(cab.map(([x, y]) => [x, y - deck]), deck),
-                          line([[0, Hm], [-a, 0]], 'cable'), line([[L, Hm], [L + a, 0]], 'cable'), rect(-a - 0.6, -0.4, -a + 0.6, 0, 'light'), rect(L + a - 0.6, -0.4, L + a + 0.6, 0, 'light')],
+                          line([[-c / 2, Hm], [-a, 0]], 'cable'), line([[L + c / 2, Hm], [L + a, 0]], 'cable'), rect(-a - 0.6, -0.4, -a + 0.6, 0, 'light'), rect(L + a - 0.6, -0.4, L + a + 0.6, 0, 'light')],
                   roof: [[-c, 0], [-c, Hm], ...cab, [L + c, Hm], [L + c, 0]], foot: [-a - 0.6, L + a + 0.6],
                   zoneLabel: `sag ${f2(f)}`, zone: Hm - H, cols: alongSides(W, s), colNote: `masts every ${f1(s)} m, backstays anchored ${f1(a)} m outside`,
                   thrust: q * L * L / (8 * f), thrustNote: 'cable pull on the masts, taken by backstays and ground anchors',
@@ -326,11 +325,11 @@
           rule: { cable: 'sag L/15 + hog L/20' },
           build(L, H, W, m, q) {
               const f1_ = L / 15, f2_ = L / 20, Hm = H + f1_, a = Hm, c = colW('concrete', Hm + f2_ * 0.3), s = clamp(r05(L / 8), 5, 15);
-              const low = parab(0, L, Hm, -f1_), up = parab(0, L, Hm, f2_), n = Math.max(4, Math.round(L / 4));
-              const struts = []; for (let i = 1; i < n; i++) { const x = L * i / n, t = i / n; struts.push(line([[x, Hm - 4 * f1_ * t * (1 - t)], [x, Hm + 4 * f2_ * t * (1 - t)]], 'thin')); }
+              const low = parab(-c / 2, L + c / 2, Hm, -f1_), up = parab(-c / 2, L + c / 2, Hm, f2_), n = Math.max(4, Math.round(L / 4)), Ls = L + c;   // both cables meet on the mast axes
+              const struts = []; for (let i = 1; i < n; i++) { const x = -c / 2 + Ls * i / n, t = i / n; struts.push(line([[x, Hm - 4 * f1_ * t * (1 - t)], [x, Hm + 4 * f2_ * t * (1 - t)]], 'thin')); }
               return {
                   parts: [rect(-c, 0, 0, Hm), rect(L, 0, L + c, Hm), line(low, 'cable'), line(up, 'cable'), ...struts,
-                          line([[0, Hm], [-a, 0]], 'cable'), line([[L, Hm], [L + a, 0]], 'cable'), rect(-a - 0.6, -0.4, -a + 0.6, 0, 'light'), rect(L + a - 0.6, -0.4, L + a + 0.6, 0, 'light')],
+                          line([[-c / 2, Hm], [-a, 0]], 'cable'), line([[L + c / 2, Hm], [L + a, 0]], 'cable'), rect(-a - 0.6, -0.4, -a + 0.6, 0, 'light'), rect(L + a - 0.6, -0.4, L + a + 0.6, 0, 'light')],
                   roof: [[-c, 0], [-c, Hm], ...up, [L + c, Hm], [L + c, 0]], foot: [-a - 0.6, L + a + 0.6],
                   zoneLabel: `sag+hog ${f2(f1_ + f2_)}`, zone: f1_ + f2_, cols: alongSides(W, s), colNote: `masts every ${f1(s)} m, backstays anchored ${f1(a)} m outside`,
                   thrust: q * L * L / (8 * f1_), thrustNote: 'pull of the carrying cable on the masts, to backstays and anchors',
@@ -440,13 +439,13 @@
           spans: { steel: { lim: [15, 100], typ: [[25, 70]] }, timber: { lim: [15, 100], typ: [[25, 70]] }, concrete: { lim: [15, 100], typ: [[25, 70]] } },
           rule: { steel: 'rise f = L/6 · rib L/60', timber: 'rise f = L/6 · rib L/45', concrete: 'rise f = L/6 · rib L/40' },
           build(L, H, W, m, q) {
-              const f = L / 6, t = L / ({ steel: 60, timber: 45, concrete: 40 }[m]), c = colW(m, H), s = clamp(r05(L / 5), 5, 12);
-              const inner = parab(0, L, H, f);
+              const f = L / 6, t = L / ({ steel: 60, timber: 45, concrete: 40 }[m]), c = colW(m, H), s = clamp(r05(L / 5), 5, 12), Ls = L + c;
+              const inner = parab(-c / 2, L + c / 2, H, f);   // springing and tie meet over the column axes
               return {
-                  parts: [...columns(L, H, c), band(inner, t), line([[0, H], [L, H]], 'tie')],
+                  parts: [...columns(L, H, c), band(inner, t), line([[-c / 2, H], [L + c / 2, H]], 'tie')],
                   roof: [[-c, 0], [-c, H], ...inner.map(([x, y]) => [x, y + t]), [L + c, H], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `rise ${f2(f)}`, zone: f + t, cols: alongSides(W, s), colNote: `arches every ${f1(s)} m`,
-                  thrust: q * s * L * L / (8 * f), thrustNote: `tie force per arch (arches ${f1(s)} m apart) — the tie crosses the space at eave height`,
+                  thrust: q * s * Ls * Ls / (8 * f), thrustNote: `tie force per arch (arches ${f1(s)} m apart, ${f1(Ls)} m between column axes) — the tie crosses the space at eave height`,
                   thrustPerArch: true,
                   plan: { kind: 'oneway', s },
                   notes: ['The tie keeps the columns free of thrust; without it they need buttresses.', 'Rise L/5–L/8: flatter means a larger tie force (H = qL²/8f).']
@@ -458,11 +457,11 @@
           spans: { steel: { lim: [20, 100], typ: [[20, 80]] }, timber: { lim: [10, 60], typ: [[20, 50]] } },
           rule: { steel: 'd = L/12', timber: 'd = L/10' },
           build(L, H, W, m, q) {
-              const d = L / ({ steel: 12, timber: 10 }[m]), c = colW(m, H), s = clamp(r05(L / 4), 5, 10);
-              let n = Math.max(2, Math.round(L / d / 2) * 2); const p = L / n;
+              const d = L / ({ steel: 12, timber: 10 }[m]), c = colW(m, H), s = clamp(r05(L / 4), 5, 10), x0 = -c / 2, Ls = L + c;   // end nodes over the column axes
+              let n = Math.max(2, Math.round(Ls / d / 2) * 2); const p = Ls / n;
               const web = [];
-              for (let i = 0; i <= n; i++) web.push(line([[i * p, H], [i * p, H + d]], 'thin'));
-              for (let i = 0; i < n; i++) web.push(i < n / 2 ? line([[i * p, H + d], [(i + 1) * p, H]], 'thin') : line([[i * p, H], [(i + 1) * p, H + d]], 'thin'));
+              for (let i = 0; i <= n; i++) web.push(line([[x0 + i * p, H], [x0 + i * p, H + d]], 'thin'));
+              for (let i = 0; i < n; i++) web.push(i < n / 2 ? line([[x0 + i * p, H + d], [x0 + (i + 1) * p, H]], 'thin') : line([[x0 + i * p, H], [x0 + (i + 1) * p, H + d]], 'thin'));
               const ch = Math.max(0.08, d / 14);
               return {
                   parts: [...columns(L, H, c), rect(-c, H, L + c, H + ch), rect(-c, H + d - ch, L + c, H + d), ...web],
@@ -476,15 +475,15 @@
           spans: { steel: { lim: [10, 50], typ: [[15, 30]] }, timber: { lim: [8, 40], typ: [[15, 30]] } },
           rule: { steel: 'rise L/5', timber: 'rise L/4' },
           build(L, H, W, m, q) {
-              const r = L / ({ steel: 5, timber: 4 }[m]), c = colW(m, H), s = m === 'timber' ? 4 : 6;
-              let n = Math.max(4, Math.round(L / (r * 0.9) / 2) * 2); const p = L / n;
-              const y = x => H + r * (1 - Math.abs(2 * x / L - 1));
+              const r = L / ({ steel: 5, timber: 4 }[m]), c = colW(m, H), s = m === 'timber' ? 4 : 6, x0 = -c / 2, Ls = L + c;   // heels over the column axes
+              let n = Math.max(4, Math.round(Ls / (r * 0.9) / 2) * 2); const p = Ls / n;
+              const y = x => H + r * (1 - Math.abs(2 * (x - x0) / Ls - 1)), X = i => x0 + i * p;
               const web = [];
-              for (let i = 1; i < n; i++) web.push(line([[i * p, H], [i * p, y(i * p)]], 'thin'));
-              for (let i = 1; i < n - 1; i++) { if (i < n / 2) web.push(line([[i * p, H], [(i + 1) * p, y((i + 1) * p)]], 'thin')); else web.push(line([[(i + 1) * p, H], [i * p, y(i * p)]], 'thin')); }
+              for (let i = 1; i < n; i++) web.push(line([[X(i), H], [X(i), y(X(i))]], 'thin'));
+              for (let i = 1; i < n - 1; i++) { if (i < n / 2) web.push(line([[X(i), H], [X(i + 1), y(X(i + 1))]], 'thin')); else web.push(line([[X(i + 1), H], [X(i), y(X(i))]], 'thin')); }
               return {
-                  parts: [...columns(L, H, c), line([[-c, H], [L + c, H]], 'member'), line([[-c * 1.5, y(0) - 0.05], [L / 2, H + r], [L + c * 1.5, y(L) - 0.05]], 'member'), ...web],
-                  roof: [[-c, 0], [-c, H], [L / 2, H + r], [L + c, H], [L + c, 0]], foot: [-c, L + c],
+                  parts: [...columns(L, H, c), line([[x0, H], [L - x0, H]], 'member'), line([[x0, H], [L / 2, H + r], [L - x0, H]], 'member'), ...web],
+                  roof: [[-c, 0], [-c, H], [x0, H], [L / 2, H + r], [L - x0, H], [L + c, H], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `rise ${f2(r)}`, zone: r, cols: alongSides(W, s), colNote: `trusses every ${f1(s)} m on walls or columns`,
                   plan: { kind: 'oneway', s },
                   notes: ['Follows the thrust line only near the supports: forces pile up at the heel (Engel p.142).', 'The roof void is large — usable as a loft only if the web allows.']
@@ -513,15 +512,15 @@
           spans: { timber: { lim: [8, 30], typ: [[12, 25]] }, steel: { lim: [10, 90], typ: [[20, 80]] } },
           rule: { timber: 'rise L/6 · lamella depth L/60 · tie', steel: 'rise L/6 · lamella depth L/80 · tie' },
           build(L, H, W, m, q) {
-              const f = L / 6, t = L / ({ timber: 60, steel: 80 }[m]), c = colW(m, H), s = 6;
-              const inner = parab(0, L, H, f);
+              const f = L / 6, t = L / ({ timber: 60, steel: 80 }[m]), c = colW(m, H), s = 6, x0 = -c / 2, Ls = L + c;
+              const inner = parab(x0, x0 + Ls, H, f);   // springing and tie over the column axes
               return {
-                  parts: [...columns(L, H, c), band(inner, t), line([[0, H], [L, H]], 'tie')],
+                  parts: [...columns(L, H, c), band(inner, t), line([[x0, H], [x0 + Ls, H]], 'tie')],
                   roof: [[-c, 0], [-c, H], ...inner.map(([x, y]) => [x, y + t]), [L + c, H], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `rise ${f2(f)}`, zone: f + t, cols: alongSides(W, s), colNote: `edge beams on columns every ${f1(s)} m, ties across`,
-                  thrust: q * s * L * L / (8 * f), thrustNote: `tie force every ${f1(s)} m, at eave height`, thrustPerArch: true,
-                  plan: { kind: 'lattice', x0: 0, S: L, a: clamp(L / 10, 1.5, 4) },
-                  lattice: { f, t },
+                  thrust: q * s * Ls * Ls / (8 * f), thrustNote: `tie force every ${f1(s)} m, at eave height (${f1(Ls)} m between column axes)`, thrustPerArch: true,
+                  plan: { kind: 'lattice', x0, S: Ls, a: clamp(L / 10, 1.5, 4) },
+                  lattice: { f, t, x0, Ls },
                   notes: ['Short identical members (lamellas) cross in a diamond net on a curved surface: every node is shared by two arches, so a point load spreads to its neighbours (Engel pp.152–155).', 'Zollinger’s system: small pieces, one joint type — cheap to make, and the net stiffens the arch against uneven load.']
               };
           } },
@@ -563,9 +562,9 @@
           spans: { steel: { lim: [15, 90], typ: [[20, 70]] }, timber: { lim: [15, 60], typ: [[20, 50]] }, concrete: { lim: [10, 40], typ: [[15, 30]] } },
           rule: { steel: 'd = L/10, ≥ 3 m (a usable storey)', timber: 'd = L/10, ≥ 3 m (a usable storey)', concrete: 'd = L/10, ≥ 3 m (a usable storey)' },
           build(L, H, W, m, q) {
-              const d = Math.max(3, L / 10), c = colW(m, H), s = clamp(r05(L / 5), 6, 12), n = Math.max(3, Math.round(L / d)), p = L / n, ch = Math.max(0.3, d / 9);
+              const d = Math.max(3, L / 10), c = colW(m, H), s = clamp(r05(L / 5), 6, 12), n = Math.max(3, Math.round((L + c) / d)), p = (L + c) / n, ch = Math.max(0.3, d / 9), x0 = -c / 2;
               const posts = [];
-              for (let i = 0; i <= n; i++) { const e = Math.min(i, n - i) / (n / 2), w = ch * (1.6 - 0.9 * e); posts.push(rect(i * p - w / 2, H, i * p + w / 2, H + d)); }
+              for (let i = 0; i <= n; i++) { const e = Math.min(i, n - i) / (n / 2), w = Math.min(ch * (1.6 - 0.9 * e), i === 0 || i === n ? c : 1e9); posts.push(rect(x0 + i * p - w / 2, H, x0 + i * p + w / 2, H + d)); }   // end posts over the columns
               return {
                   parts: [...columns(L, H, c), rect(-c, H, L + c, H + ch), rect(-c, H + d - ch, L + c, H + d), ...posts],
                   roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
@@ -657,7 +656,7 @@
           rule: { steel: 'beam L/40 + cable sag L/12', timber: 'beam L/30 + cable sag L/12' },
           build(L, H, W, m, q) {
               const d = L / ({ steel: 40, timber: 30 }[m]), f = L / 12, c = colW(m, H + f), s = { steel: 6, timber: 5 }[m], Hb = H + f;
-              const cab = [[0, Hb], [L / 3, H], [2 * L / 3, H], [L, Hb]];
+              const cab = [[-c / 2, Hb], [L / 3, H], [2 * L / 3, H], [L + c / 2, Hb]];   // anchored over the column axes
               return {
                   parts: [...columns(L, Hb, c), rect(-c, Hb, L + c, Hb + d), line(cab, 'cable'), line([[L / 3, H], [L / 3, Hb]], 'member'), line([[2 * L / 3, H], [2 * L / 3, Hb]], 'member')],
                   roof: [[-c, 0], [-c, Hb + d], [L + c, Hb + d], [L + c, 0]], foot: [-c, L + c],
@@ -692,6 +691,29 @@
     const cushionP = q => q + 0.3;
     const rowDisks = (L, W) => { const n = Math.max(1, Math.floor(W / L)); return Array.from({ length: n }, (_, k) => [L / 2, (k + 0.5) * W / n, L / 2]); };
     const UV = (x, y, r) => [2 * (x - r[0]) / (r[2] - r[0]) - 1, 2 * (y - r[1]) / (r[3] - r[1]) - 1];
+    // depth of a buttress behind a masonry pier, from statics: horizontal thrust Hx at height z and vertical load V on a
+    // tp × tp pier; the least depth for which the resultant falls in the middle third of the base, so no joint opens (Heyman)
+    function buttressDepth(Hx, V, z, tp, bw, g = 20) {
+        const res = bd => { const Wp = g * tp * tp * z, Wb = g * bw * bd * z, N = Wp + Wb + V, B = tp + bd; return { B, e: (Wp * (bd + tp / 2) + Wb * bd / 2 + V * (bd + tp / 2) - Hx * z) / N }; };
+        let bd = 0; while (res(bd).e < res(bd).B / 3 && bd < 80) bd += 0.1;
+        return Object.assign({ bd: +bd.toFixed(1) }, res(bd));
+    }
+    // piers with their buttresses for a row of vaulted bays L × b; thrust per corner from one bay: across Hx1, along Hy1; load per corner V1
+    function vaultPiers(L, H, rs, tp, Hx1, Hy1, V1) {
+        const ys = [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))], W_ = ys[ys.length - 1], bw = 2 * tp / 3, boxes = [], info = [];
+        for (const y of ys) {
+            const end = y === ys[0] || y === W_, nb = end ? 1 : 2, bx = buttressDepth(nb * Hx1, nb * V1, H, tp, bw), by = end ? buttressDepth(Hy1, V1, H, tp, bw) : null;
+            info.push({ y, bx, by });
+            for (const [x0, x1, dir] of [[-tp, 0, -1], [L, L + tp, 1]]) {
+                const at = bx.bd > 0 ? { [dir < 0 ? 'x0' : 'x1']: [y - bw / 2, y + bw / 2] } : {};
+                boxes.push([x0, x1, y - tp / 2, y + tp / 2, 0, H, at]);
+                if (bx.bd > 0) boxes.push(dir < 0 ? [x0 - bx.bd, x0, y - bw / 2, y + bw / 2, 0, H] : [x1, x1 + bx.bd, y - bw / 2, y + bw / 2, 0, H]);
+                if (by && by.bd > 0) { const xc = (x0 + x1) / 2, sgn = y === ys[0] ? -1 : 1; boxes.push([xc - bw / 2, xc + bw / 2, sgn < 0 ? y - tp / 2 - by.bd : y + tp / 2, sgn < 0 ? y - tp / 2 : y + tp / 2 + by.bd, 0, H]); }
+            }
+        }
+        const bxi = info.find(i => !i.by) || info[0], bye = info[0];
+        return { boxes, note: `Buttresses from statics, not a rule of thumb: ${info.length > 2 ? `interior piers ${f1_(bxi.bx.bd)} m deep across the hall, ` : ''}end piers ${f1_(bye.bx.bd)} m across and ${f1_(bye.by.bd)} m along — the least depths that keep the resultant of thrust, vault load and masonry weight inside the middle third of each base (masonry rule, J. Heyman, The Stone Skeleton, 1995).` };
+    }
     // polar parameter t over a w × h rectangle, piecewise so that t = 1/8, 3/8, 5/8, 7/8 fall exactly on its corners
     const angT = (t, w, h) => { const c = Math.atan2(h, w), K = [0, c, Math.PI / 2, Math.PI - c, Math.PI, Math.PI + c, 1.5 * Math.PI, 2 * Math.PI - c, 2 * Math.PI], u = ((t % 1) + 1) % 1 * 8, k = Math.min(7, Math.floor(u)); return K[k] + (K[k + 1] - K[k]) * (u - k) + (t >= 1 ? 2 * Math.PI : 0); };
     const RHO = (x, y, d) => [Math.min(1, Math.hypot(x - d[0], y - d[1]) / d[2]), Math.atan2(y - d[1], x - d[0])];
@@ -731,17 +753,22 @@
         const o = r.surf;
         for (const m of o.mods) {
             const P = (i, j, ni, nj) => { const [x, y] = modPt(m, i / ni, j / nj); return [x, y, m.z(x, y)]; };
-            const ni = m.ni || (m.disk ? 8 : 14), nj = m.nj || (m.disk ? 28 : 14), kind = m.kind || o.kind || 'membrane';
+            let ni = m.ni || (m.disk ? 8 : 14), nj = m.nj || (m.disk ? 28 : 14);
+            const kind = m.kind || o.kind || 'membrane', cab = kind !== 'net' && m.cables, net = cab && (m.dir || 'both') === 'both';
             if (kind === 'none') continue;
-            if (kind !== 'net') for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add('face', [P(i, j, ni, nj), P(i + 1, j, ni, nj), P(i + 1, j + 1, ni, nj), P(i, j + 1, ni, nj)], kind);
+            // cables on a skin: the skin is cut on the cable grid, so every cable segment is an edge of the skin; with cables both ways
+            // the skin draws no lines of its own (the cables are the lines), with cables one way the membrane keeps its lines across them
+            const ki = m.li || ni, kj = m.lj || nj;
+            if (net) { ni = 2 * ki; nj = 2 * kj; } else if (cab) { ni = ki * Math.max(1, Math.round(ni / ki)); nj = kj * Math.max(1, Math.round(nj / kj)); }
+            if (kind !== 'net') for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add('face', [P(i, j, ni, nj), P(i + 1, j, ni, nj), P(i + 1, j + 1, ni, nj), P(i, j + 1, ni, nj)], net ? 'skin' : kind);
             if (kind === 'net' || m.cables) {
-                const dir = m.dir || 'both', cs = m.cstyle || 'thin', ki = m.li || ni, kj = m.lj || nj;
-                if (dir !== 'x') for (let i = 0; i <= ki; i++) { const pts = []; for (let t = 0; t <= 48; t++) pts.push(P(i * ni / ki, t * nj / 48, ni, nj)); add('line', pts, cs); }
-                if (dir !== 'y') for (let j = 0; j <= kj; j++) { const pts = []; for (let t = 0; t <= 48; t++) pts.push(P(t * ni / 48, j * nj / kj, ni, nj)); add('line', pts, cs); }
+                const dir = m.dir || 'both', cs = m.cstyle || 'thin', si = cab ? ni : 48, sj = cab ? nj : 48;
+                if (dir !== 'x') for (let i = 0; i <= ki; i++) { const pts = []; for (let t = 0; t <= sj; t++) pts.push(P(i * ni / ki, t * nj / sj, ni, nj)); add('line', pts, cs); }
+                if (dir !== 'y') for (let j = 0; j <= kj; j++) { const pts = []; for (let t = 0; t <= si; t++) pts.push(P(t * ni / si, j * nj / kj, ni, nj)); add('line', pts, cs); }
             }
         }
         for (const [x, y, z] of o.posts || []) add('line', [[x, y, 0], [x, y, z]], 'post');
-        for (const b of o.boxes || []) box3(add, ...b);
+        for (const b of o.boxes || []) box3(add, b[0], b[1], b[2], b[3], b[4], b[5], 'solid', b[6] || {});
         for (const f of o.faces3 || []) add('face', f.pts, f.c || 'solid', f.e);
         for (const l of o.lines3 || []) add('line', l.pts, l.c || 'cable');
     }
@@ -755,10 +782,10 @@
           own: (m, L) => 0.05 + 0.0008 * L,
           build(L, H, W, m, q) {
               const f1 = L / 15, f2 = L / 25, d = f1 + f2 + 0.3, Hm = H + d, a = Hm, c = colW('concrete', Hm), s = clamp(r05(L / 8), 5, 15);
-              const up = parab(0, L, Hm, -f1), lo = parab(0, L, H, f2), n = Math.max(4, Math.round(L / 3)), ties = [];
-              for (let i = 1; i < n; i++) { const t = i / n; ties.push(line([[L * t, Hm - 4 * f1 * t * (1 - t)], [L * t, H + 4 * f2 * t * (1 - t)]], 'thin')); }
+              const up = parab(-c / 2, L + c / 2, Hm, -f1), lo = parab(-c / 2, L + c / 2, H, f2), n = Math.max(4, Math.round(L / 3)), ties = [], Ls = L + c;   // on the mast axes
+              for (let i = 1; i < n; i++) { const t = i / n, x = -c / 2 + Ls * t; ties.push(line([[x, Hm - 4 * f1 * t * (1 - t)], [x, H + 4 * f2 * t * (1 - t)]], 'thin')); }
               return {
-                  parts: [rect(-c, 0, 0, Hm), rect(L, 0, L + c, Hm), line(up, 'member'), line(lo, 'cable'), ...ties, line([[0, Hm], [-a, 0]], 'cable'), line([[L, Hm], [L + a, 0]], 'cable')],
+                  parts: [rect(-c, 0, 0, Hm), rect(L, 0, L + c, Hm), line(up, 'member'), line(lo, 'cable'), ...ties, line([[-c / 2, Hm], [-a, 0]], 'cable'), line([[L + c / 2, Hm], [L + a, 0]], 'cable')],
                   roof: [[-c, 0], [-c, Hm], ...up, [L + c, Hm], [L + c, 0]], foot: [-a - 0.6, L + a + 0.6],
                   zone: d, cols: alongSides(W, s), colNote: `masts every ${f1_(s)} m, backstays ${f1_(a)} m out`,
                   thrust: q * L * L / (8 * f1), thrustNote: 'pull of the carrying cable, per metre, to backstays', plan: { kind: 'oneway', s, masts: true, anchors: a },
@@ -1033,25 +1060,28 @@
         // --- 1.4 vaults and lattices ---
         { id: 'v_cross', fam: 1, name: 'Cross (groin) vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'bays L × ~L, rise L/4, piers at the corners' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
-              const f = L / 4, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], tp = Math.max(0.8, L / 12), bd = Math.max(1.5, L / 6);
-              const o = { kind: 'shellx', mods: rs.map(r0 => ({ rect: r0, z: (x, y) => { const u = (x - r0[0]) / L, v = (y - r0[1]) / b; return H + Math.max(f * 4 * u * (1 - u), f * 4 * v * (1 - v)); }, ni: 16, nj: 16 })), secT: 0,
-                  boxes: uniq(rs.flatMap(([, y0, , y1]) => [y0, y1]).map(y => [y])).flatMap(([y]) => [[-tp, 0, y - tp / 2, y + tp / 2, 0, H], [L, L + tp, y - tp / 2, y + tp / 2, 0, H], [-tp - bd, -tp, y - tp / 3, y + tp / 3, 0, H * 0.8], [L + tp, L + tp + bd, y - tp / 3, y + tp / 3, 0, H * 0.8]]) };
+              const f = L / 4, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], tp = Math.max(0.8, L / 12);
+              const VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * f), q * L * b * b / (16 * f), q * L * b / 4);
+              const o = { kind: 'shellx', mods: rs.map(r0 => ({ rect: r0, z: (x, y) => { const u = (x - r0[0]) / L, v = (y - r0[1]) / b; return H + Math.max(f * 4 * u * (1 - u), f * 4 * v * (1 - v)); }, ni: 16, nj: 16 })), secT: 0, boxes: VP.boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: f, cols: o.boxes.length / 2, colNote: `piers + buttresses at the corners of each ${f1_(L)} × ${f1_(b)} m bay`, thrust: q * L * L * b / (8 * f), thrustNote: `interior pier, across the hall: Hx = qL²b/8f (both bays push the same way); end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * f))} kN diagonal`, thrustPerArch: true,
-                  notes: ['Two barrel vaults cross: the load gathers along the groins into four corner piers, so the sides can open (Engel 1.4.2.2).'] });
+              return Object.assign(r, { zone: f, cols: 2 * (rs.length + 1), colNote: `piers + buttresses at the corners of each ${f1_(L)} × ${f1_(b)} m bay`, thrust: q * L * L * b / (8 * f), thrustNote: `interior pier, across the hall: Hx = qL²b/8f (both bays push the same way); end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * f))} kN diagonal`, thrustPerArch: true,
+                  notes: ['Two barrel vaults cross: the load gathers along the groins into four corner piers, so the sides can open (Engel 1.4.2.2).', VP.note] });
           } },
         { id: 'v_cloister', fam: 1, name: 'Cloister vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'rises L/4 from all four walls' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
-              const f = L / 4, tw = Math.max(0.5, L / 12), zd = dd => f * 4 * Math.min(0.5, dd / L) * (1 - Math.min(0.5, dd / L));
+              const f = L / 4, Hm = q * L * L / (8 * f), Vm = q * L / 2, ecc = t_ => { const Ww = 20 * t_ * H; return (Ww * t_ / 2 + Vm * t_ / 2 - Hm * H) / (Ww + Vm); };
+              // wall thickness from statics: per metre, the resultant of the thrust at the springing, the vault's load and the wall's weight inside the middle third
+              let tw = 0.3; while (ecc(tw) < tw / 3 && tw < 30) tw += 0.05; tw = +tw.toFixed(2);
+              const zd = dd => f * 4 * Math.min(0.5, dd / L) * (1 - Math.min(0.5, dd / L));
               const o = { kind: 'shellx', mods: [{ rect: [0, 0, L, W], z: (x, y) => H + Math.min(zd(x), zd(L - x), zd(y), zd(W - y)), ni: 20, nj: 30 }], secY: W / 2,
                   boxes: [[-tw, 0, -tw, W + tw, 0, H], [L, L + tw, -tw, W + tw, 0, H], [0, L, -tw, 0, 0, H], [0, L, W, W + tw, 0, H]] };
               const r = surfaceHall(o);
               return Object.assign(r, { zone: f, cols: 0, colNote: `continuous walls ${f2(tw)} m on all four sides`, thrust: q * L * L / (8 * f), thrustNote: 'per metre at mid-wall, H = qL²/8f — the webs act as arches from each wall to the crown or hip',
-                  notes: ['The vault rises from all four walls and meets in hips — the opposite of the groin vault (Engel 1.4.2.3).'] });
+                  notes: ['The vault rises from all four walls and meets in hips — the opposite of the groin vault (Engel 1.4.2.3).', `Wall thickness from statics, not a rule of thumb: ${f2(tw)} m is the least that keeps the resultant of the ${Math.round(Hm)} kN/m thrust, the vault's ${Math.round(Vm)} kN/m and the wall's weight inside the middle third of its base (masonry rule, J. Heyman, 1995).`] });
           } },
         { id: 'v_arch', fam: 1, name: 'Sail vault on four arches', ...M(SP.vault, ['masonry']), rule: { masonry: 'one sphere through the four corners, cut by the four sides' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
-              const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], R1 = Math.hypot(L / 2, b / 2), tp = Math.max(0.8, L / 12);
+              const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], R1 = Math.hypot(L / 2, b / 2), tp = Math.max(0.8, L / 12); let VP;
               const redge = t => { const th = angT(t, L, b); return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
               const mods = [], lines3 = [];
               for (const r0 of rs) {
@@ -1062,15 +1092,15 @@
               const o = { kind: 'shellx', mods, lines3, secY: (rs[0][1] + rs[0][3]) / 2,
                   sec: Array.from({ length: 49 }, (_, i) => { const x = L * i / 48; return [x, H + Math.sqrt(Math.max(0, R1 * R1 - (x - L / 2) ** 2))]; }),
                   extra2d: [line(Array.from({ length: 33 }, (_, i) => { const a = Math.PI * i / 32; return [L / 2 - L / 2 * Math.cos(a), H + L / 2 * Math.sin(a)]; }), 'thin')],
-                  boxes: [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))].flatMap(y => [[-tp, 0, y - tp / 2, y + tp / 2, 0, H], [L, L + tp, y - tp / 2, y + tp / 2, 0, H]]) };
+                  boxes: (VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * R1), q * L * b * b / (16 * R1), q * L * b / 4)).boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: R1, cols: o.boxes.length, colNote: `four piers per ${f1_(L)} × ${f1_(b)} m bay, open arches on all four sides`,
+              return Object.assign(r, { zone: R1, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, open arches on all four sides`,
                   thrust: q * L * L * b / (8 * R1), thrustNote: `interior pier, across the hall — minimum thrust with the line of thrust through the crown ${f2(R1)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * R1))} kN diagonal`, thrustPerArch: true,
-                  notes: ['One spherical cap through the four corners, cut by the four side planes: the cuts are the arches, the bay stands on four piers (Engel 1.4.2.4, p.47).', `The crown stands ${f1_(R1)} m above the springing — half the diagonal of the bay.`] });
+                  notes: ['One spherical cap through the four corners, cut by the four side planes: the cuts are the arches, the bay stands on four piers (Engel 1.4.2.4, p.47).', `The crown stands ${f1_(R1)} m above the springing — half the diagonal of the bay.`, VP.note] });
           } },
         { id: 'v_pend', fam: 1, name: 'Dome on pendentives', ...M(SP.vault, ['masonry']), rule: { masonry: 'pendentives up to the inscribed circle, hemispherical dome above' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
-              const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], a = Math.min(L, b), R1 = Math.hypot(L / 2, b / 2), z1 = Math.sqrt(Math.max(0, R1 * R1 - (a / 2) ** 2)), tp = Math.max(0.8, L / 12), c = z1 + a / 2;
+              const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], a = Math.min(L, b), R1 = Math.hypot(L / 2, b / 2), z1 = Math.sqrt(Math.max(0, R1 * R1 - (a / 2) ** 2)), tp = Math.max(0.8, L / 12), c = z1 + a / 2; let VP;
               const mods = [], lines3 = [];
               for (const r0 of rs) {
                   const [x0, y0, x1, y1] = r0, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, redge = t => { const th = angT(t, L, b); return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
@@ -1082,16 +1112,16 @@
               const cy0 = (rs[0][1] + rs[0][3]) / 2, zs = x => { const rr = Math.abs(x - L / 2); return rr >= a / 2 ? H + Math.sqrt(Math.max(0, R1 * R1 - rr * rr - 0)) : H + z1 + Math.sqrt((a / 2) ** 2 - rr * rr); };
               const o = { kind: 'shellx', mods, lines3, secY: cy0, sec: Array.from({ length: 49 }, (_, i) => { const x = L * i / 48; return [x, zs(x)]; }),
                   extra2d: [line(Array.from({ length: 25 }, (_, i) => { const x = L * i / 24; return [x, H + Math.sqrt(Math.max(0, R1 * R1 - (x - L / 2) ** 2 - (b / 2) ** 2))]; }), 'thin')],
-                  boxes: [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))].flatMap(y => [[-tp, 0, y - tp / 2, y + tp / 2, 0, H], [L, L + tp, y - tp / 2, y + tp / 2, 0, H]]) };
+                  boxes: (VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * c), q * L * b * b / (16 * c), q * L * b / 4)).boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: c, cols: o.boxes.length, colNote: `four piers per ${f1_(L)} × ${f1_(b)} m bay, edge arches between them`,
+              return Object.assign(r, { zone: c, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, edge arches between them`,
                   thrust: q * L * L * b / (8 * c), thrustNote: `interior pier, across the hall — minimum thrust (Heyman), line of thrust through the crown ${f2(c)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * c))} kN diagonal`, thrustPerArch: true,
-                  notes: ['Pendentives — spherical triangles cut from one sphere through the four corners — carry the round dome down to four piers; the cut edges are the arches between piers (Engel 1.4.2.5).', `A hemispherical dome over a ${f1_(a)} m square stands ${f1_(c)} m above the springing — that height is the geometry of the system (Hagia Sophia proportions).`] });
+                  notes: ['Pendentives — spherical triangles cut from one sphere through the four corners — carry the round dome down to four piers; the cut edges are the arches between piers (Engel 1.4.2.5).', `A hemispherical dome over a ${f1_(a)} m square stands ${f1_(c)} m above the springing — that height is the geometry of the system (Hagia Sophia proportions).`, VP.note] });
           } },
         { id: 'v_squinch', fam: 1, name: 'Dome on squinches', ...M(SP.vault, ['masonry']), rule: { masonry: 'arches on four piers, squinches turn the square into an octagon, dome above' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
               const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], a = Math.min(L, b), Hs = H + Math.max(L, b) / 2, s8 = a * Math.tan(Math.PI / 8), hq = s8 / 2, Hq = Hs + hq, c = Hq + a / 2 - H;
-              const tp = Math.max(0.8, L / 12), tw = Math.max(0.4, a / 30), dC = (a - s8) / 2;
+              const tp = Math.max(0.8, L / 12), tw = Math.max(0.4, a / 30), dC = (a - s8) / 2; let VP;
               const mods = [], faces3 = [], lines3 = [], seen = new Set();
               const archPts = (ax, ay, bx, by) => { const span = Math.hypot(bx - ax, by - ay); return Array.from({ length: 25 }, (_, i) => { const th = Math.PI * i / 24, t = (1 - Math.cos(th)) / 2; return [ax + (bx - ax) * t, ay + (by - ay) * t, H + span / 2 * Math.sin(th)]; }); };
               for (const r0 of rs) {
@@ -1134,11 +1164,11 @@
                   sec: Array.from({ length: 33 }, (_, i) => { const th = Math.PI * i / 32; return [L / 2 - h * Math.cos(th), Hq + h * Math.sin(th)]; }),
                   extra2d: [line(archPts(0, 0, L, 0).map(([x, , z]) => [x, z]), 'thin'), rect(-tw, H + b / 2, 0, Hs, 'light'), rect(L, H + b / 2, L + tw, Hs, 'light'),
                             rect(L / 2 - h - tw, Hs, L / 2 - h, Hq, 'light'), rect(L / 2 + h, Hs, L / 2 + h + tw, Hq, 'light'), line([[0, Hs], [L, Hs]], 'thin')],
-                  boxes: [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))].flatMap(y => [[-tp, 0, y - tp / 2, y + tp / 2, 0, H], [L, L + tp, y - tp / 2, y + tp / 2, 0, H]]) };
+                  boxes: (VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * c), q * L * b * b / (16 * c), q * L * b / 4)).boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: c, cols: o.boxes.length, colNote: `four piers per ${f1_(L)} × ${f1_(b)} m bay, arches on all four sides`,
+              return Object.assign(r, { zone: c, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, arches on all four sides`,
                   thrust: q * L * L * b / (8 * c), thrustNote: `interior pier, across the hall — minimum thrust with the line of thrust through the crown ${f2(c)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * c))} kN diagonal`, thrustPerArch: true,
-                  notes: ['Four arches on four piers carry a square; squinches — small arches with conical niches — bridge its corners and turn it into an octagon; the dome sits on the octagon (Engel 1.4.2.6, p.47).', `Arches ${f1_(Math.max(L, b) / 2)} m high, squinch band ${f1_(hq)} m, dome ${f1_(a / 2)} m: the crown stands ${f1_(c)} m above the springing.`] });
+                  notes: ['Four arches on four piers carry a square; squinches — small arches with conical niches — bridge its corners and turn it into an octagon; the dome sits on the octagon (Engel 1.4.2.6, p.47).', `Arches ${f1_(Math.max(L, b) / 2)} m high, squinch band ${f1_(hq)} m, dome ${f1_(a / 2)} m: the crown stands ${f1_(c)} m above the springing.`, VP.note] });
           } },
         { id: 'g_arch', fam: 1, name: 'Gridshell with boundary arches', ...M(SP.lattice, ['timber', 'steel']), rule: { timber: 'rise S/4, open ends on edge arches', steel: 'rise S/4, open ends on edge arches' },
           own: (m, L) => (m === 'timber' ? 0.8 : 1) * (0.08 + 0.002 * L),
@@ -1229,7 +1259,14 @@
     // a beam grid: plan segments [x1, y1, x2, y2, f] with depth f·d hanging from the top plane H + d
     function gridHall(L, H, W, m, o) {
         const d = o.d, c = colW(m, H), posts = o.posts || perimPosts(L, W, 6);
-        const faces3 = o.segs.map(([x1, y1, x2, y2, f = 1]) => ({ c: 'solid', pts: [[x1, y1, H + d * (1 - f)], [x2, y2, H + d * (1 - f)], [x2, y2, H + d], [x1, y1, H + d]] }));
+        // each beam is cut where it crosses another, so no piece passes through another beam (the drawing order can then be decided)
+        const cross = (A, B) => { const [ax, ay, bx, by] = A, [cx, cy, dx, dy] = B, rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy, den = rx * sy - ry * sx;
+            if (Math.abs(den) < 1e-9) return null; const t = ((cx - ax) * sy - (cy - ay) * sx) / den, u = ((cx - ax) * ry - (cy - ay) * rx) / den; return t > 1e-6 && t < 1 - 1e-6 && u > -1e-6 && u < 1 + 1e-6 ? t : null; };
+        const faces3 = o.segs.flatMap((sg, k) => { const [x1, y1, x2, y2, f = 1] = sg, ts = [0, 1];
+            o.segs.forEach((g, j) => { if (j !== k) { const t = cross(sg, g); if (t != null) ts.push(t); } });
+            ts.sort((a, b) => a - b);
+            return ts.slice(0, -1).map((t0, i) => { const t1 = ts[i + 1], P0 = [x1 + (x2 - x1) * t0, y1 + (y2 - y1) * t0], P1 = [x1 + (x2 - x1) * t1, y1 + (y2 - y1) * t1];
+                return { c: 'solid', pts: [[P0[0], P0[1], H + d * (1 - f)], [P1[0], P1[1], H + d * (1 - f)], [P1[0], P1[1], H + d], [P0[0], P0[1], H + d]] }; }).filter(fc => Math.hypot(fc.pts[1][0] - fc.pts[0][0], fc.pts[1][1] - fc.pts[0][1]) > 1e-3); });
         const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: () => H + d, ni: 1, nj: 1 }], posts: posts.map(([x, y]) => [x, y, H]), faces3, secY: W / 2,
             planSegs: o.segs, secParts: [rect(-c, 0, 0, H), rect(L, 0, L + c, H), rect(0, H, L, H + d, 'light')] });
         return Object.assign(r, { zone: d, cols: posts.length, colNote: o.colNote || `perimeter columns every ~6 m`, foot: [-c, L + c] });
@@ -2631,20 +2668,30 @@
     }
     // a flat quad A B C D cut into pieces no longer than smax, each drawing only its share of the outline,
     // so the depth sort compares small pieces with small pieces
-    function quadPieces(add, A, B, C, D, c = 'solid', smax = 3) {
-        const nu = Math.max(1, Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]) / smax)), nv = Math.max(1, Math.ceil(Math.hypot(D[0] - A[0], D[1] - A[1], D[2] - A[2]) / smax));
-        if (nu === 1 && nv === 1) { add('face', [A, B, C, D], c); return; }
+    // breaks: extra cut positions (0…1) along A→B and A→D — where something is attached, so no piece straddles it
+    function quadPieces(add, A, B, C, D, c = 'solid', smax = 3, ub = [], vb = []) {
+        const r6 = t => +t.toFixed(6), cuts = (len, extra) => { const n = Math.max(1, Math.ceil(len / smax)); return [...new Set([...Array.from({ length: n + 1 }, (_, i) => i / n), ...extra.filter(t => t > 1e-6 && t < 1 - 1e-6)].map(r6))].sort((a, b) => a - b); };
+        const U = cuts(Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]), ub), V = cuts(Math.hypot(D[0] - A[0], D[1] - A[1], D[2] - A[2]), vb);
+        if (U.length === 2 && V.length === 2) { add('face', [A, B, C, D], c); return; }
+        // cuts where something is attached are real corner lines: drawn, and not overlapped
+        const hardU = new Set([0, 1, ...ub.map(r6)]), hardV = new Set([0, 1, ...vb.map(r6)]);
         const P = (u, v) => [0, 1, 2].map(k => A[k] * (1 - u) * (1 - v) + B[k] * u * (1 - v) + C[k] * u * v + D[k] * (1 - u) * v);
-        for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++)
-            add('face', [P(i / nu, j / nv), P((i + 1) / nu, j / nv), P((i + 1) / nu, (j + 1) / nv), P(i / nu, (j + 1) / nv)], c, [j === 0, i === nu - 1, j === nv - 1, i === 0]);
+        // across ordinary cuts sibling pieces overlap by 1 cm, so no seam shows and nothing has to be painted over it
+        const lu = Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]) || 1, lv = Math.hypot(D[0] - A[0], D[1] - A[1], D[2] - A[2]) || 1, du = 0.01 / lu, dv = 0.01 / lv;
+        for (let i = 0; i < U.length - 1; i++) for (let j = 0; j < V.length - 1; j++) {
+            const hl = hardU.has(U[i]), hr = hardU.has(U[i + 1]), hb = hardV.has(V[j]), ht = hardV.has(V[j + 1]);
+            const u0 = hl ? U[i] : U[i] - du, u1 = hr ? U[i + 1] : U[i + 1] + du, v0 = hb ? V[j] : V[j] - dv, v1 = ht ? V[j + 1] : V[j + 1] + dv;
+            add('face', [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)], c, [hb, hr, ht, hl]);
+        }
     }
-    function box3(add, x0, x1, y0, y1, z0, z1, c = 'solid') {
-        const P = (x, y, z) => [x, y, z];
+    // at: { x0: [y…], x1: [y…] } — where something is attached to the x0 or x1 face (that face is cut there, with a corner line)
+    function box3(add, x0, x1, y0, y1, z0, z1, c = 'solid', at = {}) {
+        const P = (x, y, z) => [x, y, z], fr = ys => (ys || []).map(y => (y - y0) / (y1 - y0));
         quadPieces(add, P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1), c);
         quadPieces(add, P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1), c);
-        quadPieces(add, P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1), c);
-        quadPieces(add, P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1), c);
-        quadPieces(add, P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1), c);
+        quadPieces(add, P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1), c, 3, fr(at.x0));
+        quadPieces(add, P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1), c, 3, fr(at.x1));
+        quadPieces(add, P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1), c);   // the top runs on flush into what is attached: no line
     }
     function resample(chain, n) {
         const xa = chain[0][0], xb = chain[chain.length - 1][0], out = [];
@@ -2757,7 +2804,7 @@
             }
             for (const x of [0, L]) add('line', [[x, 0, H], [x, W, H]], 'member');
         } else if (sys === 'lamella') {
-            const f = r.lattice.f, na = 16, cyl = u => [L * u, H + 4 * f * u * (1 - u)];
+            const { f, x0: lx, Ls } = r.lattice, na = 16, cyl = u => [lx + Ls * u, H + 4 * f * u * (1 - u)];
             const a = clamp(L / 10, 1.5, 4), k = Math.max(4, Math.round(W / a)), m2 = Math.max(4, Math.round(L / a));
             for (let i = 0; i < na; i++) {   // light skin so the net reads
                 const [xa, za] = cyl(i / na), [xb, zb] = cyl((i + 1) / na);
@@ -2768,8 +2815,8 @@
                 for (let i = 0; i <= m2; i++) { const u = i / m2, y = (j + dir * i) * W / k; if (y < -1e-6 || y > W + 1e-6) continue; const [x, z] = cyl(u); P.push([x, y, z]); }
                 if (P.length > 1) add('line', P, 'thin');
             }
-            for (const y of ysOf(W, 6)) { add('line', [[0, y, H], [L, y, H]], 'tie'); for (const x of [0, L]) box3(add, x - 0.15, x + 0.15, y - 0.15, y + 0.15, 0, H); }
-            for (const x of [0, L]) add('line', [[x, 0, H], [x, W, H]], 'member');
+            for (const y of ysOf(W, 6)) { add('line', [[lx, y, H], [lx + Ls, y, H]], 'tie'); for (const x of [lx, lx + Ls]) box3(add, x - 0.15, x + 0.15, y - 0.15, y + 0.15, 0, H); }
+            for (const x of [lx, lx + Ls]) add('line', [[x, 0, H], [x, W, H]], 'member');
         } else if (sys === 'gshell') {
             const { x0, Sp, F } = r.gshell, e = Math.min(W / 2, Sp / 2), nu = 18, nv = Math.max(12, Math.round(W / 2));
             // section is the arch; along the hall the height eases down to the ground over the last e metres
@@ -2802,7 +2849,8 @@
                 for (const xw of [-tw, L]) for (let k = 0; k < ys.length; k++) box3(add, xw, xw + tw, ys[k] - tw / 2, ys[k] + tw / 2, 0, H);
                 for (const xw of [-tw, L]) box3(add, xw, xw + tw, 0, W, H - 0.4, H + t);
             } else {
-                box3(add, -tw, 0, 0, W, 0, H + t); box3(add, L, L + tw, 0, W, 0, H + t);
+                const bwv = Math.max(0.5, L / 30), yc = V.mode === 'buttress' ? ys.flatMap(y => [y - bwv / 2, y + bwv / 2]) : [];
+                box3(add, -tw, 0, 0, W, 0, H + t, 'solid', { x0: yc }); box3(add, L, L + tw, 0, W, 0, H + t, 'solid', { x1: yc });
             }
             shell(0, 'shellx');
             if (V.mode === 'buttress') for (const y of ys) for (const [x0, dir] of [[-tw, -1], [L + tw, 1]]) {
@@ -2829,12 +2877,12 @@
     }
     const STYLE3 = {
         face: { solid: 'fill="#fff" stroke="#222" stroke-width="0.55"', light: 'fill="#f3f3f3" stroke="#222" stroke-width="0.55"', membrane: 'fill="#fff" stroke="#666" stroke-width="0.3"',
-                shell: 'fill="#fff" stroke="#555" stroke-width="0.3"', shellx: 'fill="#fff" stroke="#666" stroke-width="0.28"', fold1: 'fill="#fff" stroke="#333" stroke-width="0.45"', fold2: 'fill="#f2f2f2" stroke="#333" stroke-width="0.45"' },
+                shell: 'fill="#fff" stroke="#555" stroke-width="0.3"', shellx: 'fill="#fff" stroke="#666" stroke-width="0.28"', skin: 'fill="#fff" stroke="#fff" stroke-width="0.15"', fold1: 'fill="#fff" stroke="#333" stroke-width="0.45"', fold2: 'fill="#f2f2f2" stroke="#333" stroke-width="0.45"' },
         line: { member: 'stroke="#222" stroke-width="0.85"', thin: 'stroke="#777" stroke-width="0.35"', cable: 'stroke="#333" stroke-width="0.5"', tie: 'stroke="#c62828" stroke-width="0.7" stroke-dasharray="4 3"',
                 hatch: 'stroke="#ececec" stroke-width="0.4"', box: 'stroke="rgba(25,118,210,0.45)" stroke-width="0.5" stroke-dasharray="3 3"', post: 'stroke="#222" stroke-width="1"' }
     };
-    function projector() {
-        const r = S.rot * Math.PI / 180, e = S.elev * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), ce = Math.cos(e), se = Math.sin(e);
+    function projector(rot = S.rot, elev = S.elev) {
+        const r = rot * Math.PI / 180, e = elev * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), ce = Math.cos(e), se = Math.sin(e);
         return ([x, y, z]) => [x * c + y * s, -(z * ce + (-x * s + y * c) * se), x * s * ce - y * c * ce + z * se];
     }
     function projectScene(items, pr) {
@@ -2846,21 +2894,74 @@
         y0 -= 2.2; // room for people's heads
         return { x0, x1, y0, y1 };
     }
+    // painter's order: faces that overlap on screen are ordered by which lies in front of the other's plane, not just by their
+    // centre depth — so a buttress or column standing against a wall is drawn after the wall behind it. Larger depth = nearer.
+    function paintOrder(proj) {
+        const items = [];
+        for (const o of proj) {
+            if (o.t === 'line' && o.P.length > 2) for (let i = 0; i < o.P.length - 1; i++) { const P = [o.P[i], o.P[i + 1]]; items.push(Object.assign({}, o, { P, depth: (P[0][2] + P[1][2]) / 2, seg: true })); }
+            else items.push(o);
+        }
+        const n = items.length, box = items.map(o => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of o.P) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); } return [x0, y0, x1, y1]; });
+        // plane of each face in screen space (orthographic, so the axes are orthonormal): unit normal turned to the viewer, n·p = d
+        const plane = items.map(o => { if (o.t !== 'face' || o.P.length < 3) return null;
+            let nx = 0, ny = 0, nz = 0; const P = o.P; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]); }
+            const l = Math.hypot(nx, ny, nz); if (!l) return null; if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; } nx /= l; ny /= l; nz /= l;
+            if (nz < 0.02) return null;   // seen edge-on: nothing to hide
+            return [nx, ny, nz, P.reduce((s_, p) => s_ + nx * p[0] + ny * p[1] + nz * p[2], 0) / P.length]; });
+        const span = Math.max(1e-6, ...box.map(b => Math.max(b[2] - b[0], b[3] - b[1]))), eps = 1e-4 * span;
+        const size = box.map(b => Math.hypot(b[2] - b[0], b[3] - b[1]));
+        const tol = (g, f) => plane[g] ? eps : Math.max(eps, 0.04 * size[f]);   // a line on a curved skin runs within a few % of the facet size
+        const dist = (p, pl) => pl[0] * p[0] + pl[1] * p[1] + pl[2] * p[2] - pl[3];
+        const front = (g, f) => { const pl = plane[f], e = tol(g, f); return items[g].P.every(p => dist(p, pl) >= -e); };   // g on the viewer's side of f's plane
+        const back = (g, f) => { const pl = plane[f], e = tol(g, f); return items[g].P.every(p => dist(p, pl) <= e); };
+        // spatial hash of the faces, to test only pairs that overlap on screen
+        let X0 = 1e9, Y0 = 1e9, X1 = -1e9, Y1 = -1e9; for (const b of box) { X0 = Math.min(X0, b[0]); Y0 = Math.min(Y0, b[1]); X1 = Math.max(X1, b[2]); Y1 = Math.max(Y1, b[3]); }
+        const G = 48, cw = (X1 - X0) / G || 1, ch = (Y1 - Y0) / G || 1, cells = new Map(), key = (i, j) => i * 1000 + j;
+        const range = b => [Math.max(0, Math.floor((b[0] - X0) / cw)), Math.min(G - 1, Math.floor((b[2] - X0) / cw)), Math.max(0, Math.floor((b[1] - Y0) / ch)), Math.min(G - 1, Math.floor((b[3] - Y0) / ch))];
+        items.forEach((o, i) => { if (!plane[i]) return; const [a, b, c, d] = range(box[i]); for (let u = a; u <= b; u++) for (let v = c; v <= d; v++) { const k = key(u, v); (cells.get(k) || cells.set(k, []).get(k)).push(i); } });
+        const after = Array.from({ length: n }, () => []), indeg = new Array(n).fill(0), seen = new Set();
+        const edge = (a, b) => { after[a].push(b); indeg[b]++; };   // a before b
+        for (let g = 0; g < n; g++) {
+            const [a, b, c, d] = range(box[g]);
+            for (let u = a; u <= b; u++) for (let v = c; v <= d; v++) for (const f of cells.get(key(u, v)) || []) {
+                if (f === g) continue; const pk = f < g ? f * n + g : g * n + f; if (seen.has(pk)) continue; seen.add(pk);
+                const B = box[f], A = box[g]; if (A[2] < B[0] - eps || B[2] < A[0] - eps || A[3] < B[1] - eps || B[3] < A[1] - eps) continue;
+                const gf = front(g, f), gb = back(g, f);
+                if (plane[g]) { const fg = front(f, g), fb = back(f, g);
+                    if ((gf && !gb) || (fb && !fg)) edge(f, g); else if ((gb && !gf) || (fg && !fb)) edge(g, f); }
+                else if (gf) edge(f, g); else if (gb) edge(g, f);   // a line on a face is drawn after it
+            }
+        }
+        // Kahn's order, taking the farthest ready item first; a cycle is broken at its farthest item
+        const out = [], done = new Uint8Array(n), heap = [], push = i => { heap.push(i); let k = heap.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (items[heap[p]].depth <= items[heap[k]].depth) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };
+        const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && items[heap[l]].depth < items[heap[m]].depth) m = l; if (r < heap.length && items[heap[r]].depth < items[heap[m]].depth) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
+        for (let i = 0; i < n; i++) if (!indeg[i]) push(i);
+        const byDepth = items.map((_, i) => i).sort((a, b) => items[a].depth - items[b].depth); let bi = 0;
+        while (out.length < n) {
+            if (!heap.length) { while (done[byDepth[bi]]) bi++; indeg[byDepth[bi]] = 0; push(byDepth[bi]); }
+            const i = pop(); if (done[i]) continue; done[i] = 1; out.push(items[i]);
+            for (const j of after[i]) if (!done[j] && --indeg[j] === 0) push(j);
+        }
+        return out;
+    }
     function axoSVG(proj, bb, ghost = null) {
         const w = bb.x1 - bb.x0, h = bb.y1 - bb.y0, pad = Math.max(w, h) * 0.04;
         let s = `<svg viewBox="${bb.x0 - pad} ${bb.y0 - pad} ${w + 2 * pad} ${h + 2 * pad}" preserveAspectRatio="xMidYMid meet">`;
-        const sorted = proj.slice().sort((a, b) => a.depth - b.depth);
+        const sorted = paintOrder(proj);
         const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(3)},${p[1].toFixed(3)}`).join('');
         for (const o of sorted) {
             if (o.t === 'face' && o.e) {
                 // a piece of a larger face: filled, its seams hidden, and only the edges flagged in o.e drawn — in its own place in the depth order
                 const st = (STYLE3.face[o.c] || STYLE3.face.solid).match(/stroke="([^"]*)" stroke-width="([^"]*)"/), fill = (STYLE3.face[o.c] || STYLE3.face.solid).match(/fill="([^"]*)"/)[1];
-                s += `<path d="${path(o.P)}Z" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
-                const d = o.e.map((on, i) => on ? `M${o.P[i][0].toFixed(3)},${o.P[i][1].toFixed(3)}L${o.P[(i + 1) % o.P.length][0].toFixed(3)},${o.P[(i + 1) % o.P.length][1].toFixed(3)}` : '').join('');
+                // fill; hide only the seams to its sibling pieces (a fill-coloured stroke on the outer edges would erase neighbours' lines)
+                const segP = on => o.e.map((f, i) => f === on ? `M${o.P[i][0].toFixed(3)},${o.P[i][1].toFixed(3)}L${o.P[(i + 1) % o.P.length][0].toFixed(3)},${o.P[(i + 1) % o.P.length][1].toFixed(3)}` : '').join('');
+                s += `<path d="${path(o.P)}Z" fill="${fill}" stroke="none"/>`;
+                const d = segP(true);
                 if (d) s += `<path d="${d}" fill="none" stroke="${st[1]}" stroke-width="${st[2]}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
             }
             else if (o.t === 'face') s += `<path d="${path(o.P)}Z" ${STYLE3.face[o.c] || STYLE3.face.solid} stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
-            else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member} vector-effect="non-scaling-stroke"/>`;
+            else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member}${o.seg ? ' stroke-linecap="round"' : ''} vector-effect="non-scaling-stroke"/>`;
         }
         if (ghost) for (const o of ghost) if (o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box')
             s += `<path d="${path(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`;
@@ -2909,7 +3010,14 @@
         { t: 'Why', tip: '', f: r => `<div class="why">${esc(r.notes[0])}</div>` }
     ];
 
-    function compute() { PR = projector(); RES = SYS.map(evaluate); }
+    // the systems are rebuilt only when the hall or the load changes; turning the drawing only re-projects them
+    let resKey = '';
+    function compute() {
+        PR = projector();
+        const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, S.vaultMode, S.q]);
+        if (k === resKey && RES && RES.length) { for (const r of RES) r.P3 = null; return; }
+        resKey = k; RES = SYS.map(evaluate);
+    }
     const byId = id => RES.find(r => r.sys.id === id);
     const matOk = r => r.sys.mats.includes(S.mat);
     function drawingOf(r, sel, view) {
@@ -2918,7 +3026,7 @@
         return sectionSVG(r, frameBox(sel));
     }
 
-    function render() {
+    function render(light = false) {   // light: while turning, only the compared drawings and the enlarged view are redrawn
         syncFinish(); compute(); syncInputs();
         const sel = slots.map(byId), more = sel.length < 5;
         const g = $('grid'); g.style.setProperty('--n', sel.length + (more ? 1 : 0));
@@ -2943,8 +3051,7 @@
         $('qNote').textContent = finishNote || `covering applies to frames, trusses, arches, cables · shells are their own roof`;
         $('nSys').textContent = RES.length;
         $('suggest').textContent = metric === 'span' ? 'Suggest five' : `Suggest five · ${$('metric').selectedOptions[0].text.replace(/ \(.*\)/, '')}`;
-        drawTree();
-        drawRank();
+        if (!light) { drawTree(); drawRank(); }
         if (modalId) drawModal();
     }
 
@@ -3041,7 +3148,7 @@
         const r = byId(modalId);
         $('mName').textContent = r.sys.name;
         $('mSub').textContent = `${r.sys.code} · ${FAM[r.sys.fam]} · ${MATNAME[r.m]}`;
-        $('mBig').innerHTML = axoSVG(r.P3, bounds3([r.P3]));
+        drawBig();
         $('mSec').innerHTML = sectionSVG(r, frameBox([r]), { big: true });
         $('mStatus').innerHTML = `<span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
         $('mPlan').innerHTML = planSVG(r);
@@ -3085,8 +3192,7 @@
     $('presets').insertAdjacentHTML('beforeend', PRESETS.map((p, i) => `${i ? '<span class="dot">·</span>' : ''}<button data-p="${i}">${p.n} ${p.L}×${p.W}×${p.H}</button>`).join(''));
     $('presets').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; const p = PRESETS[+b.dataset.p]; Object.assign(S, { L: p.L, W: p.W, H: p.H }); render(); });
     $('suggest').addEventListener('click', suggest);
-    const resetAngle = () => { S.rot = AXO.rot; S.elev = AXO.elev; render(); };
-    $('resetView').addEventListener('click', resetAngle);
+    const resetAngle = () => { MV.rot = AXO.rot; MV.elev = AXO.elev; drawBig(true); };
     $('mReset').addEventListener('click', resetAngle);
     document.querySelectorAll('#views button').forEach(b => b.addEventListener('click', () => { S.view = b.dataset.v; render(); }));
 
@@ -3098,13 +3204,9 @@
     });
     let drag = null;
     document.addEventListener('pointerdown', e => { const d = e.target.closest('.wrap .draw'); if (!d) return; drag = { x: e.clientX, y: e.clientY, r: S.rot, e: S.elev, id: d.dataset.open, moved: false }; });
-    window.addEventListener('pointermove', e => {
-        if (!drag || S.view !== '3d') return;
-        const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-        if (!drag.moved && Math.hypot(dx, dy) < 4) return;
-        drag.moved = true; S.rot = clamp(drag.r + dx * 0.4, -85, 85); S.elev = clamp(drag.e - dy * 0.3, 5, 75); render();
-    });
-    window.addEventListener('pointerup', () => { if (drag && !drag.moved && drag.id) { modalId = drag.id; $('modal').classList.add('show'); drawModal(); } drag = null; });
+    // the home page always stays at the standard axonometric angle; a drawing is turned in the enlarged view
+    window.addEventListener('pointermove', e => { if (drag && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) >= 6) drag.moved = true; });
+    window.addEventListener('pointerup', () => { if (drag && !drag.moved && drag.id) openModal(drag.id); drag = null; });
 
     // ---- ranking ----
     $('metric').addEventListener('change', e => { metric = e.target.value; render(); });
@@ -3117,12 +3219,31 @@
     new ResizeObserver(drawRank).observe($('dots'));
 
     // ---- enlarged view ----
-    const closeModal = () => { modalId = null; $('modal').classList.remove('show'); };
+    let mdrag = null, bigFrame = 0;
+    const MV = { rot: AXO.rot, elev: AXO.elev };   // the enlarged view's own angle
+    function openModal(id) { modalId = id; MV.rot = AXO.rot; MV.elev = AXO.elev; bigFit = null; $('modal').classList.add('show'); drawModal(); }
+    // the big drawing at the view's angle; the frame's size is fitted once, when the view opens (or is reset), and then only
+    // follows the model's centre — so turning never rescales it
+    let bigFit = null;
+    function drawBig(refit = false) {
+        const r = byId(modalId); if (!r) return;
+        const pr = projector(MV.rot, MV.elev), P3 = projectScene(scene3D(r), pr);
+        if (!r._c) { const P = P3.length ? scene3D(r).flatMap(o => o.pts) : [[0, 0, 0]]; const lo = [0, 1, 2].map(k => Math.min(...P.map(p => p[k]))), hi = [0, 1, 2].map(k => Math.max(...P.map(p => p[k]))); r._c = lo.map((v, k) => (v + hi[k]) / 2); }
+        const pc = pr(r._c);
+        if (refit || !bigFit || bigFit.id !== r.sys.id) { const b = bounds3([P3]); bigFit = { id: r.sys.id, w: (b.x1 - b.x0) * 1.15, h: (b.y1 - b.y0) * 1.15, dx: (b.x0 + b.x1) / 2 - pc[0], dy: (b.y0 + b.y1) / 2 - pc[1] }; }
+        const cx = pc[0] + bigFit.dx, cy = pc[1] + bigFit.dy;
+        $('mBig').innerHTML = axoSVG(P3, { x0: cx - bigFit.w / 2, x1: cx + bigFit.w / 2, y0: cy - bigFit.h / 2, y1: cy + bigFit.h / 2 });
+    }
+    // closing the enlarged view always brings the drawings back to the standard axonometric angle
+    const closeModal = () => { if (!$('modal').classList.contains('show')) return; modalId = null; $('modal').classList.remove('show'); mdrag = null; };
     $('mClose').addEventListener('click', closeModal);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-    let mdrag = null;
-    $('mBig').addEventListener('pointerdown', e => { mdrag = { x: e.clientX, y: e.clientY, r: S.rot, e: S.elev }; $('mBig').setPointerCapture(e.pointerId); });
-    $('mBig').addEventListener('pointermove', e => { if (!mdrag) return; S.rot = clamp(mdrag.r + (e.clientX - mdrag.x) * 0.4, -85, 85); S.elev = clamp(mdrag.e - (e.clientY - mdrag.y) * 0.3, 5, 75); render(); });
+    // turning follows the hand: drag right and the near side moves right, drag down and the top tips towards you;
+    // one full width of the view turns the model half round; no limit on the turn, the tilt stays between 5° and 85°
+    $('mBig').addEventListener('pointerdown', e => { mdrag = { x: e.clientX, y: e.clientY, r: MV.rot, e: MV.elev, w: $('mBig').clientWidth || 600 }; try { $('mBig').setPointerCapture(e.pointerId); } catch (_) {} });
+    $('mBig').addEventListener('pointermove', e => { if (!mdrag) return; const k = 180 / mdrag.w;
+        MV.rot = ((mdrag.r - (e.clientX - mdrag.x) * k) % 360 + 540) % 360 - 180; MV.elev = clamp(mdrag.e + (e.clientY - mdrag.y) * k, 5, 85);
+        if (!bigFrame) bigFrame = requestAnimationFrame(() => { bigFrame = 0; drawBig(); }); });
     $('mBig').addEventListener('pointerup', () => mdrag = null);
 
     render();
