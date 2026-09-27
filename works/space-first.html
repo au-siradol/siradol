@@ -102,6 +102,18 @@
     .draw svg { width: 100% !important; height: 100% !important; max-height: none !important; }
     .grid > .draw { padding: 4px 2px; }
     .draw.orbit { cursor: zoom-in; }
+    /* sections that fold away: the header stays, the body goes */
+    /* the section title is the switch: ▾ open, ▸ folded */
+    .fold, .fold span { font-family: inherit; font-size: 17px !important; font-weight: 700; letter-spacing: 0; text-transform: none; color: #111; }
+    .fold { background: none; border: 0; padding: 0; margin-right: 10px; cursor: pointer; line-height: 1.3; }
+    .fold::before { content: '▾'; display: inline-block; width: 1em; color: #999; font-weight: 400; }
+    .fsec.folded .fold::before { content: '▸'; }
+    .fold:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .fsec.folded .fbody { display: none !important; }
+    .fsec .fsum { display: none; color: #555; }
+    .fsec.folded .fsum { display: inline; }
+    .fsec.folded .fopen { display: none; }
+    .draw .wait, .dr:empty, .vd:empty { width: 100%; height: 100%; min-height: 60px; background: linear-gradient(90deg, #fafafa, #f2f2f2, #fafafa); }
     .draw svg { width: 100%; height: auto; display: block; }
     .cell { font-size: 14px; }
     .cell .b { height: 1px; background: var(--line); margin-top: 4px; }
@@ -214,21 +226,23 @@
         <div class="presets" id="presets"><span class="k">Start from</span></div>
     </div>
 
-    <section class="tree">
-        <div class="thead"><b>Engel’s genealogy of structures</b><span>pick a type (p.44), then a variant (pp.45–53) — drawn for your space; click a drawn variant to add it to the comparison</span></div>
-        <div id="types"></div>
+    <section class="tree fsec" data-sec="tree">
+        <div class="thead"><button class="fold" type="button">Engel’s genealogy of structures</button><span>pick a type (p.44), then a variant (pp.45–53) — drawn for your space; click a drawn variant to add it to the comparison</span></div>
+        <div id="types" class="fbody"></div>
     </section>
 
+    <section class="fsec" data-sec="cmp">
     <div class="bar">
-        <p class="lead">Up to five systems at one scale · the best value in each row is underlined · click a drawing to enlarge it and turn it</p>
+        <p class="lead"><button class="fold" type="button">Comparison</button> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value in each row is underlined · click a drawing to enlarge it and turn it</span></p>
         <button class="btn" id="suggest">Suggest five</button>
         <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div>
     </div>
-    <div class="grid" id="grid"></div>
+    <div class="grid fbody" id="grid"></div>
+    </section>
 
-    <div class="rank">
-        <div class="hd"><b>All <span id="nSys"></span> systems</b><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option></select><span id="rankNote"></span></div>
-        <svg id="dots"></svg>
+    <div class="rank fsec" data-sec="rank">
+        <div class="hd"><button class="fold" type="button">All <span id="nSys"></span> systems</button><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option></select><span class="fbody" id="rankNote"></span></div>
+        <svg id="dots" class="fbody"></svg>
     </div>
 
     <details class="notes">
@@ -243,7 +257,7 @@
     <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
 </div></div>
 
-<script>
+<script id="engine">
 // Space First engine — shared by the UI prototypes (extracted from space-first.html)
     const $ = id => document.getElementById(id);
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -2950,9 +2964,15 @@
         }
         return out;
     }
-    function axoSVG(proj, bb, ghost = null) {
+    // a drawing is its body (the ordered paths, made once per scene) inside a frame (the viewBox, set by where it is shown)
+    function axoFrame(body, bb, extra = '') {
         const w = bb.x1 - bb.x0, h = bb.y1 - bb.y0, pad = Math.max(w, h) * 0.04;
-        const head = `<svg viewBox="${bb.x0 - pad} ${bb.y0 - pad} ${w + 2 * pad} ${h + 2 * pad}" preserveAspectRatio="xMidYMid meet">`;
+        return `<svg viewBox="${bb.x0 - pad} ${bb.y0 - pad} ${w + 2 * pad} ${h + 2 * pad}" preserveAspectRatio="xMidYMid meet">` + body + extra + '</svg>';
+    }
+    function axoSVG(proj, bb, ghost = null) { return axoFrame(axoBody(proj), bb, ghost ? ghostPaths(ghost) : ''); }
+    const pathD = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');
+    const ghostPaths = ghost => ghost.filter(o => o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box').map(o => `<path d="${pathD(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`).join('');
+    function axoBody(proj) {
         const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');   // metres: 1 cm is plenty
         // B: the drawing of a scene is made once and reused wherever the same scene is shown (only the frame differs)
         let s = bodyCache.get(proj);
@@ -2971,10 +2991,7 @@
             else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member}${o.seg ? ' stroke-linecap="round"' : ''} vector-effect="non-scaling-stroke"/>`;
         }
         bodyCache.set(proj, s); }
-        s = head + s;
-        if (ghost) for (const o of ghost) if (o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box')
-            s += `<path d="${path(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`;
-        return s + '</svg>';
+        return s;
     }
 
 </script>
@@ -2983,6 +3000,14 @@
     const AXO = { rot: 38, elev: 32 };
     S.view = '3d'; S.rot = AXO.rot; S.elev = AXO.elev;
     let slots = ['truss', 'portal', 'tarch', 'vault', 'barrel'], selType = null, metric = 'span', RES = [], modalId = null;
+    // the three sections fold away when not in use; each viewer's choice is kept in this browser, and a folded section is not drawn
+    const FOLD_KEY = 'space-first-folded'; let folded = {};
+    try { folded = JSON.parse(localStorage.getItem(FOLD_KEY)) || {}; } catch (_) { folded = {}; }
+    function applyFold() {
+        document.querySelectorAll('.fsec').forEach(sec => { const f = !!folded[sec.dataset.sec]; sec.classList.toggle('folded', f); const b = sec.querySelector('.fold'); if (b) { b.setAttribute('aria-expanded', String(!f)); b.title = f ? 'Show' : 'Hide'; } });
+    }
+    function setFold(k, f) { folded[k] = f; try { localStorage.setItem(FOLD_KEY, JSON.stringify(folded)); } catch (_) {} applyFold(); }
+    document.addEventListener('click', e => { const b = e.target.closest('.fold'); if (!b) return; const k = b.closest('.fsec').dataset.sec; setFold(k, !folded[k]); if (!folded[k]) render(); });
     const PRESETS = [
         { n: 'Pavilion', L: 12, W: 12, H: 4 },
         { n: 'Market hall', L: 24, W: 48, H: 6 },
@@ -3026,7 +3051,7 @@
         PR = projector();
         const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, S.vaultMode, S.q]);
         if (k === resKey) return;
-        resKey = k; EV = new Map(); RES = []; clearTimeout(restJob);
+        resKey = k; EV = new Map(); RES = []; clearTimeout(restJob); DRAW.clear(); asked.clear(); drawJob++;
         let i = 0; const key = k;
         const step = () => { if (key !== resKey) return; const t0 = performance.now(); while (i < SYS.length && performance.now() - t0 < 8) byId(SYS[i++].id);
             if (i < SYS.length) restJob = setTimeout(step, 0); else { resAll(); drawRank(); } };
@@ -3035,8 +3060,31 @@
     function resAll() { if (RES.length !== SYS.length) RES = SYS.map(s_ => byId(s_.id)); return RES; }
     const byId = id => { let r = EV.get(id); if (!r) { const sys = SYS.find(s_ => s_.id === id); if (!sys) return undefined; r = evaluate(sys); EV.set(id, r); } return r; };
     const matOk = r => r.sys.mats.includes(S.mat);
+    // F: axonometric drawings are made in a background worker built from the engine script itself — it evaluates, projects,
+    // orders and writes the paths, and sends back only text; the page places it. Without workers everything is drawn here.
+    const DRAW = new Map(), asked = new Set(); let drawJob = 0;
+    const worker = (() => { try {
+        const glue = `\nself.onmessage = e => { const { job, s, ids } = e.data; Object.assign(S, s); PR = projector();
+            for (const id of ids) { const sys = SYS.find(x => x.id === id); if (!sys) continue; try { const r = evaluate(sys), P = r.P3; postMessage({ job, id, body: axoBody(P), box: bounds3([P]) }); } catch (err) { postMessage({ job, id, err: String(err) }); } } };`;
+        const w = new Worker(URL.createObjectURL(new Blob([document.getElementById('engine').textContent + glue], { type: 'text/javascript' })));
+        w.onmessage = e => drawArrived(e.data); w.onerror = () => {}; return w; } catch (_) { return null; } })();
+    function wantDraw(ids) {
+        const need = ids.filter(id => !DRAW.has(id) && !asked.has(id)); if (!need.length) return;
+        if (!worker) { for (const id of need) { const r = byId(id); DRAW.set(id, { body: axoBody(r.P3), box: bounds3([r.P3]) }); } return; }
+        need.forEach(id => asked.add(id)); worker.postMessage({ job: drawJob, s: Object.assign({}, S), ids: need });
+    }
+    const unionBox = ids => { const b = ids.map(id => DRAW.get(id).box); return { x0: Math.min(...b.map(q => q.x0)), x1: Math.max(...b.map(q => q.x1)), y0: Math.min(...b.map(q => q.y0)), y1: Math.max(...b.map(q => q.y1)) }; };
+    function drawArrived(m) {
+        if (m.job !== drawJob) return;
+        if (m.err) { const r = byId(m.id); m = { id: m.id, body: axoBody(r.P3), box: bounds3([r.P3]) }; }   // fall back to drawing it here
+        DRAW.set(m.id, { body: m.body, box: m.box });
+        document.querySelectorAll(`[data-draw="${m.id}"]`).forEach(el => { el.innerHTML = axoFrame(m.body, m.box); el.removeAttribute('data-draw'); });
+        // the compared drawings share one scale, so they are placed together once all of them are here
+        if (S.view === '3d' && slots.every(id => DRAW.has(id)) && document.querySelector('#grid .draw .wait'))
+            document.querySelectorAll('#grid .draw[data-open]').forEach(el => { el.innerHTML = axoFrame(DRAW.get(el.dataset.open).body, unionBox(slots)); });
+    }
     function drawingOf(r, sel, view) {
-        if (view === '3d') return axoSVG(r.P3, bounds3(sel.map(x => x.P3)));
+        if (view === '3d') { const ids = sel.map(x => x.sys.id); wantDraw(ids); return ids.every(id => DRAW.has(id)) ? axoFrame(DRAW.get(r.sys.id).body, unionBox(ids)) : '<div class="wait"></div>'; }
         if (view === 'plan') return planSVG(r);
         return sectionSVG(r, frameBox(sel));
     }
@@ -3060,17 +3108,20 @@
                 return `<div class="cell ${mark(i) ? 'best' : ''} ${matOk(r) ? '' : 'alt'}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}${sub2 ? `<small class="src" title="${esc(sub2)}">${esc(sub2)}</small>` : ''}</div>`;
             }).join('') + pad;
         }
-        g.innerHTML = h;
+        if (!folded.cmp) g.innerHTML = h;
+        $('cmpSum').textContent = '· ' + sel.map(r => r.sys.name).join(' · ');
         document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.v === S.view));
         $('qNote').textContent = finishNote || `covering applies to frames, trusses, arches, cables · shells are their own roof`;
         $('nSys').textContent = SYS.length;
         $('suggest').textContent = metric === 'span' ? 'Suggest five' : `Suggest five · ${$('metric').selectedOptions[0].text.replace(/ \(.*\)/, '')}`;
+        applyFold();
         if (!light) { drawTree(); if (RES.length === SYS.length) drawRank(); }
         if (modalId) drawModal();
     }
 
     let treeKey = '';
     function drawTree() {
+        if (folded.tree) { treeKey = ''; return; }
         const tk = resKey + '|' + selType;
         if (tk === treeKey) {   // same hall, same open type: only the markers change
             document.querySelectorAll('#types .tcard').forEach(c => c.classList.toggle('on', c.dataset.type === selType));
@@ -3096,7 +3147,7 @@
         document.querySelectorAll('#types [data-lazy]').forEach(el => thumbIO.observe(el));
     }
     // E: a card or variant drawing is made when it comes near the screen
-    const thumbIO = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { thumbIO.unobserve(e.target); const r = byId(e.target.dataset.lazy); if (r) e.target.innerHTML = axoSVG(r.P3, bounds3([r.P3])); } }, { rootMargin: '300px' });
+    const thumbIO = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { thumbIO.unobserve(e.target); const id = e.target.dataset.lazy, d = DRAW.get(id); if (d) e.target.innerHTML = axoFrame(d.body, d.box); else { e.target.dataset.draw = id; wantDraw([id]); } } }, { rootMargin: '300px' });
     function variantPanel(t) {
         const [name, subs, why] = TREE[t];
         let h = `<div class="vpanel"><div class="vh"><div><span class="code">${t}</span> <b>${esc(name)}</b> ${why ? `<span class="why">${esc(why)}</span>` : ''}</div><button data-close="1">close</button></div><div class="vcols">`;
@@ -3132,7 +3183,7 @@
 
     const sortByMetric = list => list.slice().sort((a, b) => MEASURE[metric].v(a) - MEASURE[metric].v(b) || RANKST[a.st] - RANKST[b.st]);
     function drawRank() {
-        if (RES.length !== SYS.length) return;   // drawn once every system is built
+        if (RES.length !== SYS.length || folded.rank) return;   // drawn once every system is built, and only when open
         const el = $('dots'), W = el.clientWidth || 1000, rowH = 22, lab = 190, top = 22, H = top + RES.length * rowH + 8;
         const F = 'font-family="Helvetica Neue, Helvetica, Arial, sans-serif"';
         let s = '';
@@ -3164,6 +3215,7 @@
 
     // the five at the top of the current ranking, skipping systems outside Engel's range
     function suggest() {
+        setFold('cmp', false);   // show what was suggested
         // systems that exist in the chosen material first; only then the others
         resAll(); const feas = [...sortByMetric(RES).filter(r => r.st !== 'out' && matOk(r)), ...sortByMetric(RES).filter(r => r.st !== 'out' && !matOk(r))];
         slots = (feas.length ? feas : sortByMetric(RES)).slice(0, 5).map(r => r.sys.id);
