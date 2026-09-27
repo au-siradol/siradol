@@ -114,7 +114,9 @@
     .fsec.folded .fsum { display: inline; }
     .fsec.folded .fopen { display: none; }
     .sgrp { display: inline-flex; align-items: center; gap: 6px; }
-    .sgrp select { font: inherit; font-size: 12px; border: 0; border-bottom: 1px solid #111; background: none; padding: 2px 0; }
+    .sgrp { flex-wrap: wrap; }
+    .sgrp .btn { white-space: nowrap; }
+    .sgrp select { font: inherit; font-size: 12px; border: 0; border-bottom: 1px solid #111; background: none; padding: 2px 0; width: auto; max-width: 13em; }
     .basis { font-size: 11px; color: #777; margin-left: 10px; }
     .then { font-size: 11px; color: #888; }
     .basis.own { color: #b26a00; }
@@ -1543,6 +1545,23 @@
     // the smallest span S of a parabolic arch of rise r·S that still clears H over the full hall
     const archSpan = (L, H, r) => (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2;
     const withZone = (r, H) => Object.assign(r, { zone: r.topOverride - H });
+    // ties that take the thrust of a vault or shell standing on columns (columns alone cannot):
+    // across the hall between each pair of opposite eave columns …
+    function tieAcross(r, posts) {
+        const byY = new Map(); for (const p of posts) { const k = p[1].toFixed(2); (byY.get(k) || byY.set(k, []).get(k)).push(p); }
+        const L3 = r.surf.lines3 || (r.surf.lines3 = []); let best = null;
+        for (const ps of byY.values()) if (ps.length >= 2) { ps.sort((a, b) => a[0] - b[0]); const a = ps[0], b = ps[ps.length - 1]; L3.push({ c: 'tie', pts: [a, b] }); if (!best || Math.abs(a[1] - S.W / 2) < Math.abs(best[0][1] - S.W / 2)) best = [a, b]; }
+        if (best) r.parts.push(line([[best[0][0], best[0][2]], [best[1][0], best[1][2]]], 'tie'));
+        return r;
+    }
+    // … or, for bays standing on their corners, round every bay at the springing: across and along
+    function tieBays(r, rs, L, H) {
+        const L3 = r.surf.lines3 || (r.surf.lines3 = []), ys = [...new Set(rs.flatMap(q => [q[1], q[3]]))], W_ = Math.max(...ys), y0 = Math.min(...ys);
+        for (const y of ys) L3.push({ c: 'tie', pts: [[0, y, H], [L, y, H]] });
+        for (const x of [0, L]) L3.push({ c: 'tie', pts: [[x, y0, H], [x, W_, H]] });
+        r.parts.push(line([[0, H], [L, H]], 'tie'));
+        return r;
+    }
     // members of folded (V) or shell (U) section along a path in the x–z plane, one per y in ys, width b;
     // prof(t) is the outward offset across the width (t = 0…1); the path is the inner line, the offsets are mitred at the bends
     function stripFaces(path, prof, nt, ys, b, cl) {
@@ -1743,7 +1762,8 @@
               const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H + f, ni: 1, nj: 1 })), faces3, lines3, posts: uniq(P), secY: b / 2,
                   planSegs: rs.flatMap(([x0, y0, x1, y1]) => [[x0, y0, x1, y1, 0.3], [x1, y0, x0, y1, 0.3], [(x0 + x1) / 2, y0, (x0 + x1) / 2, y1, 1], [x0, (y0 + y1) / 2, x1, (y0 + y1) / 2, 1]]),
                   sec: [[0, H + f], [L, H + f]], secParts: [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H), line([[0, H], [L / 2, H + f], [L, H]], 'thin')] });
-              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay stands on its four corners`,
+              tieBays(r, rs, L, H);
+              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay stands on its four corners · tied round each bay at the base`,
                   thrust: q * L * L * b / (8 * f), thrustNote: `interior corner, across the hall: Hx = qL²b/8f (both bays push the same way)`, thrustPerArch: true,
                   notes: ['Two gable-shaped folded plates cross: the ridges run to the middle of each side, the valleys to the corners, where it stands (Engel 4.2.3.1).'] });
           } },
@@ -1807,7 +1827,8 @@
                   for (const y of [y0, y1]) lines3.push({ c: 'member', pts: Array.from({ length: 17 }, (_, i) => { const u = i / 16; return [x0 + L * u, y, H + f * 4 * u * (1 - u)]; }) });
                   for (const x of [x0, x1]) lines3.push({ c: 'member', pts: Array.from({ length: 17 }, (_, i) => { const v = i / 16; return [x, y0 + b * v, H + f * 4 * v * (1 - v)]; }) }); }
               const r = surfaceHall({ kind: 'shellx', mods, posts: uniq(P), lines3, secT: 0 });
-              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay stands on its four corners, edge arches between`,
+              tieBays(r, rs, L, H);
+              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay stands on its four corners, edge arches between · tied round each bay at the springing`,
                   thrust: q * L * L * b / (8 * f), thrustNote: 'interior corner, across the hall: Hx = qL²b/8f (both bays push the same way)', thrustPerArch: true,
                   notes: ['Two cylindrical shells cross, as in a groin vault, and gather the load along the groins into four corners (Engel 4.3.1.3, pp.238–244).'] });
           } },
@@ -1818,23 +1839,32 @@
               const lines3 = [0, W].map(y => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const x = L * i / 24; return [x, y, z(x, y)]; }) })).concat([0, L].map(x => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const y = W * i / 24; return [x, y, z(x, y)]; }) })));
               const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 16, nj: 24 }], posts: [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H]], lines3, secY: W / 2 });
               const Hx = q * W * L * L / (8 * (fx + 2 * fy / 3)) / 2, Hy = q * L * W * W / (8 * (fy + 2 * fx / 3)) / 2;
-              return Object.assign(withZone(r, H), { spanUsed: Math.max(L, W), spanLabel: `spans ${f1_(Math.max(L, W))} m between corner supports`, cols: 4, colNote: 'four corner supports only; the edges are stiffened arches',
+              tieBays(r, [[0, 0, L, W]], L, H);
+              return Object.assign(withZone(r, H), { spanUsed: Math.max(L, W), spanLabel: `spans ${f1_(Math.max(L, W))} m between corner supports`, cols: 4, colNote: 'four corner supports only; the edges are stiffened arches · tied along all four edges',
                   thrust: Math.hypot(Hx, Hy), thrustNote: `resultant at each corner: across Hx = qWL²/16(fx + ⅔fy) = ${Math.round(Hx)} kN, along Hy = qLW²/16(fy + ⅔fx) = ${Math.round(Hy)} kN`, thrustPerArch: true,
                   notes: ['A curve slid along another curve: both directions arch, so the shell is doubly curved like a dome but covers a rectangle (Engel 4.3.2.2, p.256).', 'The whole roof stands on four points — the edge arches collect the shell forces.'] });
           } },
-        { id: 'ss_rot', fam: 4, name: 'Rotational saddle shell', mats: ['concrete', 'timber'], spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'hyperboloid about the long axis · rise L/8 at mid-length, W/12 higher at the ends', timber: 'hyperboloid about the long axis · rise L/8 at mid-length, W/12 higher at the ends' },
+        { id: 'ss_rot', fam: 4, name: 'Rotational saddle shell', mats: ['concrete', 'timber'], spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'a hyperboloid lying along the hall · waist = the span, rise L/5 · end radius 1.35 × the waist', timber: 'a hyperboloid lying along the hall · waist = the span, rise L/5 · end radius 1.35 × the waist' },
           own: (m, L) => shellOwn(m, L, 1.2),
           build(L, H, W, m, q) {
-              const F = L / 8, g = Math.min(W / 12, L / 4), r0 = (L * L / 4 + F * F) / (2 * F), zc = H + F - r0, c = (W / 2) / Math.sqrt(((r0 + g) / r0) ** 2 - 1), rad = y => r0 * Math.sqrt(1 + ((y - W / 2) / c) ** 2);
-              const z = (x, y) => zc + Math.sqrt(Math.max(0, rad(y) ** 2 - (x - L / 2) ** 2)), s = 6, P = [];
-              for (const y of ysOf(W, s)) P.push([0, y, z(0, y)], [L, y, z(L, y)]);
-              const ey = [...new Set([...Array.from({ length: 25 }, (_, i) => W * i / 24), ...ysOf(W, s)].map(v => +v.toFixed(4)))].sort((p_, q_) => p_ - q_);   // the edge passes through every column head
-              const lines3 = [0, L].map(x => ({ c: 'member', pts: ey.map(y => [x, y, z(x, y)]) }));
-              const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 14, nj: 24 }], posts: P, lines3, secY: W / 2,
-                  secParts: [rect(-0.3, 0, 0, z(0, W / 2)), rect(L, 0, L + 0.3, z(L, W / 2)), line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin')] });
-              return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides on columns that rise towards the ends',
-                  thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
-                  notes: ['A surface of revolution about the hall’s long axis whose radius grows towards the ends: it arches across and sags along — a saddle (Engel 4.3.3.1).'] });
+              // a hyperboloid of one sheet about a horizontal axis along the hall (Engel p.53, 4.3.3.1): every cross-section is a circular arc,
+              // smallest at mid-length (the waist, which spans the hall) and growing towards the ends; the eaves stay level at H and,
+              // in plan, pinch in to the waist like an hourglass
+              const F = L / 5, k = 1.35, r0 = (L * L / 4 + F * F) / (2 * F), zc = H + F - r0, c = (W / 2) / Math.sqrt(k * k - 1);
+              const rad = y => r0 * Math.sqrt(1 + ((y - W / 2) / c) ** 2), ex = y => Math.sqrt(Math.max(0, rad(y) ** 2 - (H - zc) ** 2));
+              const z = (x, y) => zc + Math.sqrt(Math.max(0, rad(y) ** 2 - (x - L / 2) ** 2)), s = 6;
+              const ey = [...new Set([...Array.from({ length: 25 }, (_, i) => W * i / 24), ...ysOf(W, s)].map(v => +v.toFixed(4)))].sort((p_, q_) => p_ - q_);
+              const P = ysOf(W, s).flatMap(y => [[L / 2 - ex(y), y, H], [L / 2 + ex(y), y, H]]);
+              const arc = y => Array.from({ length: 33 }, (_, i) => { const x = L / 2 - ex(y) + 2 * ex(y) * i / 32; return [x, y, z(x, y)]; });
+              const lines3 = [-1, 1].map(sd => ({ c: 'member', pts: ey.map(y => [L / 2 + sd * ex(y), y, H]) })).concat([0, W].map(y => ({ c: 'member', pts: arc(y) })));
+              const e0 = ex(0);
+              const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [L / 2 - e0, 0, L / 2 + e0, W], map: (u, v) => { const y = W * v; return [L / 2 + (2 * u - 1) * ex(y), y]; }, z, ni: 16, nj: 24 }],
+                  posts: P, lines3, secT: 0.5,
+                  secParts: [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H), line(arc(0).map(p => [p[0], p[2]]), 'thin')] });
+              tieAcross(r, P);
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: `level eaves on columns every ${f1_(s)} m, curving out in plan from the ${f1_(L)} m waist to ${f1_(2 * e0)} m at the ends · ties across at the eaves`,
+                  thrust: q * L * L / (8 * F), thrustNote: 'per metre at the waist, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
+                  notes: ['A hyperboloid lying along the hall: every cross-section is a circle, smallest at mid-length and growing towards the ends, so the roof sags along and arches across — a saddle (Engel 4.3.3.1, p.53).', `The ends open into arches ${f1_(z(L / 2, 0) - H)} m high over ${f1_(2 * e0)} m; the eaves stay level and pinch in to the ${f1_(L)} m waist. Unlike the translational saddle, no two cross-sections are the same.`] });
           } },
         { id: 'ss_trans', fam: 4, name: 'Translational saddle shell', mats: ['concrete', 'timber'], spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'arch L/8 across, sag W/16 along', timber: 'arch L/8 across, sag W/16 along' },
           own: (m, L) => shellOwn(m, L, 1.2),
@@ -1845,7 +1875,8 @@
               const lines3 = [0, L].map(x => ({ c: 'member', pts: ey.map(y => [x, y, z(x, y)]) }));
               const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 14, nj: 24 }], posts: P, lines3, secY: W / 2,
                   secParts: [rect(-0.3, 0, 0, z(0, W / 2)), rect(L, 0, L + 0.3, z(L, W / 2)), line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin')] });
-              return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides; the eaves rise towards the ends',
+              tieAcross(r, P);
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides; the eaves rise towards the ends · ties across at the eaves',
                   thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
                   notes: ['A hanging parabola slid along a standing one: it arches one way and hangs the other (Engel 4.3.3.2, p.256).'] });
           } },
@@ -2164,7 +2195,8 @@
                   lines3.push({ c: 'member', pts: Array.from({ length: 2 * n + 1 }, (_, i) => F(i / (2 * n), i / (2 * n))) }, { c: 'member', pts: Array.from({ length: 2 * n + 1 }, (_, i) => F(1 - i / (2 * n), i / (2 * n))) }); }
               const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H, ni: 1, nj: 1 })), lines3, posts: uniq(P), secY: b / 2,
                   sec: Array.from({ length: 25 }, (_, i) => [L * i / 24, H + f]), secParts: [line(Array.from({ length: 25 }, (_, i) => [L * i / 24, H + f * 4 * (i / 24) * (1 - i / 24)]), 'thin'), rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H)] });
-              return Object.assign(r, { zone: f, cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay on its corners`,
+              tieBays(r, rs, L, H);
+              return Object.assign(r, { zone: f, cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay on its corners · tied round each bay at the springing`,
                   thrust: q * L * L * b / (8 * f), thrustNote: 'interior corner, across the hall: Hx = qL²b/8f (both bays push the same way)', thrustPerArch: true,
                   notes: ['Two triangulated barrel nets cross like a groin vault and gather the load along the groins into four corners (Engel 2.3.1.2).'] });
           } },
@@ -2203,7 +2235,8 @@
               lines3.push({ c: 'post', pts: [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H], [0, 0, H]] });
               const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: (x, y) => zf(x / L, y / W), ni: 1, nj: 1 }], lines3, posts: P, secY: W / 2,
                   sec: Array.from({ length: 25 }, (_, i) => [L * i / 24, zf(i / 24, 0.5)]) });
-              return Object.assign(r, { zone: F, cols: P.length, colNote: `ring beam on columns every ${f1_(s)} m round the hall`,
+              tieAcross(r, P);
+              return Object.assign(r, { zone: F, cols: P.length, colNote: `ring beam on columns every ${f1_(s)} m round the hall · ties across between opposite columns`,
                   thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
                   notes: ['A barrel whose ends round off into quarter-domes: the net is curved both ways over a long plan (Engel 2.3.3).'] });
           } },
@@ -2317,7 +2350,8 @@
               const f = L / 6, g = W / 16, d = L / (m === 'timber' ? 30 : 40), a = clamp(Math.max(d * 1.8, L / 12), 1.5, 6), nu = Math.max(4, Math.round(L / a)), nv = Math.max(2, Math.round(W / a)), s = 6;
               const F = (u, v) => [L * u, W * v, H + 4 * f * u * (1 - u) + 4 * g * v * (1 - v)], C = [L / 2, W / 2, H - L], posts = edgeNodes(F, nu, nv, d, C, s, W), em = posts.find(p => Math.abs(p[1] - W / 2) < W / nv) || posts[0];
               const r = spaceHall(L, H, W, { F, nu, nv, d, C, mods: [{ rect: [0, 0, L, W], z: () => H, ni: 1, nj: 1 }], posts, secPosts: [rect(em[0] - 0.3, 0, em[0], em[2]), rect(L - em[0], 0, L - em[0] + 0.3, em[2])] });
-              return Object.assign(r, { colNote: `edge beams on columns every ${f1_(s)} m that rise to mid-length`,
+              tieAcross(r, posts);
+              return Object.assign(r, { colNote: `edge beams on columns every ${f1_(s)} m that rise to mid-length · ties across between opposite columns`,
                   thrust: q * L * L / (8 * f), thrustNote: 'per metre at the ends, across the hall: H = qL²/8f — the arching direction alone, an upper bound',
                   notes: ['The double-layer grid is curved both ways, like a translational shell (Engel 2.4.3.2).'] });
           } },
