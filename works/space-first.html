@@ -282,6 +282,7 @@
         const a = Math.min(L, W), b = Math.max(L, W), sh = b ** 3 / (a ** 3 + b ** 3);
         return { short: a, share: sh, k: Math.sqrt(2 * sh) };
     }
+    const SP_BEAM1 = { steel: { lim: [5, 25], typ: [[7, 20]] }, timber: { lim: [3, 12], typ: [[4, 8]] }, concrete: { lim: [3, 15], typ: [[4, 10]] } };
     const SYS = [
         // ===== 1 FORM-ACTIVE =====
         { id: 'cable', fam: 1, code: '1.1.1', name: 'Suspended cable roof', mats: ['cable'],
@@ -358,7 +359,7 @@
           build(L, H, W, m, q) {
               const r = 0.25, Sp = (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2, F = r * Sp, x0 = L / 2 - Sp / 2, t = Math.max(0.12, L / 300);
               const inner = parab(x0, x0 + Sp, 0, F);
-              return {
+              return { spanUsed: Sp, spanLabel: `the arch spans ${f1_(Sp)} m`,
                   parts: [band(inner, t)],
                   roof: inner.map(([x, y]) => [x, y + t]), foot: [x0 - 0.3, x0 + Sp + 0.3],
                   zoneLabel: `rise ${f1(F)}`, zone: F + t - H, cols: 0, colNote: 'no columns — the net lands on a continuous ground edge',
@@ -376,7 +377,7 @@
               const F0 = L / 5, clearW = H < F0 ? L * Math.sqrt(1 - H / F0) : 0;
               const t = Sp / ({ steel: 60, timber: 45, concrete: 40 }[m]), x0 = L / 2 - Sp / 2, s = clamp(r05(Sp / 6), 4, 12);
               const inner = parab(x0, x0 + Sp, 0, F);
-              return {
+              return { spanUsed: Sp, spanLabel: `the arch spans ${f1_(Sp)} m`,
                   parts: [band(inner, t)],
                   roof: [...inner.map(([x, y]) => [x, y + t])], foot: [x0 - t / 2, x0 + Sp + t / 2],
                   zoneLabel: `rise ${f1(F)}`, zone: F + t - H, cols: 2 * (Math.ceil(W / s) + 1), colNote: `${Math.ceil(W / s) + 1} arch ribs every ${f1(s)} m, feet on footings`,
@@ -395,7 +396,7 @@
               const outer = inner.map(([x, y], i) => [x, y + th[i]]);
               const hinge = (x, y, k) => poly([[x - k, y], [x, y + k], [x + k, y], [x, y - k]], 'light');
               const k = Math.max(0.15, tmax * 0.6);
-              return {
+              return { spanUsed: Sp, spanLabel: `the arch spans ${f1_(Sp)} m`,
                   parts: [poly([...inner, ...outer.slice().reverse()]), hinge(x0, 0.05, k), hinge(x0 + Sp, 0.05, k), hinge(x0 + Sp / 2, F + tmin / 2, k)],
                   roof: outer, foot: [x0 - tmax / 2, x0 + Sp + tmax / 2],
                   zoneLabel: `rise ${f1(F)}`, zone: F + tmin - H, cols: 2 * (Math.ceil(W / s) + 1), colNote: `${Math.ceil(W / s) + 1} arches every ${f1(s)} m, hinged feet on footings`,
@@ -551,7 +552,7 @@
 
         // ===== 3 SECTION-ACTIVE =====
         { id: 'beam', fam: 3, code: '3.1.1', name: 'Beam on columns', mats: ['steel', 'timber', 'concrete'],
-          spans: { steel: { lim: [5, 25], typ: [[7, 20]] }, timber: { lim: [4, 12], typ: [[4, 8]] }, concrete: { lim: [4, 15], typ: [[4, 10]] } },
+          spans: SP_BEAM1,
           rule: { steel: 'd = L/22', timber: 'd = L/17', concrete: 'd = L/14' },
           build(L, H, W, m, q) {
               const d = L / ({ steel: 22, timber: 17, concrete: 14 }[m]), c = colW(m, H), s = { steel: 6, timber: 5, concrete: 6 }[m];
@@ -737,16 +738,16 @@
         for (const p of o.posts || []) zmax = Math.max(zmax, p[2]);
         for (const l of [...(o.lines3 || []), ...(o.faces3 || [])]) for (const p of l.pts) zmax = Math.max(zmax, p[2]);
         const inM0 = y => m0.disk && !m0.rect ? Math.abs(y - m0.disk[1]) <= m0.disk[2] + 0.01 : (y >= m0.rect[1] - 0.01 && y <= m0.rect[3] + 0.01);
-        const parts = [line(sec, o.kind === 'shellx' ? 'member' : 'cable'), ...(o.extra2d || [])];
-        for (const [x, y, z] of o.posts || []) if (m0.disk ? Math.abs(y - m0.disk[1]) < 0.3 : inM0(y)) parts.push(rect(x - 0.12, 0, x + 0.12, z));
+        const parts = o.secParts ? [line(sec, 'member'), ...o.secParts] : [line(sec, o.kind === 'shellx' ? 'member' : 'cable'), ...(o.extra2d || [])];
+        if (!o.secParts) for (const [x, y, z] of o.posts || []) if (m0.disk ? Math.abs(y - m0.disk[1]) < 0.3 : inM0(y)) parts.push(rect(x - 0.12, 0, x + 0.12, z));
         // boxes cut by the section plane, plus piers standing behind it in the first bay (not walls running across)
         const ysec = o.secY != null ? o.secY : m0.disk ? m0.disk[1] : (o.secY != null ? o.secY : modPt(m0, 0.5, o.secT != null ? o.secT : 0.5)[1]);
-        for (const b of o.boxes || []) if ((b[2] - 0.01 <= ysec && ysec <= b[3] + 0.01) || ((inM0(b[2]) || inM0(b[3])) && b[1] - b[0] < S.L / 2)) parts.push(rect(b[0], b[4], b[1], b[5], 'light'));
+        if (!o.secParts) for (const b of o.boxes || []) if ((b[2] - 0.01 <= ysec && ysec <= b[3] + 0.01) || ((inM0(b[2]) || inM0(b[3])) && b[1] - b[0] < S.L / 2)) parts.push(rect(b[0], b[4], b[1], b[5], 'light'));
         const xs = [...sec.map(p => p[0]), ...(o.posts || []).map(p => p[0]), ...(o.anchors || []).map(p => p[0]), ...(o.boxes || []).flatMap(b => [b[0], b[1]]), ...(o.footExtra || [])];
-        const ys = o.mods.flatMap(m => m.disk ? [m.disk[1] - m.disk[2], m.disk[1] + m.disk[2]] : [0, 1].map(t => modPt(m, 0.5, t)[1]));
+        const ys = o.mods.flatMap(m => m.disk ? [m.disk[1] - m.disk[2], m.disk[1] + m.disk[2]] : [0, 0.25, 0.5, 0.75, 1].flatMap(u => [modPt(m, u, 0)[1], modPt(m, u, 1)[1], modPt(m, 0, u)[1], modPt(m, 1, u)[1]]));
         return {
             parts, roof: [[sec[0][0], 0], ...sec, [sec[sec.length - 1][0], 0]], foot: [Math.min(...xs) - 0.3, Math.max(...xs) + 0.3], topOverride: zmax, surf: o,
-            plan: { kind: 'surf', mods: o.mods, posts: o.posts || [], anchors: o.anchors || [], boxes: o.boxes || [], ext: Math.max(0, -Math.min(...ys), Math.max(...ys) - S.W) }
+            plan: { kind: 'surf', mods: o.mods, posts: o.posts || [], anchors: o.anchors || [], boxes: o.boxes || [], segs: o.planSegs, ext: Math.max(0, -Math.min(...ys), Math.max(...ys) - S.W) }
         };
     }
     function drawSurface(r, add) {
@@ -754,6 +755,7 @@
         for (const m of o.mods) {
             const P = (i, j, ni, nj) => { const [x, y] = modPt(m, i / ni, j / nj); return [x, y, m.z(x, y)]; };
             const ni = m.ni || (m.disk ? 8 : 14), nj = m.nj || (m.disk ? 28 : 14), kind = m.kind || o.kind || 'membrane';
+            if (kind === 'none') continue;
             if (kind !== 'net') for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add('face', [P(i, j, ni, nj), P(i + 1, j, ni, nj), P(i + 1, j + 1, ni, nj), P(i, j + 1, ni, nj)], kind);
             if (kind === 'net' || m.cables) {
                 const dir = m.dir || 'both', cs = m.cstyle || 'thin', ki = m.li || ni, kj = m.lj || nj;
@@ -763,7 +765,7 @@
         }
         for (const [x, y, z] of o.posts || []) add('line', [[x, y, 0], [x, y, z]], 'post');
         for (const b of o.boxes || []) box3(add, ...b);
-        for (const f of o.faces3 || []) add('face', f.pts, f.c || 'solid');
+        for (const f of o.faces3 || []) add('face', f.pts, f.c || 'solid', f.e);
         for (const l of o.lines3 || []) add('line', l.pts, l.c || 'cable');
     }
     const guy = (o, p, a) => { (o.lines3 = o.lines3 || []).push({ pts: [p, [a[0], a[1], 0]], c: 'cable' }); (o.anchors = o.anchors || []).push(a); };
@@ -869,11 +871,12 @@
         { id: 'n_cable', fam: 1, name: 'Four-point cable net (edge cables)', ...M(SP.cableNet, ['cable']), rule: { cable: 'hypar, corner rise 2 × L/8 · edge cables sag 1/12' },
           own: (m, L) => 0.05 + 0.0008 * L,
           build(L, H, W, m, q) {
-              const A = L / 8, rs = rowRects(L, W), c = 0.08;
-              const o = { kind: 'membrane', mods: rs.map((r0, k) => { const [x0, y0, x1, y1] = r0, b = y1 - y0, sg = k % 2 ? -1 : 1;
-                  return { rect: r0, map: (s, t) => [x0 + L * (s + c * Math.sin(Math.PI * t) * (1 - 2 * s)), y0 + b * (t + c * Math.sin(Math.PI * s) * (1 - 2 * t))],
+              // each net reaches past its bay by e = c·a/(1 − 2c), so the edge cables, bowing in by c·a, still pass through the hall's edge
+              const A = L / 8, c = 0.08, rs = rowRects(L, W).map(([x0, y0, x1, y1]) => { const ex = c * (x1 - x0) / (1 - 2 * c), ey = c * (y1 - y0) / (1 - 2 * c); return [x0 - ex, y0 - ey, x1 + ex, y1 + ey]; });
+              const o = { kind: 'membrane', mods: rs.map((r0, k) => { const [x0, y0, x1, y1] = r0, a = x1 - x0, b = y1 - y0, sg = k % 2 ? -1 : 1;
+                  return { rect: r0, map: (s, t) => [x0 + a * (s + c * Math.sin(Math.PI * t) * (1 - 2 * s)), y0 + b * (t + c * Math.sin(Math.PI * s) * (1 - 2 * t))],
                       z: (x, y) => { const [u, v] = UV(x, y, r0); return H + A + sg * A * u * v; }, cables: true, li: 12, lj: 12 }; }), posts: [], lines3: [] };
-              rs.forEach(([x0, y0, x1, y1], k) => { const hi = H + 2 * A, lo = H, sw_ = k % 2; for (const [x, y, z] of [[x0, y0, sw_ ? lo : hi], [x1, y0, sw_ ? hi : lo], [x1, y1, sw_ ? lo : hi], [x0, y1, sw_ ? hi : lo]]) { o.posts.push([x, y, z]); if (z > H) guy(o, [x, y, z], [x ? L + z * 0.7 : -z * 0.7, y]); } });
+              rs.forEach(([x0, y0, x1, y1], k) => { const hi = H + 2 * A, lo = H, sw_ = k % 2; for (const [x, y, z] of [[x0, y0, sw_ ? lo : hi], [x1, y0, sw_ ? hi : lo], [x1, y1, sw_ ? lo : hi], [x0, y1, sw_ ? hi : lo]]) { o.posts.push([x, y, z]); if (z > H) guy(o, [x, y, z], [x < L / 2 ? x - z * 0.7 : x + z * 0.7, y]); } });
               o.posts = uniq(o.posts);
               for (const md of o.mods) for (const [s0, t0, s1, t1] of [[0, 0, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 0, 0]]) o.lines3.push({ c: 'member', pts: Array.from({ length: 21 }, (_, i) => { const s = s0 + (s1 - s0) * i / 20, t = t0 + (t1 - t0) * i / 20, [x, y] = md.map(s, t); return [x, y, md.z(x, y)]; }) });
               const r = surfaceHall(o);
@@ -1036,7 +1039,7 @@
               const za = x => { const u = (x - x0) / Sp; return 4 * F * u * (1 - u); };
               const o = { kind: 'membrane', mods: [{ rect: [x0, 0, x0 + Sp, W], z: (x, y) => za(x) + d2 / 2 * Math.sqrt(Math.max(0, 1 - ((y % d2) / (d2 / 2) - 1) ** 2)), ni: 16, nj: Math.min(200, nt * 4) }], secY: d2 / 2 };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: F + d2 / 2 - H, cols: 0, colNote: `${nt} tubes Ø${f2(d2)} m side by side, anchored at both feet`, thrust: q * Sp * Sp / (8 * F), thrustNote: 'at each foot, per metre', notes: ['High-pressure tubes packed side by side are both structure and enclosure (Engel 1.3.3.1).', 'Puncture one tube and only that arch goes.'] });
+              return Object.assign(r, { spanUsed: Sp, spanLabel: `the arch spans ${f1_(Sp)} m`, zone: F + d2 / 2 - H, cols: 0, colNote: `${nt} tubes Ø${f2(d2)} m side by side, anchored at both feet`, thrust: q * Sp * Sp / (8 * F), thrustNote: 'at each foot, per metre', notes: ['High-pressure tubes packed side by side are both structure and enclosure (Engel 1.3.3.1).', 'Puncture one tube and only that arch goes.'] });
           } },
         { id: 'at_skel', fam: 1, name: 'Air tube skeleton', ...M(SP.tube, ['membrane']), rule: { membrane: 'tube arches every L/5, Ø L/15, skin between' }, roofType: 'membrane', own: () => 0.04,
           build(L, H, W, m, q) {
@@ -1046,7 +1049,7 @@
                   lines3: ys.flatMap(y => [0, dt].map(off => ({ c: 'post', pts: Array.from({ length: 25 }, (_, i) => { const x = x0 + Sp * i / 24; return [x, y, za(x) + off]; }) }))),
                   extra2d: [band(Array.from({ length: 25 }, (_, i) => { const x = x0 + Sp * i / 24; return [x, za(x)]; }), dt)] };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: F + dt - H, cols: 0, colNote: `${ys.length} tube arches every ${f1_(s)} m`, thrust: q * s * Sp * Sp / (8 * F), thrustNote: `per tube arch (${f1_(s)} m apart)`, thrustPerArch: true,
+              return Object.assign(r, { spanUsed: Sp, spanLabel: `the arch spans ${f1_(Sp)} m`, zone: F + dt - H, cols: 0, colNote: `${ys.length} tube arches every ${f1_(s)} m`, thrust: q * s * Sp * Sp / (8 * F), thrustNote: `per tube arch (${f1_(s)} m apart)`, thrustPerArch: true,
                   notes: ['Inflated tubes form a skeleton of arches; a separate skin is hung between them (Engel 1.3.3.2).'] });
           } },
         // --- 1.4 vaults and lattices ---
@@ -1119,8 +1122,9 @@
                   for (const [ax, ay, bx, by] of [[x0, y0, x1, y0], [x1, y0, x1, y1], [x0, y1, x1, y1], [x0, y0, x0, y1]]) {
                       const key = [ax, ay, bx, by].map(v => v.toFixed(2)).join(','); if (seen.has(key)) continue; seen.add(key);
                       const ap = archPts(ax, ay, bx, by);
-                      faces3.push({ c: 'solid', pts: [[ax, ay, Hs], ...ap, [bx, by, Hs]] });
-                      lines3.push({ c: 'post', pts: ap });
+                      // the wall is cut into strips, one per arch segment, so the depth sort sees small pieces
+                      for (let i = 0; i < ap.length - 1; i++) for (let j = 0; j < 3; j++) { const p = ap[i], n = ap[i + 1], zp = k => p[2] + (Hs - p[2]) * k / 3, zn = k => n[2] + (Hs - n[2]) * k / 3;
+                          if (Hs - Math.min(p[2], n[2]) > 1e-3) faces3.push({ c: 'solid', pts: [[p[0], p[1], zp(j)], [n[0], n[1], zn(j)], [n[0], n[1], zn(j + 1)], [p[0], p[1], zp(j + 1)]], e: [j === 0, i === ap.length - 2, j === 2, i === 0] }); }
                   }
                   // a flat ledge at Hs where the bay is longer than it is wide
                   if (b > L + 0.01) for (const [ya, yb] of [[y0, cy - h], [cy + h, y1]]) faces3.push({ c: 'light', pts: [[x0, ya, Hs], [x1, ya, Hs], [x1, yb, Hs], [x0, yb, Hs]] });
@@ -1128,14 +1132,18 @@
                   // the octagon band: four straight walls on the square's sides …
                   for (const [ux, uy, nx, ny] of [[1, 0, 0, -1], [0, 1, 1, 0], [-1, 0, 0, 1], [0, -1, -1, 0]]) {
                       const mx = cx + nx * h, my = cy + ny * h, pa = [mx - ux * s8 / 2, my - uy * s8 / 2], pb = [mx + ux * s8 / 2, my + uy * s8 / 2];
-                      faces3.push({ c: 'solid', pts: [[pa[0], pa[1], Hs], [pb[0], pb[1], Hs], [pb[0], pb[1], Hq], [pa[0], pa[1], Hq]] });
+                      for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) { const P = (u, v) => [pa[0] + (pb[0] - pa[0]) * u / 6, pa[1] + (pb[1] - pa[1]) * u / 6, Hs + (Hq - Hs) * v / 2];
+                          faces3.push({ c: 'solid', pts: [P(i, j), P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)], e: [j === 0, i === 5, j === 1, i === 0] }); }
                   }
                   // … and four squinches: a half-cone from the corner to an arch across the corner
                   for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
                       const C = [cx + sx * h, cy + sy * h, Hs], A = [C[0] - sx * dC, C[1], Hs], B = [C[0], C[1] - sy * dC, Hs], M_ = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
                       const P = th => [M_[0] + (A[0] - M_[0]) * Math.cos(th), M_[1] + (A[1] - M_[1]) * Math.cos(th), Hs + hq * Math.sin(th)];
-                      for (let i = 0; i < 12; i++) faces3.push({ c: 'shellx', pts: [C, P(Math.PI * i / 12), P(Math.PI * (i + 1) / 12)] });
-                      lines3.push({ c: 'member', pts: Array.from({ length: 13 }, (_, i) => P(Math.PI * i / 12)) });
+                      // the half-cone in three rings from the corner out to the squinch arch
+                      const Q = (th, u) => { const e = P(th); return [C[0] + (e[0] - C[0]) * u, C[1] + (e[1] - C[1]) * u, C[2] + (e[2] - C[2]) * u]; };
+                      for (let i = 0; i < 12; i++) { const t0 = Math.PI * i / 12, t1 = Math.PI * (i + 1) / 12;
+                          faces3.push({ c: 'shellx', pts: [C, Q(t0, 1 / 3), Q(t1, 1 / 3)], e: [true, false, true] });
+                          for (const [u0, u1] of [[1 / 3, 2 / 3], [2 / 3, 1]]) faces3.push({ c: 'shellx', pts: [Q(t0, u0), Q(t0, u1), Q(t1, u1), Q(t1, u0)], e: [true, u1 === 1, true, false] }); }
                   }
                   // flat ledge between the octagon and the dome's base circle, then the dome
                   const roct = t => { const th = 2 * Math.PI * t, k = Math.round(th / (Math.PI / 4)); return h / Math.cos(th - k * Math.PI / 4); };
@@ -1162,14 +1170,667 @@
               const o = { kind: 'membrane', mods: [{ rect: [x0, 0, x0 + Sp, W], z: (x, y) => za(x) * (1 - 0.18 * (2 * y / W - 1) ** 2), ni: 18, nj: 18, cables: true, li: 18, lj: 18 }], secY: W / 2,
                   lines3: [0, W].map(y => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const x = x0 + Sp * i / 24; return [x, y, za(x) * 0.82]; }) })) };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: F - H, cols: 0, colNote: 'net on a ground edge along the sides, open ends on edge arches', thrust: q * Sp * Sp / (8 * F * 0.82), thrustNote: 'per metre where the lattice is lowest, at the end arches: H = qS²/8f with f = 0.82 F',
+              return Object.assign(r, { spanUsed: Sp, spanLabel: `the arch spans ${f1_(Sp)} m`, zone: F - H, cols: 0, colNote: 'net on a ground edge along the sides, open ends on edge arches', thrust: q * Sp * Sp / (8 * F * 0.82), thrustNote: 'per metre where the lattice is lowest, at the end arches: H = qS²/8f with f = 0.82 F',
                   notes: ['The lattice ends in arches instead of running down to the ground, so the ends stay open (Engel 1.4.3.2).'] });
           } }
     ];
     for (let i = SYS.length - 1; i >= 0; i--) if (SYS[i].id === 'tent') SYS.splice(i, 1);
     for (const s of FAM1) SYS.push(Object.assign({ code: '' }, s));
 
+    // ---------- family 3 variants (Engel pp.50–51; spans p.176) ----------
+    const SP3 = {
+        beam1: { timber: { lim: [3, 12], typ: [[4, 8]] }, steel: { lim: [5, 25], typ: [[7, 20]] }, concrete: { lim: [3, 15], typ: [[4, 10]] } },
+        beam2: { timber: { lim: [7, 35], typ: [[10, 30]] }, steel: { lim: [5, 30], typ: [[8, 25]] }, concrete: { lim: [7, 30], typ: [[10, 25]] } },
+        beam3: { timber: { lim: [3, 12], typ: [[4, 8]] }, steel: { lim: [5, 25], typ: [[7, 20]] }, concrete: { lim: [3, 12], typ: [[4, 8]] } },
+        frame1: { timber: { lim: [10, 50], typ: [[15, 40]] }, steel: { lim: [10, 80], typ: [[15, 60]] }, concrete: { lim: [7, 30], typ: [[10, 25]] } },
+        frame2: { timber: { lim: [10, 55], typ: [[15, 45]] }, steel: { lim: [10, 85], typ: [[15, 65]] }, concrete: { lim: [8, 35], typ: [[10, 25]] } },
+        frame3: { timber: { lim: [15, 60], typ: [[20, 50]] }, steel: { lim: [15, 90], typ: [[20, 70]] }, concrete: { lim: [10, 40], typ: [[15, 30]] } },
+        grid1: { timber: { lim: [10, 30], typ: [[12, 25]] }, steel: { lim: [10, 30], typ: [[12, 25]] }, concrete: { lim: [5, 20], typ: [[6, 15]] } },
+        grid2: { timber: { lim: [10, 35], typ: [[15, 30]] }, steel: { lim: [10, 35], typ: [[15, 30]] }, concrete: { lim: [5, 25], typ: [[6, 20]] } },
+        grid3: { timber: { lim: [8, 25], typ: [[10, 20]] }, concrete: { lim: [5, 18], typ: [[6, 15]] } }
+    };
+    const MAT3 = ['steel', 'timber', 'concrete'];
+    const R3 = (m, st, ti, co) => ({ steel: st, timber: ti, concrete: co }[m]);
+    const nCols = (W, s, k) => k * (Math.ceil(W / s - 1e-9) + 1);
+    const hingeAt = (x, z, k) => poly([[x - k, z], [x, z + k], [x + k, z], [x, z - k]], 'light');
+    const spacing3 = m => ({ steel: 6, timber: 5, concrete: 6 }[m]);
+    const beamOwn = (m, L, d, s, f = 1) => (m === 'concrete' ? 25 * Math.max(0.3, d / 2.5) * d / s : (m === 'timber' ? 0.8 : 1) * (0.10 + 0.010 * L)) * f;
+    const rules3 = f => ({ steel: f('steel'), timber: f('timber'), concrete: f('concrete') });
+    const sampleX = (xa, xb, n = 48) => Array.from({ length: n + 1 }, (_, i) => xa + (xb - xa) * i / n);
+
+    // a beam along an underside line zu(x), depth d(x), from xa to xb
+    function beamBand(zu, d, xa, xb, extraX = []) {
+        const xs = [...new Set([...sampleX(xa, xb), ...extraX].map(v => +v.toFixed(4)))].sort((p, q) => p - q);
+        const lo = xs.map(x => [x, zu(x)]), hi = xs.map(x => [x, zu(x) + (typeof d === 'function' ? d(x) : d)]);
+        return { part: poly([...lo, ...hi.slice().reverse()]), top: hi };   // top runs from xa to xb
+    }
+    // the hall is the middle span; side bays a = L/2 continue the structure outside the clear space
+    function threeSpan(L, H, W, m, q, o) {
+        const a = L / 2, c = colW(m, H), s = spacing3(m), d = L / o.ratio(m), X = [-a, 0, L, L + a];
+        const b = beamBand(o.zu, d, -a - c, L + a + c, [0, L, L / 2]);
+        const parts = [rect(-a - c, 0, -a, o.zu(-a)), rect(-c, 0, 0, o.zu(0)), rect(L, 0, L + c, o.zu(L)), rect(L + a, 0, L + a + c, o.zu(L + a)), b.part];
+        for (const x of o.hinges || []) parts.push(hingeAt(x, o.zu(x) + d / 2, Math.max(0.15, d * 0.45)));
+        return {
+            parts, roof: [[-a - c, 0], ...b.top, [L + a + c, 0]], foot: [-a - c, L + a + c],
+            zone: Math.max(...b.top.filter(p => p[0] >= 0 && p[0] <= L).map(p => p[1])) - H, cols: nCols(W, s, 4),
+            colNote: `hall + side bays ${f1_(a)} m wide; beams every ${f1_(s)} m over four supports`,
+            plan: { kind: 'oneway', s, x0: -a, x1: L + a, colsX: X }
+        };
+    }
+    // a portal frame over the hall; o.d0 set = three-hinged (tapers to a crown hinge)
+    function portalParts(L, H, o) {
+        const tan = Math.tan(6 * Math.PI / 180), Lh = L * 0.12, dr = o.dr, dh = o.dh;
+        const top = x => H + dh + tan * (L / 2 - Math.abs(x - L / 2));
+        const dep = x => { const e = Math.min(x, L - x); if (o.d0 != null) return dh - (dh - o.d0) * e / (L / 2); return e >= Lh ? dr : dh - (dh - dr) * e / Lh; };
+        const xs = sampleX(0, L, 60), wb = o.wb;
+        const topPts = [[-dh, top(0) - tan * dh], ...xs.map(x => [x, top(x)]), [L + dh, top(L) - tan * dh]];
+        const frame = [[-wb, 0], [0, 0], [0, H], ...xs.map(x => [x, top(x) - dep(x)]), [L, H], [L, 0], [L + wb, 0], ...topPts.slice().reverse()];
+        return { frame: poly(frame), topPts, top, dep };
+    }
+    function gridLines(theta, sp, r0) {
+        const [x0, y0, x1, y1] = r0, th = theta * Math.PI / 180, dx = Math.cos(th), dy = Math.sin(th), nx = -dy, ny = dx, out = [];
+        const cs = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => x * nx + y * ny), cmin = Math.min(...cs), cmax = Math.max(...cs);
+        const cmid = (x0 + x1) / 2 * nx + (y0 + y1) / 2 * ny;
+        for (let k = Math.ceil((cmin - cmid) / sp + 1e-6); cmid + k * sp < cmax - 1e-6; k++) {
+            const c = cmid + k * sp, px = c * nx, py = c * ny; let t0 = -1e9, t1 = 1e9, ok = true;
+            for (const [p, dd, lo, hi] of [[px, dx, x0, x1], [py, dy, y0, y1]]) {
+                if (Math.abs(dd) > 1e-9) { let u = (lo - p) / dd, v = (hi - p) / dd; if (u > v) [u, v] = [v, u]; t0 = Math.max(t0, u); t1 = Math.min(t1, v); }
+                else if (p < lo - 1e-9 || p > hi + 1e-9) ok = false;
+            }
+            if (ok && t1 - t0 > 0.05) out.push([px + t0 * dx, py + t0 * dy, px + t1 * dx, py + t1 * dy]);
+        }
+        return out;
+    }
+    const edgesOf = ([x0, y0, x1, y1], f = 1) => [[x0, y0, x1, y0, f], [x1, y0, x1, y1, f], [x1, y1, x0, y1, f], [x0, y1, x0, y0, f]];
+    function perimPosts(L, W, s) {
+        const nx = Math.max(1, Math.round(L / s)), ny = Math.max(1, Math.round(W / s)), P = [];
+        for (let i = 0; i <= nx; i++) P.push([L * i / nx, 0], [L * i / nx, W]);
+        for (let j = 1; j < ny; j++) P.push([0, W * j / ny], [L, W * j / ny]);
+        return P;
+    }
+    // a beam grid: plan segments [x1, y1, x2, y2, f] with depth f·d hanging from the top plane H + d
+    function gridHall(L, H, W, m, o) {
+        const d = o.d, c = colW(m, H), posts = o.posts || perimPosts(L, W, 6);
+        const faces3 = o.segs.map(([x1, y1, x2, y2, f = 1]) => ({ c: 'solid', pts: [[x1, y1, H + d * (1 - f)], [x2, y2, H + d * (1 - f)], [x2, y2, H + d], [x1, y1, H + d]] }));
+        const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: () => H + d, ni: 1, nj: 1 }], posts: posts.map(([x, y]) => [x, y, H]), faces3, secY: W / 2,
+            planSegs: o.segs, secParts: [rect(-c, 0, 0, H), rect(L, 0, L + c, H), rect(0, H, L, H + d, 'light')] });
+        return Object.assign(r, { zone: d, cols: posts.length, colNote: o.colNote || `perimeter columns every ~6 m`, foot: [-c, L + c] });
+    }
+    const gridA = L => clamp(L / Math.round(L / 3), 2, 5);
+    const gridOwn = (m, L, d) => m === 'concrete' ? 2 * 25 * Math.max(0.2, d / 3) * d / gridA(L) + 2.5 : (m === 'timber' ? 0.8 : 1) * (0.12 + 0.008 * L);
+
+    const FAM3 = [
+        // --- 3.1 beams ---
+        { id: 'b_pitch', fam: 3, name: 'Pitched beam', mats: MAT3, spans: SP3.beam1, rule: rules3(m => `d = L/${R3(m, 22, 17, 14)} · pitch 1:6`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 22, 17, 14), spacing3(m)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 22, 17, 14), c = colW(m, H), s = spacing3(m), zu = x => H + x / 6, b = beamBand(zu, d, -c, L + c, [0, L]);
+              return { parts: [rect(-c, 0, 0, zu(0)), rect(L, 0, L + c, zu(L)), b.part], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
+                  zone: L / 6 + d, cols: alongSides(W, s), colNote: `beams every ${f1_(s)} m; the high side is ${f1_(L / 6)} m taller`, plan: { kind: 'oneway', s },
+                  notes: ['A straight beam laid on a slope: it still spans by bending, so it needs the depth of a level beam; the slope only drains the roof (Engel 3.1.1.2).'] };
+          } },
+        { id: 'b_angle', fam: 3, name: 'Angled (kinked) beam', mats: MAT3, spans: SP3.beam1, rule: rules3(m => `d = L/${R3(m, 22, 17, 14)} · kink at 0.4 L, slope 1:4`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 22, 17, 14), spacing3(m)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 22, 17, 14), c = colW(m, H), s = spacing3(m), xk = 0.4 * L, zu = x => H + Math.min(x, xk) / 4, b = beamBand(zu, d, -c, L + c, [0, xk, L]);
+              return { parts: [rect(-c, 0, 0, zu(0)), rect(L, 0, L + c, zu(L)), b.part], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
+                  zone: xk / 4 + d, cols: alongSides(W, s), colNote: `beams every ${f1_(s)} m`, plan: { kind: 'oneway', s },
+                  notes: ['A beam with a kink: the kink must be rigid, because the bending moment passes through it (Engel 3.1.1.3).'] };
+          } },
+        { id: 'b_curve', fam: 3, name: 'Curved beam', mats: MAT3, spans: SP3.beam1, rule: rules3(m => `d = L/${R3(m, 22, 17, 14)} · rise L/10, one support sliding`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 22, 17, 14), spacing3(m)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 22, 17, 14), c = colW(m, H), s = spacing3(m), f = L / 10, zu = x => H + (x <= 0 || x >= L ? 0 : 4 * f * (x / L) * (1 - x / L)), b = beamBand(zu, d, -c, L + c, [0, L]);
+              return { parts: [rect(-c, 0, 0, H), rect(L, 0, L + c, H), b.part, hingeAt(L + c / 2, H - 0.05, 0.15)], roof: [[-c, 0], ...b.top, [L + c, 0]], foot: [-c, L + c],
+                  zone: f + d, cols: alongSides(W, s), colNote: `beams every ${f1_(s)} m, one bearing sliding`, plan: { kind: 'oneway', s },
+                  notes: ['Curved like an arch but free to slide at one end: with no thrust it works as a beam and needs a beam’s depth (Engel 3.1.1.4).', 'Fix both ends and it becomes an arch — then the thrust must be taken.'] };
+          } },
+        { id: 'cb_h', fam: 3, name: 'Continuous beam', mats: MAT3, spans: SP3.beam2, rule: rules3(m => `d = L/${R3(m, 26, 20, 20)} · side bays L/2`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 26, 20, 20), spacing3(m), 0.85),
+          build(L, H, W, m, q) {
+              const r = threeSpan(L, H, W, m, q, { ratio: m => R3(m, 26, 20, 20), zu: () => H });
+              return Object.assign(r, { notes: ['The beam runs on over the supports into the side bays: the support moments relieve the span, so it can be shallower than a one-bay beam (Engel pp.181–182).', 'The hall stays column-free; the extra supports stand outside it, at the far side of each side bay.'] });
+          } },
+        { id: 'cb_p', fam: 3, name: 'Continuous pitched beam', mats: MAT3, spans: SP3.beam2, rule: rules3(m => `d = L/${R3(m, 26, 20, 20)} · pitch 1:10 · side bays L/2`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 26, 20, 20), spacing3(m), 0.85),
+          build(L, H, W, m, q) {
+              const r = threeSpan(L, H, W, m, q, { ratio: m => R3(m, 26, 20, 20), zu: x => H + x / 10 });
+              return Object.assign(r, { notes: ['A continuous beam laid on a slope over all three bays (Engel 3.1.2.2).'] });
+          } },
+        { id: 'cb_a', fam: 3, name: 'Continuous angled beam', mats: MAT3, spans: SP3.beam2, rule: rules3(m => `d = L/${R3(m, 26, 20, 20)} · gable rise L/10 over the hall`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 26, 20, 20), spacing3(m), 0.85),
+          build(L, H, W, m, q) {
+              const r = threeSpan(L, H, W, m, q, { ratio: m => R3(m, 26, 20, 20), zu: x => H + (x > 0 && x < L ? L / 10 * (1 - Math.abs(2 * x / L - 1)) : 0) });
+              return Object.assign(r, { notes: ['Kinked over the supports and at the ridge, continuous throughout — every kink is a rigid joint (Engel 3.1.2.3).'] });
+          } },
+        { id: 'gb_h', fam: 3, name: 'Pin-jointed (Gerber) beam', mats: MAT3, spans: SP3.beam3, spanNote: 'p.176 has a third beam row, drawn with a central support: used here for pin-jointed and cantilever beams',
+          rule: rules3(m => `d = L/${R3(m, 24, 18, 16)} · hinges at 0.15 L`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 24, 18, 16), spacing3(m), 0.9),
+          build(L, H, W, m, q) {
+              const r = threeSpan(L, H, W, m, q, { ratio: m => R3(m, 24, 18, 16), zu: () => H, hinges: [0.15 * L, 0.85 * L] });
+              return Object.assign(r, { notes: ['Hinges near the supports make the continuous beam statically determinate: the side beams cantilever into the hall and carry a suspended middle beam (Engel 3.1.3).', 'Settlement of a support no longer stresses the beam.'] });
+          } },
+        { id: 'gb_c', fam: 3, name: 'Pin-jointed curved beam', mats: MAT3, spans: SP3.beam3, spanNote: 'p.176 has a third beam row, drawn with a central support: used here for pin-jointed and cantilever beams',
+          rule: rules3(m => `d = L/${R3(m, 24, 18, 16)} · rise L/10 · hinges at 0.15 L`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 24, 18, 16), spacing3(m), 0.9),
+          build(L, H, W, m, q) {
+              const f = L / 10, zu = x => H + (x > 0 && x < L ? 4 * f * (x / L) * (1 - x / L) : 0);
+              const r = threeSpan(L, H, W, m, q, { ratio: m => R3(m, 24, 18, 16), zu, hinges: [0.15 * L, 0.85 * L] });
+              return Object.assign(r, { notes: ['A curved, pin-jointed beam over three bays (Engel 3.1.3.4): the hinges keep it free of thrust, so the curve is architectural, not structural.'] });
+          } },
+        { id: 'k_uni', fam: 3, name: 'Cantilever beam (one-sided)', mats: MAT3, spans: SP3.beam3, spanNote: 'p.176 has a third beam row, drawn with a central support: used here for pin-jointed and cantilever beams',
+          rule: rules3(m => `root L/${R3(m, 10, 8, 7)}, tip L/40 · back span L/3`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 10, 8, 7), spacing3(m), 1.6),
+          build(L, H, W, m, q) {
+              const a = L / 3, c = colW(m, H), s = spacing3(m), dR = L / R3(m, 10, 8, 7), dT = L / 40;
+              const d = x => x >= 0 ? dR - (dR - dT) * x / L : dR - (dR - 0.45 * dR) * (-x / a);
+              const b = beamBand(() => H, d, -a - c, L, [0]);
+              return { parts: [rect(-c, 0, 0, H), line([[-a - c / 2, -0.3], [-a - c / 2, H]], 'tie'), rect(-a - c - 0.4, -0.6, -a + 0.4, 0, 'light'), b.part],
+                  roof: [[-a - c, 0], ...b.top, [L, H], [L, 0]], foot: [-a - c - 0.4, L],
+                  zone: dR, cols: nCols(W, s, 1), colNote: `one row of columns at the back, tie-downs ${f1_(a)} m behind; the front edge is open`,
+                  thrust: q * s * L * L / (2 * a), thrustNote: `hold-down force per beam in the back tie: T = qsL²/2a (beams ${f1_(s)} m apart)`, thrustPerArch: true,
+                  plan: { kind: 'oneway', s, x0: -a, x1: L, colsX: [0], anchorsX: [-a] },
+                  notes: ['The beam cantilevers the full span from one line of columns; a back span tied down to the ground balances it (Engel 3.1.4.1).', 'The front of the hall is open — the grandstand and hangar roof.'] };
+          } },
+        { id: 'k_bi', fam: 3, name: 'Cantilever beam (two-sided)', mats: MAT3, spans: SP3.beam3, spanNote: 'p.176 has a third beam row, drawn with a central support: used here for pin-jointed and cantilever beams',
+          rule: rules3(m => `root L/${R3(m, 16, 12, 11)}, tips L/60 · one column row at mid-span`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 16, 12, 11), spacing3(m), 0.9),
+          build(L, H, W, m, q) {
+              const c = colW(m, H), s = spacing3(m), dR = L / R3(m, 16, 12, 11), dT = L / 60, d = x => dR - (dR - dT) * Math.abs(2 * x / L - 1);
+              const b = beamBand(() => H, d, 0, L, [L / 2]);
+              return { parts: [rect(L / 2 - c / 2, 0, L / 2 + c / 2, H), b.part], roof: [[0, 0], [0, H], ...b.top, [L, H], [L, 0]], foot: [0, L],
+                  zone: dR, cols: nCols(W, s, 1), colNote: `one column row down the middle of the hall, every ${f1_(s)} m; both edges open`,
+                  plan: { kind: 'oneway', s, x0: 0, x1: L, colsX: [L / 2] },
+                  notes: ['Beams balanced on one central row of columns, cantilevering to both sides (Engel 3.1.4.2).', `The column row stands in the middle of the hall; each cantilever is ${f1_(L / 2)} m.`] };
+          } },
+        // --- 3.2 frames ---
+        { id: 'f_3h', fam: 3, name: 'Three-hinged frame', mats: MAT3, spans: SP3.frame1, rule: rules3(m => `knee L/${R3(m, 18, 12, 10)}, crown L/${R3(m, 60, 40, 30)} · hinges at feet and crown`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 18, 12, 10), spacing3(m), 0.55),
+          build(L, H, W, m, q) {
+              const dh = L / R3(m, 18, 12, 10), d0 = L / R3(m, 60, 40, 30), s = spacing3(m), P = portalParts(L, H, { dr: d0, dh, d0, wb: dh * 0.45 });
+              const k = Math.max(0.15, dh * 0.25), hc = P.top(L / 2) - d0 / 2;
+              return { parts: [P.frame, hingeAt(L / 2, hc, k), hingeAt(-dh * 0.22, k, k), hingeAt(L + dh * 0.22, k, k)],
+                  roof: [[-dh, 0], ...P.topPts, [L + dh, 0]], foot: [-dh, L + dh], zone: Math.max(...P.topPts.map(p => p[1])) - H,
+                  cols: alongSides(W, s), colNote: `frames every ${f1_(s)} m, hinged at the feet and the crown`,
+                  thrust: q * s * L * L / (8 * hc), thrustNote: `per frame at each foot, H = qsL²/8h with the crown hinge ${f2(hc)} m up`, thrustPerArch: true, plan: { kind: 'oneway', s },
+                  notes: ['Three hinges make the frame statically determinate: no moment at the crown and the feet, the most at the knees — so it tapers both ways (Engel pp.189–192).', 'Settlement and temperature cause no extra stress.'] };
+          } },
+        { id: 'f_fix', fam: 3, name: 'Frame with fixed ends', mats: MAT3, spans: SP3.frame1, rule: rules3(m => `rafter L/${R3(m, 45, 28, 22)}, haunch ×1.6 · fixed feet`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 45, 28, 22), spacing3(m), 0.5),
+          build(L, H, W, m, q) {
+              const dr = L / R3(m, 45, 28, 22), dh = 1.6 * dr, s = spacing3(m), P = portalParts(L, H, { dr, dh, wb: dh });
+              return { parts: [P.frame, rect(-dh - 0.4, -0.7, 0.4, 0, 'light'), rect(L - 0.4, -0.7, L + dh + 0.4, 0, 'light')],
+                  roof: [[-dh, 0], ...P.topPts, [L + dh, 0]], foot: [-dh - 0.4, L + dh + 0.4], zone: Math.max(...P.topPts.map(p => p[1])) - H,
+                  cols: alongSides(W, s), colNote: `frames every ${f1_(s)} m, columns fixed into the foundations`, plan: { kind: 'oneway', s },
+                  notes: ['Fixed feet take moment too, so the moments spread over more of the frame and the rafter can be shallowest of the three (Engel 3.2.1.3).', 'The foundations must resist that moment — bigger footings.'] };
+          } },
+        ...[['mf_cont', 'Continuous multi-bay frame', 'continuous', [45, 28, 22], 'Rigid over all three bays, pinned at the feet (Engel 3.2.2.1).'],
+            ['mf_pin', 'Pin-jointed multi-bay frame', 'pin', [40, 25, 20], 'The outer columns are hinged at head and foot — pendulum posts; the rigid middle frame gives the stability (Engel 3.2.2.2).'],
+            ['mf_fix', 'Multi-bay frame with fixed ends', 'fix', [50, 30, 24], 'All feet fixed into the foundations: the stiffest version, and the shallowest rafters (Engel 3.2.2.3).']].map(([id, name, kind, R, note]) => ({
+            id, fam: 3, name, mats: MAT3, spans: SP3.frame2, rule: rules3(m => `rafter L/${R3(m, ...R)}, haunch ×2 · side bays L/2`),
+            own: (m, L) => beamOwn(m, L, L / R3(m, ...R), spacing3(m), 0.6),
+            build(L, H, W, m, q) {
+                const a = L / 2, tan = Math.tan(6 * Math.PI / 180), dr = L / R3(m, ...R), dh = 2 * dr, s = spacing3(m), w = dh * 0.8;
+                const top = x => H + dh + tan * (L / 2 - Math.abs(x - L / 2));
+                const dep = x => { const e0 = Math.min(Math.abs(x), Math.abs(x - L)); let dd = e0 < 0.12 * L ? dh - (dh - dr) * e0 / (0.12 * L) : dr; const eo = Math.min(Math.abs(x + a), Math.abs(x - L - a)); if (eo < 0.12 * L) dd = Math.max(dd, 1.5 * dr - 0.5 * dr * eo / (0.12 * L)); return dd; };
+                const zu = x => top(x) - dep(x), b = beamBand(zu, dep, -a - w, L + a + w, [-a, 0, L / 2, L, L + a]);
+                const parts = [rect(-a - w, 0, -a, zu(-a)), rect(-w, 0, 0, zu(0)), rect(L, 0, L + w, zu(L)), rect(L + a, 0, L + a + w, zu(L + a)), b.part];
+                const k = Math.max(0.15, dr * 0.5);
+                if (kind === 'pin') for (const x of [-a - w / 2, L + a + w / 2]) parts.push(hingeAt(x, zu(x > 0 ? L + a : -a) - k, k), hingeAt(x, k, k));
+                if (kind === 'continuous') for (const x of [-a - w / 2, -w / 2, L + w / 2, L + a + w / 2]) parts.push(hingeAt(x, k, k));
+                if (kind === 'fix') for (const x of [-a - w / 2, -w / 2, L + w / 2, L + a + w / 2]) parts.push(rect(x - w, -0.7, x + w, 0, 'light'));
+                return { parts, roof: [[-a - w, 0], ...b.top, [L + a + w, 0]], foot: [-a - w * 2, L + a + w * 2],
+                    zone: Math.max(...b.top.filter(p => p[0] >= 0 && p[0] <= L).map(p => p[1])) - H, cols: nCols(W, s, 4),
+                    colNote: `hall + side bays ${f1_(a)} m wide; frames every ${f1_(s)} m on four columns`, plan: { kind: 'oneway', s, x0: -a, x1: L + a, colsX: [-a, 0, L, L + a] },
+                    notes: [note, 'The hall is the middle bay: its columns stand at its edges, the side bays lie outside the clear space.'] };
+            } })),
+        { id: 'sf_one', fam: 3, name: 'One-panel closed frame', mats: MAT3, spans: SP3.frame3, rule: rules3(() => 'd = L/8, ≥ 3 m · end posts only'),
+          own: (m, L, r0) => m === 'concrete' ? 25 * Math.max(0.3, r0.ch / 2.5) * (2 * r0.ch + 4 * r0.ch * r0.zone / L) / r0.plan.s : beamOwn(m, L, 0, r0.plan.s, 1.3),
+          build(L, H, W, m, q) {
+              const d = Math.max(3, L / 8), c = colW(m, H), s = clamp(r05(L / 5), 6, 12), ch = Math.max(0.4, d / 7), w = 2 * ch;
+              return { parts: [...columns(L, H, c), rect(-c, H, L + c, H + ch), rect(-c, H + d - ch, L + c, H + d), rect(0, H, w, H + d), rect(L - w, H, L, H + d)],
+                  roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c], zone: d, ch, cols: alongSides(W, s), colNote: `closed frames every ${f1_(s)} m`,
+                  plan: { kind: 'oneway', s },
+                  notes: ['Two chords joined by rigid end posts only: one closed panel, carried by frame action (Engel 3.2.3.1).', 'Much less stiff than the multi-panel girder of the same depth — the chords bend over the whole span.'] };
+          } },
+        { id: 'sf_multi', fam: 3, name: 'Multi-storey closed frame', mats: MAT3, spans: SP3.frame3, rule: rules3(() => 'd = L/6, ≥ 6.5 m · two storeys of panels'),
+          own: (m, L, r0) => m === 'concrete' ? 25 * Math.max(0.3, r0.ch / 2.5) * (3 * r0.ch + (r0.nP + 1) * 1.35 * r0.ch * r0.zone / L) / r0.plan.s : beamOwn(m, L, 0, r0.plan.s, 1.2),
+          build(L, H, W, m, q) {
+              const d = Math.max(6.5, L / 6), c = colW(m, H), s = clamp(r05(L / 5), 6, 12), ch = Math.max(0.3, d / 18), n = Math.max(3, Math.round(L / (d / 2))), p = L / n, parts = [...columns(L, H, c)];
+              for (const z of [H, H + d / 2 - ch / 2, H + d - ch]) parts.push(rect(-c, z, L + c, z + ch));
+              for (let i = 0; i <= n; i++) { const e = Math.min(i, n - i) / (n / 2), w = ch * (1.8 - 0.9 * e); parts.push(rect(i * p - w / 2, H, i * p + w / 2, H + d)); }
+              return { parts, roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c], zone: d, ch, nP: n, cols: alongSides(W, s), colNote: `girders two storeys deep every ${f1_(s)} m`,
+                  plan: { kind: 'oneway', s },
+                  notes: ['Two storeys of open, rigid panels act as one girder spanning the hall (Engel 3.2.3.3).', 'The structure zone holds two usable floors.'] };
+          } },
+        // --- 3.3 beam grids ---
+        { id: 'g_diag', fam: 3, name: 'Diagonal beam grid', mats: MAT3, spans: SP3.grid1, rule: rules3(m => `d = L/${R3(m, 20, 18, 18)} · beams at 45°`), twoWay: true,
+          own: (m, L) => gridOwn(m, L, L / R3(m, 20, 18, 18)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 20, 18, 18), a = gridA(L) * 1.2, R0 = [0, 0, L, W];
+              const r = gridHall(L, H, W, m, { d, segs: [...gridLines(45, a, R0), ...gridLines(-45, a, R0), ...edgesOf(R0)] });
+              return Object.assign(r, { notes: ['Beams at 45° to the edges: the short corner beams are stiff and prop the long ones, so the grid works even on a long plan (Engel p.202).'] });
+          } },
+        { id: 'g_tri', fam: 3, name: 'Triangulated beam grid', mats: MAT3, spans: SP3.grid1, rule: rules3(m => `d = L/${R3(m, 22, 20, 20)} · three directions`), twoWay: true,
+          own: (m, L) => gridOwn(m, L, L / R3(m, 22, 20, 20)) * 1.2,
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 22, 20, 20), h = gridA(L) * 1.3 * Math.sqrt(3) / 2, R0 = [0, 0, L, W];
+              const r = gridHall(L, H, W, m, { d, segs: [...gridLines(0, h, R0), ...gridLines(60, h, R0), ...gridLines(120, h, R0), ...edgesOf(R0)] });
+              return Object.assign(r, { notes: ['Beams in three directions meeting at every node: the stiffest homogeneous grid, suited to centred and triangular plans (Engel p.203).'] });
+          } },
+        { id: 'gg_orth', fam: 3, name: 'Gradated orthogonal grid', mats: MAT3, spans: SP3.grid2, rule: rules3(m => `main beams L/${R3(m, 18, 16, 16)} across · secondaries 0.55 d`),
+          own: (m, L) => gridOwn(m, L, L / R3(m, 18, 16, 16)) * 0.85,
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 18, 16, 16), a = gridA(L), R0 = [0, 0, L, W];
+              const main = gridLines(90, 2 * a, [0, 0, W, L]).map(([y1, x1, y2, x2]) => [x1, y1, x2, y2, 1]);
+              const segs = [...gridLines(0, 2 * a, R0).map(sg => [...sg.slice(0, 4), 1]), ...gridLines(90, a, R0).map(sg => [...sg.slice(0, 4), 0.55]), ...edgesOf(R0)];
+              const r = gridHall(L, H, W, m, { d, segs });
+              return Object.assign(r, { notes: ['A hierarchy: deep main beams across the span, shallower secondary beams between them — the grid is graded to the load path (Engel 3.3.2.1, p.203).'] });
+          } },
+        { id: 'gg_skew', fam: 3, name: 'Skew grid between edge girders', mats: MAT3, spans: SP3.grid2, rule: rules3(m => `skew beams at 30°, d = 1.15 L/${R3(m, 20, 18, 18)}`),
+          own: (m, L) => gridOwn(m, L, 1.15 * L / R3(m, 20, 18, 18)) * 0.8,
+          build(L, H, W, m, q) {
+              const d = 1.155 * L / R3(m, 20, 18, 18), a = gridA(L) * 1.2, R0 = [0, 0, L, W], P = [];
+              for (const y of ysOf(W, 6)) P.push([0, y], [L, y]);
+              const r = gridHall(L, H, W, m, { d, posts: P, colNote: 'columns on the two long sides only, every ~6 m', segs: [...gridLines(30, a, R0).map(sg => [...sg.slice(0, 4), 0.8]), ...edgesOf(R0)] });
+              return Object.assign(r, { notes: ['Parallel beams set skew between two edge girders: every beam is the same length, and the corners get short, stiff beams (Engel 3.3.2.2, p.202).'] });
+          } },
+        { id: 'gg_tri', fam: 3, name: 'Gradated triangulated grid', mats: MAT3, spans: SP3.grid2, rule: rules3(m => `main beams L/${R3(m, 20, 18, 18)} · secondaries at ±60°, 0.55 d`),
+          own: (m, L) => gridOwn(m, L, L / R3(m, 20, 18, 18)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 20, 18, 18), h = gridA(L) * Math.sqrt(3) / 2, R0 = [0, 0, L, W];
+              const segs = [...gridLines(90, 2 * h / Math.sqrt(3) * 1.5, R0).map(sg => [...sg.slice(0, 4), 1]), ...gridLines(30, h, R0).map(sg => [...sg.slice(0, 4), 0.55]), ...gridLines(150, h, R0).map(sg => [...sg.slice(0, 4), 0.55]), ...edgesOf(R0)];
+              const r = gridHall(L, H, W, m, { d, segs });
+              return Object.assign(r, { notes: ['Main beams across the span with a triangulated secondary grid between them (Engel 3.3.2.3).'] });
+          } },
+        { id: 'gc_ring', fam: 3, name: 'Concentric grid: ring and radial beams', mats: ['timber', 'concrete'], spans: SP3.grid3, rule: { timber: 'd = L/18 · inner ring 0.4 L', concrete: 'd = L/15 · inner ring 0.4 L' },
+          own: (m, L) => gridOwn(m, L, L / R3(m, 18, 18, 15)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 18, 18, 15), segs = [];
+              for (const [x0, y0, x1, y1] of rowRects(L, W)) {
+                  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, hx = 0.2 * (x1 - x0), hy = 0.2 * (y1 - y0);
+                  segs.push(...edgesOf([x0, y0, x1, y1]), ...edgesOf([cx - hx, cy - hy, cx + hx, cy + hy]));
+                  for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) segs.push([cx + sx * hx, cy + sy * hy, sx < 0 ? x0 : x1, sy < 0 ? y0 : y1, 1]);
+                  for (const [ax, ay, bx, by] of [[cx, cy - hy, cx, y0], [cx + hx, cy, x1, cy], [cx, cy + hy, cx, y1], [cx - hx, cy, x0, cy]]) segs.push([ax, ay, bx, by, 0.7]);
+              }
+              const r = gridHall(L, H, W, m, { d, segs });
+              return Object.assign(r, { notes: ['Beams gathered round a central ring: the load travels in to the ring and out along the diagonals to the corners (Engel 3.3.3, drawing 1 on p.51 — Engel names no variants here).'] });
+          } },
+        { id: 'gc_pin', fam: 3, name: 'Concentric grid: pinwheel', mats: ['timber', 'concrete'], spans: SP3.grid3, rule: { timber: 'd = L/18 · four beams each resting on the next', concrete: 'd = L/15 · four beams each resting on the next' },
+          own: (m, L) => gridOwn(m, L, L / R3(m, 18, 18, 15)),
+          build(L, H, W, m, q) {
+              const d = L / R3(m, 18, 18, 15), segs = [];
+              for (const [x0, y0, x1, y1] of rowRects(L, W)) {
+                  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, e = 0.15 * Math.min(x1 - x0, y1 - y0);
+                  segs.push(...edgesOf([x0, y0, x1, y1]), [x0, cy - e, cx + e, cy - e, 1], [cx + e, y0, cx + e, cy + e, 1], [x1, cy + e, cx - e, cy + e, 1], [cx - e, y1, cx - e, cy - e, 1],
+                      [(x0 + cx) / 2, y0, (x0 + cx) / 2, cy - e, 0.6], [x1, (y0 + cy) / 2, cx + e, (y0 + cy) / 2, 0.6], [(x1 + cx) / 2, y1, (x1 + cx) / 2, cy + e, 0.6], [x0, (y1 + cy) / 2, cx - e, (y1 + cy) / 2, 0.6]);
+              }
+              const r = gridHall(L, H, W, m, { d, segs });
+              return Object.assign(r, { notes: ['Four main beams, each carried on the next, frame a central square — a reciprocal (pinwheel) grid (Engel 3.3.3, drawing 2 on p.51 — Engel names no variants here).'] });
+          } }
+    ];
+    for (const s of FAM3) SYS.push(Object.assign({ code: '' }, s));
+
+    // ---------- family 4 variants (Engel pp.52–53; spans p.216) ----------
+    const SP4 = {
+        plate1: { concrete: { lim: [8, 50], typ: [[10, 40]] }, timber: { lim: [6, 50], typ: [[8, 30]] } },
+        plate2: { concrete: { lim: [10, 60], typ: [[15, 50]] }, timber: { lim: [8, 50], typ: [[10, 40]] } },
+        plate3: { concrete: { lim: [5, 25], typ: [[8, 20]] }, timber: { lim: [5, 20], typ: [[5, 15]] } },
+        fold1: { concrete: { lim: [10, 60], typ: [[15, 50]] }, timber: { lim: [8, 50], typ: [[10, 40]] } },
+        fold2: { concrete: { lim: [20, 200], typ: [[25, 150]] }, timber: { lim: [15, 150], typ: [[20, 120]] } },
+        fold3: { concrete: { lim: [20, 100], typ: [[25, 80]] }, timber: { lim: [15, 80], typ: [[20, 60]] } },
+        fold4: { concrete: { lim: [10, 90], typ: [[20, 70]] }, timber: { lim: [10, 70], typ: [[15, 60]] } },
+        shell1: { concrete: { lim: [10, 75], typ: [[20, 60]] } },
+        shell2: { concrete: { lim: [20, 200], typ: [[40, 150]] } },
+        shell3: { concrete: { lim: [15, 90], typ: [[25, 70]] } },
+        shell4: { concrete: { lim: [15, 70], typ: [[25, 60]] }, timber: { lim: [15, 60], typ: [[20, 50]] } },
+        shell5: { concrete: { lim: [20, 100], typ: [[25, 80]] } }
+    };
+    const MAT4 = ['concrete', 'timber'];
+    const plateOwn = (m, d, s) => m === 'concrete' ? 25 * 0.25 * d / s + 0.2 : 5 * 0.15 * d / s + 0.15;
+    const foldOwn = (m, L) => m === 'concrete' ? 25 * clamp(L / 300, 0.08, 0.25) * 1.35 : 0.35;
+    const shellOwn = (m, L, f = 1.2) => m === 'timber' ? 0.4 : 25 * Math.max(0.08, L / 500) * f;
+    const zigAt = (y, b) => { const p = ((y / b) % 2 + 2) % 2; return p <= 1 ? p : 2 - p; };
+    const foldYs = (W, b) => { const n = Math.max(2, Math.round(W / b / 2) * 2), bb = W / n; return { n, bb, ys: Array.from({ length: n + 1 }, (_, k) => k * bb) }; };
+    const quad = (a, b, c, d, cl = 'solid') => ({ c: cl, pts: [a, b, c, d] });
+    const tri = (a, b, c, cl = 'solid') => ({ c: cl, pts: [a, b, c] });
+    // the smallest span S of a parabolic arch of rise r·S that still clears H over the full hall
+    const archSpan = (L, H, r) => (H / r + Math.sqrt((H / r) ** 2 + 4 * L * L)) / 2;
+    const withZone = (r, H) => Object.assign(r, { zone: r.topOverride - H });
+    // members of folded (V) or shell (U) section along a path in the x–z plane, one per y in ys, width b;
+    // prof(t) is the outward offset across the width (t = 0…1); the path is the inner line, the offsets are mitred at the bends
+    function stripFaces(path, prof, nt, ys, b, cl) {
+        const n = path.length, nrm = (a, c) => { const dx = c[0] - a[0], dz = c[1] - a[1], l = Math.hypot(dx, dz); return [-dz / l, dx / l]; };
+        const off = path.map((p, i) => {
+            const n1 = i > 0 ? nrm(path[i - 1], p) : null, n2 = i < n - 1 ? nrm(p, path[i + 1]) : null;
+            if (!n1) return n2; if (!n2) return n1;
+            const d = 1 + n1[0] * n2[0] + n1[1] * n2[1]; return [(n1[0] + n2[0]) / d, (n1[1] + n2[1]) / d];
+        });
+        const Q = (i, t, y) => { const o = prof(t); return [path[i][0] + off[i][0] * o, y - b / 2 + b * t, path[i][1] + off[i][1] * o]; };
+        const faces = [];
+        for (const y of ys) for (let j = 0; j < nt; j++) for (let i = 0; i < n - 1; i++)
+            faces.push({ c: cl === 'fold' ? (j % 2 ? 'fold2' : 'fold1') : cl, pts: [Q(i, j / nt, y), Q(i + 1, j / nt, y), Q(i + 1, (j + 1) / nt, y), Q(i, (j + 1) / nt, y)] });
+        return { faces, edge: path.map((p, i) => [p[0] + off[i][0] * prof(0), p[1] + off[i][1] * prof(0)]) };
+    }
+    // n members centred in equal bays across W; the gaps between them are glazed
+    const bays = (W, s, fill) => { const n = Math.max(1, Math.round(W / s)), p = W / n; return { n, p, b: p * fill, ys: Array.from({ length: n }, (_, k) => (k + 0.5) * p) }; };
+    function stripHall(L, H, W, o) {
+        const { faces, edge } = stripFaces(o.path, o.prof, o.nt, o.ys, o.b, o.cl), xs = [...o.path, ...edge].map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+        const posts = o.posts || [], c = 0.3;
+        return surfaceHall({ kind: 'none', mods: o.ys.map(y => ({ rect: [x0, y - o.b / 2, x1, y + o.b / 2], z: () => H, ni: 1, nj: 1 })), faces3: faces, posts, secY: o.ys[0], sec: edge,
+            secParts: [line(o.path, 'thin'), ...(posts.length ? [rect(-c, 0, 0, H), rect(L, 0, L + c, H)] : [])] });
+    }
+    // a module whose outline is the closed polygon C: its corners are split into four runs and filled by a Coons patch
+    function polyMod(C, z) {
+        const n = C.length, q = [0, Math.round(n / 4), Math.round(n / 2), Math.round(3 * n / 4)];
+        const run = (i0, i1) => { const P = []; for (let i = i0; i <= i1; i++) P.push(C[i % n]); return u => { const f = u * (P.length - 1), k = Math.min(P.length - 2, Math.floor(f)), w = f - k; return [P[k][0] + (P[k + 1][0] - P[k][0]) * w, P[k][1] + (P[k + 1][1] - P[k][1]) * w]; }; };
+        const b = run(q[0], q[1]), r = run(q[1], q[2]), tp = run(q[2], q[3]), lf = run(q[3], n), P00 = C[q[0]], P10 = C[q[1]], P11 = C[q[2]], P01 = C[q[3]];
+        return { z, ni: 1, nj: 1, map: (s_, t_) => { const B = b(s_), T = tp(1 - s_), Lf = lf(1 - t_), R = r(t_);
+            return [0, 1].map(j => (1 - t_) * B[j] + t_ * T[j] + (1 - s_) * Lf[j] + s_ * R[j] - ((1 - s_) * (1 - t_) * P00[j] + s_ * (1 - t_) * P10[j] + (1 - s_) * t_ * P01[j] + s_ * t_ * P11[j])); } };
+    }
+    // a half-polygon of n equal facets on a semicircle about (L/2, 0), springing from the ground, just big enough to clear the hall
+    function semiPoly(L, H, n = 6) {
+        const th = Math.atan2(H, -L / 2), dA = Math.PI / n, k = Math.min(n - 1, Math.floor((Math.PI - th) / dA)), mid = Math.PI - (k + 0.5) * dA;
+        const R = Math.hypot(L / 2, H) * Math.cos(th - mid) / Math.cos(dA / 2);
+        return { R, ang: Array.from({ length: n + 1 }, (_, i) => Math.PI - i * dA), pts: Array.from({ length: n + 1 }, (_, i) => { const a = Math.PI - i * dA; return [L / 2 + R * Math.cos(a), R * Math.sin(a)]; }) };
+    }
+    const rowsNote4 = { plate: 'p.216 has three plate rows (one-bay, continuous, cantilever); intersecting plates use the one-bay row',
+        fold3: 'p.216 third folded-plate row (drawn as a pyramid): used for polyhedral and intersecting folded plates',
+        shell3: 'p.216 third shell row (drawn as short cylindrical shells): used for cone and intersecting shells' };
+
+    const FAM4 = [
+        // --- 4.1 plates: deep walls that span like beams ---
+        { id: 'p_rect', fam: 4, name: 'Plate (wall-beam) roof', mats: MAT4, spans: SP4.plate1, rule: { concrete: 'd = L/5, ≥ 3 m · plates every 6 m', timber: 'd = L/5, ≥ 3 m · plates every 5 m' },
+          own: (m, L) => plateOwn(m, Math.max(3, L / 5), m === 'timber' ? 5 : 6),
+          build(L, H, W, m, q) {
+              const d = Math.max(3, L / 5), c = colW(m, H), s = m === 'timber' ? 5 : 6;
+              return { parts: [rect(-c, 0, 0, H), rect(L, 0, L + c, H), rect(-c, H, L + c, H + d)], roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
+                  zone: d, cols: alongSides(W, s), colNote: `plates every ${f1_(s)} m on end columns; a light roof spans between them`, plan: { kind: 'oneway', s },
+                  notes: ['A plate is a wall that works as a very deep beam: the load flows through its surface to the supports (Engel pp.210–218, 4.1.1.1).', 'Deep and heavy, but the plates can be the walls of a storey or of the roof space.'] };
+          } },
+        { id: 'p_pitch', fam: 4, name: 'Pitched plate roof', mats: MAT4, spans: SP4.plate1, rule: { concrete: 'eaves L/7, ridge +L/8', timber: 'eaves L/7, ridge +L/8' },
+          own: (m, L) => plateOwn(m, Math.max(2.5, L / 7) + L / 16, m === 'timber' ? 5 : 6),
+          build(L, H, W, m, q) {
+              const de = Math.max(2.5, L / 7), c = colW(m, H), s = m === 'timber' ? 5 : 6, top = [[-c, H + de], [L / 2, H + de + L / 8], [L + c, H + de]];
+              return { parts: [rect(-c, 0, 0, H), rect(L, 0, L + c, H), poly([[-c, H], [L + c, H], ...top.slice().reverse()])], roof: [[-c, 0], ...top, [L + c, 0]], foot: [-c, L + c],
+                  zone: de + L / 8, cols: alongSides(W, s), colNote: `plates every ${f1_(s)} m`, plan: { kind: 'oneway', s },
+                  notes: ['The plate’s top follows the roof pitch: deepest at mid-span, where the moment is (Engel 4.1.1.2).'] };
+          } },
+        { id: 'p_step', fam: 4, name: 'Stepped plate roof', mats: MAT4, spans: SP4.plate1, rule: { concrete: 'd = L/5, stepped 0.35 d over the middle fifth', timber: 'd = L/5, stepped 0.35 d over the middle fifth' },
+          own: (m, L) => plateOwn(m, Math.max(3, L / 5), m === 'timber' ? 5 : 6),
+          build(L, H, W, m, q) {
+              const d = Math.max(3, L / 5), st = 0.35 * d, c = colW(m, H), s = m === 'timber' ? 5 : 6;
+              const zb = x => x <= 0.4 * L ? H + st : x >= 0.6 * L ? H : H + st * (0.6 * L - x) / (0.2 * L);
+              const xs = [-c, 0.4 * L, 0.6 * L, L + c], bot = xs.map(x => [x, zb(x)]), topL = bot.map(([x, z]) => [x, z + d]);
+              return { parts: [rect(-c, 0, 0, zb(0)), rect(L, 0, L + c, H), poly([...bot, ...topL.slice().reverse()])], roof: [[-c, 0], ...topL, [L + c, 0]], foot: [-c, L + c],
+                  zone: d + st, cols: alongSides(W, s), colNote: `plates every ${f1_(s)} m; the step can hold a clerestory`, plan: { kind: 'oneway', s },
+                  notes: ['The plate steps down across the span, so the roof can change level — for a clerestory or a split section (Engel 4.1.1.3).'] };
+          } },
+        { id: 'p_cont', fam: 4, name: 'Continuous plate', mats: MAT4, spans: SP4.plate2, rule: { concrete: 'd = L/6.5, ≥ 3 m · side bays L/2', timber: 'd = L/6.5, ≥ 3 m · side bays L/2' },
+          own: (m, L) => plateOwn(m, Math.max(3, L / 6.5), m === 'timber' ? 5 : 6) * 1.5,
+          build(L, H, W, m, q) {
+              const a = L / 2, d = Math.max(3, L / 6.5), c = colW(m, H), s = m === 'timber' ? 5 : 6;
+              return { parts: [rect(-a - c, 0, -a, H), rect(-c, 0, 0, H), rect(L, 0, L + c, H), rect(L + a, 0, L + a + c, H), rect(-a - c, H, L + a + c, H + d)],
+                  roof: [[-a - c, 0], [-a - c, H + d], [L + a + c, H + d], [L + a + c, 0]], foot: [-a - c, L + a + c], zone: d, cols: nCols(W, s, 4),
+                  colNote: `hall + side bays ${f1_(a)} m; plates every ${f1_(s)} m over four supports`, plan: { kind: 'oneway', s, x0: -a, x1: L + a, colsX: [-a, 0, L, L + a] },
+                  notes: ['A plate running on over several supports: continuity lets it be shallower than a one-bay plate (Engel 4.1.2.1).', 'The side bays lie outside the clear space.'] };
+          } },
+        { id: 'p_cstep', fam: 4, name: 'Continuous stepped plate', mats: MAT4, spans: SP4.plate2, rule: { concrete: 'd = L/6.5 over the hall, 0.7 d over the side bays', timber: 'd = L/6.5 over the hall, 0.7 d over the side bays' },
+          own: (m, L) => plateOwn(m, Math.max(3, L / 6.5), m === 'timber' ? 5 : 6) * 1.4,
+          build(L, H, W, m, q) {
+              const a = L / 2, d = Math.max(3, L / 6.5), c = colW(m, H), s = m === 'timber' ? 5 : 6;
+              const top = [[-a - c, H + 0.7 * d], [0, H + 0.7 * d], [0, H + d], [L, H + d], [L, H + 0.7 * d], [L + a + c, H + 0.7 * d]];
+              return { parts: [rect(-a - c, 0, -a, H), rect(-c, 0, 0, H), rect(L, 0, L + c, H), rect(L + a, 0, L + a + c, H), poly([[-a - c, H], [L + a + c, H], ...top.slice().reverse()])],
+                  roof: [[-a - c, 0], ...top, [L + a + c, 0]], foot: [-a - c, L + a + c], zone: d, cols: nCols(W, s, 4),
+                  colNote: `hall + side bays ${f1_(a)} m; plates every ${f1_(s)} m`, plan: { kind: 'oneway', s, x0: -a, x1: L + a, colsX: [-a, 0, L, L + a] },
+                  notes: ['Continuous plates stepped over the supports: the hall gets the full depth and a higher roof than the side bays (Engel 4.1.2.2).'] };
+          } },
+        { id: 'p_can1', fam: 4, name: 'Cantilever plate (one-sided)', mats: MAT4, spans: SP4.plate3, rule: { concrete: 'root L/4, tip L/10 · back span L/3', timber: 'root L/4, tip L/10 · back span L/3' },
+          own: (m, L) => plateOwn(m, Math.max(3, L / 4) * 0.7, m === 'timber' ? 5 : 6),
+          build(L, H, W, m, q) {
+              const a = L / 3, dR = Math.max(3, L / 4), dT = Math.max(1.2, L / 10), c = colW(m, H), s = m === 'timber' ? 5 : 6;
+              const top = [[-a - c, H + 0.6 * dR], [0, H + dR], [L, H + dT]];
+              return { parts: [rect(-c, 0, 0, H), line([[-a - c / 2, -0.3], [-a - c / 2, H]], 'tie'), rect(-a - c - 0.4, -0.6, -a + 0.4, 0, 'light'), poly([[-a - c, H], [L, H], ...top.slice().reverse()])],
+                  roof: [[-a - c, 0], ...top, [L, H], [L, 0]], foot: [-a - c - 0.4, L], zone: dR, cols: nCols(W, s, 1),
+                  colNote: `one wall or column row at the back, tie-downs ${f1_(a)} m behind; the front is open`,
+                  thrust: q * s * L * L / (2 * a), thrustNote: `hold-down force per plate in the back tie: T = qsL²/2a (plates ${f1_(s)} m apart)`, thrustPerArch: true,
+                  plan: { kind: 'oneway', s, x0: -a, x1: L, colsX: [0], anchorsX: [-a] },
+                  notes: ['Plates cantilever the whole span from one line of supports, balanced by a tied-down back span (Engel 4.1.3.1).'] };
+          } },
+        { id: 'p_can2', fam: 4, name: 'Cantilever plate (two-sided)', mats: MAT4, spans: SP4.plate3, rule: { concrete: 'root L/6, tips L/14 · one support row at mid-span', timber: 'root L/6, tips L/14 · one support row at mid-span' },
+          own: (m, L) => plateOwn(m, Math.max(2.5, L / 6) * 0.7, m === 'timber' ? 5 : 6),
+          build(L, H, W, m, q) {
+              const dR = Math.max(2.5, L / 6), dT = Math.max(0.9, L / 14), c = colW(m, H), s = m === 'timber' ? 5 : 6, top = [[0, H + dT], [L / 2, H + dR], [L, H + dT]];
+              return { parts: [rect(L / 2 - c / 2, 0, L / 2 + c / 2, H), poly([[0, H], [L, H], ...top.slice().reverse()])], roof: [[0, 0], ...top, [L, 0]], foot: [0, L], zone: dR, cols: nCols(W, s, 1),
+                  colNote: `one support row down the middle of the hall, every ${f1_(s)} m`, plan: { kind: 'oneway', s, x0: 0, x1: L, colsX: [L / 2] },
+                  notes: ['Plates balanced on a central row of supports, cantilevering to both sides (Engel 4.1.3.2).', 'The support row stands in the middle of the hall.'] };
+          } },
+        { id: 'p_x2', fam: 4, name: 'Intersecting plates (two-way)', mats: MAT4, spans: SP4.plate1, spanNote: rowsNote4.plate, rule: { concrete: 'd = L/6, ≥ 2 m · cells ~8 m', timber: 'd = L/6, ≥ 2 m · cells ~8 m' },
+          own: (m, L, r0) => 2 * plateOwn(m, r0.pd, r0.pa),
+          build(L, H, W, m, q) {
+              const d = Math.max(2, L / 6), nx = Math.max(2, Math.round(L / 8)), ax = L / nx, ny = Math.max(1, Math.round(W / ax)), ay = W / ny, R0 = [0, 0, L, W], P = [];
+              for (let i = 0; i <= nx; i++) P.push([i * ax, 0], [i * ax, W]);
+              for (let j = 1; j < ny; j++) P.push([0, j * ay], [L, j * ay]);
+              const segs = [...gridLines(90, ax, R0).map(g => [...g.slice(0, 4), 1]), ...gridLines(0, ay, R0).map(g => [...g.slice(0, 4), 1]), ...edgesOf(R0)];
+              const r = gridHall(L, H, W, m, { d, segs, posts: P, colNote: `supports where the plates meet the perimeter; cells ${f1_(ax)} × ${f1_(ay)} m` });
+              return Object.assign(r, { pd: d, pa: Math.min(ax, ay), notes: ['Deep plates crossing both ways form an egg-crate: every plate is propped by the ones it crosses (Engel 4.1.4.1).'] });
+          } },
+        { id: 'p_x3', fam: 4, name: 'Intersecting plates (three-way)', mats: MAT4, spans: SP4.plate1, spanNote: rowsNote4.plate, rule: { concrete: 'd = L/7, ≥ 2 m · triangles ~10 m', timber: 'd = L/7, ≥ 2 m · triangles ~10 m' },
+          own: (m, L, r0) => 3 * plateOwn(m, r0.pd, r0.pa),
+          build(L, H, W, m, q) {
+              const d = Math.max(2, L / 7), a = L / Math.max(2, Math.round(L / 10)), h = a * Math.sqrt(3) / 2, R0 = [0, 0, L, W];
+              const segs = [...gridLines(0, h, R0), ...gridLines(60, h, R0), ...gridLines(120, h, R0)].map(g => [...g.slice(0, 4), 1]).concat(edgesOf(R0));
+              const r = gridHall(L, H, W, m, { d, segs, colNote: `perimeter supports every ~6 m; triangles ${f1_(a)} m a side` });
+              return Object.assign(r, { pd: d, pa: h, notes: ['Plates in three directions: triangular cells, stiff in every direction (Engel 4.1.4.2).'] });
+          } },
+        // --- 4.2 folded plates ---
+        { id: 'fb_box', fam: 4, name: 'Folded box frame', mats: MAT4, spans: SP4.fold1, roofType: 'shell', rule: { concrete: 'fold h = L/12, walls folded too', timber: 'fold h = L/10, walls folded too' },
+          own: (m, L) => foldOwn(m, L) * 1.3,
+          build(L, H, W, m, q) {
+              const h = L / (m === 'timber' ? 10 : 12), F = foldYs(W, clamp(h * 1.6, 1.5, 5)), faces3 = [];
+              const e0 = y => [-h * zigAt(y, F.bb), y, H + h * zigAt(y, F.bb)], eL = y => [L + h * zigAt(y, F.bb), y, H + h * zigAt(y, F.bb)];
+              for (let k = 0; k < F.n; k++) {
+                  const y0 = F.ys[k], y1 = F.ys[k + 1], cl = k % 2 ? 'fold2' : 'fold1';
+                  faces3.push(quad(e0(y0), e0(y1), eL(y1), eL(y0), cl));
+                  for (const e of [e0, eL]) { const a = e(y0), b = e(y1); faces3.push(quad([a[0], y0, 0], [b[0], y1, 0], b, a, cl)); }
+              }
+              const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: () => H + h, ni: 1, nj: 1 }], faces3, secY: F.bb, sec: [[-h, H + h], [L + h, H + h]],
+                  secParts: [line([[-h, 0], [-h, H + h], [L + h, H + h], [L + h, 0]], 'member'), line([[0, 0], [0, H], [L, H], [L, 0]], 'thin')] });
+              return Object.assign(withZone(r, H), { cols: 0, colNote: 'no columns — the folded walls carry the folded roof', foot: [-h, L + h],
+                  notes: ['The folds of the roof turn down into folded walls: roof and walls form one folded frame (Engel 4.2.1.2).', 'The frame corners must be stiff, or the folds open up (Engel p.221).'] });
+          } },
+        { id: 'fb_barrel', fam: 4, name: 'Folded barrel vault', mats: MAT4, spans: SP4.fold2, roofType: 'shell', rule: { concrete: 'six facets on a half-circle from the ground · folds L/25', timber: 'six facets on a half-circle from the ground · folds L/20' },
+          own: (m, L) => foldOwn(m, L) * 1.5,
+          build(L, H, W, m, q) {
+              const h = L / (m === 'timber' ? 20 : 25), sp = semiPoly(L, H, 6), R = sp.R, n = 6, Fy = foldYs(W, clamp(L / 8, 2, 6)), faces3 = [];
+              const V = (i, k) => { const o = h * ((i + k) % 2), a = sp.ang[i]; return [sp.pts[i][0] + o * Math.cos(a), Fy.ys[k], sp.pts[i][1] + o * Math.sin(a)]; };
+              for (let i = 0; i < n; i++) for (let k = 0; k < Fy.n; k++) { const A = V(i, k), B = V(i + 1, k), C = V(i + 1, k + 1), D = V(i, k + 1), c1 = (i + k) % 2 ? 'fold2' : 'fold1';
+                  if ((i + k) % 2) faces3.push(tri(B, C, D, c1), tri(B, D, A, c1 === 'fold1' ? 'fold2' : 'fold1')); else faces3.push(tri(A, B, C, c1), tri(A, C, D, c1 === 'fold1' ? 'fold2' : 'fold1')); }
+              const outer = sp.pts.map(([x, z], i) => [x + h * Math.cos(sp.ang[i]), z + h * Math.sin(sp.ang[i])]);
+              const r = surfaceHall({ kind: 'none', mods: [{ rect: [L / 2 - R, 0, L / 2 + R, W], z: () => H, ni: 1, nj: 1 }], faces3, secY: 0, sec: outer, secParts: [line(sp.pts, 'thin')] });
+              return Object.assign(withZone(r, H), { spanUsed: 2 * R, spanLabel: `the vault spans ${f1_(2 * R)} m`, cols: 0, colNote: `springs from the ground ${f1_(R - L / 2)} m outside each side; continuous footings`,
+                  thrust: q * R / 2, thrustNote: `per metre of vault at each footing: H = qS²/8f with S = 2R, f = R, so H = qR/2 (R = ${f1_(R)} m)`,
+                  notes: ['A barrel made of flat, folded facets that springs from the ground: the folds stiffen the thin plates against buckling (Engel 4.2.1.3).', 'Continuous thrust along both footings.'] });
+          } },
+        { id: 'fp_pyr', fam: 4, name: 'Pyramidal folded plate', mats: MAT4, spans: SP4.fold3, spanNote: rowsNote4.fold3, roofType: 'shell', rule: { concrete: 'rise L/4 per square bay · edge ties', timber: 'rise L/4 per square bay · edge ties' },
+          own: (m, L) => foldOwn(m, L) * 1.1,
+          build(L, H, W, m, q) {
+              const f = L / 4, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], faces3 = [], lines3 = [], P = [];
+              for (const [x0, y0, x1, y1] of rs) {
+                  const A = [(x0 + x1) / 2, (y0 + y1) / 2, H + f], C = [[x0, y0, H], [x1, y0, H], [x1, y1, H], [x0, y1, H]];
+                  C.forEach((p, i) => { faces3.push(tri(p, C[(i + 1) % 4], A, i % 2 ? 'fold2' : 'fold1')); lines3.push({ c: 'tie', pts: [p, C[(i + 1) % 4]] }); P.push(p); });
+              }
+              const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H, ni: 1, nj: 1 })), faces3, lines3, posts: uniq(P), secY: b / 2, planSegs: rs.flatMap(([x0, y0, x1, y1]) => [[x0, y0, x1, y1, 1], [x1, y0, x0, y1, 1]]),
+                  sec: [[0, H], [L / 2, H + f], [L, H]], secParts: [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H), line([[0, H], [L, H]], 'tie')] });
+              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `one pyramid per ${f1_(L)} × ${f1_(b)} m bay, on its corners`,
+                  thrust: q * L * L * b / (16 * f), thrustNote: `tension in each base edge tie — minimum thrust with the line of thrust through the apex ${f2(f)} m up: T = qL²b/16f`, thrustPerArch: true,
+                  notes: ['Four triangular plates lean on each other: each is a deep beam spanning to the corners (Engel 4.2.2.1, p.231).', 'The base edges are tied, or the pyramid spreads.'] });
+          } },
+        { id: 'fp_tri', fam: 4, name: 'Faceted dome (triangular folding)', mats: MAT4, spans: SP4.fold3, spanNote: rowsNote4.fold3, roofType: 'shell', rule: { concrete: '12-sided base round the hall · rise D/6 · triangles in 3 rings', timber: '12-sided base round the hall · rise D/6 · triangles in 3 rings' },
+          own: (m, L) => foldOwn(m, L),
+          build(L, H, W, m, q) {
+              // the base is a 12-gon drawn round the hall's circle, so its flat sides still clear the hall corners
+              const d = hallDisk(L, W), N = 12, R = d[2] / Math.cos(Math.PI / N), f = 2 * R / 6, Rs = (R * R + f * f) / (2 * f), zc = H + f - Rs, rings = [1, 0.68, 0.36, 0], faces3 = [];
+              const node = (k, i) => { const s_ = rings[k], a = 2 * Math.PI * (i + 0.5 * (k % 2)) / N, x = d[0] + R * s_ * Math.cos(a), y = d[1] + R * s_ * Math.sin(a); return [x, y, zc + Math.sqrt(Math.max(0, Rs * Rs - (R * s_) ** 2))]; };
+              for (let k = 0; k < 3; k++) for (let i = 0; i < N; i++) {
+                  const c1 = i % 2 ? 'fold2' : 'fold1', c2 = i % 2 ? 'fold1' : 'fold2';
+                  if (k === 2) faces3.push(tri(node(2, i), node(2, i + 1), node(3, 0), c1));
+                  else if (k % 2) faces3.push(tri(node(k, i), node(k, i + 1), node(k + 1, i + 1), c1), tri(node(k + 1, i), node(k + 1, i + 1), node(k, i), c2));
+                  else faces3.push(tri(node(k, i), node(k, i + 1), node(k + 1, i), c1), tri(node(k + 1, i), node(k + 1, i + 1), node(k, i + 1), c2));
+              }
+              const base = Array.from({ length: N }, (_, i) => node(0, i)), phi0 = Math.asin(R / Rs), ring = q * Rs / 2 * Math.cos(phi0) * R;
+              const r = surfaceHall({ kind: 'none', mods: [polyMod(base.map(p => [p[0], p[1]]), () => H)], faces3, posts: base, lines3: [{ c: 'member', pts: [...base, base[0]] }], secY: d[1],
+                  sec: Array.from({ length: 25 }, (_, i) => { const x = d[0] - R + 2 * R * i / 24; return [x, zc + Math.sqrt(Math.max(0, Rs * Rs - (x - d[0]) ** 2))]; }),
+                  secParts: [rect(d[0] - R - 0.3, 0, d[0] - R, H), rect(d[0] + R, 0, d[0] + R + 0.3, H)] });
+              return Object.assign(withZone(r, H), { spanUsed: 2 * R, spanLabel: `needs a 12-sided base ${f1_(2 * R)} m across its corners`, cols: N, colNote: `a 12-sided ring beam round the hall on ${N} columns`,
+                  thrust: ring, thrustNote: 'tension in the ring beam, treating the facets as the spherical cap they approximate', thrustIsRing: true,
+                  notes: ['Flat triangles folded into a dome: each facet is a plate, each fold a rib (Engel 4.2.2.2).'] });
+          } },
+        { id: 'fi_2', fam: 4, name: 'Intersecting folded plates (two-way)', mats: MAT4, spans: SP4.fold3, spanNote: rowsNote4.fold3, roofType: 'shell', rule: { concrete: 'two gable folds crossing · rise L/5 · on corners', timber: 'two gable folds crossing · rise L/5 · on corners' },
+          own: (m, L) => foldOwn(m, L) * 1.15,
+          build(L, H, W, m, q) {
+              const f = L / 5, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], faces3 = [], P = [], lines3 = [];
+              for (const [x0, y0, x1, y1] of rs) {
+                  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, A = [cx, cy, H + f], M = [[cx, y0, H + f], [x1, cy, H + f], [cx, y1, H + f], [x0, cy, H + f]], C = [[x0, y0, H], [x1, y0, H], [x1, y1, H], [x0, y1, H]];
+                  for (let i = 0; i < 4; i++) { faces3.push(tri(A, M[i], C[(i + 1) % 4], 'fold1'), tri(A, C[(i + 1) % 4], M[(i + 1) % 4], 'fold2')); lines3.push({ c: 'member', pts: [C[i], M[i], C[(i + 1) % 4]] }); P.push(C[i]); }
+              }
+              const r = surfaceHall({ kind: 'none', mods: rs.map(rr => ({ rect: rr, z: () => H + f, ni: 1, nj: 1 })), faces3, lines3, posts: uniq(P), secY: b / 2,
+                  planSegs: rs.flatMap(([x0, y0, x1, y1]) => [[x0, y0, x1, y1, 0.3], [x1, y0, x0, y1, 0.3], [(x0 + x1) / 2, y0, (x0 + x1) / 2, y1, 1], [x0, (y0 + y1) / 2, x1, (y0 + y1) / 2, 1]]),
+                  sec: [[0, H + f], [L, H + f]], secParts: [rect(-0.3, 0, 0, H), rect(L, 0, L + 0.3, H), line([[0, H], [L / 2, H + f], [L, H]], 'thin')] });
+              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay stands on its four corners`,
+                  thrust: q * L * L * b / (8 * f), thrustNote: `interior corner, across the hall: Hx = qL²b/8f (both bays push the same way)`, thrustPerArch: true,
+                  notes: ['Two gable-shaped folded plates cross: the ridges run to the middle of each side, the valleys to the corners, where it stands (Engel 4.2.3.1).'] });
+          } },
+        { id: 'fi_3', fam: 4, name: 'Intersecting folded plates (three-way)', mats: MAT4, spans: SP4.fold3, spanNote: rowsNote4.fold3, roofType: 'shell', rule: { concrete: 'hexagon round the hall · three gables at 60° · rise a/4', timber: 'hexagon round the hall · three gables at 60° · rise a/4' },
+          own: (m, L) => foldOwn(m, L) * 1.2,
+          build(L, H, W, m, q) {
+              // the smallest regular hexagon round the hall: corners at ±y (pointy along y) or at ±x
+              const aY = Math.max(L / Math.sqrt(3), W / 2 + L / (2 * Math.sqrt(3))), aX = Math.max(W / Math.sqrt(3), L / 2 + W / (2 * Math.sqrt(3))), a = Math.min(aX, aY), a0 = aY <= aX ? Math.PI / 2 : 0;
+              const cx = L / 2, cy = W / 2, f = a / 4, A = [cx, cy, H + f], C = [], Mp = [], faces3 = [], lines3 = [];
+              for (let i = 0; i < 6; i++) { const t = a0 + i * Math.PI / 3, t2 = t + Math.PI / 3; C.push([cx + a * Math.cos(t), cy + a * Math.sin(t), H]); }
+              for (let i = 0; i < 6; i++) { const c1 = C[i], c2 = C[(i + 1) % 6]; Mp.push([(c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2, H + f]); }
+              for (let i = 0; i < 6; i++) { faces3.push(tri(A, C[i], Mp[i], 'fold1'), tri(A, Mp[i], C[(i + 1) % 6], 'fold2')); lines3.push({ c: 'member', pts: [C[i], Mp[i], C[(i + 1) % 6]] }); }
+              const e = a * Math.sqrt(3) / 2, sec = a0 ? [[cx - e, H + f], [cx + e, H + f]] : [[cx - a, H], [cx, H + f], [cx + a, H]];   // cut along x: on the ridge (a0 = 90°) or down the valleys
+              const r = surfaceHall({ kind: 'none', mods: [polyMod(C, () => H)], faces3, lines3, posts: C, secY: cy, sec, planSegs: [...C.map(p => [cx, cy, p[0], p[1], 0.3]), ...Mp.map(p => [cx, cy, p[0], p[1], 1])], secParts: a0 ? [line([[cx - e, H], [cx - e, H + f]], 'thin'), line([[cx + e, H], [cx + e, H + f]], 'thin'), rect(cx - e - 0.3, 0, cx - e, H), rect(cx + e, 0, cx + e + 0.3, H)] : [rect(cx - a - 0.3, 0, cx - a, H), rect(cx + a, 0, cx + a + 0.3, H), rect(cx - a / 2 - 0.15, 0, cx - a / 2 + 0.15, H, 'light'), rect(cx + a / 2 - 0.15, 0, cx + a / 2 + 0.15, H, 'light')] });
+              return Object.assign(withZone(r, H), { spanUsed: 2 * a, spanLabel: `needs a hexagon ${f1_(2 * a)} m corner to corner`, cols: 6, colNote: `one hexagon, ${f1_(2 * a)} m corner to corner, contains the hall; six corner supports`,
+                  notes: ['Three gable-shaped folded plates cross at 60°: ridges run from the top to the middle of each side, valleys to the six corners, where it stands (Engel 4.2.3.2).', 'No thrust figure: the load path through three crossing folds is not reduced to one statical formula here.'] });
+          } },
+        { id: 'fl_beam', fam: 4, name: 'Folded-plate beams', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section, h = L/12 · glazing between', timber: 'V-section, h = L/10 · glazing between' },
+          own: (m, L) => foldOwn(m, L) * 0.75,
+          build(L, H, W, m, q) {
+              const h = L / (m === 'timber' ? 10 : 12), B = bays(W, m === 'timber' ? 5 : 6, 0.75), P = B.ys.flatMap(y => [[0, y, H], [L, y, H]]);
+              const r = stripHall(L, H, W, { path: [[0, H], [L, H]], prof: t => h * Math.abs(2 * t - 1), nt: 2, ys: B.ys, b: B.b, cl: 'fold', posts: P });
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} V-beams ${f1_(B.b)} m wide on end columns; glazing between`,
+                  notes: ['Each beam is a narrow folded plate — two inclined plates meeting at a fold (Engel 4.2.4.1).'] });
+          } },
+        { id: 'fl_frame', fam: 4, name: 'Folded frames', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section rafters and legs, h = L/12', timber: 'V-section rafters and legs, h = L/10' },
+          own: (m, L) => foldOwn(m, L) * 0.85,
+          build(L, H, W, m, q) {
+              const h = L / (m === 'timber' ? 10 : 12), B = bays(W, m === 'timber' ? 5 : 6, 0.75);
+              const r = stripHall(L, H, W, { path: [[0, 0], [0, H], [L, H], [L, 0]], prof: t => h * Math.abs(2 * t - 1), nt: 2, ys: B.ys, b: B.b, cl: 'fold' });
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} folded frames ${f1_(B.b)} m wide, glazing between — the legs are folded plates too`,
+                  notes: ['Rafter and legs are one V-shaped folded plate, turned down at the knees (Engel 4.2.4.2).'] });
+          } },
+        { id: 'fl_arch', fam: 4, name: 'Folded arches', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section, six facets on a half-circle · h = S/25', timber: 'V-section, six facets on a half-circle · h = S/20' },
+          own: (m, L) => foldOwn(m, L) * 1.0,
+          build(L, H, W, m, q) {
+              const sp = semiPoly(L, H, 6), R = sp.R, h = 2 * R / (m === 'timber' ? 20 : 25), B = bays(W, m === 'timber' ? 5 : 6, 0.75);
+              const r = stripHall(L, H, W, { path: sp.pts, prof: t => h * Math.abs(2 * t - 1), nt: 2, ys: B.ys, b: B.b, cl: 'fold' });
+              return Object.assign(withZone(r, H), { spanUsed: 2 * R, spanLabel: `the arches span ${f1_(2 * R)} m`, cols: 2 * B.n, colNote: `${B.n} arches ${f1_(B.p)} m apart, glazing between; feet ${f1_(R - L / 2)} m outside the hall`,
+                  thrust: q * B.p * R / 2, thrustNote: `at each foot, per arch (${f1_(B.p)} m apart): H = qsS²/8f with S = 2R, f = R, so H = qsR/2`, thrustPerArch: true,
+                  notes: ['Arches whose section is a V-shaped folded plate: the fold gives the thin arch the stiffness to resist uneven load (Engel 4.2.4.3).'] });
+          } },
+        // --- 4.3 shells ---
+        { id: 'sc_cone', fam: 4, name: 'Conical shells', mats: ['concrete'], spans: SP4.shell3, spanNote: rowsNote4.shell3, roofType: 'shell', rule: { concrete: 'h from L/40 to L/7 along the span, alternating' },
+          own: (m, L) => shellOwn(m, L, 1.25) + 0.4,
+          build(L, H, W, m, q) {
+              const b = clamp(r05(L / 4), 6, 15), ysb = ysOf(W, b), h0 = L / 12, mods = [], P = [];
+              for (let k = 0; k < ysb.length - 1; k++) { const y0 = ysb[k], y1 = ysb[k + 1], hx = x => h0 * (k % 2 ? 1.7 - 1.4 * x / L : 0.3 + 1.4 * x / L);
+                  mods.push({ rect: [0, y0, L, y1], z: (x, y) => { const t = (y - y0) / (y1 - y0); return H + hx(x) * 4 * t * (1 - t); }, ni: 10, nj: 10 }); }
+              for (const y of ysb) P.push([0, y, H], [L, y, H]);
+              const r = surfaceHall({ kind: 'shellx', mods, posts: P, secT: 0.5, lines3: ysb.map(y => ({ c: 'member', pts: [[0, y, H], [L, y, H]] })) });
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: `columns only at the shell corners, every ${f1_(b)} m`,
+                  notes: ['Shells whose section grows along the span — a cone lying on its side; neighbours alternate, so the roof stays level at the edges (Engel 4.3.1.2).', 'Like the long barrel it spans lengthwise as a beam; the deeper end can take a larger opening.'] });
+          } },
+        { id: 'sc_int', fam: 4, name: 'Intersecting cylindrical shells', mats: ['concrete'], spans: SP4.shell3, spanNote: rowsNote4.shell3, roofType: 'shell', rule: { concrete: 'two barrels crossing per bay · rise L/5 · on corners' },
+          own: (m, L) => shellOwn(m, L, 1.3),
+          build(L, H, W, m, q) {
+              const f = L / 5, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], P = [], lines3 = [];
+              const mods = rs.map(r0 => ({ rect: r0, z: (x, y) => { const u = (x - r0[0]) / L, v = (y - r0[1]) / b; return H + f * Math.max(4 * u * (1 - u), 4 * v * (1 - v)); }, ni: 16, nj: 16 }));
+              for (const [x0, y0, x1, y1] of rs) { P.push([x0, y0, H], [x1, y0, H], [x1, y1, H], [x0, y1, H]);
+                  for (const y of [y0, y1]) lines3.push({ c: 'member', pts: Array.from({ length: 17 }, (_, i) => { const u = i / 16; return [x0 + L * u, y, H + f * 4 * u * (1 - u)]; }) });
+                  for (const x of [x0, x1]) lines3.push({ c: 'member', pts: Array.from({ length: 17 }, (_, i) => { const v = i / 16; return [x, y0 + b * v, H + f * 4 * v * (1 - v)]; }) }); }
+              const r = surfaceHall({ kind: 'shellx', mods, posts: uniq(P), lines3, secT: 0 });
+              return Object.assign(withZone(r, H), { cols: uniq(P).length, colNote: `each ${f1_(L)} × ${f1_(b)} m bay stands on its four corners, edge arches between`,
+                  thrust: q * L * L * b / (8 * f), thrustNote: 'interior corner, across the hall: Hx = qL²b/8f (both bays push the same way)', thrustPerArch: true,
+                  notes: ['Two cylindrical shells cross, as in a groin vault, and gather the load along the groins into four corners (Engel 4.3.1.3, pp.238–244).'] });
+          } },
+        { id: 'sd_trans', fam: 4, name: 'Translational dome', mats: ['concrete'], spans: SP4.shell2, roofType: 'shell', rule: { concrete: 'rises L/8 across and W/10 along · on four corners' },
+          own: (m, L) => shellOwn(m, L, 1.2),
+          build(L, H, W, m, q) {
+              const fx = L / 8, fy = W / 10, u = x => 1 - (2 * x / L - 1) ** 2, v = y => 1 - (2 * y / W - 1) ** 2, z = (x, y) => H + fx * u(x) + fy * v(y);
+              const lines3 = [0, W].map(y => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const x = L * i / 24; return [x, y, z(x, y)]; }) })).concat([0, L].map(x => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const y = W * i / 24; return [x, y, z(x, y)]; }) })));
+              const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 16, nj: 24 }], posts: [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H]], lines3, secY: W / 2 });
+              const Hx = q * W * L * L / (8 * (fx + 2 * fy / 3)) / 2, Hy = q * L * W * W / (8 * (fy + 2 * fx / 3)) / 2;
+              return Object.assign(withZone(r, H), { spanUsed: Math.max(L, W), spanLabel: `spans ${f1_(Math.max(L, W))} m between corner supports`, cols: 4, colNote: 'four corner supports only; the edges are stiffened arches',
+                  thrust: Math.hypot(Hx, Hy), thrustNote: `resultant at each corner: across Hx = qWL²/16(fx + ⅔fy) = ${Math.round(Hx)} kN, along Hy = qLW²/16(fy + ⅔fx) = ${Math.round(Hy)} kN`, thrustPerArch: true,
+                  notes: ['A curve slid along another curve: both directions arch, so the shell is doubly curved like a dome but covers a rectangle (Engel 4.3.2.2, p.256).', 'The whole roof stands on four points — the edge arches collect the shell forces.'] });
+          } },
+        { id: 'ss_rot', fam: 4, name: 'Rotational saddle shell', mats: ['concrete', 'timber'], spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'hyperboloid about the long axis · rise L/8 at mid-length, W/12 higher at the ends', timber: 'hyperboloid about the long axis · rise L/8 at mid-length, W/12 higher at the ends' },
+          own: (m, L) => shellOwn(m, L, 1.2),
+          build(L, H, W, m, q) {
+              const F = L / 8, g = Math.min(W / 12, L / 4), r0 = (L * L / 4 + F * F) / (2 * F), zc = H + F - r0, c = (W / 2) / Math.sqrt(((r0 + g) / r0) ** 2 - 1), rad = y => r0 * Math.sqrt(1 + ((y - W / 2) / c) ** 2);
+              const z = (x, y) => zc + Math.sqrt(Math.max(0, rad(y) ** 2 - (x - L / 2) ** 2)), s = 6, P = [];
+              for (const y of ysOf(W, s)) P.push([0, y, z(0, y)], [L, y, z(L, y)]);
+              const lines3 = [0, L].map(x => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const y = W * i / 24; return [x, y, z(x, y)]; }) }));
+              const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 14, nj: 24 }], posts: P, lines3, secY: W / 2,
+                  secParts: [rect(-0.3, 0, 0, z(0, W / 2)), rect(L, 0, L + 0.3, z(L, W / 2)), line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin')] });
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides on columns that rise towards the ends',
+                  thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
+                  notes: ['A surface of revolution about the hall’s long axis whose radius grows towards the ends: it arches across and sags along — a saddle (Engel 4.3.3.1).'] });
+          } },
+        { id: 'ss_trans', fam: 4, name: 'Translational saddle shell', mats: ['concrete', 'timber'], spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'arch L/8 across, sag W/16 along', timber: 'arch L/8 across, sag W/16 along' },
+          own: (m, L) => shellOwn(m, L, 1.2),
+          build(L, H, W, m, q) {
+              const F = L / 8, g = W / 16, z = (x, y) => H + F * (1 - (2 * x / L - 1) ** 2) + g * (2 * y / W - 1) ** 2, s = 6, P = [];
+              for (const y of ysOf(W, s)) P.push([0, y, z(0, y)], [L, y, z(L, y)]);
+              const lines3 = [0, L].map(x => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const y = W * i / 24; return [x, y, z(x, y)]; }) }));
+              const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [0, 0, L, W], z, ni: 14, nj: 24 }], posts: P, lines3, secY: W / 2,
+                  secParts: [rect(-0.3, 0, 0, z(0, W / 2)), rect(L, 0, L + 0.3, z(L, W / 2)), line(Array.from({ length: 25 }, (_, i) => [L * i / 24, z(L * i / 24, 0)]), 'thin')] });
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: 'edge beams along both long sides; the eaves rise towards the ends',
+                  thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
+                  notes: ['A hanging parabola slid along a standing one: it arches one way and hangs the other (Engel 4.3.3.2, p.256).'] });
+          } },
+        { id: 'ls_gird', fam: 4, name: 'Shell girders', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'U-section, h = L/12 · glazing between' },
+          own: (m, L) => shellOwn(m, L, 1.3) * 0.75,
+          build(L, H, W, m, q) {
+              const h = L / 12, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 0.75), P = B.ys.flatMap(y => [[0, y, H], [L, y, H]]);
+              const r = stripHall(L, H, W, { path: [[0, H], [L, H]], prof: t => h * (2 * t - 1) ** 2, nt: 8, ys: B.ys, b: B.b, cl: 'shellx', posts: P });
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} trough-shaped girders ${f1_(B.b)} m wide on end columns; glazing between`,
+                  notes: ['Narrow curved shells used as beams: the curve gives the thin section its depth (Engel 4.3.4.1).'] });
+          } },
+        { id: 'ls_frame', fam: 4, name: 'Shell frames', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'U-section rafters and legs, h = L/12' },
+          own: (m, L) => shellOwn(m, L, 1.3) * 0.85,
+          build(L, H, W, m, q) {
+              const h = L / 12, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 0.75);
+              const r = stripHall(L, H, W, { path: [[0, 0], [0, H], [L, H], [L, 0]], prof: t => h * (2 * t - 1) ** 2, nt: 8, ys: B.ys, b: B.b, cl: 'shellx' });
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell frames ${f1_(B.b)} m wide, glazing between — the legs are shells too`,
+                  notes: ['A trough-shaped shell rafter turned down into trough-shaped legs: one continuous frame (Engel 4.3.4.2).'] });
+          } },
+        { id: 'ls_arch', fam: 4, name: 'Shell arches', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'U-section · straight legs, 45° haunches L/6, flat top' },
+          own: (m, L) => shellOwn(m, L, 1.3) * 0.9,
+          build(L, H, W, m, q) {
+              const h = L / 12, a = L / 6, F = H + a, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 0.75);
+              const r = stripHall(L, H, W, { path: [[0, 0], [0, H], [a, F], [L - a, F], [L, H], [L, 0]], prof: t => h * (2 * t - 1) ** 2, nt: 8, ys: B.ys, b: B.b, cl: 'shellx' });
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell arches ${f1_(B.p)} m apart, glazing between`,
+                  thrust: q * B.p * L * L / (8 * F), thrustNote: `at each foot, per arch (${f1_(B.p)} m apart): H = qsL²/8f with f = ${f1_(F)} m, the crown height`, thrustPerArch: true,
+                  notes: ['Arches of trough-shaped shell section, with straight legs and sloping haunches as Engel draws them (4.3.4.3).', 'The shape is not the funicular of a uniform load, so the section also takes bending.'] });
+          } }
+    ];
+    for (const s of FAM4) SYS.push(Object.assign({ code: '' }, s));
+
     // where each thrust figure comes from: Engel first, and the formula's origin when it is not in the book
+    const EHALF = 'Engel p.114: thrust grows as the rise falls · half-circle of six facets: H = qS²/8f with S = 2R, f = R, i.e. qR/2, by moment equilibrium about the crown, taking hinges at the crown and feet (three-hinged arch; statics, not in Engel)';
     const E114 = 'Engel p.114: thrust grows as the rise falls (rise ½ of span → 1, ⅓ → 1½, ¼ → 2, ⅛ → 4) · H = qL²/8f: moment equilibrium of a parabolic arch at the crown (standard statics, not in Engel)';
     const E64 = 'Engel p.64: cable force and thrust are inversely proportional to the sag · H = qL²/8f: moment equilibrium of a parabolic cable (standard statics, not in Engel)';
     const RING = 'Engel pp.68–78: radial cables between an outer compression ring and a central tension ring · C = qR³/4f: derived here from vertical equilibrium of the circular dish (N = qR²/4f per metre of ring, times R)';
@@ -1193,6 +1854,18 @@
         cbeam: 'Engel p.322: superposition — the beam is also the compression chord of the cable · cable force H = qsL²/8f (statics, not in Engel)',
         dome: 'Engel pp.245–248: meridians in compression, hoop tension near the base, a ring beam · Nφ = qR/2 for load per plan area, ring T = Nφ·cosφ₀·a: membrane theory of spherical shells (Timoshenko & Woinowsky-Krieger, Theory of Plates and Shells)',
         cu_pos: CUSH, cu_neg: CUSH, cu_pn: CUSH,
+        k_uni: 'Not in Engel · hold-down force T = qsL²/2a: moment equilibrium of the cantilever about the column line (statics)',
+        f_3h: 'Engel pp.186–192: frames push out at the feet; three hinges make it determinate · H = qsL²/8h (statics)',
+        p_can1: 'Not in Engel · hold-down force T = qsL²/2a: moment equilibrium of the cantilever plate about its support line (statics)',
+        fb_barrel: EHALF, fl_arch: EHALF,
+        fp_pyr: 'Not in Engel (p.53 shows the form only) · minimum thrust: moment equilibrium of half the pyramid with the line of thrust through the apex, T = qL²b/16f per edge tie (method: J. Heyman, The Stone Skeleton, 1995)',
+        fp_tri: 'Engel pp.245–248 (domes) · treated as the spherical cap it approximates: ring T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)',
+        fi_2: 'Not in Engel (p.53 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
+        sc_int: 'Not in Engel (p.53 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
+        ls_arch: 'Engel p.114: thrust grows as the rise falls · H = qsL²/8f by moment equilibrium about the crown, taking hinges at the crown and feet (three-hinged arch; statics, not in Engel)',
+        sd_trans: 'Not in Engel (p.53 shows the form only) · derived here, in each direction: moment equilibrium of half the shell about the line through two corner supports, with the resultant of the mid-span cut at the cut’s mean height (fx + ⅔fy across, fy + ⅔fx along); the corner takes half of each (statics)',
+        ss_rot: 'Engel p.256: in the arching direction a saddle works as an arch · H = qL²/8F per metre, taking that direction alone — an upper bound (statics)',
+        ss_trans: 'Engel p.256: in the arching direction a saddle works as an arch · H = qL²/8F per metre, taking that direction alone — an upper bound (statics)',
         at_env: 'Engel pp.97–102 (air tubes) · H = qS²/8f per metre (statics, not in Engel)', at_skel: 'Engel pp.97–102 (air tubes) · H = qS²/8f per tube arch (statics, not in Engel)'
     };
     const FAM = { 1: 'Form-active', 2: 'Vector-active', 3: 'Section-active', 4: 'Surface-active', 6: 'Hybrid' };
@@ -1228,31 +1901,31 @@
             '2.4.2': ['folded space trusses', ['parallel folding']],
             '2.4.3': ['curved space trusses', ['singly curved', 'doubly curved', 'spherical shape']],
             '2.4.4': ['linear space trusses', ['space truss beam', 'space truss frame', 'space truss arch']] }],
-        '3.1': ['Beam structures', { '3.1.1': ['one-bay beam', ['horizontal beam', 'pitched beam', 'angled beam', 'curved beam'], { 1: 'beam' }],
-            '3.1.2': ['continuous beam', []], '3.1.3': ['pin-jointed beam', []],
-            '3.1.4': ['cantilever beam', ['unilateral cantilever beam', 'bilateral cantilever beam']] }],
-        '3.2': ['Frame structures', { '3.2.1': ['one-bay frames', ['two-hinged frame', 'three-hinged frame', 'frame with fixed ends'], { 1: 'portal' }],
-            '3.2.2': ['multipanel frames', ['continuous frame', 'pin-jointed frame', 'fixed-ends frame']],
-            '3.2.3': ['storey frames', ['one-panel closed frame', 'multi-panel closed frame', 'multi-storey closed frame'], { 2: 'vier' }] }],
-        '3.3': ['Beam grid structures', { '3.3.1': ['homogeneous grids', ['orthogonal grid', 'diagonal grid', 'triangulated grid'], { 1: 'grid' }],
-            '3.3.2': ['gradated grids', ['orthogonal grid', 'skew grid', 'triangulated grid']],
-            '3.3.3': ['concentric grids', []] }],
+        '3.1': ['Beam structures', { '3.1.1': ['one-bay beam', ['horizontal beam', 'pitched beam', 'angled beam', 'curved beam'], { 1: 'beam', 2: 'b_pitch', 3: 'b_angle', 4: 'b_curve' }],
+            '3.1.2': ['continuous beam', ['horizontal beam', 'pitched beam', 'angled beam'], { 1: 'cb_h', 2: 'cb_p', 3: 'cb_a' }], '3.1.3': ['pin-jointed beam', ['horizontal beam', null, null, 'curved beam'], { 1: 'gb_h', 4: 'gb_c' }],
+            '3.1.4': ['cantilever beam', ['unilateral cantilever beam', 'bilateral cantilever beam'], { 1: 'k_uni', 2: 'k_bi' }] }],
+        '3.2': ['Frame structures', { '3.2.1': ['one-bay frames', ['two-hinged frame', 'three-hinged frame', 'frame with fixed ends'], { 1: 'portal', 2: 'f_3h', 3: 'f_fix' }],
+            '3.2.2': ['multipanel frames', ['continuous frame', 'pin-jointed frame', 'fixed-ends frame'], { 1: 'mf_cont', 2: 'mf_pin', 3: 'mf_fix' }],
+            '3.2.3': ['storey frames', ['one-panel closed frame', 'multi-panel closed frame', 'multi-storey closed frame'], { 1: 'sf_one', 2: 'vier', 3: 'sf_multi' }] }],
+        '3.3': ['Beam grid structures', { '3.3.1': ['homogeneous grids', ['orthogonal grid', 'diagonal grid', 'triangulated grid'], { 1: 'grid', 2: 'g_diag', 3: 'g_tri' }],
+            '3.3.2': ['gradated grids', ['orthogonal grid', 'skew grid', 'triangulated grid'], { 1: 'gg_orth', 2: 'gg_skew', 3: 'gg_tri' }],
+            '3.3.3': ['concentric grids', ['ring and radial beams (drawn on p.51, not named)', 'pinwheel (drawn on p.51, not named)'], { 1: 'gc_ring', 2: 'gc_pin' }] }],
         '3.4': ['Slab structures', { '3.4.1': ['uniform slabs', ['edge-supported slab', 'continuous slab', 'mushroom slab']],
             '3.4.2': ['ribbed slabs', ['ribbed slab', 'waffle (coffered) slab', 'T-beam floor']],
             '3.4.3': ['box frames', ['open box frame', 'closed box frame', 'multi-storey box frame']],
             '3.4.4': ['cantilever slabs', ['unilateral cantilever slab', 'bilateral cantilever slab']] }, 'slabs span 4–20 m (Engel p.176): too short for a long-span hall'],
-        '4.1': ['Plate structures', { '4.1.1': ['one-bay plates', ['rectangular plate', 'pitched plate', 'stepped plate']],
-            '4.1.2': ['continuous plates', ['rectangular plate', 'stepped plate']],
-            '4.1.3': ['cantilever plates', ['unilateral cantilever plate', 'bilateral cantilever plate']],
-            '4.1.4': ['intersecting plates', ['biaxial intersection', 'three-axial intersection']] }],
-        '4.2': ['Folded plate structures', { '4.2.1': ['one-way folded plates', ['folded-plate roof', 'folded box frame', 'folded barrel vault'], { 1: 'folded' }],
-            '4.2.2': ['polyhedral folded plates', ['pyramidal folding', 'triangular folding']],
-            '4.2.3': ['intersecting folded plates', ['biaxial intersection', 'three-axial intersection']],
-            '4.2.4': ['linear folded plates', ['folded-plate beam', 'folded frame', 'folded arch']] }],
-        '4.3': ['Shell structures', { '4.3.1': ['cylindrical shells', ['barrel shell', 'cone shell', 'intersecting shell'], { 1: 'barrel' }],
-            '4.3.2': ['dome shells', ['rotational shell', 'translational shell'], { 1: 'dome' }],
-            '4.3.3': ['saddle shells', ['rotational shell', 'translational shell', 'ruled-surface shell'], { 3: 'hyparT' }],
-            '4.3.4': ['linear shells', ['shell-type girder', 'shell-type frame', 'shell-type arch']] }],
+        '4.1': ['Plate structures', { '4.1.1': ['one-bay plates', ['rectangular plate', 'pitched plate', 'stepped plate'], { 1: 'p_rect', 2: 'p_pitch', 3: 'p_step' }],
+            '4.1.2': ['continuous plates', ['rectangular plate', 'stepped plate'], { 1: 'p_cont', 2: 'p_cstep' }],
+            '4.1.3': ['cantilever plates', ['unilateral cantilever plate', 'bilateral cantilever plate'], { 1: 'p_can1', 2: 'p_can2' }],
+            '4.1.4': ['intersecting plates', ['biaxial intersection', 'three-axial intersection'], { 1: 'p_x2', 2: 'p_x3' }] }],
+        '4.2': ['Folded plate structures', { '4.2.1': ['one-way folded plates', ['folded-plate roof', 'folded box frame', 'folded barrel vault'], { 1: 'folded', 2: 'fb_box', 3: 'fb_barrel' }],
+            '4.2.2': ['polyhedral folded plates', ['pyramidal folding', 'triangular folding'], { 1: 'fp_pyr', 2: 'fp_tri' }],
+            '4.2.3': ['intersecting folded plates', ['biaxial intersection', 'three-axial intersection'], { 1: 'fi_2', 2: 'fi_3' }],
+            '4.2.4': ['linear folded plates', ['folded-plate beam', 'folded frame', 'folded arch'], { 1: 'fl_beam', 2: 'fl_frame', 3: 'fl_arch' }] }],
+        '4.3': ['Shell structures', { '4.3.1': ['cylindrical shells', ['barrel shell', 'cone shell', 'intersecting shell'], { 1: 'barrel', 2: 'sc_cone', 3: 'sc_int' }],
+            '4.3.2': ['dome shells', ['rotational shell', 'translational shell'], { 1: 'dome', 2: 'sd_trans' }],
+            '4.3.3': ['saddle shells', ['rotational shell', 'translational shell', 'ruled-surface shell'], { 1: 'ss_rot', 2: 'ss_trans', 3: 'hyparT' }],
+            '4.3.4': ['linear shells', ['shell-type girder', 'shell-type frame', 'shell-type arch'], { 1: 'ls_gird', 2: 'ls_frame', 3: 'ls_arch' }] }],
         '5.1': ['Bay-type highrises', { '5.1.1': ['framed bays', ['stacked hinged frames', 'all-bay through-frames']], '5.1.2': ['trussed bays', []],
             '5.1.3': ['stabilized post-beam bays', ['single-bay bracing', 'core stabilization', 'shear wall stabilization']],
             '5.1.4': ['shear wall bays', ['longitudinal wall systems', 'crosswall systems', 'two-way wall systems']] }, 'height-active: carries storeys, not a single-storey hall (ch. 5)'],
@@ -1329,12 +2002,16 @@
         return { own, fin, finName, svc, live, q: own + fin + svc + live };
     }
 
+    let PR = null;
     function evaluate(sys) {
         const m = matOf(sys), r0 = sys.build(S.L, S.H, S.W, m, 1), load = roofLoad(sys, m, S.L, r0);
         const r = sys.build(S.L, S.H, S.W, m, load.q); r.load = load;
         const top = r.topOverride != null ? r.topOverride : Math.max(...r.parts.flatMap(p => p.pts.map(q => q[1])));
         const enclosed = polyArea(r.roof.concat(r.roof[0][1] === 0 ? [] : [[r.roof[r.roof.length - 1][0], 0], [r.roof[0][0], 0]]));
-        return Object.assign(r, { sys, m, top, st: status(sys, r.spanUsed || S.L, m), eff: S.L * S.H / enclosed, footW: r.foot[1] - r.foot[0] });
+        const res = Object.assign(r, { sys, m, top, st: status(sys, r.spanUsed || S.L, m), eff: S.L * S.H / enclosed, footW: r.foot[1] - r.foot[0] });
+        let p3 = null;
+        Object.defineProperty(res, 'P3', { get() { return p3 || (p3 = projectScene(scene3D(res), PR || projector())); }, set(v) { p3 = v; }, configurable: true });
+        return res;
     }
 
     // ---------- SVG drawing ----------
@@ -1404,14 +2081,20 @@
         if (pl.kind === 'surf') {
             for (const m of pl.mods) {
                 if (m.disk) s += `<circle cx="${m.disk[0]}" cy="${m.disk[1]}" r="${m.disk[2]}" fill="rgba(0,0,0,0.03)" stroke="#111" stroke-width="${sw * 1.2}"/>`;
-                else { const P = []; for (const [s0, t0, s1, t1] of [[0, 0, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 0, 0]]) for (let i = 0; i < 10; i++) P.push(modPt(m, s0 + (s1 - s0) * i / 10, t0 + (t1 - t0) * i / 10));
-                    s += `<path d="M${P.map(p => p.join(',')).join('L')}Z" fill="rgba(0,0,0,0.03)" stroke="#111" stroke-width="${sw * 1.2}"/>`; }
+                else {
+                    // outline of the (s, t) square, densely sampled; a side that collapses to a point or runs back along its opposite side (the seam of a polar map) is filled but not stroked
+                    const N = m.rect && !m.map ? 1 : 60, E = [[0, 0, 1, 0], [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 0, 0]], side = ([s0, t0, s1, t1]) => Array.from({ length: N + 1 }, (_, i) => modPt(m, s0 + (s1 - s0) * i / N, t0 + (t1 - t0) * i / N));
+                    const S4 = E.map(side), same = (A, B) => A.every((p, i) => Math.hypot(p[0] - B[N - i][0], p[1] - B[N - i][1]) < 1e-6), point = A => A.every(p => Math.hypot(p[0] - A[0][0], p[1] - A[0][1]) < 1e-6);
+                    const seam = [same(S4[0], S4[2]), same(S4[1], S4[3])], P = S4.flatMap(A => A.slice(0, -1));
+                    s += `<path d="M${P.map(p => p.join(',')).join('L')}Z" fill="rgba(0,0,0,0.03)" stroke="none"/>`;
+                    S4.forEach((A, k) => { if (!seam[k % 2] && !point(A)) s += `<path d="M${A.map(p => p.join(',')).join('L')}" fill="none" stroke="#111" stroke-width="${sw * 1.2}"/>`; }); }
             }
+            for (const g of pl.segs || []) s += ln(g[0], g[1], g[2], g[3], sw * (0.5 + 0.9 * (g[4] == null ? 1 : g[4])));
             for (const b of pl.boxes) s += `<rect x="${b[0]}" y="${b[2]}" width="${b[1] - b[0]}" height="${b[3] - b[2]}" fill="#111"/>`;
             for (const p of pl.posts) s += dot(p[0], p[1]);
             for (const a of pl.anchors) s += `<circle cx="${a[0]}" cy="${a[1]}" r="${cr * 0.4}" fill="none" stroke="#111" stroke-width="${sw}"/>`;
         } else if (pl.kind === 'oneway') {
-            for (const y of ys(pl.s)) { s += ln(0, y, L, y, sw * 1.6); s += dot(0, y) + dot(L, y); if (pl.masts) s += ln(0, y, -pl.anchors, y, sw * 0.7, '#111', `${sw * 2} ${sw * 2}`) + ln(L, y, L + pl.anchors, y, sw * 0.7, '#111', `${sw * 2} ${sw * 2}`); }
+            for (const y of ys(pl.s)) { s += ln(pl.x0 != null ? pl.x0 : 0, y, pl.x1 != null ? pl.x1 : L, y, sw * 1.6); for (const x of pl.colsX || [0, L]) s += dot(x, y); for (const x of pl.anchorsX || []) s += `<circle cx="${x}" cy="${y}" r="${cr * 0.4}" fill="none" stroke="#c62828" stroke-width="${sw}"/>`; if (pl.masts) s += ln(0, y, -pl.anchors, y, sw * 0.7, '#111', `${sw * 2} ${sw * 2}`) + ln(L, y, L + pl.anchors, y, sw * 0.7, '#111', `${sw * 2} ${sw * 2}`); }
         } else if (pl.kind === 'grid') {
             for (let x = 0; x <= L + 1e-6; x += pl.a) s += ln(x, 0, x, W, sw * 0.7);
             for (let y = 0; y <= W + 1e-6; y += pl.a) s += ln(0, y, L, y, sw * 0.7);
@@ -1479,7 +2162,7 @@
     }
     function scene3D(r) {
         const L = S.L, W = S.W, H = S.H, it = [];
-        const add = (t, pts, c = 'member') => it.push({ t, pts, c });
+        const add = (t, pts, c = 'member', e) => it.push(e ? { t, pts, c, e } : { t, pts, c });
         const sys = r.sys.id, pl = r.plan;
         // floor hatch inside the clear space, like Engel's plates
         const nh = Math.max(6, Math.round(W / 2.5));
@@ -1715,7 +2398,14 @@
         const sorted = proj.slice().sort((a, b) => a.depth - b.depth);
         const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(3)},${p[1].toFixed(3)}`).join('');
         for (const o of sorted) {
-            if (o.t === 'face') s += `<path d="${path(o.P)}Z" ${STYLE3.face[o.c] || STYLE3.face.solid} stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+            if (o.t === 'face' && o.e) {
+                // a piece of a larger face: filled, its seams hidden, and only the edges flagged in o.e drawn — in its own place in the depth order
+                const st = (STYLE3.face[o.c] || STYLE3.face.solid).match(/stroke="([^"]*)" stroke-width="([^"]*)"/), fill = (STYLE3.face[o.c] || STYLE3.face.solid).match(/fill="([^"]*)"/)[1];
+                s += `<path d="${path(o.P)}Z" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+                const d = o.e.map((on, i) => on ? `M${o.P[i][0].toFixed(3)},${o.P[i][1].toFixed(3)}L${o.P[(i + 1) % o.P.length][0].toFixed(3)},${o.P[(i + 1) % o.P.length][1].toFixed(3)}` : '').join('');
+                if (d) s += `<path d="${d}" fill="none" stroke="${st[1]}" stroke-width="${st[2]}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+            }
+            else if (o.t === 'face') s += `<path d="${path(o.P)}Z" ${STYLE3.face[o.c] || STYLE3.face.solid} stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
             else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member} vector-effect="non-scaling-stroke"/>`;
         }
         if (ghost) for (const o of ghost) if (o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box')
@@ -1754,7 +2444,7 @@
     };
 
     const ROWS = [
-        { t: 'Engel span', tip: 'Where your span sits in Engel’s range for this system and material', f: r => { const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(v) - Math.log(3)) / (Math.log(500) - Math.log(3)); return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini"><span class="lim" style="left:${X(sp.lim[0])}%;width:${X(sp.lim[1]) - X(sp.lim[0])}%"></span>${sp.typ.map(([a, b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6, X(b) - X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${r.spanUsed ? `needs Ø${f1(r.spanUsed)} m · ` : ''}${sp.lim[0]}–${sp.lim[1]} m · usual ${sp.typ.map(t => t.join('–')).join(', ')}${r.sys.spanSrc ? ' · rule of thumb, not in Engel' : ''}</small>`; } },
+        { t: 'Engel span', tip: 'Where your span sits in Engel’s range for this system and material', f: r => { const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(v) - Math.log(3)) / (Math.log(500) - Math.log(3)); return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini"><span class="lim" style="left:${X(sp.lim[0])}%;width:${X(sp.lim[1]) - X(sp.lim[0])}%"></span>${sp.typ.map(([a, b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6, X(b) - X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${r.spanUsed ? (r.spanLabel || `needs Ø${f1(r.spanUsed)} m`) + ' · ' : ''}${sp.lim[0]}–${sp.lim[1]} m · usual ${sp.typ.map(t => t.join('–')).join(', ')}${r.sys.spanSrc ? ' · rule of thumb, not in Engel' : ''}${r.sys.spanNote ? ' · ' + r.sys.spanNote : ''}</small>`; } },
         { t: 'Structure zone', tip: 'Height given to structure above the clear height', k: 'zone', f: r => f2(r.zone) + ' m', sub: r => r.sys.rule[r.m] },
         { t: 'Total height', tip: 'Ground to the highest point', k: 'top', f: r => f2(r.top) + ' m' },
         { t: 'Footprint', tip: 'Ground width the system needs, incl. arch feet, anchors, walls', k: 'footW', f: r => f1(r.footW) + ' m', sub: r => r.footW > S.L + 1 ? `${f1(r.footW - S.L)} m beyond the space` : '' },
@@ -1765,7 +2455,7 @@
         { t: 'Why', tip: '', f: r => `<div class="why">${esc(r.notes[0])}</div>` }
     ];
 
-    function compute() { RES = SYS.map(evaluate); const pr = projector(); RES.forEach(r => r.P3 = projectScene(scene3D(r), pr)); }
+    function compute() { PR = projector(); RES = SYS.map(evaluate); }
     const byId = id => RES.find(r => r.sys.id === id);
     const matOk = r => r.sys.mats.includes(S.mat);
     function drawingOf(r, sel, view) {
@@ -1811,7 +2501,7 @@
             h += `<div class="famrow"><div class="fh">${f} ${FAMILY[f]}<small>${FAMSUB[f] || 'gathers and grounds storey loads'}</small></div>`;
             for (const t of types) {
                 const [name, subs, why] = TREE[t], mods = RES.filter(r => r.sys.type === t);
-                let nv = 0; for (const st in subs) nv += Math.max(1, subs[st][1].length);
+                let nv = 0; for (const st in subs) nv += Math.max(1, subs[st][1].filter(Boolean).length);
                 h += `<div class="tcard ${t === selType ? 'on' : ''} ${why ? 'out' : ''}" data-type="${t}" title="${esc(why || '')}"><div class="tn"><span class="code">${t}</span>${esc(name)}</div>` +
                      (mods.length ? `<div class="dr">${axoSVG(mods[0].P3, bounds3([mods[0].P3]))}</div>` : `<div class="dr none">${why ? 'outside a hall' : 'no model yet'}</div>`) +
                      `<div class="cnt">${Object.keys(subs).length} subtypes · ${mods.length} of ${nv} variants drawn</div></div>`;
@@ -1829,6 +2519,7 @@
             h += `<div class="vcol"><div class="sh"><span class="code">${st}</span>${esc(sname)}</div>`;
             if (!vars.length) h += `<div class="vi nomod"><span class="n"></span><span class="nm">no variants listed by Engel<small>no model yet</small></span></div>`;
             vars.forEach((v, k) => {
+                if (!v) return;
                 const id = mm && mm[k + 1], r = id && byId(id);
                 if (r) h += `<div class="vi mod ${slots.includes(id) ? 'in' : ''}" data-add="${id}"><span class="n">${k + 1}</span><span><div class="vd">${axoSVG(r.P3, bounds3([r.P3]))}</div><span class="nm">${esc(v)}<small>${st}.${k + 1} · ${CHIP[r.st]}${slots.includes(id) ? ' · in comparison' : ' · click to compare'}</small></span></span></div>`;
                 else h += `<div class="vi nomod"><span class="n">${k + 1}</span><span class="nm">${esc(v)}<small>${st}.${k + 1} · no model yet</small></span></div>`;
@@ -1864,10 +2555,10 @@
             for (const t of [3, 5, 10, 20, 30, 50, 100, 200, 500]) s += `<line x1="${X(t)}" x2="${X(t)}" y1="${top - 6}" y2="${H}" stroke="#e6e6e6"/><text x="${X(t)}" y="${top - 10}" font-size="9" fill="#aaa" text-anchor="middle" ${F}>${t} m</text>`;
             rows.forEach((r, i) => {
                 const y = top + i * rowH + rowH / 2, sp = r.sys.spans[r.m];
-                s += row(r, y, W) + `<line x1="${X(sp.lim[0])}" x2="${X(sp.lim[1])}" y1="${y}" y2="${y}" stroke="${r.st === 'out' ? '#bbb' : '#111'}"/>` + sp.typ.map(([a, b]) => `<rect x="${X(a)}" y="${y - 1.5}" width="${Math.max(2, X(b) - X(a))}" height="3" fill="${r.st === 'out' ? '#bbb' : '#111'}"/>`).join('') + '</g>';
+                s += row(r, y, W) + (r.spanUsed ? `<circle cx="${X(r.spanUsed)}" cy="${y}" r="3.2" fill="none" stroke="#c62828"/>` : '') + `<line x1="${X(sp.lim[0])}" x2="${X(sp.lim[1])}" y1="${y}" y2="${y}" stroke="${r.st === 'out' ? '#bbb' : '#111'}"/>` + sp.typ.map(([a, b]) => `<rect x="${X(a)}" y="${y - 1.5}" width="${Math.max(2, X(b) - X(a))}" height="3" fill="${r.st === 'out' ? '#bbb' : '#111'}"/>`).join('') + '</g>';
             });
             s += `<line x1="${X(S.L)}" x2="${X(S.L)}" y1="${top - 4}" y2="${H}" stroke="#c62828"/>`;
-            $('rankNote').textContent = 'line = possible, bar = usual, red = your span · pp. 62, 138, 176, 216 · click a row to add or remove it';
+            $('rankNote').textContent = 'line = possible, bar = usual, red = your span, red circle = the larger span a system itself needs (arch feet, enclosing circle) · pp. 62, 138, 176, 216 · click a row to add or remove it';
         } else {
             const M = MEASURE[metric], show = M.show || M.v, mx = Math.max(...rows.map(show)) * 1.08 || 1, X = v => lab + (W - lab - 60) * v / mx;
             for (let t = 0; t <= 4; t++) { const v = mx * t / 4; s += `<line x1="${X(v)}" x2="${X(v)}" y1="${top - 4}" y2="${H}" stroke="#e6e6e6"/><text x="${X(v)}" y="${top - 8}" font-size="9" fill="#aaa" text-anchor="middle" ${F}>${M.fmt(v)}</text>`; }
