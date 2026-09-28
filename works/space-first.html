@@ -467,10 +467,12 @@
                   notes = ['Vaults side by side lean on each other: the thrust of one cancels the next, so the inner supports can be slender piers (Engel p.113, "continuous").', 'Works only if the building repeats the hall; the outermost walls still need buttresses or mass.'];
               }
               V.tw = tw; V.bd = bd; V.inner3 = arcPts(0, L, H, f, 16);
+              // a way in through each side wall, in the middle bay (the ends of the vault stand open as well)
+              if (mode !== 'adjacent') { const yb = ysOf(W, bay), nb = yb.length - 1, kb = Math.min(nb - 1, Math.floor(nb / 2)); V.door = Object.assign({ y: (yb[kb] + yb[kb + 1]) / 2 }, doorOf(H, yb[kb + 1] - yb[kb] - (mode === 'buttress' ? Math.max(0.5, L / 30) : 0))); }
               return {
                   parts, roof: [[-tw, 0], [-tw, H + t], ...inner.map(([x, y]) => [x, y + t]), [L + tw, H + t], [L + tw, 0]], foot,
                   zoneLabel: `rise ${f2(f)}`, zone: f + t, cols, colNote, thrust: thrust || null, thrustNote, thrustPerArch: perArch,
-                  plan: { kind: 'walls', bw: tw, mode, bay, bd }, surface: true, inner, t, bw: tw, V, enclose: mode === 'adjacent' ? null : ['x0', 'x1'],
+                  plan: { kind: 'walls', bw: tw, mode, bay, bd, door: V.door }, surface: true, inner, t, bw: tw, V, enclose: mode === 'adjacent' ? null : ['x0', 'x1'],
                   forces: mode === 'tie' ? [{ p: [L / 2, W / 2, H], tie: true, v: Hv * bay, u: 'kN in each tie' }]
                       : [{ p: [0, W / 2, H], d: [-1, 0], v: Hv, u: mode === 'adjacent' ? 'kN/m, met by the next vault' : 'kN/m' }, { p: [L, W / 2, H], d: [1, 0], v: Hv, u: mode === 'adjacent' ? 'kN/m, met by the next vault' : 'kN/m' }],
                   notes: ['Spans ACROSS, like an arch pulled out along the hall: the surface is in compression along the curve.', `A semicircle, as Engel draws it (p.47): it rises ${f1(f)} m, half the span. The thrust H = qL²/8f takes the line of thrust through the crown and the springing, which leaves the thin shell at the haunches — it runs in the fill that masons laid over them (J. Heyman, The Stone Skeleton, 1995).`, ...notes, 'Click the drawing to compare buttresses, ties and neighbouring vaults.']
@@ -755,6 +757,17 @@
         const res = tc => { const Wc = g * tc * a * (trans ? H : H + 2 * fr / 3), N = Vb + wi + Wo + Wa + Wc; return { N, e: (Vb * B + wi * (B - ti / 2) + Wo * to / 2 + (Wa + Wc) * (to + a / 2) - Hb * H) / N }; };
         let tc = 0.4; while (res(tc).e < B / 3 && tc < s_) tc += 0.05;
         return Object.assign({ tc: +tc.toFixed(2), to, fa: fr, hO, B, s: s_ }, res(tc));
+    }
+    // a way in: a door gap w wide and h high, sized for the clear height H and the gap it has to fit in
+    const doorOf = (H, gap = 99) => ({ w: +Math.min(2.4, Math.max(1, gap - 0.6)).toFixed(2), h: +Math.min(3, Math.max(2.1, H - 1.5), H - 0.4).toFixed(2) });
+    // a wall box [x0, x1, y0, y1, z0, z1] running along 'x' or 'y', split round its doors [[centre, w, h]]: full-height pieces
+    // between them and a lintel over each (drawn from below too; its ends lie against the pieces, so they are not drawn)
+    function doorWall(box, along, doors) {
+        const k = along === 'y' ? 2 : 0, out = [], put = (lo, hi, z0, at) => { const b = box.slice(0, 6); b[k] = lo; b[k + 1] = hi; b[4] = z0; if (at) b.push(at); out.push(b); };
+        let a = box[k];
+        for (const [c, w, h] of doors.slice().sort((p, q) => p[0] - q[0])) { const lo = Math.max(a, c - w / 2), hi = c + w / 2; if (lo > a + 1e-6) put(a, lo, box[4]); put(lo, hi, box[4] + h, { bottom: true, skip: along === 'y' ? ['y0', 'y1'] : ['x0', 'x1'] }); a = hi; }
+        if (box[k + 1] > a + 1e-6) put(a, box[k + 1], box[4]);
+        return out;
     }
     // a buttress against a wall tw thick, one every s along it, bw wide: bd = the least depth for which the resultant of the thrust
     // Hb at the springing H, the vault's Vb (on the wall's inner edge), the wall's and the buttress's weight falls inside the
@@ -1149,7 +1162,7 @@
           build(L, H, W, m, q) {
               const mode = modeOf('v_cross', 'aisles'), f = L / 2, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], tp = Math.max(0.8, L / 12);
               const Hx1 = q * L * L * b / (16 * f), Hy1 = q * L * b * b / (16 * f), V1 = q * L * b / 4, ys = [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))];
-              const vault = { kind: 'shellx', mods: rs.map(r0 => ({ rect: r0, z: (x, y) => H + f * Math.max(ell((x - r0[0]) / L), ell((y - r0[1]) / b)), ni: 16, nj: 16 })), secT: 0 };
+              const vault = { kind: 'shellx', mods: rs.map(r0 => ({ rect: r0, z: (x, y) => H + f * Math.max(ell((x - r0[0]) / L), ell((y - r0[1]) / b)), ni: 24, nj: 24 })), secT: 0 };
               const piers = () => ys.flatMap(y => [[-tp, 0, y - tp / 2, y + tp / 2, 0, H], [L, L + tp, y - tp / 2, y + tp / 2, 0, H]]);
               // the end piers are pushed along the hall by the end bays: buttresses that way (the interior piers are balanced along the hall)
               const bw = 2 * tp / 3, by = buttressDepth(Hy1, V1, H, tp, bw), endB = () => by.bd > 0 ? [ys[0], ys[ys.length - 1]].flatMap(y => [-tp / 2, L + tp / 2].map(xc => { const sg = y === ys[0] ? -1 : 1; return [xc - bw / 2, xc + bw / 2, sg < 0 ? y - tp / 2 - by.bd : y + tp / 2, sg < 0 ? y - tp / 2 : y + tp / 2 + by.bd, 0, H]; })) : [];
@@ -1165,7 +1178,7 @@
                   let tE = AB.tc; while (eE(tE) < tE / 3 && tE < 30) tE += 0.05; tE = +tE.toFixed(2);
                   const yA = ys[0] - (tE - AB.tc / 2), yB = ys[ys.length - 1] + (tE - AB.tc / 2);
                   const hb = Math.min(H / 3, b / 6), boxes = [...piers(), ...rs.flatMap(([, ya, , yb]) => [[-tp, 0, ya + tp / 2, yb - tp / 2, H - hb, H], [L, L + tp, ya + tp / 2, yb - tp / 2, H - hb, H]]), ...endB(),
-                      [-oo - to, -oo, yA, yB, 0, hO], [L + oo, L + oo + to, yA, yB, 0, hO]], rooms = [];
+                      ...[[-oo - to, -oo, yA, yB, 0, hO], [L + oo, L + oo + to, yA, yB, 0, hO]].flatMap(bx => doorWall(bx, 'y', rs.map(([, ya, , yb]) => { const D = doorOf(H, yb - ya - AB.tc); return [(ya + yb) / 2, D.w, D.h]; })))], rooms = [];
                   ys.forEach((y, k) => { const end = k === 0 || k === ys.length - 1, t_ = end ? tE : AB.tc, yc = y + (k === 0 ? -1 : k === ys.length - 1 ? 1 : 0) * (t_ - AB.tc) / 2;
                       crossWall(boxes, [-tp, yc], [-oo, yc], t_, H); crossWall(boxes, [L + tp, yc], [L + oo, yc], t_, H); });
                   for (let k = 0; k < ys.length - 1; k++) rooms.push(aisleMod(-oo, ys[k], -tp, ys[k + 1], fr, H, 'y'), aisleMod(L + tp, ys[k], L + oo, ys[k + 1], fr, H, 'y'));
@@ -1204,13 +1217,16 @@
               const common = ['The vault rises from all four walls and meets in hips — the opposite of the groin vault (Engel 1.4.2.3).', `Its webs are semicircles, as Engel draws them (p.47): the crown stands ${f1_(f)} m above the springing. The thrust is ${Math.round(Hm)} kN/m at the middle of each wall (H = qL²/8f, the line of thrust through crown and springing, carried by the fill over the haunches) and falls to nothing at the corners, where the webs meet in the hips.`];
               // the push at d along a wall of length len: full on the long walls' straight middle, falling to nothing at the corners
               const hAt = (d, len) => Hm * Math.min(1, Math.min(d, len - d) / (L / 2));
+              // the four walls, each with a door at yd (long walls) or xd (end walls) — a cloister vault is closed all round otherwise
+              const walls = (tw, yd, xd, gap) => { const D = doorOf(H, gap);
+                  return [...doorWall([-tw, 0, 0, W, 0, H], 'y', [[yd, D.w, D.h]]), ...doorWall([L, L + tw, 0, W, 0, H], 'y', [[yd, D.w, D.h]]), ...doorWall([-tw, L + tw, -tw, 0, 0, H], 'x', [[xd, D.w, D.h]]), ...doorWall([-tw, L + tw, W, W + tw, 0, H], 'x', [[xd, D.w, D.h]])]; };
               let o, colNote, thrust = Hm, thrustNote, perArch = false, notes, forces;
               if (mode === 'piers') {
                   // a cloister vault needs its walls all round (every web springs from one); the thrust is taken by buttresses against them,
                   // each sized for the push where it stands — deepest at mid-wall, none near the corners, where the return walls stiffen the wall
                   const s0 = clamp(r05(L / 4), 4, 8), tw = +Math.max(0.4, L / 25, s0 / 10).toFixed(2), bw = Math.max(0.6, tw);
                   const n = Math.max(2, Math.round(W / s0)), mm = Math.max(2, Math.round(L / s0)), sy = W / n, sx = L / mm, deep = [];
-                  const boxes = [[-tw, 0, 0, W, 0, H], [L, L + tw, 0, W, 0, H], [-tw, L + tw, -tw, 0, 0, H], [-tw, L + tw, W, W + tw, 0, H]];
+                  const boxes = walls(tw, (Math.floor((n - 1) / 2) + 0.5) * sy, (Math.floor((mm - 1) / 2) + 0.5) * sx, Math.min(sx, sy) - bw);   // doors between buttresses
                   let mid = null;
                   for (let k = 1; k < n; k++) { const y = k * sy, P = wallPier(hAt(y, W) * sy, Vm * sy, H, tw, sy, bw); deep.push(P.bd); if (!mid || P.bd >= mid.bd) mid = P;
                       if (P.bd > 0) boxes.push([-tw - P.bd, -tw, y - bw / 2, y + bw / 2, 0, H, { skip: ['x1'] }], [L + tw, L + tw + P.bd, y - bw / 2, y + bw / 2, 0, H, { skip: ['x0'] }]); }
@@ -1224,7 +1240,7 @@
                   notes = [...common, 'A cloister vault needs a wall under every edge — each web springs from one — so it cannot stand on free columns; what can be made thick enough are buttresses against the walls (Engel p.113, "buttressed").', `Buttresses about ${f1_(Math.max(sx, sy))} m apart, each sized for the push where it stands: ${f1_(bmax)} m deep at mid-wall, less towards the corners and none next to them, where the return walls hold the wall. From statics, not a rule of thumb: at mid-wall ${Math.round(hAt(W / 2, W) * sy)} kN of thrust per buttress, the vault's load, the wall and the buttress give a resultant ${f2(mid.e)} m in from the outer edge of the ${f2(mid.B)} m base — inside the middle third (masonry rule, J. Heyman, The Stone Skeleton, 1995).`, `Between the buttresses the ${f2(tw)} m wall carries the push to them, arching sideways in its own thickness.`];
               } else if (mode === 'tie') {
                   const tw = Math.max(0.4, L / 25), sp = clamp(r05(L / 4), 4, 8), n = Math.max(2, Math.round(W / sp)), ys = Array.from({ length: n - 1 }, (_, k) => (k + 1) * W / n), T = Hm * L / 4;
-                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes: [[-tw, 0, 0, W, 0, H], [L, L + tw, 0, W, 0, H], [-tw, L + tw, -tw, 0, 0, H], [-tw, L + tw, W, W + tw, 0, H]],
+                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes: walls(tw, W / 2, L / 2),
                       lines3: [...ys.map(y => ({ c: 'tie', pts: [[0, y, H], [L, y, H]] })), { c: 'tie', pts: [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H], [0, 0, H]] }],
                       planSegs: [...ys.map(y => [0, y, L, y, 0.3]), [0, 0, L, 0, 0.3], [L, 0, L, W, 0.3], [L, W, 0, W, 0.3], [0, W, 0, 0, 0.3]], extra2d: [line([[0, H], [L, H]], 'tie')] };
                   thrust = Hm * W / n; perArch = true;
@@ -1235,7 +1251,7 @@
               } else {
                   const ecc = t_ => { const Ww = 20 * t_ * H; return (Ww * t_ / 2 + Vm * t_ - Hm * H) / (Ww + Vm); };   // the vault bears on the wall's inner edge, as in the other modes
                   let tw = 0.3; while (ecc(tw) < tw / 3 && tw < 30) tw += 0.05; tw = +tw.toFixed(2);
-                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes: [[-tw, 0, 0, W, 0, H], [L, L + tw, 0, W, 0, H], [-tw, L + tw, -tw, 0, 0, H], [-tw, L + tw, W, W + tw, 0, H]] };
+                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes: walls(tw, W / 2, L / 2) };
                   colNote = `continuous walls ${f2(tw)} m on all four sides`;
                   thrustNote = 'per metre at mid-wall, H = qL²/8f — the webs act as arches from each wall to the crown or hip';
                   forces = push('kN/m');
@@ -2809,7 +2825,7 @@
                     S4.forEach((A, k) => { if (!seam[k % 2] && !point(A)) s += `<path d="M${A.map(p => p.join(',')).join('L')}" fill="none" stroke="#111" stroke-width="${sw * 1.2}"/>`; }); }
             }
             for (const g of pl.segs || []) s += ln(g[0], g[1], g[2], g[3], sw * (0.5 + 0.9 * (g[4] == null ? 1 : g[4])));
-            for (const b of pl.boxes) s += `<rect x="${b[0]}" y="${b[2]}" width="${b[1] - b[0]}" height="${b[3] - b[2]}" fill="#111"/>`;
+            for (const b of pl.boxes) if (b[4] < 0.01) s += `<rect x="${b[0]}" y="${b[2]}" width="${b[1] - b[0]}" height="${b[3] - b[2]}" fill="#111"/>`;   // cut above the floor: lintels and arcades are not in plan
             for (const p of pl.posts) s += dot(p[0], p[1]);
             for (const a of pl.anchors) s += `<circle cx="${a[0]}" cy="${a[1]}" r="${cr * 0.4}" fill="none" stroke="#111" stroke-width="${sw}"/>`;
         } else if (pl.kind === 'oneway') {
@@ -2844,6 +2860,7 @@
             const yb = []; for (let y = 0; y <= W + 1e-6; y += W / Math.max(1, Math.ceil(W / pl.bay))) yb.push(y);
             if (pl.mode === 'buttress') for (const y of yb) s += `<rect x="${-pl.bw - pl.bd}" y="${y - 0.4}" width="${pl.bd}" height="0.8" fill="#111"/><rect x="${L + pl.bw}" y="${y - 0.4}" width="${pl.bd}" height="0.8" fill="#111"/>`;
             if (pl.mode === 'tie') for (const y of yb) s += ln(0, y, L, y, sw, '#c62828', `${sw * 3} ${sw * 2}`);
+            if (pl.door) for (const x of [-pl.bw, L]) s += `<rect x="${x - 0.05}" y="${pl.door.y - pl.door.w / 2}" width="${pl.bw + 0.1}" height="${pl.door.w}" fill="#fff"/>`;   // the doors
             for (let y = 0; y <= W + 1e-6; y += Math.max(1, W / 16)) s += ln(0, y, L, y, sw * 0.5, '#999', `${sw * 3} ${sw * 3}`);
         } else if (pl.kind === 'pneu') {
             const c = L / 2;
@@ -2885,9 +2902,11 @@
         }
     }
     // at: { x0: [y…], x1: [y…] } — where something is attached to the x0 or x1 face (that face is cut there, with a corner line);
-    // at.skip: faces not drawn because they stand against another wall and can never be seen ('x0', 'x1', 'y0', 'y1')
+    // at.skip: faces not drawn because they stand against another wall and can never be seen ('x0', 'x1', 'y0', 'y1');
+    // at.bottom: draw the underside too (a lintel seen from below)
     function box3(add, x0, x1, y0, y1, z0, z1, c = 'solid', at = {}) {
         const P = (x, y, z) => [x, y, z], fr = ys => (ys || []).map(y => (y - y0) / (y1 - y0)), on = f => !(at.skip && at.skip.includes(f));
+        if (at.bottom) quadPieces(add, P(x0, y0, z0), P(x1, y0, z0), P(x1, y1, z0), P(x0, y1, z0), c);
         if (on('y0')) quadPieces(add, P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1), c);
         if (on('y1')) quadPieces(add, P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1), c);
         if (on('x0')) quadPieces(add, P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1), c, 3, fr(at.x0));
@@ -3051,7 +3070,9 @@
                 for (const xw of [-tw, L]) box3(add, xw, xw + tw, 0, W, H - 0.4, H + t);
             } else {
                 const bwv = Math.max(0.5, L / 30), yc = V.mode === 'buttress' ? ys.flatMap(y => [y - bwv / 2, y + bwv / 2]) : [];
-                box3(add, -tw, 0, 0, W, 0, H + t, 'solid', { x0: yc }); box3(add, L, L + tw, 0, W, 0, H + t, 'solid', { x1: yc });
+                const wall = (xa, xb, side) => { for (const b of V.door ? doorWall([xa, xb, 0, W, 0, H + t], 'y', [[V.door.y, V.door.w, V.door.h]]) : [[xa, xb, 0, W, 0, H + t]])
+                    box3(add, b[0], b[1], b[2], b[3], b[4], b[5], 'solid', b[6] || { [side]: yc.filter(y => y > b[2] + 1e-6 && y < b[3] - 1e-6) }); };
+                wall(-tw, 0, 'x0'); wall(L, L + tw, 'x1');
             }
             shell(0, 'shellx');
             if (V.mode === 'buttress') for (const y of ys) for (const [x0, dir] of [[-tw, -1], [L + tw, 1]]) {
