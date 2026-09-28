@@ -5,156 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timber Gridshell Form-Finder — Hanging Net to Inverted Dome</title>
     <style>
-        * { font-family: Helvetica, Arial, sans-serif !important; box-sizing: border-box; }
-
-        body {
-            background-color: #f4f5f5;
-            color: #111;
-            margin: 0;
-            padding: 0 24px 24px;
-        }
+        /* type, lines and controls after Space First (study 12); colours kept, they carry the structure */
+        :root { --ink: #111; --mute: #888; --faint: #aaa; --line: #e0e0e0; --fail: #d32f2f; }
+        * { box-sizing: border-box; }
+        body, input, button, select, textarea { font-family: 'Helvetica Neue', sans-serif; }
+        body { margin: 0; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; padding: 0 clamp(20px, 7vw, 120px) 60px; }  /* wide side margins: room around the work */
 
         .study-bar {
-            max-width: 1300px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 14px 0 8px 0;
-            border-bottom: 1px solid #111;
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            box-sizing: border-box;
+            max-width: 1240px; width: 100%; margin: 0 auto; padding: 14px 0 8px 0;
+            border-bottom: 1px solid var(--ink); display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap;
         }
-        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
-        .study-bar a:hover { color:#d32f2f; }
-        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
-        .study-bar .idx { font-family:'Courier New', monospace; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
-        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
-        .study-bar .titleline b { font-weight:bold; color:#111; }
-        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
-        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+        .study-bar a { color: var(--ink); text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; flex: none; }
+        .study-bar a:hover { color: #1976d2; }
+        .study-bar .titlegroup { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+        .study-bar .idx { font-size: 11px; color: #999; letter-spacing: 1px; flex: none; }
+        .study-bar .titleline { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; text-align: right; }
+        .study-bar .titleline .sep { color: #ccc; margin: 0 7px; }
+        .study-bar .titleline .sub { color: #666; }
 
-        .main-container { max-width: 1300px; margin: 16px auto 0; }
+        .main-container { max-width: 1240px; margin: 18px auto 0; }
 
-        .main-view-panel {
-            background: transparent;
-            border: none;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .canvases-wrapper { display: flex; gap: 15px; }
-
-        /* LEFT: 2D boundary editor */
-        .canvas-2d-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            min-width: 300px;
-            padding: 15px;
-        }
-        .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .editor-header h3 {
-            margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #333; letter-spacing: 0.5px;
-        }
-        canvas#editorCanvas {
-            display: block; width: 100%; height: 300px; background: #fff;
-            border: 1px solid #eee; cursor: crosshair; margin-bottom: 10px;
-        }
-
-        /* RIGHT: 3D interactive net / dome */
-        .canvas-3d-wrapper {
-            flex: 1.7;
-            position: relative;
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            overflow: hidden;
-        }
-        #simContainer {
-            display: block; width: 100%; height: 420px; background: transparent;
-            cursor: grab; position: relative; overflow: hidden;
-        }
+        /* model + 2D outline: the outline folds away to a rail on the right */
+        .canvases-wrapper { display: flex; gap: 0; border-bottom: 1px solid var(--line); }
+        .canvas-3d-wrapper { flex: 1; position: relative; overflow: hidden; min-width: 0; }
+        #simContainer { display: block; width: 100%; height: clamp(520px, 74vh, 820px); cursor: grab; position: relative; overflow: hidden; }
         #simContainer:active { cursor: grabbing; }
-        #sim-hint {
-            position: absolute; bottom: 8px; right: 10px; font-size: 9px; letter-spacing: 0.5px;
-            text-transform: uppercase; color: #aaa; pointer-events: none;
-        }
-        #sim-title {
-            position: absolute; top: 10px; left: 12px; font-size: 9px; letter-spacing: 0.5px;
-            text-transform: uppercase; color: #999; pointer-events: none;
-        }
-
-        .btn-group { display: flex; gap: 5px; margin-top: auto; }
-        select {
-            width: auto; padding: 4px 6px; font-size: 10px;
-            background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 0;
-        }
-        select.wide { width: 100%; margin-top: 5px; }
-
-        button.action-btn {
-            flex: 1; padding: 8px; background: transparent; color: #111; border: 1px solid #ccc;
-            font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;
-            cursor: pointer; transition: 0.2s;
-        }
-        button.action-btn:hover { background: #f4f4f4; border-color: #999; }
-        button.primary-btn { border-color: #111; margin-top: 5px; width: 100%; }
-        button.primary-btn:hover { background: #111; color: #fff; }
-        button.mode-btn.active { background: #111; color: #fff; border-color: #111; }
-        button.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        button.action-btn:disabled:hover { background: transparent; border-color: #ccc; }
-
-        #status-bar {
-            background: #fff; border: 1px solid #e5e5e5; padding: 15px; text-align: center;
-            font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
-            transition: color 0.3s;
+        #sim-hint { position: absolute; bottom: 8px; left: 0; font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--faint); pointer-events: none; }
+        .canvas-2d-wrapper { flex: 0 0 380px; display: flex; flex-direction: column; border-left: 1px solid var(--line); padding: 0 0 12px 16px; min-width: 0; }
+        .editor-header { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 8px; }
+        canvas#editorCanvas { display: block; width: 100%; height: 420px; cursor: crosshair; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+        .canvases-wrapper.editor-folded .canvas-2d-wrapper { flex: 0 0 34px; padding: 0; }
+        .canvases-wrapper.editor-folded .canvas-2d-wrapper > :not(.editor-header) { display: none !important; }
+        .canvases-wrapper.editor-folded .editor-header { writing-mode: vertical-rl; margin: 12px 0 0 8px; }
+        .canvases-wrapper.editor-folded .editor-header > :not(.fold) { display: none; }
+        @media (max-width: 900px) {
+            body { padding: 0 12px 40px; }
+            .canvases-wrapper { flex-direction: column; }
+            .canvas-2d-wrapper { flex: none; border-left: none; padding-left: 0; }
+            .canvases-wrapper.editor-folded .editor-header { writing-mode: horizontal-tb; margin: 10px 0; }
+            #simContainer { height: 440px; }
+            .bnd-panel { width: 220px; }
         }
 
-        hr.dashed { border: 0; border-top: 1px dashed #ccc; margin: 16px 0; }
-
-        .controls-grid { display: flex; gap: 32px; flex-wrap: wrap; }
+        /* sections that fold away: the title is the switch, ▾ open, ▸ folded (as Space First) */
+        .fold { font-family: inherit; font-size: 17px; font-weight: 700; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; line-height: 1.3; text-align: left; }
+        .fold::before { content: '▾'; display: inline-block; width: 1em; color: #999; font-weight: 400; }
+        .fsec.folded .fold::before, .canvases-wrapper.editor-folded .editor-header .fold::before { content: '▸'; }
+        .fold:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .fsec { border-bottom: 1px solid var(--ink); padding: 14px 0 16px; }
+        .fsec .fhead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .fsec .fsum { display: none; font-size: 11px; color: #555; }
+        .fsec.folded .fsum { display: inline; }
+        .fsec .flead { font-size: 11px; color: var(--mute); }
+        .fsec.folded .flead { display: none; }
+        .fsec.folded .fbody { display: none !important; }
+        .fbody { display: flex; gap: 36px; flex-wrap: wrap; margin-top: 12px; }
         .column { flex: 1; min-width: 260px; }
-        .column h3 {
-            margin-top: 0; font-size: 8.5px; font-weight: bold; text-transform: uppercase;
-            letter-spacing: 0.8px; margin-bottom: 10px; color: #111;
-            border-bottom: 1px solid #111; padding-bottom: 4px;
+        .k { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px; color: var(--faint); margin: 0 0 8px; }
+
+        .panels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 28px; padding-top: 12px; }
+        .panels > .column { min-width: 0; }
+        .panels h2 { font-size: 17px; font-weight: 700; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--ink); }
+        .panels .k { margin-top: 16px; }
+        @media (max-width: 1100px) { .panels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 640px) { .panels { grid-template-columns: 1fr; } }
+        #status-bar { font-size: 11px; color: var(--mute); padding: 8px 0; letter-spacing: 0.3px; min-height: 30px; }
+        #status-bar.fail { color: var(--fail); }
+
+        .control-row { margin-bottom: 12px; font-size: 11px; }
+        label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; color: #333; font-size: 11px; }
+        .checkbox-row { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; font-size: 11px; color: #333; }
+        .checkbox-row input { cursor: pointer; accent-color: var(--ink); }
+        .checkbox-row label { margin: 0; }
+        .val { font-size: 11px; color: #555; }
+        input[type="range"] { appearance: none; -webkit-appearance: none; width: 100%; margin: 2px 0 0; height: 20px; background: transparent; cursor: pointer; }
+        input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: #aaa; }
+        input[type="range"]::-moz-range-track { height: 1px; background: #aaa; }
+        input[type="range"]::-moz-range-progress { height: 1px; background: #aaa; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 8px; height: 8px; margin-top: -3.5px; border: 0; border-radius: 50%; background: var(--ink); }
+        input[type="range"]::-moz-range-thumb { width: 8px; height: 8px; border: 0; border-radius: 50%; background: var(--ink); }
+        input[type="range"]:focus-visible { outline: 1px solid #777; outline-offset: 3px; }
+        input[type="range"]:disabled { opacity: .4; cursor: default; }
+        input[type="number"] { width: 56px; font-size: 13px; border: none; border-bottom: 1px solid #bbb; background: transparent; padding: 0 1px 1px; }
+        input:focus, select:focus { outline: none; border-bottom-color: var(--ink); }
+        select { font-size: 12px; color: var(--ink); border: none; border-bottom: 1px solid #bbb; background: transparent; padding: 2px 0; border-radius: 0; cursor: pointer; max-width: 100%; }
+        select.wide { width: 100%; }
+
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        button.action-btn {
+            border: 1px solid var(--ink); background: transparent; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px;
+            padding: 5px 10px; cursor: pointer; color: var(--ink);
         }
+        button.action-btn:hover { background: var(--ink); color: #fff; }
+        button.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        button.action-btn:disabled:hover { background: transparent; color: var(--ink); }
+        button.mode-btn.active { background: var(--ink); color: #fff; }
+        .seg-row { display: inline-flex; border: 1px solid var(--ink); margin-bottom: 10px; }
+        .seg-row button { border: none; border-right: 1px solid var(--ink); background: transparent; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; padding: 5px 9px; cursor: pointer; color: var(--ink); }
+        .seg-row button:last-child { border-right: none; }
+        .seg-row button.active { background: var(--ink); color: #fff; }
 
-        .control-row { margin-bottom: 12px; font-size: 9.5px; }
-        label { display: flex; justify-content: space-between; margin-bottom: 5px; color: #333; }
-        .checkbox-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; font-size: 9.5px; color: #333; }
-        .checkbox-row input { cursor: pointer; }
-        .val { font-size: 9.5px; color: #555; }
+        .stats { font-size: 11px; }
+        .stat-line { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-top: 1px solid #f0f0f0; }
+        .stat-line .lbl { color: #666; }
+        .stat-line .num { color: var(--ink); font-weight: bold; text-align: right; }
+        .stat-line .num.fail { color: var(--fail); }
 
-        input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
-        input[type="range"]:focus { outline: none; }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 10px; width: 10px; border-radius: 50%; background: #111; cursor: pointer; margin-top: -4px;
-        }
-        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; cursor: pointer; background: #999; }
+        details.note { margin-top: 10px; font-size: 11px; color: #555; line-height: 1.55; }
+        details.note summary { cursor: pointer; color: var(--mute); font-size: 11px; list-style: none; }
+        details.note summary::-webkit-details-marker { display: none; }
+        details.note summary::before { content: '▸ '; color: #999; }
+        details.note[open] summary::before { content: '▾ '; }
+        .legend { font-size: 9.5px; color: var(--mute); margin: -4px 0 10px; line-height: 1.7; }
+        .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+        .legend-line { display: inline-block; width: 14px; height: 3px; margin-right: 4px; vertical-align: middle; }
 
-        .info-box {
-            margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;
-            color: #666; font-size: 9.5px; line-height: 1.5;
-        }
-        .info-box b { color: #333; }
-        .info-box.stats { margin-top: 0; padding-top: 0; border-top: none; }
-        .info-box .stat-line { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .info-box .stat-line .lbl { color: #666; }
-        .info-box .stat-line .num { color: #111; font-weight: bold; }
+        table.ladder { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+        table.ladder th { text-align: left; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: var(--faint); border-bottom: 1px solid var(--ink); padding: 4px 6px 4px 0; }
+        table.ladder td { border-bottom: 1px solid var(--line); padding: 5px 6px 5px 0; vertical-align: top; }
+        table.ladder tr.chosen td { font-weight: bold; }
+        table.ladder td.fail { color: var(--fail); }
+        table.ladder td.ok { color: #2e7d32; }
 
-        .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
-        .legend-line { display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; }
-
-        .recommend-box {
-            margin-top: 12px; padding: 10px; font-size: 10px; line-height: 1.5; border-left: 3px solid #111; background: #fafafa;
-        }
-
+        /* edge panel over the model */
+        .bnd-panel { position: absolute; top: 10px; right: 10px; width: 250px; z-index: 2; background: rgba(255,255,255,0.95); border: 1px solid var(--ink); padding: 10px 12px; font-size: 11px; }
+        .bnd-panel .bnd-hint { font-size: 9.5px; color: var(--mute); line-height: 1.5; }
+        .bnd-body { display: none; margin-top: 10px; }
+        .bnd-body.on { display: block; }
+        .bnd-panel .bnd-title { font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+        .legend-edge { display: inline-block; width: 16px; height: 0; vertical-align: middle; margin-right: 4px; }
     </style>
     <script type="importmap">
         {
@@ -171,153 +150,296 @@
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
             <span class="idx">05</span>
-            <span class="titleline"><b>Timber Gridshell Form-Finder</b><span class="sep">&mdash;</span><span class="sub">2D Boundary &rarr; Hanging Net &rarr; Inverted Compression Dome, after Otto / Happold &amp; Liddell, Mannheim 1975</span></span>
+            <span class="titleline"><b>Timber Gridshell Form-Finder</b><span class="sep">&mdash;</span><span class="sub">Hanging net &rarr; built shell &rarr; check &rarr; design, after Otto / Happold &amp; Liddell, Mannheim 1975</span></span>
         </span>
     </div>
 
     <div class="main-container">
 
-        <div class="main-view-panel">
-            <div class="canvases-wrapper">
+        <div class="canvases-wrapper editor-folded">
 
-                <div class="canvas-3d-wrapper">
-                    <div id="simContainer"></div>
-                    <div id="sim-title">Interactive Net</div>
-                    <div id="sim-hint">Drag to Rotate &amp; Pan / Scroll to Zoom</div>
+            <div class="canvas-3d-wrapper">
+                <div id="simContainer"></div>
+                <div id="sim-hint">Drag to rotate &amp; pan &middot; scroll to zoom</div>
+                <div class="bnd-panel" id="bndPanel">
+                    <div class="bnd-hint" id="bndHint">Click a node (height) or an edge (type) &middot; drag a node to move it &middot; shift-drag for height</div>
+                    <div class="bnd-body" id="nodeGroup">
+                        <div class="bnd-title" id="nodeTitle">Node</div>
+                        <div class="control-row">
+                            <label>Edge height at this node <span id="val-vHeight" class="val">0.0 m</span></label>
+                            <input type="range" id="vHeight" min="0" max="15" step="0.1" value="0">
+                        </div>
+                        <div class="btn-group"><button class="action-btn" id="btnApplyHeight">Same height at every node</button></div>
+                    </div>
+                    <div class="bnd-body" id="edgeGroup">
+                        <div class="bnd-title" id="edgeTitle">Edge</div>
+                        <div class="seg-row" id="edgeTypeRow">
+                            <button data-type="wall">Wall</button>
+                            <button data-type="beam">Beam</button>
+                            <button data-type="cable">Cable</button>
+                            <button data-type="arch">Arch</button>
+                        </div>
+                        <div class="control-row" id="edgeRiseRow">
+                            <label><span id="edgeRiseName">Arch rise</span> <span id="val-edgeRise" class="val">0.0 m</span></label>
+                            <input type="range" id="edgeRise" min="0" max="12" step="0.1" value="0">
+                        </div>
+                        <div class="btn-group"><button class="action-btn" id="btnApplyType">Same type on every edge</button></div>
+                        <p class="legend" style="margin:8px 0 0;">
+                            <span class="legend-edge" style="border-top: 3px solid #111;"></span>Wall
+                            &nbsp;<span class="legend-edge" style="border-top: 2px dashed #8d6e4a;"></span>Beam on columns
+                            &nbsp;<span class="legend-edge" style="border-top: 2px dotted #111;"></span>Cable
+                            &nbsp;<span class="legend-edge" style="border-top: 4px double #8d6e4a;"></span>Arch
+                            &middot; Fig 54, Happold &amp; Liddell 1975
+                        </p>
+                    </div>
                 </div>
+            </div>
 
-                <div class="canvas-2d-wrapper">
-                    <div class="editor-header">
-                        <h3>2D Boundary Editor</h3>
-                        <select id="presetSelect" class="wide" style="width:auto;">
-                            <option value="blob" selected>Mannheim-like Blob</option>
-                            <option value="essen">Essen-like Rounded Square</option>
-                            <option value="rect">Rectangle</option>
+            <div class="canvas-2d-wrapper">
+                <div class="editor-header">
+                    <button class="fold" type="button" id="foldEditor">2D outline</button>
+                    <select id="presetSelect">
+                        <option value="mannheim" selected>Mannheim 1975 (traced, Linkwitz plan)</option>
+                        <option value="blob">Single dome (generic)</option>
+                        <option value="essen">Essen 1962 (15 &times; 15 m)</option>
+                        <option value="rect">Rectangle</option>
+                    </select>
+                </div>
+                <div class="btn-group" style="margin-bottom: 8px;">
+                    <button class="action-btn mode-btn" id="modeSketchBtn">Sketch freeform</button>
+                    <button class="action-btn mode-btn" id="modeEditBtn">Edit nodes</button>
+                </div>
+                <div class="control-row" style="margin-bottom: 4px;">
+                    <label>Sketch smoothness <span id="val-sketchSmooth" class="val">3</span></label>
+                    <input type="range" id="sketchSmooth" min="1" max="10" step="1" value="3" title="1 = sharp corners kept as drawn · 10 = corners rounded off heavily">
+                </div>
+                <p id="editorHint" class="legend" style="margin:0 0 8px;">Drag a node to move it, drag empty space to pan, scroll to zoom.</p>
+                <canvas id="editorCanvas"></canvas>
+                <div class="btn-group">
+                    <button class="action-btn" id="btnAddNode">+ Add node</button>
+                    <button class="action-btn" id="btnRemoveNode">&minus; Remove node</button>
+                    <button class="action-btn" id="btnTidy" title="Round eligible corners and space edge nodes about 6 m apart; preserves support transitions and rejects crossing edges">Tidy outline</button>
+                    <button class="action-btn" id="btnUndoTidy" disabled>Undo tidy</button>
+                </div>
+            </div>
+
+        </div>
+        <div id="status-bar">Generating the net &hellip;</div>
+
+        <div class="panels">
+            <div class="column">
+                <h2>Form-finding</h2>
+
+                    <div class="k">Net &amp; hanging model</div>
+                    <div class="seg-row" id="stageRow" title="Flat grid → hanging model (tension) → built shell (compression)">
+                        <button data-stage="flat" class="active">1 Flat</button>
+                        <button data-stage="hanging">2 Hanging</button>
+                        <button data-stage="built">3 Built</button>
+                    </div>
+                    <div class="control-row">
+                        <label>Model grid (plan) <span id="val-spacing" class="val">2.00 m</span></label>
+                        <input type="range" id="meshSpacing" min="0.8" max="4" step="0.1" value="2">
+                    </div>
+                    <div class="control-row">
+                        <label>Lath slack (extra length over plan) <span id="val-slack" class="val">5.0 %</span></label>
+                        <input type="range" id="lathSlack" min="0.5" max="20" step="0.5" value="5">
+                    </div>
+                    <div class="control-row" style="display:flex; gap:8px; align-items:baseline;">
+                        <span style="flex:1; color:#333;">Fit crown height to</span>
+                        <input type="number" id="fitHeight" value="10" min="1" max="40" step="0.5">
+                        <span class="val">m</span>
+                        <button class="action-btn" id="btnFit">Fit</button>
+                    </div>
+                    <details class="note"><summary>How the net is made</summary>
+                        A square grid is laid over the plan and trimmed at the edge. Every edge is held at its
+                        height, as Otto's chain model was held on posts (Fig 13&ndash;14, Happold &amp; Liddell 1975).
+                        The laths are pin-jointed and a little longer than the plan grid, like the chain links, so
+                        the net hangs by changing shape, not by stretching; slack sets how deep it hangs. The links
+                        to the edge pull with one set force, as Otto's springs did, so the lath lines share the
+                        load. Each model member stands for several real 50 mm laths at 0.5 m, as the 1975 computer
+                        model used one member for many laths.
+                    </details>
+
+
+                    <div class="k">Permanent load</div>
+                    <div class="control-row">
+                        <label>Covering</label>
+                        <select id="covering" class="wide">
+                            <option value="pvc" selected>PVC-coated polyester mesh (Mannheim 1975) · 1.2 kg/m²</option>
+                            <option value="ptfe">PTFE / glass membrane · 1.5 kg/m²</option>
+                            <option value="etfe">ETFE foil cushions with frames · 3 kg/m²</option>
+                            <option value="timber">Timber boarding / plywood · 12 kg/m²</option>
+                            <option value="glass">Glass with frames · 40 kg/m²</option>
                         </select>
                     </div>
-                    <div class="btn-group" style="margin-bottom: 8px;">
-                        <button class="action-btn mode-btn" id="modeSketchBtn">Sketch Freeform</button>
-                        <button class="action-btn mode-btn" id="modeEditBtn">Edit Nodes</button>
+                    <div class="stats">
+                        <div class="stat-line"><span class="lbl">Permanent load G</span><span class="num" id="stat-g">—</span></div>
+                        <div class="stat-line"><span class="lbl">Crown height (built)</span><span class="num" id="stat-crown">—</span></div>
+                        <div class="stat-line"><span class="lbl">Total G / sum of vertical reactions</span><span class="num" id="stat-reac">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max lath force (per lath line)</span><span class="num" id="stat-nmax">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max edge thrust</span><span class="num" id="stat-thrust">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max strain while hanging</span><span class="num" id="stat-strain">—</span></div>
+                        <div class="stat-line"><span class="lbl">Relaxation</span><span class="num" id="stat-dr">—</span></div>
                     </div>
-                    <div class="control-row" style="margin-bottom: 4px;">
-                        <label>Sketch Smoothness <span id="val-sketchSmooth" class="val">3</span></label>
-                        <input type="range" id="sketchSmooth" min="1" max="10" step="1" value="3">
+                    <details class="note"><summary>How the forces are found</summary>
+                        The shape is found for the permanent load: laths (5 kg/m² per layer: hemlock, 50 &times; 50 mm
+                        at 0.5 m both ways), bolts, blocks, nailing strips and ties (9 kg/m², set so the Mannheim double
+                        layer gives Liddell's 20 kg/m²) and the covering. It is uniform, so the shape does not depend on
+                        how heavy it is, only the forces do. Dynamic relaxation (<code>karamba-lite.js</code>) returns
+                        the equilibrium forces of the found shape: tension while hanging, the same values in
+                        compression once inverted; the reactions must add up to the weight. Karamba's
+                        <i>Analyze Large Deformation</i> returns no forces.
+                    </details>
+
+            </div>
+            <div class="column">
+                <h2>Check: geometry &amp; loads</h2>
+
+                    <div class="k">Geometry (instant)</div>
+                    <div class="control-row">
+                        <label>Colour laths by</label>
+                        <select id="lathColour" class="wide">
+                            <option value="force" selected>Axial force (form-finding)</option>
+                            <option value="analysis">Axial force (analysis: blue compression, orange tension)</option>
+                            <option value="radius">Bend radius</option>
+                            <option value="plain">Plain</option>
+                        </select>
                     </div>
-                    <p style="font-size: 8px; color: #bbb; margin: 0 0 10px 0; text-transform: uppercase;">
-                        1 = sharp corners kept as drawn &middot; 10 = corners rounded off heavily (edges stay straight lines throughout)
+                    <p class="legend" id="forceLegend" style="display:none">
+                        <span class="legend-line" style="background:#adbfcf;"></span>low &nbsp;
+                        <span class="legend-line" style="background:#0b2d4d;"></span>max <span id="forceLegendMax"></span> &nbsp;
+                        <span class="legend-line" style="background:#e07b1f;"></span>slack <span id="forceLegendSlack"></span>
                     </p>
-                    <p id="editorHint" style="font-size: 9px; color: #999; margin: 0 0 10px 0; text-transform: uppercase;">
-                        Drag a node to move it, drag empty space to pan, scroll to zoom.
+                    <p class="legend" id="radiusLegend" style="display:none;">
+                        <span class="legend-line" style="background:#4caf50;"></span>0–8° &nbsp;
+                        <span class="legend-line" style="background:#f2c40f;"></span>8–25° &nbsp;
+                        <span class="legend-line" style="background:#d32f2f;"></span>needs thinner laths
                     </p>
-                    <canvas id="editorCanvas"></canvas>
-                    <div class="btn-group">
-                        <button class="action-btn" id="btnAddNode">+ Add Node</button>
-                        <button class="action-btn" id="btnRemoveNode">- Remove Node</button>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="showShear" checked>
+                        <label for="showShear">Shear distortion at nodes</label>
                     </div>
-                </div>
+                    <p class="legend" id="shearLegend">
+                        <span class="legend-dot" style="background:#4caf50;"></span>0–8° &nbsp;
+                        <span class="legend-dot" style="background:#f2c40f;"></span>8–25° &nbsp;
+                        <span class="legend-dot" style="background:#d32f2f;"></span>25–50°+
+                    </p>
+                    <p class="legend" id="shearHint"></p>
+                    <div class="stats">
+                        <div class="stat-line"><span class="lbl">Lath thickness that bends to shape</span><span class="num" id="val-lathThickness">—</span></div>
+                        <div class="stat-line"><span class="lbl">Min bend radius</span><span class="num" id="stat-radius">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max shear deviation</span><span class="num" id="stat-shear">—</span></div>
+                        <div class="stat-line"><span class="lbl">Rise / span</span><span class="num" id="stat-ratio">—</span></div>
+                        <div class="stat-line"><span class="lbl">Model</span><span class="num" id="stat-count">—</span></div>
+                    </div>
+                    <details class="note"><summary>What the geometry tells</summary>
+                        A 50 mm lath breaks at a radius of about 10&ndash;12 m (Liddell 2015); where the shell curves
+                        tighter the laths were split into two 25 mm layers. The square grid curves by turning into
+                        rhombi: a large change of angle is where the covering and the ties have to follow the
+                        shear. A low rise over span makes a shell that buckles sooner.
+                    </details>
+
+
+                    <div class="k">Loads</div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="useSnow" checked>
+                        <label for="useSnow">Snow (untick for a site without snow)</label>
+                    </div>
+                    <div class="control-row" id="snowRow">
+                        <label>Snow on plan, characteristic</label>
+                        <div style="display:flex; gap:8px; align-items:baseline;">
+                            <select id="snowPreset" style="flex:1;">
+                                <option value="40" selected>Mannheim, unheated: 40 kg/m² (1975)</option>
+                                <option value="15">Mannheim, heated hall: 15 kg/m² (1975)</option>
+                                <option value="custom">Other site</option>
+                            </select>
+                            <input type="number" id="snowCustom" value="40" min="5" max="400" step="5" style="display:none;">
+                            <span class="val" id="snowUnit" style="display:none;">kg/m²</span>
+                        </div>
+                    </div>
+                    <details class="note"><summary>How the loads are combined</summary>
+                        No imposed load is added. Stresses are checked for 1.35 G, and with snow also for
+                        1.35 G + 1.5 S over the whole plan and over half of it (a shell suffers most from load on
+                        one side). This study uses 2.5 as a comparison target for verified equilibrium under unfactored loads,
+                        motivated by the historical study; it is not a complete modern design safety check.
+                        Wind is not included (Mannheim was tested in a wind tunnel).
+                    </details>
 
             </div>
-            <div id="status-bar">GENERATING NET...</div>
-        </div>
-
-        <hr class="dashed">
-
-        <div class="controls-grid">
-
             <div class="column">
-                <h3>1. Net Generation</h3>
-                <div class="control-row">
-                    <label>Mesh Spacing (lath grid) <span id="val-spacing" class="val">1.80 m</span></label>
-                    <input type="range" id="meshSpacing" min="0.5" max="3.5" step="0.1" value="1.8">
-                </div>
-                <div class="info-box">
-                    A square grid is generated over the boundary and trimmed at every edge crossing, exactly
-                    as Atelier Warmbronn's chain-net grid was fixed only at its boundary connections. Interior
-                    nodes remain free &mdash; the lattice is a one-degree-of-freedom mechanism until curved
-                    (Fig. 8, Happold &amp; Liddell 1975).
-                </div>
-                <div class="info-box">
-                    <b>Note:</b> this is a pedagogical approximation, not an engineering calculation. The
-                    real Mannheim analysis used non-linear Newton&ndash;Raphson buckling runs (Happold &amp;
-                    Liddell 1975) and Linkwitz's force-density method for the exact geometry &mdash; both far
-                    beyond what a browser demo can reproduce.
-                </div>
-            </div>
+                <h2>Check: structure</h2>
 
+                    <div class="k">Structure (karamba-lite)</div>
+                    <div class="btn-group" style="margin-bottom:10px;">
+                        <button class="action-btn" id="btnAnalyze">Analyze</button>
+                    </div>
+                    <div class="control-row">
+                        <label>Show deformation &times; <span id="val-defScale" class="val">auto</span></label>
+                        <input type="range" id="defScale" min="0" max="200" step="1" value="0">
+                    </div>
+                    <div class="stats">
+                        <div class="stat-line"><span class="lbl">Design in use</span><span class="num" id="an-design">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max deflection (G + S)</span><span class="num" id="an-defl">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max compression per lath (ULS)</span><span class="num" id="an-nmax">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max moment per lath line (ULS)</span><span class="num" id="an-mmax">—</span></div>
+                        <div id="an-util"></div>
+                        <div class="stat-line"><span class="lbl">Deflection limit (span / 250)</span><span class="num" id="an-deflLim">—</span></div>
+                    </div>
+                    <details class="note"><summary>What Analyze does</summary>
+                        First-order analysis (Karamba's <i>Analyze</i>) for every load combination: 1.35 G, and with snow
+                        1.35 G + 1.5 S over the whole plan and over half of it. It reports the worst lath force and
+                        moment, the utilisation of the laths and edge members, and the deflection under G + S against
+                        span / 250. Buckling of the shell is not checked here, and in a gridshell buckling often
+                        governs: Mannheim was designed against a collapse load (Happold &amp; Liddell 1975).
+                        A simplified browser calculation, not Karamba3D.
+                    </details>
+
+            </div>
             <div class="column">
-                <h3>2. Gravity Relaxation</h3>
-                <div class="control-row">
-                    <label>Sag Strength (self-weight) <span id="val-sag" class="val">1.60</span></label>
-                    <input type="range" id="sagStrength" min="0.2" max="3.0" step="0.1" value="1.6">
-                </div>
-                <div class="checkbox-row">
-                    <input type="checkbox" id="invertToggle" checked>
-                    <label style="margin:0;" for="invertToggle">Show as Inverted Dome (compression form)</label>
-                </div>
-                <div class="checkbox-row">
-                    <input type="checkbox" id="freeBoundaryToggle">
-                    <label style="margin:0;" for="freeBoundaryToggle">Free-Hanging Boundary</label>
-                </div>
-                <div class="control-row" id="supportSpacingRow" style="display:none;">
-                    <label>Support Spacing <span id="val-supportSpacing" class="val">5 nodes</span></label>
-                    <input type="range" id="supportSpacing" min="2" max="10" step="1" value="5">
-                </div>
-                <div class="btn-group" style="margin-top: 8px;">
-                    <button class="action-btn" id="btnReRelax">Re-Relax from Flat</button>
-                </div>
-                <div class="info-box">
-                    By default the boundary is a fixed ring (matches a flat support system). With
-                    <b>Free-Hanging Boundary</b> on, only every Nth boundary node stays a hard support
-                    &mdash; the rest sag under gravity too, closer to how Otto adjusted boundary heights
-                    point-by-point against a support system to find the optimum shape (Fig 13&ndash;14,
-                    Happold &amp; Liddell 1975) instead of holding the whole edge in one flat plane.
-                </div>
-            </div>
+                <h2>Design</h2>
 
-            <div class="column">
-                <h3>3. Structural Feasibility (indicative)</h3>
-                <div class="checkbox-row">
-                    <input type="checkbox" id="showShear" checked>
-                    <label style="margin:0;" for="showShear">Shear distortion at nodes</label>
-                </div>
-                <p style="font-size: 8px; color: #999; margin: 0 0 10px 0;">
-                    <span class="legend-dot" style="background:#4caf50;"></span>Fine &nbsp;
-                    <span class="legend-dot" style="background:#f2c40f;"></span>Marginal &nbsp;
-                    <span class="legend-dot" style="background:#d32f2f;"></span>Needs diagonal tie
-                </p>
-                <div class="checkbox-row">
-                    <input type="checkbox" id="showCurvature" checked>
-                    <label style="margin:0;" for="showCurvature">Lath bend radius</label>
-                </div>
-                <p style="font-size: 8px; color: #999; margin: 0 0 10px 0;">
-                    <span class="legend-line" style="background:#4caf50;"></span>Fine &nbsp;
-                    <span class="legend-line" style="background:#f2c40f;"></span>Marginal &nbsp;
-                    <span class="legend-line" style="background:#d32f2f;"></span>Needs lamination
-                </p>
-                <div class="control-row" style="margin-bottom: 6px;">
-                    <label style="margin-bottom: 2px;">Lath Thickness in Use</label>
-                    <div class="val" id="val-lathThickness" style="font-size: 9.5px; color: #111; font-weight: bold;">— mm (auto)</div>
-                </div>
-                <p style="font-size: 8px; color: #bbb; margin: 0 0 8px 0; text-transform: uppercase;">
-                    Auto: thickest standard size that still clears this shape's tightest curve (calibrated from Liddell 2015, §3.3).
-                </p>
-                <div class="checkbox-row">
-                    <input type="checkbox" id="lathOverrideToggle">
-                    <label style="margin:0;" for="lathOverrideToggle">Override manually</label>
-                </div>
-                <div class="control-row" id="lathOverrideRow" style="display:none;">
-                    <label>Manual Thickness <span id="val-lathManual" class="val">50 mm</span></label>
-                    <input type="range" id="lathManual" min="25" max="80" step="5" value="50">
-                </div>
-                <div class="info-box stats" id="statsBox">
-                    <div class="stat-line"><span class="lbl">Nodes / Laths</span><span class="num" id="stat-count">—</span></div>
-                    <div class="stat-line"><span class="lbl">Rise / Span</span><span class="num" id="stat-ratio">—</span></div>
-                    <div class="stat-line"><span class="lbl">Max shear deviation</span><span class="num" id="stat-shear">—</span></div>
-                    <div class="stat-line"><span class="lbl">Min bend radius</span><span class="num" id="stat-radius">—</span></div>
-                </div>
-                <div class="recommend-box" id="recommendBox">—</div>
-            </div>
+                    <div class="btn-group" style="margin-bottom:10px;">
+                        <button class="action-btn" id="btnPropose">Propose a design</button>
+                    </div>
+                    <table class="ladder" id="ladderTable">
+                        <thead><tr><th>Step</th><th>Shell</th><th>Laths &amp; members</th><th>Deflection</th><th></th></tr></thead>
+                        <tbody id="ladderBody"><tr><td colspan="5" class="val">Not run yet. The shell starts as built at Mannheim (step 4).</td></tr></tbody>
+                    </table>
+                    <details class="note"><summary>How the design is chosen</summary>
+                        The shell is stiffened in the order it was at Mannheim and stops at the first step that
+                        passes Analyze: every lath and edge member within its strength for all load combinations,
+                        and a deflection under G + S within span / 250. The steps: (1) one layer each way, as Essen;
+                        (2) two layers, their bolts giving the composite action measured in 1974 (joint shear
+                        stiffness at 40 % of the design value, &gamma; 0.5 &rarr; 0.29); (3) shear blocks where the lath
+                        forces are highest (&gamma; = 1 there); (4) diagonal cable ties, 2 &times; 6 mm through every
+                        sixth node; (5) a third layer (the 2018 renovation plan). At every step the edge members are
+                        sized first. The laths stay 50 &times; 50 mm, a size set by how far they bend. &gamma; = 0.5 before
+                        the 40 % reduction is an assumption: the papers give the ratio, not the value.
+                        Not checked: buckling of the shell as a whole.
+                    </details>
 
+
+                    <div class="k">Edge members (sized from the forces)</div>
+                    <div class="stats" id="sectionsBox">
+                        <div class="stat-line"><span class="lbl">Not sized yet &mdash; the starting sizes are assumed</span><span class="num"></span></div>
+                    </div>
+                    <details class="note"><summary>How the members are sized</summary>
+                        Each group takes the smallest section in its list that passes every load combination:
+                        columns CHS 139.7&ndash;508 (combined stress and flexural buckling as vertical cantilevers,
+                        EC3 curve b), edge beams glulam 2 &times; 60 &times; 400&ndash;1200 and, when no glulam passes, steel
+                        CHS (as Stahl proposed in 2018), arches glulam, cables spiral strand. The analysis is repeated
+                        until the sizes settle, because a stiffer member draws more force. Indicative stress checks
+                        (glulam 14.8 MPa, S355, strand 0.45 f<sub>u</sub>), not a full Eurocode design.
+                    </details>
+                    <details class="note"><summary>Benchmarks (1975)</summary>
+                        Collapse load incl. own weight (Happold &amp; Liddell 1975, Table 3): Multihalle single layer
+                        3.8 &middot; double 100 &middot; double + ties 160 kg/m²; restaurant 5.8 &middot; 150 &middot; 240 kg/m².
+                        Computer run 105 kg/m². Load test: 40 kg/m² on 500 m² off centre, 79 mm measured against 70 mm
+                        (Liddell 2015) or 80 mm (Bauwelt 2017) computed. Maximum lath force about 750 kgf. Compare the
+                        trend, not the number: the traced geometry and its edge heights are not Mannheim's own.
+                    </details>
+
+            </div>
         </div>
     </div>
 
@@ -327,12 +449,14 @@
         import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
         import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
         import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-28r';
 
         /* ============================================================
            STATE
         ============================================================ */
         let boundaryPts = [];
-        let selectedIdx = -1;
+        let selectedIdx = -1;   // selected outline node (height)
+        let selectedEdge = -1;  // selected outline edge k -> k+1 (type, rise)
         let dragIdx = null;
 
         let editorMode = 'edit';   // 'edit' | 'sketch'
@@ -342,7 +466,6 @@
         let sketchSmoothness = 3;   // 1-5, see filletFractionForLevel()
         let lastSketchPx = null;
         let sketchSmoothDebounce = null;
-        let supportSpacingDebounce = null;
         const SKETCH_MIN_PX_STEP = 4;
         const SKETCH_CLOSE_PX = 20;
         const SKETCH_RESAMPLE_STEP = 0.5;  // meters, uniform arc-length pre-resample
@@ -352,12 +475,21 @@
         const SKETCH_MAX_NODES = 90;
         const SKETCH_SMOOTHNESS_MAX = 10;  // full range — was capped at 5, now exposed in full for finer per-click control
 
-        let meshSpacing = 1.8;
-        let sagStrength = 1.6;
+        let meshSpacing = 2.0;     // plan spacing of the model grid [m]
+        let lathSlack = 0.05;      // model member rest length = plan length x (1 + slack)
+        let selfWeight = 0.20;     // [kN/m2] of shell surface
         let curvatureThreshold = 10.0;  // derived each analysis pass, see Lath Thickness section
-        let inverted = true;
+        let inverted = false;
+        let viewStage = 'flat'; // 'flat' | 'hanging' | 'built'
+        let stageTween = null;
         let showShear = true;
-        let showCurvature = true;
+        let lathColourMode = 'force'; // 'force' | 'radius' | 'plain'
+        const REAL_LATH_SPACING = 0.5; // Mannheim: 50 x 50 mm laths at 0.5 m
+
+        // Boundary: boundaryPts[k] = { x, z, h, t, r } — h = edge height at the node
+        // [m above ground, as built], t = type of the edge from node k to k+1,
+        // r = that edge's arch rise (arch) or sag (cable) [m].
+        const EDGE_TYPES = ['wall', 'beam', 'cable', 'arch'];
 
         // --- Lath thickness -> minimum bend radius (item 1) ---
         // Calibrated from Happold & Liddell / Liddell 2015: a 50mm lath bends
@@ -365,30 +497,30 @@
         // Using the midpoint (11m) as the calibration point for allowable strain.
         const LATH_STRAIN_ALLOW = 0.05 / (2 * 11);
         const STANDARD_LATH_THICKNESSES_MM = [25, 30, 40, 50, 60, 80];
-        let manualLathOverride = false;
         let lathThicknessMM = 50;
 
-        // --- Boundary support pattern (item 2) ---
-        let freeHangingBoundary = false;
-        let supportSpacing = 5; // every Nth boundary node (by perimeter order) stays a hard support
-        const BOUNDARY_FREE_INV_MASS = 0.35; // free-hanging boundary moves less readily than interior net (stiffer beam/arch, not a bare chain)
-
-        let netNodes = [];      // {x,y,z, x0,y0,z0, px,py,pz, invMass, gi, gj}
-        let netMembers = [];    // {a,b,rest}
+        // Net: y is the HANGING-model height (negative, below the edges); the
+        // built shell is the same net inverted, y_built = -y.
+        let netNodes = [];      // {x,y,z, x0,y0,z0, fixed, gi, gj, bk, bt}
+        let netMembers = [];    // {a,b,rest,kind}  kind: 'lath' | edge type (chain along the boundary)
+        let netColumns = [];    // {node, h} steel columns under beam / cable edges
+        let columnNodes = new Set();
+        // cable edges: offsets of their nodes (built frame) once the cable is shaped by the
+        // forces it carries, and the tension of each span
+        let cableOffsets = new Map(), cableSpans = [], cablePass = 0, cableNodeT = new Map();
+        const COLUMN_SPACING = 6; // m, assumed
         let gridMap = new Map();       // "gi_gj" -> nodeIdx
         let memberKeyMap = new Map();  // "a_b" (a<b) -> memberIdx
         let nodeColors = [];
         let memberColors = [];
 
+        // Form-finding state (dynamic relaxation, karamba-lite.js)
+        let dr = null, drModel = null, drLaths = [];
         let simRunning = false;
-        let simStep = 0;
-        const MAX_SIM_STEPS = 900;
-        const STEPS_PER_FRAME = 3;
-        const CONSTRAINT_ITERS = 11;
-        const GRAVITY_BASE = 0.0022;
-        const GRAVITY_REFERENCE_SPAN = 18; // meters — the span the base gravity constant was tuned at
-        const DAMPING = 0.985;
-        const SETTLE_EPS = 0.00004; // average per-node movement below which the net is considered converged
+        const drIterPerFrame = 50; // relaxation steps between clock checks
+        const DR_MAX_ITER = 100000;
+        const FF_STRAIN = 0.001;   // target lath strain while hanging: stiff enough to act as chain links
+        let lastForces = null;     // results of the last converged form-finding
 
         /* ============================================================
            COLORS
@@ -396,10 +528,18 @@
         const COLOR_GREEN  = { r: 0.30, g: 0.69, b: 0.31 };
         const COLOR_YELLOW = { r: 0.95, g: 0.77, b: 0.06 };
         const COLOR_RED    = { r: 0.83, g: 0.18, b: 0.18 };
-        const COLOR_GRAY   = { r: 0.38, g: 0.38, b: 0.38 };
+        const COLOR_GRAY   = { r: 0.12, g: 0.12, b: 0.12 };
         const COLOR_FIXED  = { r: 0.07, g: 0.07, b: 0.07 };
         const COLOR_FREE   = { r: 0.00, g: 0.48, b: 1.00 };
-        const COLOR_BOUNDARY_FREE = { r: 0.62, g: 0.47, b: 0.24 };
+        const COLOR_FORCE_LOW  = { r: 0.30, g: 0.43, b: 0.56 };
+        const COLOR_FORCE_HIGH = { r: 0.04, g: 0.18, b: 0.30 };
+        const COLOR_SLACK = { r: 0.88, g: 0.48, b: 0.12 }; // a slack link in the chain model: carries nothing
+        const EDGE_COLORS = {
+            wall:  { r: 0.07, g: 0.07, b: 0.07 },
+            beam:  { r: 0.55, g: 0.43, b: 0.29 },
+            cable: { r: 0.25, g: 0.25, b: 0.25 },
+            arch:  { r: 0.55, g: 0.43, b: 0.29 }
+        };
 
         function lerpColor(a, b, t) {
             t = Math.max(0, Math.min(1, t));
@@ -438,7 +578,7 @@
             const t = ((p3.x - p1.x) * d2z - (p3.z - p1.z) * d2x) / denom;
             const u = ((p3.x - p1.x) * d1z - (p3.z - p1.z) * d1x) / denom;
             if (t < 0 || t > 1 || u < 0 || u > 1) return null;
-            return { x: p1.x + t * d1x, z: p1.z + t * d1z };
+            return { x: p1.x + t * d1x, z: p1.z + t * d1z, t, u };
         }
 
         function dist3(a, b) { return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z); }
@@ -460,8 +600,23 @@
         /* ============================================================
            PRESET BOUNDARY SHAPES
         ============================================================ */
+        // give plain {x,z} outlines the boundary attributes (height, edge type, rise)
+        function withEdges(pts, t = 'wall', h = 0) {
+            return pts.map(p => ({ x: p.x, z: p.z, h: p.h ?? h, t: p.t ?? t, r: p.r ?? 0 }));
+        }
+
+        // Edge height [m, as built] at arc position t (0..1) along edge k
+        function edgeHeightAt(k, t) {
+            const n = boundaryPts.length;
+            const A = boundaryPts[k], B = boundaryPts[(k + 1) % n];
+            let h = A.h * (1 - t) + B.h * t;
+            if (A.t === 'arch') h += 4 * A.r * t * (1 - t);   // arch rises over its chord
+            if (A.t === 'cable' && !cableOffsets.size) h -= 4 * A.r * t * (1 - t);  // first guess: sags straight down
+            return Math.max(0, h);
+        }
+
         function presetRectangle() {
-            return [{ x: -10, z: -7 }, { x: 10, z: -7 }, { x: 10, z: 7 }, { x: -10, z: 7 }];
+            return withEdges([{ x: -10, z: -7 }, { x: 10, z: -7 }, { x: 10, z: 7 }, { x: -10, z: 7 }]);
         }
         function presetEssen() {
             const pts = [], n = 16, p = 4, R = 7.5; // real Essen 1962 trial dome: 15 x 15m
@@ -473,8 +628,51 @@
                     z: R * Math.sign(s) * Math.pow(Math.abs(s), 2 / p)
                 });
             }
+            return withEdges(pts);
+        }
+        // Multihalle + restaurant, traced by eye from the Linkwitz / IAGB
+        // "Übersichtsplan" of April 1974 (1091 x 800 px image, 0.1545 m/px, which
+        // gives the published 160 x 115 m). Edge types after Fig 54 (Happold &
+        // Liddell 1975): concrete walls, arches A-G at the openings, laminated
+        // beams on columns round the Biergarten / link / south side, cable on the
+        // restaurant's river side. HEIGHTS ARE ASSUMED (no source gives them):
+        // walls 0.5 m, beams on columns 3.5 m, cable heads 3.0 m, arch rises 3-6 m.
+        // The internal valley beam and the link's two arches (H, J) are left out.
+        function presetMannheim() {
+            const W = 'wall', B = 'beam', C = 'cable', A = 'arch';
+            const px = [
+                [25, 497, W], [100, 487, W], [170, 478, W], [210, 455, W], [175, 420, W], [110, 390, W],
+                [68, 340, W], [55, 270, W], [62, 200, W], [95, 130, W], [150, 75, W], [225, 50, W],
+                [295, 42, A, 4],                                   // A
+                [338, 24, W], [400, 45, W], [455, 80, W], [500, 125, W], [520, 185, W], [512, 250, W],
+                [495, 298, B], [450, 330, B], [405, 352, B], [395, 390, B], [408, 425, B], [440, 443, B],
+                [600, 443, B], [640, 420, B], [652, 360, B], [650, 290, B],
+                [648, 230, A, 6],                                  // F
+                [722, 228, B], [728, 290, B],
+                [738, 350, A, 3],                                  // B
+                [770, 388, W], [850, 398, W], [950, 394, W],
+                [1052, 395, A, 6],                                 // G
+                [1056, 470, W], [950, 468, W], [870, 467, W],
+                [825, 478, A, 3],                                  // C
+                [845, 520, W], [868, 570, W],
+                [865, 625, A, 3],                                  // D
+                [845, 662, W], [825, 712, W], [790, 750, W],
+                [720, 766, C, 0.4], [650, 748, C, 0.4], [600, 712, C, 0.4], [568, 660, C, 0.4], [568, 600, C, 0.4],
+                [578, 555, B], [548, 527, B], [410, 528, B], [385, 585, B], [320, 592, B], [240, 588, B],
+                [160, 582, B], [90, 578, B],
+                [22, 576, A, 6]                                    // E
+            ];
+            const S = 0.1545;
+            const pts = px.map(([u, v, t, r]) => ({ x: (u - 540) * S, z: (v - 400) * S, t, r: r || 0, h: 0 }));
+            const n = pts.length;
+            pts.forEach((p, k) => {
+                const prev = pts[(k - 1 + n) % n].t, next = p.t;
+                const low = [prev, next].some(t => t === 'wall' || t === 'arch');
+                p.h = low ? 0.5 : ([prev, next].includes('cable') ? 3.0 : 3.5);
+            });
             return pts;
         }
+
         function presetBlob() {
             // Approximation of the Multihalle dome's plan silhouette from
             // Fig 18 "Plan plot of 1.5m net" (Happold & Liddell 1975) — an
@@ -489,12 +687,12 @@
             // shape-inspired approximation built from what was clearly
             // read off the page (overall proportions, the rounded main
             // bulge, the asymmetric taper) rather than exact coordinates.
-            return [
+            return withEdges([
                 { x: 30, z: 5 }, { x: 32, z: 15 }, { x: 28, z: 26 }, { x: 18, z: 34 },
                 { x: 4, z: 37 }, { x: -10, z: 33 }, { x: -20, z: 25 }, { x: -26, z: 15 },
                 { x: -27, z: 4 }, { x: -24, z: -6 }, { x: -18, z: -13 }, { x: -9, z: -17 },
                 { x: 2, z: -18 }, { x: 13, z: -16 }, { x: 22, z: -11 }, { x: 28, z: -3 }
-            ];
+            ]);
         }
 
         /* ============================================================
@@ -683,6 +881,93 @@
             return pts;
         }
 
+        /* ---- Tidy an outline for structure ----
+           (a) round every corner that turns more than 30 deg (convex or re-entrant): the lath
+               forces gather at a sharp corner, as the Mannheim model shows. Radius: 10 % of the
+               plan's short side, at least 3 m (a working choice, not from a source).
+           (b) space the edge nodes about one column bay (COLUMN_SPACING) apart along each run
+               of one edge type, so the nodes are where the columns go. Arches stay one span. */
+        function validOutline(pts) {
+            if (pts.length < 3 || pts.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.z))) return false;
+            const cross = (a, b, c) => (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
+            const on = (a, b, p) => Math.abs(cross(a, b, p)) < 1e-8 &&
+                p.x >= Math.min(a.x, b.x) - 1e-8 && p.x <= Math.max(a.x, b.x) + 1e-8 &&
+                p.z >= Math.min(a.z, b.z) - 1e-8 && p.z <= Math.max(a.z, b.z) + 1e-8;
+            let area = 0;
+            for (let i = 0; i < pts.length; i++) {
+                const a = pts[i], b = pts[(i + 1) % pts.length];
+                if (Math.hypot(a.x - b.x, a.z - b.z) < 1e-6) return false;
+                area += a.x * b.z - a.z * b.x;
+                for (let j = i + 1; j < pts.length; j++) {
+                    if (j === i + 1 || (i === 0 && j === pts.length - 1)) continue;
+                    const c = pts[j], d = pts[(j + 1) % pts.length];
+                    if ((cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0) ||
+                        on(a, b, c) || on(a, b, d) || on(c, d, a) || on(c, d, b)) return false;
+                }
+            }
+            return Math.abs(area) > 1e-6;
+        }
+        const outlineArea = pts => pts.reduce((a, p, i) => {
+            const q = pts[(i + 1) % pts.length]; return a + p.x * q.z - p.z * q.x;
+        }, 0) / 2;
+        let tidyUndo = null;
+
+        function tidyOutline(pts) {
+            const n0 = pts.length;
+            if (!validOutline(pts)) return pts;
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            pts.forEach(p => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
+            const R = Math.max(3, 0.1 * Math.min(maxX - minX, maxZ - minZ));
+            const TURN = 30 * Math.PI / 180;
+            // (a) fillets
+            let out = [];
+            for (let k = 0; k < n0; k++) {
+                const P = pts[(k - 1 + n0) % n0], C = pts[k], N = pts[(k + 1) % n0];
+                const ax = C.x - P.x, az = C.z - P.z, bx = N.x - C.x, bz = N.z - C.z;
+                const la = Math.hypot(ax, az), lb = Math.hypot(bx, bz);
+                const turn = Math.acos(Math.max(-1, Math.min(1, (ax * bx + az * bz) / (la * lb || 1))));
+                const archHere = P.t === 'arch' || C.t === 'arch' || P.t !== C.t || P.r !== C.r || P.h !== C.h || C.h !== N.h;   // keep arch springings sharp
+                if (turn < TURN || archHere || la < 1e-6 || lb < 1e-6) { out.push(C); continue; }
+                const t = Math.min(R * Math.tan(turn / 2), 0.45 * la, 0.45 * lb);   // tangent length
+                const T1 = { x: C.x - ax / la * t, z: C.z - az / la * t }, T2 = { x: C.x + bx / lb * t, z: C.z + bz / lb * t };
+                const steps = Math.max(2, Math.ceil(turn / (Math.PI / 12)));
+                for (let i = 0; i <= steps; i++) { // quadratic Bezier through the corner: a close stand-in for the arc
+                    const u = i / steps, w0 = (1 - u) * (1 - u), w1 = 2 * u * (1 - u), w2 = u * u;
+                    out.push({ x: w0 * T1.x + w1 * C.x + w2 * T2.x, z: w0 * T1.z + w1 * C.z + w2 * T2.z,
+                        h: C.h, t: i === steps ? C.t : P.t, r: C.r });
+                }
+            }
+            // (b) resample each run of one edge type at about the column spacing
+            const n1 = out.length;
+            let start = out.findIndex((p, k) => out[(k - 1 + n1) % n1].t !== p.t || out[(k - 1 + n1) % n1].r !== p.r || out[(k - 1 + n1) % n1].h !== p.h);
+            if (start < 0) start = 0;
+            const res = [];
+            for (let c = 0; c < n1;) {
+                const i0 = (start + c) % n1, t = out[i0].t;
+                const run = [out[i0]];
+                let j = 1;
+                while (c + j < n1 && out[(start + c + j) % n1].t === t && out[(start + c + j) % n1].r === out[i0].r && out[(start + c + j) % n1].h === out[i0].h) { run.push(out[(start + c + j) % n1]); j++; }
+                const end = out[(start + c + j) % n1];  // first node of the next run closes this one
+                const poly = [...run, end];
+                if (t === 'arch') res.push(...run);
+                else {
+                    const seg = [0];
+                    for (let q = 1; q < poly.length; q++) seg.push(seg[q - 1] + Math.hypot(poly[q].x - poly[q - 1].x, poly[q].z - poly[q - 1].z));
+                    const L = seg[seg.length - 1], m = Math.max(1, Math.round(L / COLUMN_SPACING));
+                    for (let q = 0; q < m; q++) {
+                        const d = L * q / m;
+                        let s2 = 1; while (s2 < seg.length - 1 && seg[s2] < d) s2++;
+                        const u = (d - seg[s2 - 1]) / ((seg[s2] - seg[s2 - 1]) || 1), A = poly[s2 - 1], B = poly[s2];
+                        res.push({ x: A.x + (B.x - A.x) * u, z: A.z + (B.z - A.z) * u, h: A.h + (B.h - A.h) * u, t, r: run[0].r });
+                    }
+                }
+                c += j;
+            }
+            const areaRatio = outlineArea(res) / outlineArea(pts);
+            // Reject crossings, reversed orientation, or a large footprint change.
+            return res.length >= 4 && validOutline(res) && areaRatio >= 0.8 && areaRatio <= 1.2 ? res : pts;
+        }
+
         function runSketchPipeline() {
             // Re-derives boundaryPts from the cached raw stroke every time,
             // so the Sketch Smoothness slider can be re-applied without re-drawing.
@@ -727,7 +1012,7 @@
 
             finalPts = capNodeCount(finalPts, SKETCH_MAX_NODES);
             if (finalPts.length < 4) return false; // degenerate sketch, keep previous boundary
-            boundaryPts = finalPts;
+            boundaryPts = tidyOutline(withEdges(finalPts)); // corners rounded, nodes a column bay apart
             return true;
         }
 
@@ -743,7 +1028,7 @@
         }
 
         /* ============================================================
-           NET GENERATION (clipped square grid, boundary-fixed)
+           NET GENERATION (clipped square grid + boundary chain)
         ============================================================ */
         function buildNet(poly, spacing) {
             let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
@@ -756,11 +1041,8 @@
             // Effective spacing: if the requested spacing would need more
             // cells than the budget allows, coarsen it just enough to fit —
             // the grid always covers the FULL boundary extent; only the
-            // resolution backs off. (Previously nx/nz were capped outright,
-            // which truncated the covered AREA instead — on a large preset
-            // with small Mesh Spacing the net ended up visibly smaller than
-            // the boundary shown in the 2D editor.)
-            const MAX_GRID_CELLS = 1800;
+            // resolution backs off.
+            const MAX_GRID_CELLS = 4000;
             let effSpacing = spacing;
             const rawNx = width / effSpacing, rawNz = height / effSpacing;
             if (rawNx * rawNz > MAX_GRID_CELLS) {
@@ -769,8 +1051,10 @@
 
             const nx = Math.max(2, Math.ceil(width / effSpacing) + 3);
             const nz = Math.max(2, Math.ceil(height / effSpacing) + 3);
-            const originX = minX - effSpacing;
-            const originZ = minZ - effSpacing;
+            // odd fractions of a cell, so grid lines never run along a straight edge
+            // (a row of nodes exactly on the outline would be neither held nor inside)
+            const originX = minX - effSpacing * 0.691;
+            const originZ = minZ - effSpacing * 0.573;
 
             const grid = [];
             for (let j = 0; j <= nz; j++) {
@@ -786,51 +1070,61 @@
             const nodes = [];
             const members = [];
 
+            function newNode(x, z, gi, gj, bk, bt) {
+                nodes.push({ x, y: 0, z, x0: x, y0: 0, z0: z, fixed: bk !== null, gi, gj, bk, bt });
+                return nodes.length - 1;
+            }
             function getOrCreateGridNode(i, j) {
                 const cell = grid[j][i];
                 if (!cell.inside) return -1;
-                if (cell.nodeIndex === -1) {
-                    cell.nodeIndex = nodes.length;
-                    nodes.push({
-                        x: cell.x, y: 0, z: cell.z,
-                        x0: cell.x, y0: 0, z0: cell.z,
-                        px: cell.x, py: 0, pz: cell.z,
-                        invMass: 1, gi: i, gj: j
-                    });
-                }
+                if (cell.nodeIndex === -1) cell.nodeIndex = newNode(cell.x, cell.z, i, j, null, 0);
                 return cell.nodeIndex;
             }
 
-            function addBoundaryNode(pt) {
-                const idx = nodes.length;
-                nodes.push({
-                    x: pt.x, y: 0, z: pt.z,
-                    x0: pt.x, y0: 0, z0: pt.z,
-                    px: pt.x, py: 0, pz: pt.z,
-                    invMass: 0, gi: null, gj: null // support by default; applyBoundarySupportPattern() may relax this
-                });
-                return idx;
+            // a node at every outline vertex: column heads, arch springings,
+            // the ends of each edge type
+            const vertexNode = poly.map((p, k) => newNode(p.x, p.z, null, null, k, 0));
+
+            function addBoundaryNode(hit) {
+                if (hit.u < 1e-6) return vertexNode[hit.k];
+                if (hit.u > 1 - 1e-6) return vertexNode[(hit.k + 1) % poly.length];
+                return newNode(hit.x, hit.z, null, null, hit.k, hit.u);
             }
 
             function findBoundaryCrossing(a, b) {
-                let best = null, bestDist = Infinity;
+                let best = null, bestT = Infinity;
                 for (let k = 0; k < poly.length; k++) {
-                    const p3 = poly[k], p4 = poly[(k + 1) % poly.length];
-                    const hit = segIntersect(a, b, p3, p4);
-                    if (hit) {
-                        const d = Math.hypot(hit.x - a.x, hit.z - a.z);
-                        if (d < bestDist) { bestDist = d; best = hit; }
-                    }
+                    const hit = segIntersect(a, b, poly[k], poly[(k + 1) % poly.length]);
+                    if (hit && hit.t < bestT) { bestT = hit.t; best = { x: hit.x, z: hit.z, k, u: hit.u }; }
                 }
                 return best;
             }
 
-            function addMember(a, b) {
+            // every crossing of segment a-b with the outline, nearest to a first
+            function allCrossings(a, b) {
+                const hits = [];
+                for (let k = 0; k < poly.length; k++) {
+                    const hit = segIntersect(a, b, poly[k], poly[(k + 1) % poly.length]);
+                    if (hit) hits.push({ x: hit.x, z: hit.z, k, u: hit.u, t: hit.t });
+                }
+                return hits.sort((p, q) => p.t - q.t);
+            }
+            // a grid segment between two inside nodes that leaves the outline
+            // (across a concave bay such as the Biergarten) is cut at both crossings
+            function addInsideSegment(ia, ja, ib, jb) {
+                const A = grid[ja][ia], B = grid[jb][ib];
+                const hits = allCrossings(A, B);
+                if (hits.length < 2) { addMember(getOrCreateGridNode(ia, ja), getOrCreateGridNode(ib, jb), 'lath'); return; }
+                addMember(getOrCreateGridNode(ia, ja), addBoundaryNode(hits[0]), 'lath');
+                addMember(getOrCreateGridNode(ib, jb), addBoundaryNode(hits[hits.length - 1]), 'lath');
+            }
+
+            function addMember(a, b, kind) {
                 if (a < 0 || b < 0 || a === b) return;
                 const na = nodes[a], nb = nodes[b];
                 const rest = Math.hypot(na.x - nb.x, na.z - nb.z);
                 if (rest < 1e-6) return;
-                members.push({ a, b, rest });
+                members.push({ a, b, rest, kind });
             }
 
             const rows = grid.length, cols = grid[0].length;
@@ -840,11 +1134,11 @@
                 for (let i = 0; i < cols - 1; i++) {
                     const A = grid[j][i], B = grid[j][i + 1];
                     if (A.inside && B.inside) {
-                        addMember(getOrCreateGridNode(i, j), getOrCreateGridNode(i + 1, j));
+                        addInsideSegment(i, j, i + 1, j);
                     } else if (A.inside !== B.inside) {
                         const inPt = A.inside ? A : B, outPt = A.inside ? B : A;
                         const hit = findBoundaryCrossing(inPt, outPt);
-                        if (hit) addMember(getOrCreateGridNode(A.inside ? i : i + 1, j), addBoundaryNode(hit));
+                        if (hit) addMember(getOrCreateGridNode(A.inside ? i : i + 1, j), addBoundaryNode(hit), 'lath');
                     }
                 }
             }
@@ -853,13 +1147,23 @@
                 for (let i = 0; i < cols; i++) {
                     const A = grid[j][i], B = grid[j + 1][i];
                     if (A.inside && B.inside) {
-                        addMember(getOrCreateGridNode(i, j), getOrCreateGridNode(i, j + 1));
+                        addInsideSegment(i, j, i, j + 1);
                     } else if (A.inside !== B.inside) {
                         const inPt = A.inside ? A : B, outPt = A.inside ? B : A;
                         const hit = findBoundaryCrossing(inPt, outPt);
-                        if (hit) addMember(getOrCreateGridNode(i, A.inside ? j : j + 1), addBoundaryNode(hit));
+                        if (hit) addMember(getOrCreateGridNode(i, A.inside ? j : j + 1), addBoundaryNode(hit), 'lath');
                     }
                 }
+            }
+
+            // boundary chain: consecutive edge nodes around the outline, each
+            // piece taking the type of the edge it lies on
+            const bnd = [];
+            nodes.forEach((n, i) => { if (n.bk !== null) bnd.push(i); });
+            bnd.sort((i, j) => (nodes[i].bk + nodes[i].bt) - (nodes[j].bk + nodes[j].bt));
+            for (let q = 0; q < bnd.length; q++) {
+                const a = bnd[q], b = bnd[(q + 1) % bnd.length];
+                addMember(a, b, poly[nodes[a].bk].t);
             }
 
             // drop isolated nodes, remap indices
@@ -872,9 +1176,9 @@
             });
             const finalMembers = members
                 .filter(m => remap[m.a] >= 0 && remap[m.b] >= 0)
-                .map(m => ({ a: remap[m.a], b: remap[m.b], rest: m.rest }));
+                .map(m => ({ a: remap[m.a], b: remap[m.b], rest: m.rest, kind: m.kind }));
 
-            return { nodes: finalNodes, members: finalMembers };
+            return { nodes: finalNodes, members: finalMembers, spacing: effSpacing };
         }
 
         function buildLookups() {
@@ -889,98 +1193,646 @@
             });
         }
 
-        // Nearest arc-length position of pt along the closed boundary polygon
-        // — used to order boundary nodes around the perimeter regardless of
-        // the order they happened to be created in during grid clipping.
-        function boundaryArcLengthParam(pt, poly) {
-            const n = poly.length;
-            let cum = 0, bestDist = Infinity, bestArcPos = 0;
-            for (let i = 0; i < n; i++) {
-                const a = poly[i], b = poly[(i + 1) % n];
-                const dx = b.x - a.x, dz = b.z - a.z;
-                const len = Math.hypot(dx, dz);
-                if (len > 1e-9) {
-                    const t = Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.z - a.z) * dz) / (len * len)));
-                    const projX = a.x + t * dx, projZ = a.z + t * dz;
-                    const dist = Math.hypot(pt.x - projX, pt.z - projZ);
-                    if (dist < bestDist) { bestDist = dist; bestArcPos = cum + t * len; }
+        // Item A: every edge node is held at its height (as Otto's chain model
+        // was held on posts). In the hanging model the edge sits at y = -h, so
+        // the inverted (built) shell has its edge at +h.
+        function applyBoundaryHeights() {
+            netNodes.forEach((n, i) => {
+                if (n.bk === null) return;
+                const h = edgeHeightAt(n.bk, n.bt), off = cableOffsets.get(i);
+                n.x = n.x0 + (off ? off[0] : 0);
+                n.z = n.z0 + (off ? off[2] : 0);
+                n.y = n.y0 = -(h + (off ? off[1] : 0));
+                n.fixed = true;
+            });
+            // Item B: steel columns under beam / cable edges — at the outline nodes
+            // where two such edges meet, and in between at about COLUMN_SPACING
+            // (assumed; the Mannheim cable edge ran 5-10 m between columns)
+            const nb = boundaryPts.length, onCol = t => t === 'beam' || t === 'cable';
+            netColumns = [];
+            const add = (idx, h) => { if (h > 0.05) netColumns.push({ node: idx, h }); };
+            netNodes.forEach((n, idx) => {
+                if (n.bk === null || n.bt !== 0) return;
+                const k = n.bk, prev = boundaryPts[(k - 1 + nb) % nb].t, next = boundaryPts[k].t;
+                if (onCol(prev) && onCol(next)) add(idx, boundaryPts[k].h);
+            });
+            for (let k = 0; k < nb; k++) {
+                if (!onCol(boundaryPts[k].t)) continue;
+                const A = boundaryPts[k], B = boundaryPts[(k + 1) % nb];
+                const L = Math.hypot(B.x - A.x, B.z - A.z), count = Math.floor(L / COLUMN_SPACING);
+                if (count < 1) continue;
+                const onEdge = [];
+                netNodes.forEach((n, idx) => { if (n.bk === k && n.bt > 0) onEdge.push(idx); });
+                for (let c = 1; c <= count; c++) {
+                    const want = c / (count + 1);
+                    let best = -1, bd = Infinity;
+                    onEdge.forEach(idx => { const d = Math.abs(netNodes[idx].bt - want); if (d < bd) { bd = d; best = idx; } });
+                    if (best >= 0 && !netColumns.some(cl => cl.node === best)) add(best, edgeHeightAt(k, netNodes[best].bt));
                 }
-                cum += len;
             }
-            return bestArcPos;
+            columnNodes = new Set(netColumns.map(c => c.node));
         }
 
-        // Item 2: by default every boundary node is a hard support (matches
-        // the previous flat-fixed-edge behaviour). With Free-Hanging Boundary
-        // enabled, only every Nth node (by position around the perimeter,
-        // spacing set by supportSpacing) stays a hard support — the rest sag
-        // under gravity like the interior net, but with reduced inverse mass
-        // so they behave like a stiffer beam/arch rather than a bare chain.
-        // This mirrors Otto's actual process of adjusting boundary heights
-        // point-by-point against a support system (Fig 13-14) rather than
-        // holding the whole edge in one flat plane.
-        function applyBoundarySupportPattern() {
-            const boundaryNodeIdx = [];
-            netNodes.forEach((n, idx) => { if (n.gi === null) boundaryNodeIdx.push(idx); });
-
-            if (!freeHangingBoundary || boundaryPts.length < 3) {
-                boundaryNodeIdx.forEach(idx => { netNodes[idx].invMass = 0; });
-                return;
+        function polygonArea(poly) {
+            let a = 0;
+            for (let i = 0; i < poly.length; i++) {
+                const p = poly[i], q = poly[(i + 1) % poly.length];
+                a += p.x * q.z - q.x * p.z;
             }
-
-            boundaryNodeIdx.sort((ia, ib) => {
-                const pa = boundaryArcLengthParam(netNodes[ia], boundaryPts);
-                const pb = boundaryArcLengthParam(netNodes[ib], boundaryPts);
-                return pa - pb;
-            });
-            boundaryNodeIdx.forEach((idx, orderPos) => {
-                netNodes[idx].invMass = (orderPos % Math.max(2, supportSpacing) === 0) ? 0 : BOUNDARY_FREE_INV_MASS;
-            });
+            return Math.abs(a) / 2;
         }
 
         /* ============================================================
-           PHYSICS: verlet + distance-constraint relaxation
+           FORM-FINDING: the hanging model, by dynamic relaxation
         ============================================================ */
-        let gravityScale = 1; // set per-net in regenerateNetAndRelax so gravity scales with sketch size, not just a fixed constant
+        let netSpacing = 2.0; // effective plan spacing of the current net
 
-        function stepSimulation() {
-            const g = GRAVITY_BASE * sagStrength * gravityScale;
-            for (const n of netNodes) {
-                if (n.invMass === 0) continue;
-                const vx = (n.x - n.px) * DAMPING;
-                const vy = (n.y - n.py) * DAMPING;
-                const vz = (n.z - n.pz) * DAMPING;
-                const nx = n.x + vx;
-                const ny = n.y + vy - g * n.invMass;
-                const nz = n.z + vz;
-                n.px = n.x; n.py = n.y; n.pz = n.z;
-                n.x = nx; n.y = ny; n.z = nz;
-            }
-            for (let iter = 0; iter < CONSTRAINT_ITERS; iter++) {
-                for (const m of netMembers) {
-                    const A = netNodes[m.a], B = netNodes[m.b];
-                    const dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z;
-                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    if (dist < 1e-9) continue;
-                    const diff = (dist - m.rest) / dist;
-                    const wa = A.invMass, wb = B.invMass;
-                    const wsum = wa + wb;
-                    if (wsum === 0) continue;
-                    const cx = dx * diff / wsum, cy = dy * diff / wsum, cz = dz * diff / wsum;
-                    if (wa > 0) { A.x += cx * wa; A.y += cy * wa; A.z += cz * wa; }
-                    if (wb > 0) { B.x -= cx * wb; B.y -= cy * wb; B.z -= cz * wb; }
+        function cellWidth() { return netSpacing * (1 + lathSlack); } // lath spacing in the model, measured on the shell
+
+        function buildDRModel() {
+            const n = netNodes.length;
+            const X = new Float64Array(3 * n), P = new Float64Array(3 * n), fixed = new Uint8Array(n);
+            netNodes.forEach((nd, i) => {
+                X[3 * i] = nd.x; X[3 * i + 1] = nd.y; X[3 * i + 2] = nd.z;
+                fixed[i] = nd.fixed ? 1 : 0;
+            });
+            drLaths = [];
+            netMembers.forEach((m, i) => { if (m.kind === 'lath') drLaths.push(i); });
+            const m = drLaths.length;
+            const ma = new Int32Array(m), mb = new Int32Array(m), kind = new Uint8Array(m).fill(BAR);
+            const L0 = new Float64Array(m), EA = new Float64Array(m), T0 = new Float64Array(m);
+
+            // Stiffness of the chain links: an estimate of the lath force from a
+            // parabolic hang (T ~ qD^2/8f) divided by a small target strain, so the
+            // links barely stretch and the net hangs by changing shape.
+            const cw = cellWidth();
+            const D = Math.sqrt(Math.max(polygonArea(boundaryPts), 1));
+            const f = D * Math.sqrt(3 * Math.max(lathSlack, 0.005) / 8);
+            const Test = selfWeight * cw * D * D / (8 * f);
+            const EAff = Test / FF_STRAIN;
+
+            drLaths.forEach((mi, e) => {
+                const mem = netMembers[mi];
+                ma[e] = mem.a; mb[e] = mem.b;
+                L0[e] = mem.rest * (1 + lathSlack);
+                // Links to the edge are springs of constant force: Otto tied each lath line
+                // to the edge through a spring, adjusted "to achieve a reasonably uniform
+                // tension in the grid" (Liddell 2015); on site the laths were cut to length
+                // and bolted to the edge boards after lifting. So these links set the force,
+                // not the length, and take up the misfit at corners.
+                const toEdge = netNodes[mem.a].fixed || netNodes[mem.b].fixed;
+                EA[e] = EAff;
+                if (toEdge) { kind[e] = CABLE; T0[e] = Test; } // the tuned spring: every lath line pulled with the same force
+                // each lath carries the shell surface either side of it, half to each end
+                const w = selfWeight * L0[e] * cw / 4;
+                P[3 * mem.a + 1] -= w; P[3 * mem.b + 1] -= w;
+            });
+            for (let i = 0; i < n; i++) if (fixed[i]) P[3 * i + 1] = 0; // loads on held nodes go straight to the support
+            drModel = { X, fixed, P, ma, mb, kind, L0, EA, T0, tensionOnly: true }; // chain links go slack
+            dr = createDR(drModel);
+            drModel.maxNodeLoad = selfWeight * cw * cw;
+        }
+
+        function syncNodesFromDR() {
+            const X = drModel.X;
+            netNodes.forEach((nd, i) => { nd.x = X[3 * i]; nd.y = X[3 * i + 1]; nd.z = X[3 * i + 2]; });
+        }
+
+        // converged when no free node is out of balance by more than 0.1 % of a node's weight
+        function drTolerance() { return 1e-3 * drModel.maxNodeLoad; }
+
+        // Cable edges (1975: "the cable profile should be defined by the distribution of forces
+        // in the laths ... treated as uniform [per span] so that the cable profile was taken to
+        // be a parabola"). Per span between columns: the average push of the shell on the cable
+        // w (built frame: outward and down), a parabola of the set sag in that direction, and
+        // the tension it takes, T = w L^2 / 8 f.
+        function computeCableOffsets() {
+            const F = new Map();
+            dr.reactions().forEach(r => F.set(r.i, [r.x, -r.y, r.z])); // hanging reaction -> push of the built shell
+            const nb = boundaryPts.length, off = new Map();
+            cableSpans = []; cableNodeT = new Map();
+            for (let k = 0; k < nb; k++) {
+                const A = boundaryPts[k], B = boundaryPts[(k + 1) % nb];
+                if (A.t !== 'cable' || !(A.r > 0)) continue;
+                const endV = netNodes.findIndex(n => n.bk === (k + 1) % nb && n.bt === 0);
+                const list = [];
+                netNodes.forEach((n, i) => { if (n.bk === k) list.push(i); });
+                list.sort((a, b) => netNodes[a].bt - netNodes[b].bt);
+                if (endV >= 0) list.push(endV);
+                const tOf = i => i === endV ? 1 : netNodes[i].bt, Lk = Math.hypot(B.x - A.x, B.z - A.z);
+                let s0 = 0;
+                for (let j = 1; j < list.length; j++) {
+                    if (j < list.length - 1 && !columnNodes.has(list[j])) continue;
+                    const t0 = tOf(list[s0]), t1 = tOf(list[j]), L = Lk * (t1 - t0), inner = list.slice(s0 + 1, j);
+                    const w = [0, 0, 0];
+                    inner.forEach(i => { const f = F.get(i); if (f) { w[0] += f[0]; w[1] += f[1]; w[2] += f[2]; } });
+                    const W = Math.hypot(w[0], w[1], w[2]);
+                    if (W > 1e-9 && L > 1e-6) {
+                        const d = w.map(v => v / W);
+                        inner.forEach(i => { const u = (tOf(i) - t0) / (t1 - t0), a = 4 * u * (1 - u) * A.r; off.set(i, [d[0] * a, d[1] * a, d[2] * a]); });
+                        const T = (W / L) * L * L / (8 * A.r);
+                        cableSpans.push({ k, L, T });
+                        list.slice(s0, j + 1).forEach(i => cableNodeT.set(i, Math.max(cableNodeT.get(i) || 0, T)));
+                    }
+                    s0 = j;
                 }
             }
-            // report how far the fastest-moving node travelled this step, so
-            // the caller can stop early once the net has genuinely settled
-            // instead of always spending the full step budget.
-            let maxMove = 0;
-            for (const n of netNodes) {
-                if (n.invMass === 0) continue;
-                const move = Math.hypot(n.x - n.px, n.y - n.py, n.z - n.pz);
-                if (move > maxMove) maxMove = move;
+            cableOffsets = off;
+        }
+
+        function crownHeight() {
+            let c = 0;
+            netNodes.forEach(n => { c = Math.max(c, -n.y); });
+            return c;
+        }
+
+        /* ============================================================
+           ANALYSIS AND DESIGN: the found shell as a 3D frame
+           Units: kN, m. E in kN/m2 (10 GPa = 10e6 kN/m2).
+        ============================================================ */
+        const LATH_B = 0.05;
+        const E_TIMBER = 10e6, G_TIMBER = E_TIMBER / 16;  // Western hemlock, indicative
+        const TIE_PAIR_A = 2 * 21e-6;                     // 2 x 6 mm 19-wire strand, ~21 mm2 each
+        const E_STRAND = 160e6;
+
+        // Section lists. cy, cz: outer fibre for Iy, Iz; f: indicative design strength [kN/m2]
+        //   glulam GL24h 24 MPa x kmod 0.8 / gammaM 1.3 = 14.8 MPa · steel S355 · strand 0.45 x 1570 MPa
+        function chs(D, t) {
+            const d = D - 2 * t, A = Math.PI / 4 * (D * D - d * d), I = Math.PI / 64 * (D ** 4 - d ** 4);
+            return { E: 210e6, G: 81e6, A, Iy: I, Iz: I, J: 2 * I, cy: D / 2, cz: D / 2, f: 355e3, steel: true, rho: 7850,
+                name: 'CHS ' + +(D * 1000).toFixed(1) + ' × ' + +(t * 1000).toFixed(1) };
+        }
+        // arches and edge beams: laminated timber 60 mm thick either side of the lattice (Happold & Liddell 1975)
+        function glulam(d) {
+            return { E: 11e6, G: 0.69e6, A: 2 * 0.06 * d, Iy: 2 * 0.06 * d ** 3 / 12, Iz: 2 * (d * 0.06 ** 3 / 12 + 0.06 * d * 0.08 ** 2),
+                J: 2 * d * 0.06 ** 3 / 3, cy: d / 2, cz: 0.11, f: 14.8e3, rho: 480, name: 'glulam 2 × 60 × ' + Math.round(d * 1000) };
+        }
+        const strand = A => ({ E: 160e6, A, f: 0.45 * 1570e3, steel: true, rho: 7850, name: 'strand ' + Math.round(A * 1e6) + ' mm²' });
+        const CHS_LIST = [[0.1397, 0.005], [0.1683, 0.0063], [0.2191, 0.008], [0.273, 0.010], [0.3239, 0.0125], [0.4064, 0.0125], [0.508, 0.016]].map(([D, t]) => chs(D, t));
+        const GLULAM_LIST = [0.4, 0.5, 0.6, 0.8, 1.0, 1.2].map(glulam);
+        const STRAND_LIST = [150, 300, 500, 800, 1200, 2000, 3000].map(a => strand(a * 1e-6));
+        const MEMBER_LISTS = { column: CHS_LIST, beam: [...GLULAM_LIST, ...CHS_LIST], arch: GLULAM_LIST, cable: STRAND_LIST };
+
+        // gamma-method: gamma = 1 / (1 + c/K); slip modulus K x f  ->  gamma'
+        const gammaAtJointFactor = (g, f) => g <= 0 ? 0 : g >= 1 ? 1 : g / (g + (1 - g) / f);
+        const GAMMA_REF = 0.5;                                  // assumed design value (the papers give only the ratio)
+        const GAMMA_TEST = gammaAtJointFactor(GAMMA_REF, 0.4);  // joints at 40 % of the assumed shear stiffness (1974 tests)
+
+        // The design ladder: stiffened in the order Mannheim was
+        const LADDER = [
+            { name: '1 layer each way (Essen)', layers: 1, gamma: 0, blocks: false, ties: false },
+            { name: '2 layers, tested joints (γ ' + GAMMA_TEST.toFixed(2) + ')', layers: 2, gamma: GAMMA_TEST, blocks: false, ties: false },
+            { name: '+ shear blocks where the force is high', layers: 2, gamma: GAMMA_TEST, blocks: true, ties: false },
+            { name: '+ diagonal cable ties', layers: 2, gamma: GAMMA_TEST, blocks: true, ties: true },
+            { name: '+ a third layer (2018 plan)', layers: 3, gamma: GAMMA_TEST, blocks: true, ties: true }
+        ];
+        // the design in use: Mannheim as built (step 4) with the starting member sizes (assumed)
+        let design = { step: 3, sec: { column: chs(0.2191, 0.008), beam: glulam(0.5), arch: glulam(0.5), cable: strand(500e-6) }, sized: false };
+        const lathLayersOf = () => LADDER[design.step].layers;
+
+        let useSnow = true, snowLoad = 40 * 0.00981; // 40 kg/m2, Mannheim unheated areas (1975)
+        let analysisDisp = null;     // Float64Array(3n) node displacements (built frame) to draw
+        let analysisN = null;        // axial force per lath member [kN, + tension]
+        let analysisAutoScale = 1, defScaleUser = 0;
+        let analysisBusy = false;
+        let lastCheck = null;        // { collapse, util } for the summaries
+
+        // Out-of-plane I of one lath line (all layers of one direction), in b^4/12
+        function outOfPlaneFactor(layers, g) {
+            if (layers === 1) return 1;
+            if (layers === 2) return 2 + 24 * g;   // 2 (loose bolts) ... 26 (fully composite)
+            return 3 + 96 * g;                      // 3 ... 99: laths at 0, 2b, 4b
+        }
+
+        // shell normal at each node (built frame, pointing up), from the grid neighbours
+        function nodeNormals() {
+            const nrm = netNodes.map(() => [0, 1, 0]);
+            const P = i => [netNodes[i].x, -netNodes[i].y, netNodes[i].z];
+            netNodes.forEach((n, i) => {
+                if (n.gi === null) return;
+                const g = (a, b) => gridMap.get((n.gi + a) + '_' + (n.gj + b));
+                const r = g(1, 0) ?? i, l = g(-1, 0) ?? i, u = g(0, 1) ?? i, d = g(0, -1) ?? i;
+                if (r === l || u === d) return;
+                const a = P(r), b = P(l), c = P(u), e = P(d);
+                const v1 = [a[0] - b[0], a[1] - b[1], a[2] - b[2]], v2 = [c[0] - e[0], c[1] - e[1], c[2] - e[2]];
+                let nv = [v1[1] * v2[2] - v1[2] * v2[1], v1[2] * v2[0] - v1[0] * v2[2], v1[0] * v2[1] - v1[1] * v2[0]];
+                if (nv[1] < 0) nv = nv.map(x => -x);
+                const L = Math.hypot(...nv);
+                if (L > 1e-9) nrm[i] = nv.map(x => x / L);
+            });
+            return nrm;
+        }
+
+        // Which support does an edge node get? (Fig 54 edge types)
+        function supportOf(n, idx) {
+            const nb = boundaryPts.length, k = n.bk, here = boundaryPts[k].t;
+            if (columnNodes.has(idx)) return 'column';
+            if (n.bt !== 0) return here === 'wall' ? 'pin' : 'free';
+            return 'pin'; // outline nodes on walls, at arch springings, or beam/cable ends at ground level
+        }
+
+        function buildFrameModel(step = LADDER[design.step], sec = design.sec) {
+            const cw = cellWidth(), nLines = cw / REAL_LATH_SPACING;
+            const nNet = netNodes.length;
+            const X = [], fix = [];
+            netNodes.forEach(n => { X.push(n.x, -n.y, n.z); fix.push(0, 0, 0, 0, 0, 0); });
+            const el = [];
+            const nrm = nodeNormals();
+            const avgUp = (a, b) => [nrm[a][0] + nrm[b][0], nrm[a][1] + nrm[b][1], nrm[a][2] + nrm[b][2]];
+            const addEl = (a, b, s, up, truss = false, tag = '') =>
+                el.push({ a, b, E: s.E, G: s.G || s.E / 2.6, A: s.A, Iy: s.Iy || 0, Iz: s.Iz || 0, J: s.J || 0, up, truss, tag, sec: s });
+
+            // supports and columns (fixed at the base: vertical cantilevers, as in 1975)
+            netNodes.forEach((n, i) => {
+                if (n.bk === null) return;
+                const s = supportOf(n, i);
+                if (s === 'pin') { fix[6 * i] = fix[6 * i + 1] = fix[6 * i + 2] = 1; }
+                if (s === 'column') {
+                    const base = X.length / 3;
+                    X.push(n.x, 0, n.z);
+                    fix.push(1, 1, 1, 1, 1, 1);
+                    addEl(base, i, sec.column, [1, 0, 0], false, 'column');
+                }
+            });
+
+            // laths: one model member stands for nLines lath lines of `layers` laths.
+            // Shear blocks where the form-finding force is in the top quarter.
+            const T = lastForces ? lastForces.T : null;
+            const positiveT = T ? Array.from(T).filter(t => t > 0).sort((a, b) => a - b) : [];
+            const tBlock = positiveT.length ? positiveT[Math.floor(0.75 * (positiveT.length - 1))] : Infinity;
+            const lathIndex = [];
+            drLaths.forEach((mi, e) => {
+                const m = netMembers[mi];
+                const g = step.blocks && T && T[e] >= tBlock ? 1 : step.gamma;
+                const b4 = LATH_B ** 4 / 12;
+                const s = {
+                    E: E_TIMBER, G: G_TIMBER,
+                    A: step.layers * nLines * LATH_B * LATH_B,
+                    Iy: nLines * outOfPlaneFactor(step.layers, g) * b4,
+                    Iz: step.layers * nLines * b4,
+                    J: step.layers * nLines * 0.141 * LATH_B ** 4
+                };
+                lathIndex.push(el.length);
+                addEl(m.a, m.b, s, avgUp(m.a, m.b), false, 'lath');
+                // lath ends are bolted to the edge boards (Fig 55): hinged there, as in the 1975 model
+                // (a short lath with both ends on the edge keeps one end fixed: hinged at both it would be a
+                // loose strut with no sideways stiffness at all)
+                const ha = netNodes[m.a].bk !== null, hb = netNodes[m.b].bk !== null;
+                el[el.length - 1].rel = ha && hb ? 2 : (ha ? 1 : 0) + (hb ? 2 : 0);
+            });
+            // edge members
+            netMembers.forEach(m => {
+                if (m.kind === 'arch') addEl(m.a, m.b, sec.arch, [0, 1, 0], false, 'arch');
+                else if (m.kind === 'beam') addEl(m.a, m.b, sec.beam, [0, 1, 0], false, 'beam');
+                else if (m.kind === 'cable') {
+                    addEl(m.a, m.b, sec.cable, [0, 1, 0], true, 'cable');
+                    el[el.length - 1].tensionOnly = true;
+                    // the tension it takes under G, from its form-found sag (T = wL^2/8f)
+                    el[el.length - 1].nGeo = Math.max(cableNodeT.get(m.a) || 0, cableNodeT.get(m.b) || 0);
+                }
+            });
+            // diagonal ties, smeared over the model cells (real ties every 6th node = 3 m apart)
+            if (step.ties) {
+                const tieSec = { E: E_STRAND, A: TIE_PAIR_A * cw / 3 };
+                netNodes.forEach((n, i) => {
+                    if (n.gi === null) return;
+                    const g = (a, b) => gridMap.get((n.gi + a) + '_' + (n.gj + b));
+                    const r = g(1, 0), u = g(0, 1), ru = g(1, 1);
+                    if (r !== undefined && u !== undefined && ru !== undefined) {
+                        addEl(i, ru, tieSec, null, true, 'tie'); el[el.length - 1].tensionOnly = true;
+                        addEl(r, u, tieSec, null, true, 'tie'); el[el.length - 1].tensionOnly = true;
+                    }
+                });
             }
-            return maxMove;
+            return { X: Float64Array.from(X), fix: Uint8Array.from(fix), el, lathIndex, nNet, nLines, layers: step.layers };
+        }
+
+        // permanent load G [kN/m2]: laths 5 kg/m2 per layer + fittings 9 + covering
+        const COVERING_KG = { pvc: 1.2, ptfe: 1.5, etfe: 3, timber: 12, glass: 40 };
+        let covering = 'pvc';
+        const KG = 0.00981; // kN per kg
+        const permanentKg = (layers = lathLayersOf()) => 5 * layers + 9 + COVERING_KG[covering];
+
+        // load combinations. 'uls': factored, for stresses. 'char': unfactored, for collapse and deflection.
+        function combos(kind) {
+            const g = kind === 'uls' ? 1.35 : 1, s = kind === 'uls' ? 1.5 : 1;
+            const G = kind === 'uls' ? '1.35 G' : 'G', S = kind === 'uls' ? '1.5 S' : 'S';
+            const list = [{ name: G, g, s: 0, half: false }];
+            if (useSnow) list.push({ name: G + ' + ' + S, g, s, half: false }, { name: G + ' + ' + S + ' on left half', g, s, half: 'left' }, { name: G + ' + ' + S + ' on right half', g, s, half: 'right' });
+            return list;
+        }
+        function planCentreX() { let cx = 0; boundaryPts.forEach(p => { cx += p.x; }); return cx / boundaryPts.length; }
+
+        // nodal loads (built frame, gravity -y): G on the shell surface, snow on the plan
+        function loadVector(nNodes, c, layers = lathLayersOf(), fm = null) {
+            const P = new Float64Array(6 * nNodes);
+            const cw = cellWidth(), cx = planCentreX(), g = permanentKg(layers) * KG;
+            drLaths.forEach(mi => {
+                const m = netMembers[mi], A = netNodes[m.a], B = netNodes[m.b];
+                const L = Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z), Lp = Math.hypot(A.x - B.x, A.z - B.z);
+                const surf = L * cw / 4, plan = Lp * netSpacing / 4;
+                [[m.a, A], [m.b, B]].forEach(([i, N]) => {
+                    const sn = c.s && (!c.half || (c.half === 'left' ? N.x < cx : N.x >= cx)) ? snowLoad * c.s : 0;
+                    P[6 * i + 1] -= g * c.g * surf + sn * plan;
+                });
+            });
+            if (fm) fm.el.forEach(e => {
+                if (!['column', 'beam', 'arch', 'cable'].includes(e.tag)) return;
+                const L = Math.hypot(...[0, 1, 2].map(k => fm.X[3 * e.b + k] - fm.X[3 * e.a + k]));
+                const w = e.A * (e.sec.rho || 0) * L * KG * c.g / 2;
+                P[6 * e.a + 1] -= w; P[6 * e.b + 1] -= w;
+            });
+            return P;
+        }
+        // a combination read as an average load on the shell [kN/m2]
+        const comboUniform = (c, layers = lathLayersOf()) => permanentKg(layers) * KG * c.g + (c.s ? snowLoad * c.s * (c.half ? 0.5 : 1) : 0);
+
+        // utilisation of an edge member for forces N (+ tension), My, Mz with section s
+        function memberUtil(e, s, N, My, Mz) {
+            if (e.truss) return Math.max(0, N) / s.A / s.f;              // a cable only works in tension
+            const M = My * s.cy / s.Iy + Mz * s.cz / s.Iz;                 // bending stress
+            if (e.tag === 'column' && N < 0) {                            // flexural buckling, cantilever K = 2, EC3 curve b
+                const Ncr = Math.PI ** 2 * s.E * s.Iy / (2 * e.L0) ** 2;
+                const lb = Math.sqrt(s.A * s.f / Ncr), phi = 0.5 * (1 + 0.34 * (lb - 0.2) + lb * lb);
+                const chi = Math.min(1, 1 / (phi + Math.sqrt(Math.max(phi * phi - lb * lb, 0))));
+                return -N / (chi * s.A * s.f) + M / s.f;
+            }
+            return Math.abs(N) / s.A / s.f + M / s.f;
+        }
+
+        function clearAnalysis() {
+            analysisDisp = null; analysisN = null; lastCheck = null;
+            ['an-defl', 'an-nmax', 'an-mmax', 'an-deflLim'].forEach(id => {
+                const el = document.getElementById(id); if (el) { el.textContent = '—'; el.classList.remove('fail'); }
+            });
+            const ut = document.getElementById('an-util'); if (ut) ut.innerHTML = '';
+            if (lathColourMode === 'analysis') lathColourMode = 'force';
+            const sel = document.getElementById('lathColour'); if (sel && sel.value === 'analysis') sel.value = 'force';
+            updateSummaries();
+        }
+
+        let busyControls = [];
+        function setBusy(on, msg) {
+            if (on && !analysisBusy) {
+                busyControls = [...document.querySelectorAll('input, select, button')].map(el => [el, el.disabled]);
+                busyControls.forEach(([el]) => { el.disabled = true; });
+                editCanvas.style.pointerEvents = 'none';
+            } else if (!on) {
+                busyControls.forEach(([el, disabled]) => { el.disabled = disabled; });
+                busyControls = []; editCanvas.style.pointerEvents = '';
+            }
+            analysisBusy = on;
+            ['btnAnalyze', 'btnPropose'].forEach(id => { document.getElementById(id).disabled = on; });
+            if (msg) setStatus(msg);
+        }
+        function setStatus(msg, fail = false) {
+            const bar = document.getElementById('status-bar');
+            bar.textContent = msg;
+            bar.classList.toggle('fail', fail);
+        }
+        const tick = () => new Promise(r => setTimeout(r, 0));
+
+        function analysisFailed(error) { setBusy(false); setStatus('Analysis stopped: ' + error.message, true); }
+        function readyForAnalysis() {
+            if (!lastRelaxConverged) { setStatus('Wait for verified hanging-net equilibrium.'); return false; }
+            if (viewStage !== 'built') setStage('built');
+            if (simRunning || !dr) { setStatus('Wait for the net to settle first.'); return false; }
+            return !analysisBusy;
+        }
+
+        function designLabel() {
+            const st = LADDER[design.step];
+            return 'step ' + (design.step + 1) + ': ' + st.layers + ' layer' + (st.layers > 1 ? 's' : '') +
+                (st.layers > 1 ? ', γ ' + st.gamma.toFixed(2) : '') + (st.blocks ? ', blocks' : '') + (st.ties ? ', ties' : '') +
+                (design.sized ? '' : ' · members assumed');
+        }
+
+        function storeDisplacements(fm, frame, scaleToSpan = 0.04) {
+            const d = new Float64Array(3 * fm.nNet);
+            let maxAbs = 0, maxDown = 0;
+            for (let i = 0; i < fm.nNet; i++) {
+                for (let k = 0; k < 3; k++) d[3 * i + k] = frame.X[3 * i + k] - frame.X0[3 * i + k];
+                maxAbs = Math.max(maxAbs, Math.hypot(d[3 * i], d[3 * i + 1], d[3 * i + 2]));
+                maxDown = Math.max(maxDown, -d[3 * i + 1]);
+            }
+            analysisDisp = d;
+            analysisAutoScale = maxAbs > 1e-9 ? scaleToSpan * spanOfPlan() / maxAbs : 1;
+            analysisN = fm.lathIndex.map(ei => frame.N[ei]);
+            return { maxAbs, maxDown };
+        }
+        function spanOfPlan() {
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            boundaryPts.forEach(p => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
+            return Math.min(maxX - minX, maxZ - minZ);
+        }
+        function showAnalysisColours() {
+            lathColourMode = 'analysis';
+            document.getElementById('lathColour').value = 'analysis';
+            analyzeStructure();
+        }
+
+        // First order over every ULS combination: the worst of each result.
+        // Returns per-element envelopes for member sizing.
+        function envelopeULS(fm, frame, layers) {
+            const m = fm.el.length;
+            const env = { N: new Float64Array(m), Nt: new Float64Array(m), My: new Float64Array(m), Mz: new Float64Array(m), stable: true, ratio: 1 };
+            for (const c of combos('uls')) {
+                env.ratio = Math.max(env.ratio, comboUniform(c, layers) / comboUniform({ g: 1, s: 0 }, layers));
+                const r = frame.linear(loadVector(frame.X.length / 3, c, layers, fm));
+                env.stable = env.stable && r.stable;
+                for (let i = 0; i < m; i++) {
+                    env.N[i] = Math.min(env.N[i], frame.N[i]);    // most compression
+                    env.Nt[i] = Math.max(env.Nt[i], frame.N[i]);  // most tension
+                    env.My[i] = Math.max(env.My[i], frame.M[i]);
+                    env.Mz[i] = Math.max(env.Mz[i], frame.Mz[i]);
+                }
+            }
+            return env;
+        }
+        function utilOf(e, s, env, i) {
+            // a cable already carries its tension under G; it grows with the load (env.ratio = worst load / G)
+            const pre = e.tag === 'cable' ? (e.nGeo || 0) * (env.ratio || 1) : 0;
+            return Math.max(memberUtil(e, s, env.N[i] + pre, env.My[i], env.Mz[i]), memberUtil(e, s, env.Nt[i] + pre, env.My[i], env.Mz[i]));
+        }
+
+        // Analyze (Karamba "Analyze"): stresses for the ULS envelope, deflection for G + S
+        function runAnalyze() {
+            if (!readyForAnalysis()) return;
+            setBusy(true, 'Analysing, first order, every load combination …');
+            setTimeout(() => {
+                const fm = buildFrameModel(), frame = createFrame(fm), layers = fm.layers;
+                const env = envelopeULS(fm, frame, layers);
+                let nMin = 0, mMax = 0;
+                fm.lathIndex.forEach(ei => { nMin = Math.min(nMin, env.N[ei]); mMax = Math.max(mMax, env.My[ei]); });
+                const perLath = 1 / (fm.nLines * layers), perLine = 1 / fm.nLines;
+                const I = outOfPlaneFactor(layers, LADDER[design.step].gamma) * LATH_B ** 4 / 12, W = I / ((2 * layers - 1) * LATH_B / 2);
+                const sigma = (-nMin * perLath) / (LATH_B * LATH_B) / 1000 + (mMax * perLine) / W / 1000; // MPa
+                // deflection and the drawn shape under the characteristic load with most snow
+                const cs = combos('char'), cDef = cs[Math.min(1, cs.length - 1)];
+                frame.linear(loadVector(frame.X.length / 3, cDef, layers, fm));
+                const { maxDown } = storeDisplacements(fm, frame);
+                document.getElementById('an-defl').textContent = (maxDown * 1000).toFixed(0) + ' mm (' + cDef.name + ')' + (env.stable ? '' : ' · unstable');
+                const lim = spanOfPlan() / 250, dEl = document.getElementById('an-defl');
+                dEl.classList.toggle('fail', maxDown > lim);
+                document.getElementById('an-deflLim').textContent = (lim * 1000).toFixed(0) + ' mm' + (maxDown > lim ? ' \u00B7 exceeded' : ' \u00B7 ok');
+                document.getElementById('an-nmax').textContent = (-nMin * perLath).toFixed(2) + ' kN';
+                document.getElementById('an-mmax').textContent = (mMax * perLine).toFixed(3) + ' kNm (σ ≈ ' + sigma.toFixed(1) + ' MPa)';
+                showUtilisation(fm, env);
+                setBusy(false);
+                showAnalysisColours();
+                setStatus('Analysed: ' + combos('uls').map(c => c.name).join(', ') + '. The shape shows ' + cDef.name + ', scaled.');
+            }, 20);
+        }
+
+        function showUtilisation(fm, env) {
+            const worst = {};
+            fm.el.forEach((e, i) => {
+                if (!['column', 'beam', 'arch', 'cable'].includes(e.tag)) return;
+                const w = worst[e.tag] || (worst[e.tag] = { u: 0, n: 0, name: e.sec.name });
+                w.u = Math.max(w.u, utilOf(e, e.sec, env, i)); w.n++;
+            });
+            const label = { column: 'Columns', beam: 'Edge beams', arch: 'Arches', cable: 'Edge cables' };
+            const rows = Object.keys(label).filter(t => worst[t]).map(t => {
+                const w = worst[t];
+                return '<div class="stat-line"><span class="lbl">' + label[t] + ' (' + w.name + ', ' + w.n + ')</span><span class="num' +
+                    (w.u > 1 ? ' fail' : '') + '">utilisation ' + w.u.toFixed(2) + '</span></div>';
+            });
+            // the laths: axial + out-of-plane bending per lath line, solid timber 24 MPa x 0.8 / 1.3
+            const st = LADDER[design.step], layers = st.layers, nl = fm.nLines, fLath = 14.8e3;
+            const I = outOfPlaneFactor(layers, st.gamma) * LATH_B ** 4 / 12, W = I / ((2 * layers - 1) * LATH_B / 2);
+            let over = 0, uMax = 0;
+            fm.lathIndex.forEach(ei => {
+                const u = (Math.abs(env.N[ei]) / nl / (layers * LATH_B * LATH_B) + env.My[ei] / nl / W) / fLath;
+                uMax = Math.max(uMax, u); if (u > 1) over++;
+            });
+            const pct = 100 * over / fm.lathIndex.length;
+            rows.unshift('<div class="stat-line"><span class="lbl">Laths (' + fm.lathIndex.length + ')</span><span class="num' + (over ? ' fail' : '') +
+                '">' + (over ? pct.toFixed(1) + ' % over, max ' + uMax.toFixed(2) : 'utilisation ' + uMax.toFixed(2)) + '</span></div>');
+            document.getElementById('an-util').innerHTML = rows.join('');
+            lastCheck = Object.assign(lastCheck || {}, { util: Math.max(0, ...Object.values(worst).map(w => w.u)), lathOver: pct });
+            updateSummaries();
+        }
+
+        // deflection under the characteristic load with the most snow, and its limit span / 250
+        function deflectionCheck(fm, frame, layers) {
+            const cs = combos('char'), c = cs[Math.min(1, cs.length - 1)];
+            frame.linear(loadVector(frame.X.length / 3, c, layers, fm));
+            let down = 0;
+            for (let i = 0; i < fm.nNet; i++) down = Math.max(down, -(frame.X[3 * i + 1] - frame.X0[3 * i + 1]));
+            const limit = spanOfPlan() / 250;
+            return { down, limit, ok: down <= limit, combo: c };
+        }
+
+        // Size the edge members for a ladder step: smallest passing section per group,
+        // repeated until the sizes settle (a stiffer member draws more force).
+        async function sizeMembers(step, label) {
+            const sec = Object.assign({}, design.sec);
+            let worst = {}, verified = null;
+            for (let round = 0; round < 5; round++) {
+                setStatus(label + ' · sizing the edge members, round ' + (round + 1));
+                await tick();
+                const fm = buildFrameModel(step, sec), frame = createFrame(fm);
+                const env = envelopeULS(fm, frame, step.layers);
+                let changed = false;
+                worst = {};
+                for (const tag of Object.keys(MEMBER_LISTS)) {
+                    const idx = [];
+                    fm.el.forEach((e, i) => { if (e.tag === tag) idx.push(i); });
+                    if (!idx.length) continue;
+                    const list = MEMBER_LISTS[tag];
+                    let pick = list[list.length - 1], u = Infinity;
+                    for (const s of list) {
+                        const us = Math.max(...idx.map(i => utilOf(fm.el[i], s, env, i)));
+                        if (us <= 1) { pick = s; u = us; break; }
+                        u = us;
+                    }
+                    worst[tag] = { u, n: idx.length, name: pick.name, len: idx.reduce((a, i) => a + fm.el[i].L0, 0), sec: pick };
+                    if (pick.name !== sec[tag].name) { sec[tag] = pick; changed = true; }
+                }
+                if (!changed) { verified = { fm, frame, env }; break; }
+            }
+            // Reuse the envelope only when these exact sections were already solved.
+            const fm = verified ? verified.fm : buildFrameModel(step, sec);
+            const frame = verified ? verified.frame : createFrame(fm);
+            const env = verified ? verified.env : envelopeULS(fm, frame, step.layers);
+            worst = {};
+            fm.el.forEach((e, i) => {
+                if (!MEMBER_LISTS[e.tag]) return;
+                const w = worst[e.tag] || (worst[e.tag] = { u: 0, n: 0, len: 0, name: e.sec.name, sec: e.sec });
+                w.u = Math.max(w.u, utilOf(e, e.sec, env, i)); w.n++; w.len += e.L0;
+            });
+            let lathUtil = 0;
+            fm.lathIndex.forEach(i => {
+                const e = fm.el[i], n = Math.max(Math.abs(env.N[i]), Math.abs(env.Nt[i]));
+                const cy = (2 * step.layers - 1) * LATH_B / 2;
+                const stress = n / e.A + env.My[i] * cy / e.Iy + env.Mz[i] * (LATH_B / 2) / e.Iz;
+                lathUtil = Math.max(lathUtil, stress / 14.8e3);
+            });
+            return { sec, worst, lathUtil, fm, frame, passed: env.stable && Number.isFinite(lathUtil) && lathUtil <= 1 &&
+                Object.values(worst).every(w => Number.isFinite(w.u) && w.u <= 1) };
+        }
+
+        // Propose a design: climb the ladder until a step passes Analyze
+        async function runPropose() {
+            if (!readyForAnalysis()) return;
+            setBusy(true, 'Proposing a design \u2026');
+            const body = document.getElementById('ladderBody');
+            body.innerHTML = '';
+            let chosen = null;
+            for (let k = 0; k < LADDER.length; k++) {
+                const step = LADDER[k], label = 'Step ' + (k + 1) + ' of ' + LADDER.length;
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + (k + 1) + '</td><td>' + step.name + '</td><td>\u2026</td><td></td><td></td>';
+                body.appendChild(tr);
+                const sized = await sizeMembers(step, label);
+                const names = { column: 'columns', beam: 'edge beams', arch: 'arches', cable: 'cables' };
+                let gov = null;
+                Object.entries(sized.worst).forEach(([t, w]) => { if (!gov || w.u > gov.u) gov = { t, u: w.u }; });
+                tr.children[2].textContent = 'laths ' + sized.lathUtil.toFixed(2) + (gov ? ' \u00B7 ' + names[gov.t] + ' ' + gov.u.toFixed(2) : '');
+                tr.children[2].className = sized.passed ? '' : 'fail';
+                setStatus(label + ' \u00B7 deflection'); await tick();
+                const d = deflectionCheck(sized.fm, sized.frame, step.layers);
+                tr.children[3].textContent = (d.down * 1000).toFixed(0) + ' / ' + (d.limit * 1000).toFixed(0) + ' mm';
+                tr.children[3].className = d.ok ? '' : 'fail';
+                const ok = sized.passed && d.ok;
+                tr.children[4].textContent = ok ? 'passes' : 'short';
+                tr.children[4].className = ok ? 'ok' : 'fail';
+                if (ok) { chosen = { k, sized }; tr.classList.add('chosen'); break; }
+            }
+            if (!chosen) { setBusy(false); setStatus('No step passes Analyze: the shape itself needs to change (more rise, a different edge). The current design is kept.', true); return; }
+            design = { step: chosen.k, sec: chosen.sized.sec, sized: true, worst: chosen.sized.worst };
+            updatePermanentLoad();
+            // Update the form-finding reference forces for the selected layer count.
+            buildDRModel();
+            lastRelaxConverged = dr.step(0) < drTolerance();
+            showSections();
+            setBusy(false);
+            clearAnalysis();
+            document.getElementById('an-design').textContent = designLabel();
+            setStatus('Proposed: ' + designLabel() + '. Laths, members and deflection pass; buckling not checked.');
+            updateSummaries();
+            if (lastRelaxConverged) analyzeStructure(); else kickRelax();
+        }
+
+        function showSections() {
+            const box = document.getElementById('sectionsBox');
+            if (!design.worst) return;
+            const label = { column: 'Columns', beam: 'Edge beams', arch: 'Arches', cable: 'Edge cables' };
+            let steelT = 0, timberM3 = 0;
+            const rows = Object.keys(label).filter(t => design.worst[t]).map(t => {
+                const w = design.worst[t], s = w.sec;
+                const mass = s.A * w.len * s.rho;
+                if (s.steel) steelT += mass / 1000; else timberM3 += s.A * w.len;
+                return '<div class="stat-line"><span class="lbl">' + label[t] + ' (' + w.n + ')</span><span class="num' + (w.u > 1 ? ' fail' : '') + '">' +
+                    w.name + ' · ' + w.u.toFixed(2) + '</span></div>';
+            });
+            // the laths themselves: layers x 2 directions x b^2 per 0.5 m, over the shell surface
+            let surf = 0;
+            drLaths.forEach(mi => { const m = netMembers[mi], A = netNodes[m.a], B = netNodes[m.b]; surf += Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z) * cellWidth() / 2; });
+            const lathM3 = LADDER[design.step].layers * 2 * LATH_B * LATH_B / REAL_LATH_SPACING * surf;
+            rows.push('<div class="stat-line"><span class="lbl">Laths, 50 × 50 mm</span><span class="num">' + lathM3.toFixed(0) + ' m³</span></div>');
+            rows.push('<div class="stat-line"><span class="lbl">Edge members: steel / glulam</span><span class="num">' + steelT.toFixed(1) + ' t / ' + timberM3.toFixed(1) + ' m³</span></div>');
+            box.innerHTML = rows.join('');
         }
 
         /* ============================================================
@@ -1066,23 +1918,40 @@
                 }
             }
 
-            // Derive the lath thickness in use (auto from this shape's
-            // tightest curve, or the manual override) and the bend-radius
-            // threshold that follows from it, THEN colour with it.
-            if (manualLathOverride) {
-                curvatureThreshold = radiusForThickness(lathThicknessMM);
-            } else {
-                lathThicknessMM = computeRecommendedThicknessMM(minRadius);
-                curvatureThreshold = radiusForThickness(lathThicknessMM);
-            }
+            // lath thickness in use: the thickest standard size that still clears
+            // this shape's tightest curve, and the bend radius that follows from it
+            lathThicknessMM = computeRecommendedThicknessMM(minRadius);
+            curvatureThreshold = radiusForThickness(lathThicknessMM);
             const lathLabel = document.getElementById('val-lathThickness');
-            if (lathLabel) {
-                lathLabel.textContent = lathThicknessMM.toFixed(0) + ' mm (' + (manualLathOverride ? 'manual' : 'auto') +
-                    ') \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m';
+            if (lathLabel) lathLabel.textContent = lathThicknessMM.toFixed(0) + ' mm \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m';
+
+            if (lathColourMode === 'radius') {
+                curvatureSamples.forEach((R, mi) => { memberColors[mi] = radiusToColor(R, curvatureThreshold); });
             }
 
-            if (showCurvature) {
-                curvatureSamples.forEach((R, mi) => { memberColors[mi] = radiusToColor(R, curvatureThreshold); });
+            if (lathColourMode === 'analysis' && analysisN) {
+                let mx = 1e-9;
+                analysisN.forEach(v => { mx = Math.max(mx, Math.abs(v)); });
+                drLaths.forEach((mi, e) => {
+                    const v = analysisN[e];
+                    memberColors[mi] = v > 0 ? lerpColor(COLOR_FORCE_LOW, COLOR_SLACK, v / mx) : lerpColor(COLOR_FORCE_LOW, COLOR_FORCE_HIGH, -v / mx);
+                });
+            }
+            const forces = computeFormForces();
+            if (forces) lastForces = Object.assign({}, forces, { T: Float64Array.from(forces.T) }); // kept for shear blocks and summaries
+            if (lathColourMode === 'force' && forces) {
+                drLaths.forEach((mi, e) => {
+                    const t = forces.T[e];
+                    memberColors[mi] = t <= 0 ? COLOR_SLACK : lerpColor(COLOR_FORCE_LOW, COLOR_FORCE_HIGH, t / (forces.p95 || 1));
+                });
+            }
+            document.getElementById('forceLegend').style.display = viewStage !== 'flat' && lathColourMode === 'force' ? '' : 'none';
+            document.getElementById('radiusLegend').style.display = lathColourMode === 'radius' ? '' : 'none';
+            if (forces) {
+                document.getElementById('forceLegendMax').textContent =
+                    '\u2265 ' + (forces.p95 * forces.perLath).toFixed(2) + ' kN per lath line (95th percentile; peak ' +
+                    (forces.maxT * forces.perLath).toFixed(2) + ')';
+                document.getElementById('forceLegendSlack').textContent = '(' + forces.slack + ' of ' + forces.T.length + ')';
             }
 
             let minY = Infinity, maxY = -Infinity;
@@ -1090,108 +1959,91 @@
             const rise = maxY - minY;
 
             let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-            netNodes.forEach(n => {
-                minX = Math.min(minX, n.x0); maxX = Math.max(maxX, n.x0);
-                minZ = Math.min(minZ, n.z0); maxZ = Math.max(maxZ, n.z0);
+            boundaryPts.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
             });
-            const span = Math.hypot(maxX - minX, maxZ - minZ);
+            const span = Math.min(maxX - minX, maxZ - minZ);
             const ratio = span > 0 ? rise / span : 0;
 
             updateInfoPanel({
                 maxShearDev, minRadius, rise, span, ratio,
-                nodeCount: netNodes.length, memberCount: netMembers.length
+                nodeCount: netNodes.length, memberCount: drLaths.length
             });
+            updateForcePanel(forces);
             updateNetGeometryPositions();
         }
 
+        // Item C: lath forces, reactions and the equilibrium check of the
+        // found shape. Tension while hanging = compression as built.
+        function computeFormForces() {
+            if (!dr || !drModel) return null;
+            const T = dr.T, X = drModel.X;
+            let maxT = 0, maxStrain = 0, minT = 0, slack = 0, edgeSpringForce = 0;
+            for (let e = 0; e < T.length; e++) {
+                maxT = Math.max(maxT, T[e]); minT = Math.min(minT, T[e]);
+                if (T[e] <= 0) slack++;
+                const a = drModel.ma[e] * 3, b = drModel.mb[e] * 3;
+                const L = Math.hypot(X[b] - X[a], X[b + 1] - X[a + 1], X[b + 2] - X[a + 2]);
+                const st = (L - drModel.L0[e]) / drModel.L0[e];
+                if (drModel.kind[e] !== CABLE) maxStrain = Math.max(maxStrain, st);
+                else edgeSpringForce = drModel.T0[e];
+            }
+            let W = 0;
+            for (let i = 0; i < netNodes.length; i++) W -= drModel.P[3 * i + 1];
+            // weight on the held nodes themselves went straight to the supports; count it back in
+            let Wedge = 0;
+            drLaths.forEach((mi, e) => {
+                const w = selfWeight * drModel.L0[e] * cellWidth() / 4;
+                if (drModel.fixed[drModel.ma[e]]) Wedge += w;
+                if (drModel.fixed[drModel.mb[e]]) Wedge += w;
+            });
+            // reactions at held nodes; horizontal thrust per metre of edge
+            const reac = dr.reactions();
+            const edgeLen = new Float64Array(netNodes.length);
+            netMembers.forEach(m => {
+                if (m.kind === 'lath') return;
+                const L = Math.hypot(netNodes[m.a].x - netNodes[m.b].x, netNodes[m.a].z - netNodes[m.b].z);
+                edgeLen[m.a] += L / 2; edgeLen[m.b] += L / 2;
+            });
+            let Ry = 0, maxThrust = 0;
+            reac.forEach(r => {
+                Ry += r.y;
+                const H = Math.hypot(r.x, r.z);
+                if (edgeLen[r.i] > 1e-6) maxThrust = Math.max(maxThrust, H / edgeLen[r.i]);
+            });
+            return {
+                T, maxT, minT, slack, maxStrain, edgeSpringForce, W: W + Wedge,
+                // colour scale: most laths, not the few peaks where an edge rises steeply
+                p95: (() => { const v = Array.from(T).filter(t => t > 0).sort((a, b) => a - b); return v.length ? v[Math.floor(0.95 * (v.length - 1))] : 1; })(), Ry: Ry + Wedge, maxThrust,
+                perLath: REAL_LATH_SPACING / cellWidth(), // share of a model member's force carried by one 0.5 m lath line
+                iter: dr.iter, converged: lastRelaxConverged
+            };
+        }
+
+        function updateForcePanel(f) {
+            const set = (id, v) => { document.getElementById(id).textContent = v; };
+            set('stat-crown', crownHeight().toFixed(2) + ' m');
+            if (!f) return;
+            const err = Math.abs(f.Ry - f.W) / Math.max(f.W, 1e-9) * 100;
+            set('stat-g', permanentKg().toFixed(1) + ' kg/m\u00B2 = ' + selfWeight.toFixed(2) + ' kN/m\u00B2 (laths ' + 5 * lathLayersOf() + ' + fittings 9 + covering ' + COVERING_KG[covering] + ')');
+            set('stat-reac', f.W.toFixed(0) + ' / ' + f.Ry.toFixed(0) + ' kN (' + (err < 0.1 ? 'balances' : err.toFixed(1) + ' % off') + ')');
+            set('stat-nmax', (f.maxT * f.perLath).toFixed(2) + ' kN');
+            set('stat-thrust', f.maxThrust.toFixed(2) + ' kN/m' + (cableSpans.length
+                ? ' \u00B7 cable up to ' + Math.max(...cableSpans.map(c => c.T)).toFixed(0) + ' kN (1975: 125 kN)' : ''));
+            set('stat-strain', (f.maxStrain * 100).toFixed(2) + ' %' + (f.maxStrain > 0.01 ? ' \u2014 net too short, add slack' : ''));
+            set('stat-dr', f.iter + ' it. ' + (f.converged ? 'converged' : 'not converged'));
+        }
+
         function updateInfoPanel(s) {
-            document.getElementById('stat-count').textContent = s.nodeCount + ' / ' + s.memberCount;
-            document.getElementById('stat-ratio').textContent = s.ratio.toFixed(2) +
-                '  (' + s.rise.toFixed(1) + ' m / ' + s.span.toFixed(1) + ' m)';
+            document.getElementById('stat-count').textContent = s.nodeCount + ' nodes / ' + s.memberCount + ' laths \u00B7 ' +
+                (cellWidth() / REAL_LATH_SPACING).toFixed(1) + ' lath lines per member';
+            document.getElementById('stat-ratio').textContent = s.ratio.toFixed(2) + ' (' + s.rise.toFixed(1) + ' m / ' + s.span.toFixed(1) + ' m)';
             document.getElementById('stat-shear').textContent = s.maxShearDev.toFixed(0) + '\u00B0';
-            document.getElementById('stat-radius').textContent = isFinite(s.minRadius) ? s.minRadius.toFixed(1) + ' m' : '—';
-
-            const statusBar = document.getElementById('status-bar');
-            let severity = 0; // 0 ok, 1 marginal, 2 bad
-
-            if (s.maxShearDev > 25) severity = Math.max(severity, 2);
-            else if (s.maxShearDev > 8) severity = Math.max(severity, 1);
-
-            // Curvature component: Auto mode compares against FIXED lath-size
-            // benchmarks rather than curvatureThreshold itself, because in
-            // Auto mode curvatureThreshold is DERIVED FROM minRadius — a
-            // direct comparison there is nearly always "Marginal" regardless
-            // of the actual shape. Manual override mode is unaffected (its
-            // threshold comes from an independently-chosen thickness).
-            if (isFinite(s.minRadius)) {
-                if (manualLathOverride) {
-                    if (s.minRadius < curvatureThreshold) severity = Math.max(severity, 2);
-                    else if (s.minRadius < curvatureThreshold * 1.6) severity = Math.max(severity, 1);
-                } else {
-                    const thinnestRadius = radiusForThickness(STANDARD_LATH_THICKNESSES_MM[0]);
-                    const thickestRadius = radiusForThickness(STANDARD_LATH_THICKNESSES_MM[STANDARD_LATH_THICKNESSES_MM.length - 1]);
-                    if (s.minRadius < thinnestRadius) severity = Math.max(severity, 2);
-                    else if (s.minRadius < thickestRadius) severity = Math.max(severity, 1);
-                }
-            }
-
-            // A monochrome light-to-dark blue scale instead of a red/amber/
-            // green traffic-light palette — this reports a construction-tier
-            // recommendation, not a pass/fail verdict, and green/red reads
-            // as "stop/go" regardless of the accompanying text. Darker +
-            // bolder = more reinforcement called for; nothing here should
-            // read as "broken".
-            const colors = ['#7fa8c9', '#3d6f9e', '#0b2d4d'];
-            const tints = ['rgba(127,168,201,0.08)', 'rgba(61,111,158,0.08)', 'rgba(11,45,77,0.08)'];
-            const weights = ['400', '600', '800'];
-            const labels = [
-                'NET SETTLED — WITHIN INDICATIVE LIMITS',
-                'NET SETTLED — LOCAL DIAGONAL STIFFENING SUGGESTED',
-                'NET SETTLED — DOUBLE LAYER + TIES LIKELY REQUIRED'
-            ];
-
-            // A very flat net (rise/span < 0.1) is a separate concern from
-            // shear/curvature severity — it's flagged with its own colour
-            // (orange, deliberately outside the blue scale above so it reads
-            // as a distinct signal) rather than folded into the tier system.
-            // The status label text and recommendBox wording stay exactly
-            // as the tier already produced; only the flatness explanation is
-            // appended to the SAME recommendBox rather than a second box.
-            const isFlat = s.ratio < 0.1;
-            const FLAT_COLOR = '#e07b1f';
-            const FLAT_TINT = 'rgba(224,123,31,0.08)';
-            const barColor = isFlat ? FLAT_COLOR : colors[severity];
-            const barTint = isFlat ? FLAT_TINT : tints[severity];
-
-            statusBar.style.color = barColor;
-            statusBar.style.fontWeight = weights[severity];
-            statusBar.textContent = labels[severity] +
-                '  ·  ' + s.nodeCount + ' NODES / ' + s.memberCount + ' LATHS  ·  RISE/SPAN ' + s.ratio.toFixed(2);
-
-            const rec = document.getElementById('recommendBox');
-            rec.style.borderLeftColor = barColor;
-            rec.style.backgroundColor = barTint;
-            rec.style.fontWeight = weights[severity];
-            const spanTxt = s.span.toFixed(1);
-            if (s.span < 16 && severity === 0) {
-                rec.innerHTML = '<b>Single layer may be feasible</b> — span ' + spanTxt + ' m is close to the ' +
-                    'Essen 1962 trial gridshell (15 &times; 15 m, single layer, collapse load ≈150 kgf/m² rigid ' +
-                    'joints; Happold &amp; Liddell 1975, Table 3).';
-            } else if (severity < 2) {
-                rec.innerHTML = '<b>Double-layer lattice recommended.</b> At this span the Multihalle single-layer ' +
-                    'shell would collapse at only ≈3.8 kgf/m² (barely above self-weight) versus ≈100 kgf/m² ' +
-                    'doubled — Table 3, Happold &amp; Liddell 1975.';
-            } else {
-                rec.innerHTML = '<b>Double layer + diagonal ties strongly recommended.</b> Shear distortion or ' +
-                    'lath curvature exceeds the indicative limit — at Mannheim, ties raised the doubled shell\'s ' +
-                    'collapse load from ≈100 to ≈160&ndash;240 kgf/m² (Table 3). Where bend radius < ' +
-                    curvatureThreshold.toFixed(1) + ' m, laths were split into two 25 mm layers on site (Liddell 2015, §3.3).';
-            }
-            if (isFlat) {
-                rec.innerHTML += ' <b>Also, this net is very flat</b> (rise/span ' + s.ratio.toFixed(2) +
-                    ') — well below the ~0.15&ndash;0.3 range typical of a working gridshell (cf. Essen 1962, ' +
-                    '&approx;0.24). Try raising Sag Strength or enabling Free-Hanging Boundary.';
-            }
+            document.getElementById('stat-radius').textContent = isFinite(s.minRadius) ? s.minRadius.toFixed(1) + ' m' : '\u2014';
+            setStatus((lastRelaxConverged ? 'Net settled \u00B7 ' : 'Iteration limit — equilibrium not confirmed \u00B7 ') + s.nodeCount + ' nodes \u00B7 rise/span ' + s.ratio.toFixed(2) +
+                (s.ratio < 0.1 ? ' \u2014 very flat: a shell this shallow buckles early; add slack or lower the edges' : ''), s.ratio < 0.1);
+            updateSummaries();
         }
 
         /* ============================================================
@@ -1205,7 +2057,7 @@
             42, simContainer.clientWidth / Math.max(simContainer.clientHeight, 1), 0.1, 2000
         );
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3)); // full screen resolution: crisp lines
         renderer.setSize(simContainer.clientWidth, simContainer.clientHeight);
         simContainer.appendChild(renderer.domElement);
 
@@ -1219,69 +2071,170 @@
         scene.add(gridHelper);
 
         let pointsGeom = null, pointsMesh = null;
+        let shearMesh = null, shearSamples = [];
         let linesGeom = null, linesMesh = null;
+        let edgeGeom = null, edgeMesh = null;   // edge beams, arches, cables, walls and columns
         let boundaryLine = null;
 
+        function lineMat(width) {
+            return new LineMaterial({
+                linewidth: width, // CSS pixels
+                alphaToCoverage: true, // smooth quad edges with the multisampled canvas
+                vertexColors: true,
+                resolution: new THREE.Vector2(simContainer.clientWidth, simContainer.clientHeight)
+            });
+        }
+
         function rebuildNetMeshes() {
+            if (shearMesh) { scene.remove(shearMesh); shearMesh.geometry.dispose(); shearMesh.material.dispose(); }
             if (pointsMesh) { scene.remove(pointsMesh); pointsGeom.dispose(); pointsMesh.material.dispose(); }
             if (linesMesh) { scene.remove(linesMesh); linesGeom.dispose(); linesMesh.material.dispose(); }
+            if (edgeMesh) { scene.remove(edgeMesh); edgeGeom.dispose(); edgeMesh.material.dispose(); }
 
             const n = netNodes.length;
             pointsGeom = new THREE.BufferGeometry();
             pointsGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
             pointsGeom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
-            const pointsMat = new THREE.PointsMaterial({ size: 0.16, vertexColors: true, sizeAttenuation: true });
+            const pointsMat = new THREE.PointsMaterial({ size: 0.8, vertexColors: true, sizeAttenuation: false }); // fixed pixel size, not a blurry world-size square
             pointsMesh = new THREE.Points(pointsGeom, pointsMat);
             scene.add(pointsMesh);
+            // A separate diagnostic overlay: ordinary nodes stay small when it is off.
+            const shearGeometry = new THREE.BufferGeometry();
+            shearGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+            shearGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+            shearSamples = [];
+            for (const [key, i] of gridMap) {
+                const [gi, gj] = key.split('_').map(Number);
+                const right = gridMap.get((gi + 1) + '_' + gj), up = gridMap.get(gi + '_' + (gj + 1));
+                if (right !== undefined && up !== undefined) shearSamples.push([i, right, up]);
+            }
+            shearGeometry.setIndex(shearSamples.map(([i]) => i));
+            shearMesh = new THREE.Points(shearGeometry, new THREE.PointsMaterial({
+                size: 3.5, sizeAttenuation: false, vertexColors: true,
+                depthTest: false, depthWrite: false
+            }));
+            shearMesh.renderOrder = 10; // diagnostic markers must not disappear underneath the laths
+            scene.add(shearMesh);
 
             // LineSegments2 + LineMaterial: THREE.LineBasicMaterial's `linewidth`
-            // is silently ignored by almost every WebGL driver (a long-standing
-            // three.js/WebGL limitation), so laths always rendered at a fixed
-            // 1px regardless of what was set. LineMaterial instead draws
-            // screen-space quads per segment, giving a genuine pixel width.
+            // is silently ignored by almost every WebGL driver, so the laths use
+            // screen-space quads per segment to get a genuine pixel width.
             linesGeom = new LineSegmentsGeometry();
-            linesGeom.setPositions(new Float32Array(Math.max(netMembers.length, 1) * 6));
-            linesGeom.setColors(new Float32Array(Math.max(netMembers.length, 1) * 6));
-            const linesMat = new LineMaterial({
-                linewidth: 2.2, // pixels
-                vertexColors: true,
-                resolution: new THREE.Vector2(simContainer.clientWidth, simContainer.clientHeight)
-            });
-            linesMesh = new LineSegments2(linesGeom, linesMat);
+            linesMesh = new LineSegments2(linesGeom, lineMat(1.2));
             scene.add(linesMesh);
+            edgeGeom = new LineSegmentsGeometry();
+            edgeMesh = new LineSegments2(edgeGeom, lineMat(2));
+            scene.add(edgeMesh);
 
             updateNetGeometryPositions();
         }
 
         function updateNetGeometryPositions() {
             if (!pointsGeom) return;
+            if (boundaryLine) boundaryLine.visible = viewStage === 'flat';
+            const sy = y => inverted ? -y : y;
+            const tween = stageTween;
+            const t = tween ? Math.min(1, (performance.now() - tween.start) / tween.duration) : 1;
+            const blend = t * t * (3 - 2 * t);
+            // analysis results are drawn on the built shell, scaled
+            const D = inverted && analysisDisp && analysisDisp.length === 3 * netNodes.length ? analysisDisp : null;
+            const ds = D ? (defScaleUser > 0 ? defScaleUser : analysisAutoScale) : 0;
+            const P = i => {
+                const n = netNodes[i];
+                const target = viewStage === 'flat' ? [n.x0, 0, n.z0] :
+                    D ? [n.x + ds * D[3 * i], -n.y + ds * D[3 * i + 1], n.z + ds * D[3 * i + 2]] : [n.x, sy(n.y), n.z];
+                return tween ? target.map((v, k) => tween.from[3 * i + k] * (1 - blend) + v * blend) : target;
+            };
             const posA = pointsGeom.attributes.position.array;
             const colA = pointsGeom.attributes.color.array;
             for (let i = 0; i < netNodes.length; i++) {
-                const n = netNodes[i];
-                const dy = inverted ? -n.y : n.y;
-                posA[i * 3] = n.x; posA[i * 3 + 1] = dy; posA[i * 3 + 2] = n.z;
-                const c = nodeColors[i] || (n.invMass === 0 ? COLOR_FIXED : (n.gi === null ? COLOR_BOUNDARY_FREE : COLOR_FREE));
+                const n = netNodes[i], p = P(i);
+                posA[i * 3] = p[0]; posA[i * 3 + 1] = p[1]; posA[i * 3 + 2] = p[2];
+                const c = n.fixed ? COLOR_FIXED : COLOR_GRAY; // shear colours belong only to the toggleable overlay
                 colA[i * 3] = c.r; colA[i * 3 + 1] = c.g; colA[i * 3 + 2] = c.b;
             }
             pointsGeom.attributes.position.needsUpdate = true;
             pointsGeom.attributes.color.needsUpdate = true;
-
-            const m = netMembers.length;
-            const lp = new Float32Array(Math.max(m, 1) * 6);
-            const lc = new Float32Array(Math.max(m, 1) * 6);
-            for (let i = 0; i < m; i++) {
-                const mem = netMembers[i];
-                const A = netNodes[mem.a], B = netNodes[mem.b];
-                const ay = inverted ? -A.y : A.y, by = inverted ? -B.y : B.y;
-                lp[i * 6] = A.x; lp[i * 6 + 1] = ay; lp[i * 6 + 2] = A.z;
-                lp[i * 6 + 3] = B.x; lp[i * 6 + 4] = by; lp[i * 6 + 5] = B.z;
-                const c = memberColors[i] || COLOR_GRAY;
-                lc[i * 6] = c.r; lc[i * 6 + 1] = c.g; lc[i * 6 + 2] = c.b;
-                lc[i * 6 + 3] = c.r; lc[i * 6 + 4] = c.g; lc[i * 6 + 5] = c.b;
+            shearMesh.visible = showShear && !stageTween;
+            document.getElementById('shearLegend').hidden = !showShear;
+            const hint = document.getElementById('shearHint');
+            hint.hidden = !showShear;
+            hint.textContent = viewStage === 'flat' ? 'Flat grid: deviation from 90° in plan.' :
+                'Deviation from 90° in the hanging net; colour markers overlay the laths.';
+            if (shearMesh.visible) {
+                const geometry = shearMesh.geometry;
+                geometry.attributes.position.array.set(posA);
+                const colours = geometry.attributes.color.array;
+                const xyz = i => viewStage === 'flat' ? [netNodes[i].x0, 0, netNodes[i].z0] :
+                    [netNodes[i].x, netNodes[i].y, netNodes[i].z];
+                shearSamples.forEach(([i, right, up]) => {
+                    const a = xyz(i), b = xyz(right), c = xyz(up);
+                    const v = b.map((x, k) => x - a[k]), w = c.map((x, k) => x - a[k]);
+                    const length = Math.hypot(...v) * Math.hypot(...w);
+                    const cosine = length > 1e-12 ? v.reduce((sum, x, k) => sum + x * w[k], 0) / length : 1;
+                    const deviation = Math.abs(Math.acos(Math.max(-1, Math.min(1, cosine))) * 180 / Math.PI - 90);
+                    const colour = devToColor(deviation);
+                    colours.set([colour.r, colour.g, colour.b], 3 * i);
+                });
+                geometry.attributes.position.needsUpdate = true;
+                geometry.attributes.color.needsUpdate = true;
+                geometry.computeBoundingSphere();
             }
-            linesGeom.setPositions(lp);
-            linesGeom.setColors(lc);
+
+            const lp = [], lc = [], ep = [], ec = [];
+            netMembers.forEach((mem, i) => {
+                const seg = [...P(mem.a), ...P(mem.b)];
+                if (mem.kind === 'lath') {
+                    const c = viewStage === 'flat' ? COLOR_GRAY : memberColors[i] || COLOR_GRAY;
+                    lp.push(...seg); lc.push(c.r, c.g, c.b, c.r, c.g, c.b);
+                } else {
+                    const c = EDGE_COLORS[mem.kind] || COLOR_FIXED;
+                    ep.push(...seg); ec.push(c.r, c.g, c.b, c.r, c.g, c.b);
+                }
+            });
+            // columns stand from the ground to the edge (built view only)
+            if (inverted && viewStage !== 'flat' && !stageTween) netColumns.forEach(col => {
+                const N = netNodes[col.node], top = P(col.node);
+                ep.push(N.x, 0, N.z, ...top); ec.push(0.35, 0.35, 0.35, 0.35, 0.35, 0.35);
+            });
+            if (!lp.length) { lp.push(0, 0, 0, 0, 0, 0); lc.push(1, 1, 1, 1, 1, 1); }
+            if (!ep.length) { ep.push(0, 0, 0, 0, 0, 0); ec.push(1, 1, 1, 1, 1, 1); }
+            updateLineBuffers(linesGeom, lp, lc);
+            updateLineBuffers(edgeGeom, ep, ec);
+            pointsGeom.computeBoundingSphere();
+            // All edit markers and selected-edge highlights follow the displayed nodes,
+            // including cable offsets, inverted geometry and magnified displacement.
+            handleMeshes.forEach(mesh => {
+                const i = netNodes.findIndex(n => n.bk === mesh.userData.k && n.bt === 0);
+                if (i >= 0) mesh.position.fromArray(posA, 3 * i);
+            });
+            if (selEdgeLine && selectedEdge >= 0) {
+                const positions = [], colours = [];
+                netMembers.forEach(m => {
+                    if (m.kind === 'lath' || netNodes[m.a].bk !== selectedEdge) return;
+                    positions.push(...P(m.a), ...P(m.b));
+                    colours.push(1, 1, 1, 1, 1, 1);
+                });
+                if (positions.length) updateLineBuffers(selEdgeLine.geometry, positions, colours);
+                selEdgeLine.visible = positions.length > 0 && !stageTween;
+            }
+        }
+
+        // Reuse GPU buffers while topology stays the same; dispose before resizing.
+        function updateLineBuffers(geometry, positions, colors) {
+            const position = geometry.attributes.instanceStart;
+            if (!position || position.data.array.length !== positions.length) {
+                geometry.dispose();
+                geometry.setPositions(positions);
+                geometry.setColors(colors);
+            } else {
+                position.data.array.set(positions);
+                position.data.needsUpdate = true;
+                geometry.attributes.instanceColorStart.data.array.set(colors);
+                geometry.attributes.instanceColorStart.data.needsUpdate = true;
+                geometry.computeBoundingBox();
+                geometry.computeBoundingSphere();
+            }
         }
 
         function updateBoundaryLine3D() {
@@ -1292,6 +2245,7 @@
             const mat = new THREE.LineDashedMaterial({ color: 0xbbbbbb, dashSize: 0.35, gapSize: 0.25 });
             boundaryLine = new THREE.Line(geo, mat);
             boundaryLine.computeLineDistances();
+            boundaryLine.visible = viewStage === 'flat';
             scene.add(boundaryLine);
         }
 
@@ -1327,8 +2281,8 @@
             });
             const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
             const size = Math.max(maxX - minX, maxZ - minZ, 6);
-            camera.position.set(cx + size * 0.95, size * 0.9, cz + size * 1.15);
-            controls.target.set(cx, size * 0.12, cz);
+            camera.position.set(cx + size * 0.76, size * 0.72, cz + size * 0.92);
+            controls.target.set(cx, 0, cz);
             camera.updateProjectionMatrix();
             controls.update();
         }
@@ -1350,35 +2304,80 @@
             const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
             const footprint = Math.max(maxX - minX, maxZ - minZ, 6);
             const size = Math.max(footprint, (maxY - minY) * 1.6, 6);
-            camera.position.set(cx + size * 0.95, cy + size * 0.9, cz + size * 1.15);
+            camera.position.set(cx + size * 0.76, cy + size * 0.72, cz + size * 0.92);
             controls.target.set(cx, cy, cz);
             camera.updateProjectionMatrix();
             controls.update();
         }
 
-        window.addEventListener('resize', () => {
+        // keep the renderer the exact size of its box (a stretched canvas blurs the lines),
+        // whatever changes the box: the window, the 2D outline folding, a scrollbar appearing
+        function fitRenderer() {
             const w = simContainer.clientWidth, h = simContainer.clientHeight;
             if (w === 0 || h === 0) return;
             camera.aspect = w / h;
             camera.updateProjectionMatrix();
             renderer.setSize(w, h);
             if (linesMesh) linesMesh.material.resolution.set(w, h);
+            if (edgeMesh) edgeMesh.material.resolution.set(w, h);
+            if (selEdgeLine) selEdgeLine.material.resolution.set(w, h);
             if (scaleRefLine) scaleRefLine.material.resolution.set(w, h);
-        });
+        }
+        window.addEventListener('resize', fitRenderer);
+        new ResizeObserver(fitRenderer).observe(simContainer);
+
+        let lastRelaxConverged = false;
+        let fitRevision = 0, fittingHeight = false;
+
+        // The relaxation runs in its own timer loop, so it keeps going when the
+        // page is not being drawn (hidden tab); animate() only draws.
+        let pumpTimer = null, netDirty = false;
+        function pumpRelax() {
+            pumpTimer = null;
+            if (!simRunning || !dr || fittingHeight) return;
+            const budget = 8; // ms of solving per tick
+            const t0 = performance.now();
+            let res = Infinity, converged = false;
+            do {
+                res = dr.step(drIterPerFrame);
+                converged = dr.iter > 200 && res < drTolerance();
+            } while (!converged && dr.iter < DR_MAX_ITER && performance.now() - t0 < budget);
+            syncNodesFromDR();
+            netDirty = true;
+            if (converged && cablePass < 2 && boundaryPts.some(p => p.t === 'cable' && p.r > 0)) {
+                computeCableOffsets();   // shape the cables by the forces they carry, then hang again
+                cablePass++;
+                simRunning = false;
+                startRelax(false, true);
+                return;
+            }
+            if (converged || dr.iter >= DR_MAX_ITER) {
+                simRunning = false;
+                lastRelaxConverged = converged;
+                analyzeStructure();
+                (viewStage === 'flat' ? fitCameraToBounds : fitCameraToNet)();
+                return;
+            }
+            document.getElementById('status-bar').textContent =
+                'RELAXING THE HANGING NET \u2026 ' + dr.iter + ' IT.  OUT OF BALANCE ' + res.toExponential(1) + ' kN';
+            pumpTimer = setTimeout(pumpRelax, 0);
+        }
+        function kickRelax() {
+            simRunning = true;
+            if (!pumpTimer) pumpTimer = setTimeout(pumpRelax, 0);
+        }
 
         function animate() {
             requestAnimationFrame(animate);
-            if (simRunning) {
-                let lastMaxMove = 0;
-                for (let k = 0; k < STEPS_PER_FRAME; k++) { lastMaxMove = stepSimulation(); simStep++; }
-                updateNetGeometryPositions();
-                const settled = simStep > 60 && lastMaxMove < SETTLE_EPS;
-                if (simStep >= MAX_SIM_STEPS || settled) {
-                    simRunning = false;
-                    analyzeStructure();
-                    fitCameraToNet();
+            if (stageTween) {
+                netDirty = true;
+                const t = Math.min(1, (performance.now() - stageTween.start) / stageTween.duration);
+                controls.target.y = stageTween.targetFrom + (stageTween.targetTo - stageTween.targetFrom) * t * t * (3 - 2 * t);
+                if (performance.now() - stageTween.start >= stageTween.duration) {
+                    stageTween = null; rebuildHandles();
                 }
             }
+            if (netDirty) { updateNetGeometryPositions(); netDirty = false; }
             controls.update();
             renderer.render(scene, camera);
         }
@@ -1387,42 +2386,81 @@
         /* ============================================================
            REGENERATE PIPELINE
         ============================================================ */
+        function startRelax(fromFlat, cableRound = false) {
+            stageTween = null;
+            fitRevision++; fittingHeight = false;
+            lastRelaxConverged = false;
+            if (!cableRound) cablePass = 0;
+            clearAnalysis();
+            applyBoundaryHeights();
+            if (fromFlat) {
+                let hSum = 0, hN = 0;
+                netNodes.forEach(n => { if (n.fixed) { hSum -= n.y; hN++; } });
+                const hMean = hN ? hSum / hN : 0;
+                netNodes.forEach(n => {
+                    if (!n.fixed) { n.x = n.x0; n.z = n.z0; n.y = -hMean; }
+                });
+            }
+            buildDRModel();
+            nodeColors = new Array(netNodes.length).fill(null);
+            memberColors = new Array(netMembers.length).fill(null);
+            updateNetGeometryPositions();
+            document.getElementById('status-bar').style.color = '#111';
+            document.getElementById('status-bar').textContent = 'RELAXING THE HANGING NET \u2026';
+            rebuildHandles();
+            kickRelax();
+        }
+
         function regenerateNetAndRelax() {
+            stageTween = null;
+            cableOffsets = new Map(); cableSpans = []; cableNodeT = new Map();
             const built = buildNet(boundaryPts, meshSpacing);
             netNodes = built.nodes;
             netMembers = built.members;
+            netSpacing = built.spacing;
             buildLookups();
-            applyBoundarySupportPattern();
-
-            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-            boundaryPts.forEach(p => {
-                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-                minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
-            });
-            const boundaryDiagonal = Math.hypot(maxX - minX, maxZ - minZ);
-            gravityScale = Math.max(0.6, Math.min(2.5, boundaryDiagonal / GRAVITY_REFERENCE_SPAN));
-
-            nodeColors = new Array(netNodes.length).fill(null);
-            memberColors = new Array(netMembers.length).fill(null);
+            applyBoundaryHeights();
             rebuildNetMeshes();
             updateBoundaryLine3D();
             updateScaleReferenceLine();
             fitCameraToBounds();
-            simStep = 0;
-            simRunning = true;
-            document.getElementById('status-bar').style.color = '#111';
-            document.getElementById('status-bar').textContent = 'RELAXING NET UNDER GRAVITY \u2026';
+            startRelax(true);
         }
 
-        function reRelaxFromFlat() {
-            netNodes.forEach(n => {
-                n.x = n.x0; n.y = n.y0; n.z = n.z0;
-                n.px = n.x0; n.py = n.y0; n.pz = n.z0;
-            });
-            simStep = 0;
-            simRunning = true;
-            document.getElementById('status-bar').style.color = '#111';
-            document.getElementById('status-bar').textContent = 'RELAXING NET UNDER GRAVITY \u2026';
+
+        // Fit: find the lath slack that gives the requested crown height
+        // (crown height grows with slack, so bisect on it)
+        async function fitCrownHeight(target) {
+            const revision = ++fitRevision;
+            fittingHeight = true;
+            simRunning = true; // structural analysis must wait for the fitted net
+            lastRelaxConverged = false;
+            clearTimeout(pumpTimer); pumpTimer = null;
+            let lo = 0.002, hi = 0.40;
+            for (let it = 0; it < 14; it++) {
+                if (revision !== fitRevision) return;
+                lathSlack = Math.sqrt(lo * hi);
+                buildDRModel();
+                let res = Infinity;
+                while (dr.iter < 20000) {
+                    const began = performance.now();
+                    do { res = dr.step(25); }
+                    while (dr.iter < 20000 && res >= drTolerance() && performance.now() - began < 8);
+                    syncNodesFromDR(); netDirty = true;
+                    document.getElementById('status-bar').textContent =
+                        'FITTING CROWN · ' + (it + 1) + '/14 · ' + crownHeight().toFixed(1) + ' / ' + target.toFixed(1) + ' m';
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                    if (revision !== fitRevision) return; // a newer edit owns the model
+                    if (dr.iter > 200 && res < drTolerance()) break;
+                }
+                const height = crownHeight();
+                // Stop only once both equilibrium and the requested height are close.
+                if (res < drTolerance() && Math.abs(height - target) < 0.02) break;
+                if (height < target) lo = lathSlack; else hi = lathSlack;
+            }
+            document.getElementById('lathSlack').value = Math.min(20, Math.max(0.5, lathSlack * 100));
+            document.getElementById('val-slack').textContent = (lathSlack * 100).toFixed(2) + ' %';
+            startRelax(false);
         }
 
         /* ============================================================
@@ -1442,9 +2480,13 @@
 
         function ensureCanvasSize(canvas) {
             const rect = canvas.getBoundingClientRect();
-            const w = Math.floor(rect.width), h = Math.floor(rect.height);
-            if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; return true; }
-            return false;
+            const ratio = Math.min(window.devicePixelRatio || 1, 3);
+            const w = Math.round(rect.width * ratio), h = Math.round(rect.height * ratio);
+            if (canvas.width === w && canvas.height === h) return false;
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0);
+            cachedCenterOffset = null;
+            return true;
         }
 
         function updateEditCenterOffset() {
@@ -1456,12 +2498,12 @@
             });
             const midX = (minX + maxX) / 2 + manualPanX, midZ = (minZ + maxZ) / 2 + manualPanZ;
             const shapeW = Math.max(maxX - minX, 1e-3), shapeH = Math.max(maxZ - minZ, 1e-3);
-            let autoScale = Math.min(editCanvas.width / shapeW, editCanvas.height / shapeH) * EDIT_FIT_MARGIN;
+            let autoScale = Math.min(editCanvas.clientWidth / shapeW, editCanvas.clientHeight / shapeH) * EDIT_FIT_MARGIN;
             autoScale = Math.max(EDIT_SCALE_MIN, Math.min(EDIT_SCALE_MAX, autoScale));
             const scale = autoScale * manualZoom;
             cachedCenterOffset = {
-                cx: editCanvas.width / 2 - midX * scale,
-                cz: editCanvas.height / 2 - midZ * scale,
+                cx: editCanvas.clientWidth / 2 - midX * scale,
+                cz: editCanvas.clientHeight / 2 - midZ * scale,
                 scale
             };
         }
@@ -1473,22 +2515,23 @@
         }
 
         function drawEditor() {
+            updateBndPanel();
             ensureCanvasSize(editCanvas);
             updateEditCenterOffset();
-            editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+            editCtx.clearRect(0, 0, editCanvas.clientWidth, editCanvas.clientHeight);
 
             // faint background grid, 1m spacing
             editCtx.strokeStyle = '#f2f2f2';
             editCtx.lineWidth = 1;
             for (let gx = -40; gx <= 40; gx++) {
                 const { px } = toPx(gx, 0);
-                if (px < 0 || px > editCanvas.width) continue;
-                editCtx.beginPath(); editCtx.moveTo(px, 0); editCtx.lineTo(px, editCanvas.height); editCtx.stroke();
+                if (px < 0 || px > editCanvas.clientWidth) continue;
+                editCtx.beginPath(); editCtx.moveTo(px, 0); editCtx.lineTo(px, editCanvas.clientHeight); editCtx.stroke();
             }
             for (let gz = -40; gz <= 40; gz++) {
                 const { pz } = toPx(0, gz);
-                if (pz < 0 || pz > editCanvas.height) continue;
-                editCtx.beginPath(); editCtx.moveTo(0, pz); editCtx.lineTo(editCanvas.width, pz); editCtx.stroke();
+                if (pz < 0 || pz > editCanvas.clientHeight) continue;
+                editCtx.beginPath(); editCtx.moveTo(0, pz); editCtx.lineTo(editCanvas.clientWidth, pz); editCtx.stroke();
             }
 
             if (editorMode === 'sketch') {
@@ -1527,21 +2570,64 @@
                 editCtx.closePath();
                 editCtx.fillStyle = 'rgba(0,123,255,0.06)';
                 editCtx.fill();
-                editCtx.strokeStyle = '#111';
-                editCtx.lineWidth = 1.5;
-                editCtx.stroke();
+                // each edge in its Fig 54 style
+                boundaryPts.forEach((p, k) => {
+                    const q = boundaryPts[(k + 1) % boundaryPts.length];
+                    const A = toPx(p.x, p.z), B = toPx(q.x, q.z);
+                    drawEdge2D(A, B, p.t, k === selectedEdge);
+                });
             }
 
             boundaryPts.forEach((p, i) => {
                 const { px, pz } = toPx(p.x, p.z);
                 editCtx.beginPath();
-                editCtx.arc(px, pz, i === selectedIdx ? 3 : 2.5, 0, Math.PI * 2);
+                editCtx.arc(px, pz, i === selectedIdx ? 3.5 : 2.5, 0, Math.PI * 2);
                 editCtx.fillStyle = i === selectedIdx ? '#007BFF' : '#111';
                 editCtx.fill();
                 editCtx.strokeStyle = '#fff';
                 editCtx.lineWidth = 1;
                 editCtx.stroke();
+                if (p.h > 0.05 || i === selectedIdx) {
+                    editCtx.font = "9px 'Helvetica Neue', sans-serif";
+                    editCtx.fillStyle = i === selectedIdx ? '#007BFF' : '#777';
+                    editCtx.fillText(p.h.toFixed(1), px + 5, pz - 4);
+                }
             });
+        }
+
+        function drawEdge2D(A, B, type, selected) {
+            const ctx = editCtx;
+            const brown = '#8d6e4a';
+            ctx.save();
+            ctx.lineCap = 'butt';
+            if (selected) {
+                ctx.strokeStyle = 'rgba(0,123,255,0.25)'; ctx.lineWidth = 9;
+                ctx.beginPath(); ctx.moveTo(A.px, A.pz); ctx.lineTo(B.px, B.pz); ctx.stroke();
+            }
+            if (type === 'wall') {
+                ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(A.px, A.pz); ctx.lineTo(B.px, B.pz); ctx.stroke();
+            } else if (type === 'beam') {
+                ctx.strokeStyle = brown; ctx.lineWidth = 2; ctx.setLineDash([7, 4]);
+                ctx.beginPath(); ctx.moveTo(A.px, A.pz); ctx.lineTo(B.px, B.pz); ctx.stroke();
+            } else if (type === 'cable') {
+                ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(A.px, A.pz); ctx.lineTo(B.px, B.pz); ctx.stroke();
+                const L = Math.hypot(B.px - A.px, B.pz - A.pz), nDots = Math.max(1, Math.floor(L / 7));
+                ctx.fillStyle = '#111';
+                for (let d = 1; d < nDots; d++) {
+                    const t = d / nDots;
+                    ctx.beginPath(); ctx.arc(A.px + (B.px - A.px) * t, A.pz + (B.pz - A.pz) * t, 1.6, 0, Math.PI * 2); ctx.fill();
+                }
+            } else if (type === 'arch') {
+                const L = Math.hypot(B.px - A.px, B.pz - A.pz) || 1;
+                const nx = -(B.pz - A.pz) / L * 2, nz = (B.px - A.px) / L * 2;
+                ctx.strokeStyle = brown; ctx.lineWidth = 1.2;
+                [-1, 1].forEach(sgn => {
+                    ctx.beginPath(); ctx.moveTo(A.px + sgn * nx, A.pz + sgn * nz); ctx.lineTo(B.px + sgn * nx, B.pz + sgn * nz); ctx.stroke();
+                });
+            }
+            ctx.restore();
         }
 
         window.addEventListener('resize', () => { if (ensureCanvasSize(editCanvas)) { cachedCenterOffset = null; drawEditor(); } });
@@ -1573,7 +2659,21 @@
                 if (d < bestD) { bestD = d; found = i; }
             });
             if (found >= 0) {
-                dragIdx = found; selectedIdx = found; drawEditor();
+                dragIdx = found; selectedIdx = found; selectedEdge = -1; drawEditor(); rebuildHandles();
+                return;
+            }
+            // near an edge: select it (type, rise); otherwise pan
+            let edge = -1, bestE = 6;
+            boundaryPts.forEach((p, k) => {
+                const q = boundaryPts[(k + 1) % boundaryPts.length];
+                const A = toPx(p.x, p.z), B = toPx(q.x, q.z);
+                const dx = B.px - A.px, dz = B.pz - A.pz, L2 = dx * dx + dz * dz || 1;
+                const u = Math.max(0, Math.min(1, ((mx - A.px) * dx + (my - A.pz) * dz) / L2));
+                const d = Math.hypot(mx - A.px - u * dx, my - A.pz - u * dz);
+                if (d < bestE) { bestE = d; edge = k; }
+            });
+            if (edge >= 0) {
+                selectEdge(edge);
             } else {
                 panning = true;
                 lastPanPx = { mx, my };
@@ -1606,7 +2706,7 @@
 
             if (dragIdx === null) return;
             const p = fromPx(mx, my);
-            boundaryPts[dragIdx] = p;
+            boundaryPts[dragIdx].x = p.x; boundaryPts[dragIdx].z = p.z;
             drawEditor();
         });
         window.addEventListener('mouseup', () => {
@@ -1620,7 +2720,7 @@
                     sketching = false;
                     finalizeSketch();
                     setEditorMode('edit');
-                    selectedIdx = -1;
+                    selectedIdx = -1; selectedEdge = -1;
                     cachedCenterOffset = null;
                     drawEditor();
                     regenerateNetAndRelax();
@@ -1643,27 +2743,44 @@
                 if (d > bestD) { bestD = d; bestI = i; }
             }
             const a = boundaryPts[bestI], b = boundaryPts[(bestI + 1) % boundaryPts.length];
-            boundaryPts.splice(bestI + 1, 0, { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 });
+            boundaryPts.splice(bestI + 1, 0, { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, h: (a.h + b.h) / 2, t: a.t, r: a.r / 2 });
+            a.r /= 2;
             selectedIdx = bestI + 1;
             cachedCenterOffset = null;
             drawEditor();
             regenerateNetAndRelax();
         });
+        document.getElementById('btnTidy').addEventListener('click', () => {
+            const next = tidyOutline(boundaryPts);
+            if (next === boundaryPts) { setStatus('Outline retained: no safe tidy within the geometry limits.'); return; }
+            tidyUndo = boundaryPts.map(p => ({ ...p }));
+            document.getElementById('btnUndoTidy').disabled = false;
+            boundaryPts = next;
+            selectedIdx = -1; selectedEdge = -1;
+            cachedCenterOffset = null;
+            drawEditor();
+            regenerateNetAndRelax();
+        });
+        document.getElementById('btnUndoTidy').addEventListener('click', () => {
+            if (!tidyUndo) return;
+            boundaryPts = tidyUndo; tidyUndo = null;
+            document.getElementById('btnUndoTidy').disabled = true;
+            selectedIdx = -1; selectedEdge = -1; cachedCenterOffset = null;
+            drawEditor(); regenerateNetAndRelax();
+        });
         document.getElementById('btnRemoveNode').addEventListener('click', () => {
             if (boundaryPts.length <= 4) return;
             const idx = selectedIdx >= 0 ? selectedIdx : boundaryPts.length - 1;
             boundaryPts.splice(idx, 1);
-            selectedIdx = -1;
+            selectedIdx = -1; selectedEdge = -1;
             cachedCenterOffset = null;
             drawEditor();
             regenerateNetAndRelax();
         });
 
         document.getElementById('presetSelect').addEventListener('change', e => {
-            if (e.target.value === 'essen') boundaryPts = presetEssen();
-            else if (e.target.value === 'rect') boundaryPts = presetRectangle();
-            else boundaryPts = presetBlob();
-            selectedIdx = -1;
+            loadPreset(e.target.value);
+            selectedIdx = -1; selectedEdge = -1;
             manualZoom = 1;
             manualPanX = 0;
             manualPanZ = 0;
@@ -1671,7 +2788,27 @@
             setEditorMode('edit');
             drawEditor();
             regenerateNetAndRelax();
+            fitPresetHeight(e.target.value);
         });
+
+        // the documented crown heights: Mannheim ~19-20 m (Fast + Epp; Bauwelt), Essen 5 m (Happold & Liddell 1975)
+        const PRESET_CROWN = { mannheim: 19, essen: 5 };
+        function loadPreset(v) {
+            tidyUndo = null; document.getElementById('btnUndoTidy').disabled = true;
+            boundaryPts = v === 'essen' ? presetEssen() : v === 'rect' ? presetRectangle() : v === 'blob' ? presetBlob() : presetMannheim();
+            // model grid: Linkwitz's plan drew every 3rd lath, 1.5 m; the big plan needs a coarser model to stay quick
+            const grid = v === 'mannheim' ? 2.5 : v === 'essen' ? 1.0 : 2.0;
+            meshSpacing = grid;
+            document.getElementById('meshSpacing').value = grid;
+            document.getElementById('val-spacing').textContent = grid.toFixed(2) + ' m';
+        }
+        function fitPresetHeight(v) {
+            const h = PRESET_CROWN[v];
+            if (!h) return;
+            document.getElementById('fitHeight').value = h;
+            document.getElementById('status-bar').textContent = 'FITTING LATH SLACK TO A ' + h.toFixed(1) + ' M CROWN \u2026';
+            void fitCrownHeight(h);
+        }
 
         /* ---- Sketch / Edit mode toggle ---- */
         const modeSketchBtn = document.getElementById('modeSketchBtn');
@@ -1703,7 +2840,7 @@
             valSketchSmooth.textContent = String(sketchSmoothness);
             if (sketchLastRawPts.length < 3) return; // no sketch drawn yet, nothing to re-run
             if (runSketchPipeline()) {
-                selectedIdx = -1;
+                selectedIdx = -1; selectedEdge = -1;
                 cachedCenterOffset = null;
                 drawEditor();
                 clearTimeout(sketchSmoothDebounce);
@@ -1723,68 +2860,322 @@
             meshDebounce = setTimeout(regenerateNetAndRelax, 300);
         });
 
-        const sagSlider = document.getElementById('sagStrength');
-        sagSlider.addEventListener('input', () => {
-            sagStrength = parseFloat(sagSlider.value);
-            document.getElementById('val-sag').textContent = sagStrength.toFixed(2);
-            simStep = 0;
-            simRunning = true;
+        let slackDebounce = null;
+        const slackSlider = document.getElementById('lathSlack');
+        slackSlider.addEventListener('input', () => {
+            lathSlack = parseFloat(slackSlider.value) / 100;
+            document.getElementById('val-slack').textContent = (lathSlack * 100).toFixed(1) + ' %';
+            clearTimeout(slackDebounce);
+            slackDebounce = setTimeout(() => startRelax(false), 120);
         });
 
-        const lathOverrideToggle = document.getElementById('lathOverrideToggle');
-        const lathOverrideRow = document.getElementById('lathOverrideRow');
-        const lathManualSlider = document.getElementById('lathManual');
-        const valLathManual = document.getElementById('val-lathManual');
+        // permanent load: laths + fittings + covering (see permanentKg)
+        function updatePermanentLoad() { selfWeight = permanentKg() * KG; }
+        document.getElementById('covering').addEventListener('change', e => {
+            covering = e.target.value;
+            updatePermanentLoad();
+            startRelax(false); // the shape does not change (uniform load), the forces do
+        });
 
-        lathOverrideToggle.addEventListener('change', () => {
-            manualLathOverride = lathOverrideToggle.checked;
-            lathOverrideRow.style.display = manualLathOverride ? 'block' : 'none';
-            if (manualLathOverride) lathThicknessMM = parseFloat(lathManualSlider.value);
+        document.getElementById('btnFit').addEventListener('click', () => {
+            const target = parseFloat(document.getElementById('fitHeight').value);
+            if (!(target > 0)) return;
+            document.getElementById('status-bar').textContent = 'FITTING LATH SLACK TO A ' + target.toFixed(1) + ' M CROWN \u2026';
+            void fitCrownHeight(target);
+        });
+
+        document.getElementById('lathColour').addEventListener('change', e => {
+            lathColourMode = e.target.value;
             if (!simRunning) analyzeStructure();
         });
-        lathManualSlider.addEventListener('input', () => {
-            lathThicknessMM = parseFloat(lathManualSlider.value);
-            valLathManual.textContent = lathThicknessMM.toFixed(0) + ' mm';
-            if (!simRunning) analyzeStructure();
+
+        /* ---- Boundary panel: height at the selected node, type of the edge after it ---- */
+        const bndPanel = document.getElementById('bndPanel');
+        const vHeightSlider = document.getElementById('vHeight');
+        const edgeRiseSlider = document.getElementById('edgeRise');
+        let bndDebounce = null;
+        function updateBndPanel() {
+            const n = boundaryPts.length;
+            const kN = selectedIdx >= 0 && selectedIdx < n ? selectedIdx : -1;
+            const kE = selectedEdge >= 0 && selectedEdge < n ? selectedEdge : -1;
+            document.getElementById('nodeGroup').classList.toggle('on', kN >= 0);
+            document.getElementById('edgeGroup').classList.toggle('on', kE >= 0);
+            if (kN >= 0) {
+                const p = boundaryPts[kN];
+                document.getElementById('nodeTitle').textContent = 'Node ' + kN;
+                vHeightSlider.value = p.h;
+                document.getElementById('val-vHeight').textContent = p.h.toFixed(1) + ' m';
+            }
+            if (kE >= 0) {
+                const p = boundaryPts[kE];
+                document.getElementById('edgeTitle').textContent = 'Edge ' + kE + ' \u2192 ' + ((kE + 1) % n);
+                document.querySelectorAll('#edgeTypeRow button').forEach(b => b.classList.toggle('active', b.dataset.type === p.t));
+                const hasRise = p.t === 'arch' || p.t === 'cable';
+                document.getElementById('edgeRiseRow').style.display = hasRise ? '' : 'none';
+                document.getElementById('edgeRiseName').textContent = p.t === 'arch' ? 'Arch rise over chord' : 'Cable sag between columns';
+                edgeRiseSlider.max = p.t === 'arch' ? 12 : 3;
+                edgeRiseSlider.value = p.r;
+                document.getElementById('val-edgeRise').textContent = p.r.toFixed(1) + ' m';
+            }
+        }
+        function boundaryChanged(retopo) {
+            cableOffsets = new Map(); cableSpans = []; cableNodeT = new Map();
+            drawEditor();
+            rebuildHandles();
+            clearTimeout(bndDebounce);
+            // heights only move the held nodes; a new edge type changes the chain, so rebuild
+            bndDebounce = setTimeout(() => retopo ? regenerateNetAndRelax() : startRelax(false), 150);
+        }
+        vHeightSlider.addEventListener('input', () => {
+            if (selectedIdx < 0) return;
+            boundaryPts[selectedIdx].h = parseFloat(vHeightSlider.value);
+            updateBndPanel();
+            boundaryChanged(false);
+        });
+        edgeRiseSlider.addEventListener('input', () => {
+            if (selectedEdge < 0) return;
+            boundaryPts[selectedEdge].r = parseFloat(edgeRiseSlider.value);
+            updateBndPanel();
+            boundaryChanged(false);
+        });
+        document.querySelectorAll('#edgeTypeRow button').forEach(btn => btn.addEventListener('click', () => {
+            if (selectedEdge < 0) return;
+            const p = boundaryPts[selectedEdge];
+            p.t = btn.dataset.type;
+            if (p.t === 'cable') p.r = Math.min(p.r, 3);
+            updateBndPanel();
+            boundaryChanged(true);
+        }));
+        document.getElementById('btnApplyHeight').addEventListener('click', () => {
+            if (selectedIdx < 0) return;
+            const h = boundaryPts[selectedIdx].h;
+            boundaryPts.forEach(p => { p.h = h; });
+            updateBndPanel();
+            boundaryChanged(false);
+        });
+        document.getElementById('btnApplyType').addEventListener('click', () => {
+            if (selectedEdge < 0) return;
+            const src = boundaryPts[selectedEdge];
+            boundaryPts.forEach(p => { p.t = src.t; p.r = src.r; });
+            updateBndPanel();
+            boundaryChanged(true);
         });
 
-        document.getElementById('invertToggle').addEventListener('change', e => {
-            inverted = e.target.checked;
-            updateNetGeometryPositions();
-            if (!simRunning) fitCameraToNet();
+        /* ---- Editing the outline in the model (3D): handles, drag, pick an edge ---- */
+        const handleGroup = new THREE.Group();
+        scene.add(handleGroup);
+        let handleMeshes = [], selEdgeLine = null;
+        const handleMatOff = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const handleMatOn = new THREE.MeshBasicMaterial({ color: 0x007bff });
+        function vertexPos3D(k) {
+            const i = netNodes.findIndex(n => n.bk === k && n.bt === 0);
+            if (pointsGeom && i >= 0) return new THREE.Vector3().fromArray(pointsGeom.attributes.position.array, 3 * i);
+            const p = boundaryPts[k];
+            return new THREE.Vector3(p.x, viewStage === 'flat' ? 0 : inverted ? p.h : -p.h, p.z);
+        }
+        function rebuildHandles() {
+            netDirty = true;
+            handleGroup.children.forEach(c => { if (c.geometry) c.geometry.dispose(); });
+            handleGroup.clear();
+            if (selEdgeLine) { scene.remove(selEdgeLine); selEdgeLine.geometry.dispose(); selEdgeLine.material.dispose(); selEdgeLine = null; }
+            const geo = new THREE.SphereGeometry(Math.max(0.09, spanOfPlan() * 0.0035), 12, 8);
+            handleMeshes = boundaryPts.map((p, k) => {
+                const m = new THREE.Mesh(geo, k === selectedIdx ? handleMatOn : handleMatOff);
+                m.position.copy(vertexPos3D(k));
+                m.userData.k = k;
+                handleGroup.add(m);
+                return m;
+            });
+            const k = selectedEdge, n = boundaryPts.length;
+            if (k >= 0 && k < n) { // the selected edge, following its elevation profile
+                const A = boundaryPts[k], B = boundaryPts[(k + 1) % n], pos = [];
+                for (let s = 0; s < 16; s++) {
+                    const t0 = s / 16, t1 = (s + 1) / 16;
+                    const y = t => viewStage === 'flat' ? 0 : (inverted ? 1 : -1) * edgeHeightAt(k, t);
+                    pos.push(A.x + (B.x - A.x) * t0, y(t0), A.z + (B.z - A.z) * t0, A.x + (B.x - A.x) * t1, y(t1), A.z + (B.z - A.z) * t1);
+                }
+                const g = new LineSegmentsGeometry(); g.setPositions(pos);
+                selEdgeLine = new LineSegments2(g, new LineMaterial({ color: 0x007bff, linewidth: 7, transparent: true, opacity: 0.45,
+                    resolution: new THREE.Vector2(simContainer.clientWidth, simContainer.clientHeight) }));
+                scene.add(selEdgeLine);
+            }
+        }
+        function selectVertex(k) {
+            selectedIdx = k; selectedEdge = -1;
+            drawEditor();       // also refreshes the panel
+            rebuildHandles();
+        }
+        function selectEdge(k) {
+            selectedEdge = k; selectedIdx = -1;
+            drawEditor();
+            rebuildHandles();
+        }
+
+        const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+        let drag3D = null, downAt = null;
+        function pointerNdc(e) {
+            const r = renderer.domElement.getBoundingClientRect();
+            ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+            return r;
+        }
+        renderer.domElement.addEventListener('pointerdown', e => {
+            if (stageTween || analysisBusy) return;
+            downAt = { x: e.clientX, y: e.clientY };
+            pointerNdc(e);
+            raycaster.setFromCamera(ndc, camera);
+            const hit = raycaster.intersectObjects(handleMeshes)[0];
+            let k = hit ? hit.object.userData.k : -1;
+            // Small drawn nodes retain a modest screen-space click target.
+            if (k < 0) {
+                const rect = renderer.domElement.getBoundingClientRect();
+                let nearest = 7;
+                handleMeshes.forEach(m => {
+                    if (!m.visible) return;
+                    const q = m.position.clone().project(camera);
+                    if (q.z < -1 || q.z > 1) return;
+                    const d = Math.hypot(e.clientX - rect.left - (q.x + 1) * rect.width / 2,
+                        e.clientY - rect.top - (1 - q.y) * rect.height / 2);
+                    if (d < nearest) { nearest = d; k = m.userData.k; }
+                });
+            }
+            if (k < 0) return;
+            selectVertex(k);
+            const pos = vertexPos3D(k);
+            let plane;
+            if (e.shiftKey) { // height: a vertical plane through the node, facing the camera
+                const nrm = camera.getWorldDirection(new THREE.Vector3()); nrm.y = 0; nrm.normalize();
+                plane = new THREE.Plane().setFromNormalAndCoplanarPoint(nrm, pos);
+            } else {
+                plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -pos.y);
+            }
+            drag3D = { k, plane, mode: e.shiftKey ? 'height' : 'plan', moved: false };
+            controls.enabled = false;
+            renderer.domElement.setPointerCapture(e.pointerId);
+            e.stopImmediatePropagation();
+        }, { capture: true });
+        renderer.domElement.addEventListener('pointermove', e => {
+            if (!drag3D) return;
+            pointerNdc(e);
+            raycaster.setFromCamera(ndc, camera);
+            const p = new THREE.Vector3();
+            if (!raycaster.ray.intersectPlane(drag3D.plane, p)) return;
+            const b = boundaryPts[drag3D.k];
+            if (drag3D.mode === 'plan') { b.x = p.x; b.z = p.z; }
+            else b.h = Math.max(0, Math.min(30, inverted ? p.y : -p.y));
+            drag3D.moved = true;
+            cachedCenterOffset = null;
+            drawEditor();
+            rebuildHandles();
+        });
+        renderer.domElement.addEventListener('pointerup', e => {
+            if (drag3D) {
+                const d = drag3D; drag3D = null;
+                controls.enabled = true;
+                if (d.moved) { if (d.mode === 'plan') regenerateNetAndRelax(); else startRelax(false); }
+                return;
+            }
+            if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 4) return; // it was an orbit drag
+            // a click: pick the nearest outline edge on screen
+            const r = pointerNdc(e);
+            const toScreen = v => { const q = v.clone().project(camera); return [(q.x + 1) / 2 * r.width, (1 - q.y) / 2 * r.height]; };
+            const mx = e.clientX - r.left, my = e.clientY - r.top, n = boundaryPts.length;
+            let best = -1, bestD = 10;
+            for (let k = 0; k < n; k++) {
+                const A = boundaryPts[k], B = boundaryPts[(k + 1) % n];
+                let prev = null;
+                for (let s = 0; s <= 12; s++) {
+                    const t = s / 12;
+                    const pt = toScreen(new THREE.Vector3(A.x + (B.x - A.x) * t, viewStage === 'flat' ? 0 : (inverted ? 1 : -1) * edgeHeightAt(k, t), A.z + (B.z - A.z) * t));
+                    if (prev) {
+                        const dx = pt[0] - prev[0], dy = pt[1] - prev[1], L2 = dx * dx + dy * dy || 1;
+                        const u = Math.max(0, Math.min(1, ((mx - prev[0]) * dx + (my - prev[1]) * dy) / L2));
+                        const d = Math.hypot(mx - prev[0] - u * dx, my - prev[1] - u * dy);
+                        if (d < bestD) { bestD = d; best = k; }
+                    }
+                    prev = pt;
+                }
+            }
+            selectEdge(best);
         });
 
-        const freeBoundaryToggle = document.getElementById('freeBoundaryToggle');
-        const supportSpacingRow = document.getElementById('supportSpacingRow');
-        const supportSpacingSlider = document.getElementById('supportSpacing');
-        freeBoundaryToggle.addEventListener('change', () => {
-            freeHangingBoundary = freeBoundaryToggle.checked;
-            supportSpacingRow.style.display = freeHangingBoundary ? 'block' : 'none';
-            regenerateNetAndRelax();
+        /* ---- Folding: the 2D outline to a rail on the right, the three sections to their titles ---- */
+        const canvasesEl = document.querySelector('.canvases-wrapper');
+        document.getElementById('foldEditor').addEventListener('click', () => {
+            const folded = canvasesEl.classList.toggle('editor-folded');
+            window.dispatchEvent(new Event('resize'));
+            if (!folded) { cachedCenterOffset = null; drawEditor(); }
         });
-        supportSpacingSlider.addEventListener('input', () => {
-            supportSpacing = parseInt(supportSpacingSlider.value, 10);
-            document.getElementById('val-supportSpacing').textContent = supportSpacing + ' nodes';
-            clearTimeout(supportSpacingDebounce);
-            supportSpacingDebounce = setTimeout(regenerateNetAndRelax, 250);
-        });
+        document.querySelectorAll('.fsec .fhead .fold').forEach(btn => btn.addEventListener('click', () => {
+            btn.closest('.fsec').classList.toggle('folded');
+        }));
+        // what a folded section still says
+        function updateSummaries() {
+            const f = lastForces;
+            const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+            set('sumForm', 'crown ' + crownHeight().toFixed(1) + ' m \u00B7 slack ' + (lathSlack * 100).toFixed(1) + ' % \u00B7 G ' +
+                permanentKg().toFixed(0) + ' kg/m\u00B2' + (f ? ' \u00B7 max ' + (f.maxT * f.perLath).toFixed(1) + ' kN per lath line' : ''));
+            const parts = [useSnow ? 'snow ' + (snowLoad / KG).toFixed(0) + ' kg/m\u00B2' : 'no snow'];
+            if (lastCheck && lastCheck.util !== undefined) parts.push('members ' + (lastCheck.util <= 1 ? 'pass' : 'fail') + ' (' + lastCheck.util.toFixed(2) + ')');
+            set('sumCheck', parts.join(' \u00B7 '));
+            set('sumDesign', designLabel());
+            set('an-design', designLabel());
+        }
+
+        /* ---- Stages: 1 flat grid -> 2 hanging model (tension) -> 3 built shell (compression) ---- */
+        function setStage(st) {
+            if (st === viewStage || analysisBusy) return;
+            const from = pointsGeom ? Float32Array.from(pointsGeom.attributes.position.array) : null;
+            viewStage = st;
+            document.querySelectorAll('#stageRow button').forEach(b => b.classList.toggle('active', b.dataset.stage === st));
+            inverted = st === 'built';
+            // Display transitions only: never alter solved coordinates or restart the solver.
+            stageTween = from && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ? { from, start: performance.now(), duration: 1100, targetFrom: controls.target.y, targetTo: st === 'flat' ? 0 : (inverted ? -1 : 1) * netNodes.reduce((a, n) => a + n.y, 0) / netNodes.length } : null;
+            handleMeshes.forEach(m => { m.visible = !stageTween; });
+            if (selEdgeLine) selEdgeLine.visible = !stageTween;
+            document.getElementById('forceLegend').style.display = st !== 'flat' && viewStage !== 'flat' && lathColourMode === 'force' ? '' : 'none';
+            netDirty = true;
+            if (!stageTween) rebuildHandles();
+        }
+        document.querySelectorAll('#stageRow button').forEach(b => b.addEventListener('click', () => setStage(b.dataset.stage)));
 
         document.getElementById('showShear').addEventListener('change', e => {
             showShear = e.target.checked;
-            if (!simRunning) analyzeStructure();
+            netDirty = true;
         });
-        document.getElementById('showCurvature').addEventListener('change', e => {
-            showCurvature = e.target.checked;
-            if (!simRunning) analyzeStructure();
+
+        /* ---- Check: snow, analysis ---- */
+        document.getElementById('useSnow').addEventListener('change', e => {
+            useSnow = e.target.checked;
+            document.getElementById('snowRow').style.display = useSnow ? '' : 'none';
+            clearAnalysis();
         });
-        document.getElementById('btnReRelax').addEventListener('click', reRelaxFromFlat);
+        // snow is a site value (code or design figure), not something to scrub through
+        function setSnowKg(kg) { snowLoad = kg * KG; clearAnalysis(); }
+        document.getElementById('snowPreset').addEventListener('change', e => {
+            const custom = e.target.value === 'custom';
+            document.getElementById('snowCustom').style.display = custom ? '' : 'none';
+            document.getElementById('snowUnit').style.display = custom ? '' : 'none';
+            setSnowKg(custom ? parseFloat(document.getElementById('snowCustom').value) || 0 : parseFloat(e.target.value));
+        });
+        document.getElementById('snowCustom').addEventListener('input', e => setSnowKg(parseFloat(e.target.value) || 0));
+        document.getElementById('defScale').addEventListener('input', e => {
+            defScaleUser = parseFloat(e.target.value);
+            document.getElementById('val-defScale').textContent = defScaleUser > 0 ? defScaleUser.toFixed(0) : 'auto';
+            netDirty = true;
+        });
+        document.getElementById('btnAnalyze').addEventListener('click', runAnalyze);
+        document.getElementById('btnPropose').addEventListener('click', () => runPropose().catch(analysisFailed));
+        updatePermanentLoad();
 
         /* ============================================================
            INIT
         ============================================================ */
-        boundaryPts = presetBlob();
+        loadPreset('mannheim');
         setEditorMode('edit');
         regenerateNetAndRelax();
+        fitPresetHeight('mannheim');
+        updateSummaries();
     </script>
 </body>
 </html>
