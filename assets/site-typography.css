@@ -1,0 +1,44 @@
+/* Shared page frame and typography. Loaded after each page's local styles. */
+* { box-sizing: border-box; }
+html { scrollbar-gutter: stable; }
+body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+body.study-page { padding: 0 24px 32px; }
+.study-bar { max-width:1100px; width:100%; margin:0 auto; padding:14px 0 8px; }
+.study-bar .titleline { font-size:13px; }
+.study-bar a,.study-bar .idx { font-size:11px; }
+.study-page input,.study-page button,.study-page select,.study-page textarea { font-family:inherit; }
+.study-page .canvas-container,.study-page .main-container { max-width:1100px; margin-top:16px; }
+.study-page .controls-container,.study-page .controls-strip,.study-page .panels { max-width:1100px; }
+.study-page .cluster-label,.study-page .column h3,.study-page .panel h4,.study-page .k { font-size:11px; font-weight:700; letter-spacing:.5px; color:#333; }
+.study-page .control-row,.study-page .field label,.study-page .field .val,.study-page .val,.study-page .checkbox-row,.study-page .toggle,.study-page .viewmode label { font-size:11px; }
+.study-page .field select,.study-page select,.study-page button,.study-page .num-row input { font-size:11px; }
+.study-page .cluster-desc,.study-page .info-box,.study-page .note,.study-page .field .note,.study-page .column p,.study-page .view-hint,.study-page #sim-hint { font-size:10.5px; line-height:1.45; }
+.study-page .field label { white-space:normal; }
+.study-page .cluster-desc { white-space:normal; overflow:visible; }
+.study-page .fold,.study-page .fold span { font-size:11px!important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+@media(max-width:760px){body.study-page{padding:0 16px 32px;}}
+body.page-space-first .wrap{ max-width:1100px; }
+body.page-space-first .fields{ margin-top:16px; }
+body.page-space-first .k{font-size:11px;letter-spacing:.5px;color:#555;}
+body.page-space-first .fold,body.page-space-first .fold span{font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;}
+body.page-space-first .fld input[type=number],body.page-space-first .fld select,body.page-space-first .fld .auto,body.page-space-first .cell,body.page-space-first .slot-h select{font-size:11px;}
+body.page-space-first .fld .u,body.page-space-first .fld .third,body.page-space-first .thead span,body.page-space-first .famrow .fh small,body.page-space-first .tcard .dr.none,body.page-space-first .tcard .cnt,body.page-space-first .vpanel .vh .why,body.page-space-first .vi,body.page-space-first .vi .nm small,body.page-space-first .slot-h .sub,body.page-space-first .slot-h .nomat,body.page-space-first .cell small,body.page-space-first .notes{font-size:10.5px;line-height:1.45;}
+body.page-space-first .seg button,body.page-space-first .btn,body.page-space-first .sgrp select,body.page-space-first .rank select{font-size:11px;letter-spacing:.3px;}
+body.page-space-first .thead b,body.page-space-first .vpanel .vh b,body.page-space-first .rank .hd b{font-size:11px;}
+body.page-space-first .code{font-size:10.5px;height:auto;line-height:1.35;}
+body.page-emerging-grid-catenoid .study-bar,body.page-emerging-grid-catenoid .canvas-container,body.page-emerging-grid-catenoid .caption,body.page-emerging-grid-catenoid .timeline,body.page-emerging-grid-catenoid .panels,body.page-emerging-grid-catenoid .reference-notes{max-width:1100px;}
+body.page-emerging-grid-catenoid .canvas-container{margin-top:16px;}
+body.page-emerging-grid-catenoid .panel h4,body.page-emerging-grid-catenoid .crit-box h4{font-size:11px;letter-spacing:.5px;color:#333;}
+body.page-emerging-grid-catenoid .panel .note,body.page-emerging-grid-catenoid .reference-notes,body.page-emerging-grid-catenoid .crit,body.page-emerging-grid-catenoid .caption .key,body.page-emerging-grid-catenoid .view-hint,body.page-emerging-grid-catenoid .vlabel,body.page-emerging-grid-catenoid .levels-key,body.page-emerging-grid-catenoid .origin-lbl,body.page-emerging-grid-catenoid .fl-label{font-size:10.5px;line-height:1.45;}
+body.page-emerging-grid-catenoid .caption,body.page-emerging-grid-catenoid .caption b,body.page-emerging-grid-catenoid .reference-notes summary{font-size:11px;}
+body.page-emerging-grid-catenoid .stage-grid .sbtn,body.page-emerging-grid-catenoid .seg button,body.page-emerging-grid-catenoid .tog,body.page-emerging-grid-catenoid .caption .qsw button,body.page-emerging-grid-catenoid .caption .refine{font-size:11px;letter-spacing:.3px;}
+body.page-emerging-grid-catenoid .stage-grid .thumb figcaption,body.page-emerging-grid-catenoid .scrub-ends,body.page-emerging-grid-catenoid .scrub-row .lbl{font-size:10.5px;}
+body.page-emerging-grid-catenoid .scrub-row .lbl{width:auto;min-width:44px;}
+body.page-emerging-grid-catenoid .seg{flex-wrap:wrap;}
+body.page-emerging-grid-catenoid .stage-grid .sbtn{height:auto;min-height:34px;white-space:normal;}
+
+@media(max-height:800px), (max-width:760px){
+ html:has(body.viewport-study),body.viewport-study {height:auto;min-height:100%;overflow:auto;}
+ body.viewport-study .canvas-container {flex:none;height:55vh;min-height:300px;}
+ body.viewport-study .controls-container {flex-wrap:wrap;}
+}
