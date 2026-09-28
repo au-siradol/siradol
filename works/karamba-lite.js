@@ -180,7 +180,7 @@ class Skyline {
     }
     factor() {
         const a = this.a, maxa = this.maxa, nn = this.neq;
-        this.negPivots = 0;
+        this.negPivots = 0; this.negEq = [];
         for (let n = 1; n <= nn; n++) {
             const kn = maxa[n], kl = kn + 1, ku = maxa[n + 1] - 1, kh = ku - kl;
             if (kh > 0) {
@@ -207,10 +207,13 @@ class Skyline {
                 }
                 a[kn] -= b;
             }
-            if (!(a[kn] > 0)) {
-                this.negPivots++;          // Sturm count: the tangent has lost stability
-                if (!(Math.abs(a[kn]) > 1e-12)) a[kn] = 1e-12;
+            // Sturm count: a clearly negative pivot means the tangent has lost stability. A pivot
+            // at round-off level around zero (a whisper-stiff rotation) is not counted.
+            if (!(a[kn] > -1e-8)) {
+                if (this.negPivots < 20) this.negEq.push(n);
+                this.negPivots++;
             }
+            if (!(Math.abs(a[kn]) > 1e-12)) a[kn] = 1e-12;
         }
     }
     solve(v) { // v: Float64Array(neq+1), overwritten with the solution
@@ -455,9 +458,9 @@ export function createFrame(frame) {
                 if (g) fint[g] += E[0][c] * f[3 * blk] + E[1][c] * f[3 * blk + 1] + E[2][c] * f[3 * blk + 2];
             }
         });
-        // a whisper of rotational stiffness everywhere, so a node held only by
+        // a whisper of rotational stiffness everywhere (0.01 kNm/rad: nothing next to a lath, enough that round-off cannot turn the pivot of an otherwise free rotation negative), so a node held only by
         // trusses (or a released joint) doesn't make the matrix singular
-        if (elastic) for (let v = 0; v < n; v++) for (let d = 3; d < 6; d++) { const g = eq[DOF * v + d]; if (g) S.add(g, g, 1e-6); }
+        if (elastic) for (let v = 0; v < n; v++) for (let d = 3; d < 6; d++) { const g = eq[DOF * v + d]; if (g) S.add(g, g, 1e-2); }
     }
 
     // internal force vector only (for a line search), without assembling stiffness
@@ -499,6 +502,12 @@ export function createFrame(frame) {
     return {
         neq, X, X0, N: Nel, M: Mel, Mz: Mzel,
         get negPivots() { return K.negPivots; },
+        // where the tangent lost its positive pivots: [{ node, dof }] (dof 0-2 move, 3-5 turn)
+        get negDofs() {
+            const out = [];
+            (K.negEq || []).forEach(q => { const i = eq.indexOf(q); if (i >= 0) out.push({ node: Math.floor(i / DOF), dof: i % DOF }); });
+            return out;
+        },
         reset,
 
         // First-order analysis (Karamba "Analyze"): one linear solve.

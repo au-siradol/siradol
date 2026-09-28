@@ -299,10 +299,10 @@
                     <div class="control-row">
                         <label>Colour laths by</label>
                         <select id="lathColour" class="wide">
-                            <option value="force" selected>Axial force (form-finding)</option>
+                            <option value="force">Axial force (form-finding)</option>
                             <option value="analysis">Axial force (analysis: blue compression, orange tension)</option>
                             <option value="radius">Bend radius</option>
-                            <option value="plain">Plain</option>
+                            <option value="plain" selected>Plain</option>
                         </select>
                     </div>
                     <p class="legend" id="forceLegend" style="display:none">
@@ -399,23 +399,22 @@
                 <h2>Design</h2>
 
                     <div class="btn-group" style="margin-bottom:10px;">
-                        <button class="action-btn" id="btnPropose">Propose a design</button>
+                        <button class="action-btn" id="btnPropose">Suggest (quick estimate)</button>
                     </div>
                     <table class="ladder" id="ladderTable">
                         <thead><tr><th>Step</th><th>Shell</th><th>Laths &amp; members</th><th>Deflection</th><th></th></tr></thead>
-                        <tbody id="ladderBody"><tr><td colspan="5" class="val">Not run yet. The shell starts as built at Mannheim (step 4).</td></tr></tbody>
+                        <tbody id="ladderBody"><tr><td colspan="5" class="val">Not run yet. The shell starts as built at Mannheim (step 4). A quick estimate of the trend, one analysis per step.</td></tr></tbody>
                     </table>
-                    <details class="note"><summary>How the design is chosen</summary>
-                        The shell is stiffened in the order it was at Mannheim and stops at the first step that
-                        passes Analyze: every lath and edge member within its strength for all load combinations,
-                        and a deflection under G + S within span / 250. The steps: (1) one layer each way, as Essen;
-                        (2) two layers, their bolts giving the composite action measured in 1974 (joint shear
-                        stiffness at 40 % of the design value, &gamma; 0.5 &rarr; 0.29); (3) shear blocks where the lath
-                        forces are highest (&gamma; = 1 there); (4) diagonal cable ties, 2 &times; 6 mm through every
-                        sixth node; (5) a third layer (the 2018 renovation plan). At every step the edge members are
-                        sized first. The laths stay 50 &times; 50 mm, a size set by how far they bend. &gamma; = 0.5 before
-                        the 40 % reduction is an assumption: the papers give the ratio, not the value.
-                        Not checked: buckling of the shell as a whole.
+                    <details class="note"><summary>How the suggestion is made</summary>
+                        A quick estimate of the trend, not a design. The shell is stiffened in the order it was at
+                        Mannheim and each step is analysed once, with its edge members sized from that one analysis:
+                        (1) one layer each way, as Essen; (2) two layers, their bolts giving the composite action
+                        measured in 1974 (joint shear stiffness at 40 % of the design value, &gamma; 0.5 &rarr; 0.29);
+                        (3) shear blocks where the lath forces are highest (&gamma; = 1 there); (4) diagonal cable ties,
+                        2 &times; 6 mm through every sixth node; (5) a third layer (the 2018 renovation plan). A step passes
+                        when every lath and edge member is within its strength and the deflection under G + S within
+                        span / 250; the first that passes is suggested. The laths stay 50 &times; 50 mm, a size set by how far
+                        they bend. &gamma; = 0.5 before the 40 % reduction is an assumption. Not checked: buckling of the shell.
                     </details>
 
 
@@ -449,7 +448,7 @@
         import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
         import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
         import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-28r';
+        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-28u';
 
         /* ============================================================
            STATE
@@ -483,7 +482,7 @@
         let viewStage = 'flat'; // 'flat' | 'hanging' | 'built'
         let stageTween = null;
         let showShear = true;
-        let lathColourMode = 'force'; // 'force' | 'radius' | 'plain'
+        let lathColourMode = 'plain'; // 'force' | 'radius' | 'plain'
         const REAL_LATH_SPACING = 0.5; // Mannheim: 50 x 50 mm laths at 0.5 m
 
         // Boundary: boundaryPts[k] = { x, z, h, t, r } — h = edge height at the node
@@ -1074,21 +1073,48 @@
                 nodes.push({ x, y: 0, z, x0: x, y0: 0, z0: z, fixed: bk !== null, gi, gj, bk, bt });
                 return nodes.length - 1;
             }
+            // Mesh clean-up at the edge. Where the grid happens to fall decides how short the
+            // partial laths and edge pieces get; very short ones are far stiffer than their
+            // neighbours and draw force to themselves, so edge results jumped with the grid.
+            // A grid node closer to the edge than SNAP x spacing moves onto the edge, and edge
+            // crossings that close to an existing edge node share it.
+            const SNAP = 0.3, snapDist = SNAP * effSpacing;
+            function nearestOnOutline(pt) {
+                let best = null;
+                for (let k = 0; k < poly.length; k++) {
+                    const a = poly[k], b = poly[(k + 1) % poly.length];
+                    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1;
+                    const u = Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.z - a.z) * dz) / L2));
+                    const x = a.x + u * dx, z = a.z + u * dz, d = Math.hypot(pt.x - x, pt.z - z);
+                    if (!best || d < best.d) best = { x, z, k, u, d };
+                }
+                return best;
+            }
             function getOrCreateGridNode(i, j) {
                 const cell = grid[j][i];
                 if (!cell.inside) return -1;
-                if (cell.nodeIndex === -1) cell.nodeIndex = newNode(cell.x, cell.z, i, j, null, 0);
+                if (cell.nodeIndex === -1) {
+                    const near = nearestOnOutline(cell);
+                    cell.nodeIndex = near && near.d < snapDist ? addBoundaryNode(near) : newNode(cell.x, cell.z, i, j, null, 0);
+                }
                 return cell.nodeIndex;
             }
 
             // a node at every outline vertex: column heads, arch springings,
             // the ends of each edge type
             const vertexNode = poly.map((p, k) => newNode(p.x, p.z, null, null, k, 0));
+            const edgeNodes = poly.map(() => []);   // boundary nodes made so far, per edge
 
             function addBoundaryNode(hit) {
-                if (hit.u < 1e-6) return vertexNode[hit.k];
-                if (hit.u > 1 - 1e-6) return vertexNode[(hit.k + 1) % poly.length];
-                return newNode(hit.x, hit.z, null, null, hit.k, hit.u);
+                const k = hit.k, n = poly.length, A = poly[k], B = poly[(k + 1) % n];
+                const len = Math.hypot(B.x - A.x, B.z - A.z) || 1;
+                // share a vertex or an existing node on this edge when they are that close
+                if (hit.u * len < snapDist) return vertexNode[k];
+                if ((1 - hit.u) * len < snapDist) return vertexNode[(k + 1) % n];
+                for (const idx of edgeNodes[k]) if (Math.abs(nodes[idx].bt - hit.u) * len < snapDist) return idx;
+                const idx = newNode(hit.x, hit.z, null, null, k, hit.u);
+                edgeNodes[k].push(idx);
+                return idx;
             }
 
             function findBoundaryCrossing(a, b) {
@@ -1566,8 +1592,8 @@
                 const el = document.getElementById(id); if (el) { el.textContent = '—'; el.classList.remove('fail'); }
             });
             const ut = document.getElementById('an-util'); if (ut) ut.innerHTML = '';
-            if (lathColourMode === 'analysis') lathColourMode = 'force';
-            const sel = document.getElementById('lathColour'); if (sel && sel.value === 'analysis') sel.value = 'force';
+            if (lathColourMode === 'analysis') lathColourMode = 'plain';
+            const sel = document.getElementById('lathColour'); if (sel && sel.value === 'analysis') sel.value = 'plain';
             updateSummaries();
         }
 
@@ -1725,10 +1751,10 @@
 
         // Size the edge members for a ladder step: smallest passing section per group,
         // repeated until the sizes settle (a stiffer member draws more force).
-        async function sizeMembers(step, label) {
+        async function sizeMembers(step, label, rounds = 5) {
             const sec = Object.assign({}, design.sec);
             let worst = {}, verified = null;
-            for (let round = 0; round < 5; round++) {
+            for (let round = 0; round < rounds; round++) {
                 setStatus(label + ' · sizing the edge members, round ' + (round + 1));
                 await tick();
                 const fm = buildFrameModel(step, sec), frame = createFrame(fm);
@@ -1772,46 +1798,52 @@
                 Object.values(worst).every(w => Number.isFinite(w.u) && w.u <= 1) };
         }
 
-        // Propose a design: climb the ladder until a step passes Analyze
+        // Suggest (quick estimate): every ladder step analysed once, its edge members sized from
+        // that one analysis, so the table shows the trend in seconds. A recommendation, not a design.
         async function runPropose() {
             if (!readyForAnalysis()) return;
-            setBusy(true, 'Proposing a design \u2026');
+            setBusy(true, 'Quick estimate \u2026');
             const body = document.getElementById('ladderBody');
             body.innerHTML = '';
-            let chosen = null;
+            const names = { column: 'columns', beam: 'edge beams', arch: 'arches', cable: 'cables' };
+            let first = null, closest = null;
             for (let k = 0; k < LADDER.length; k++) {
                 const step = LADDER[k], label = 'Step ' + (k + 1) + ' of ' + LADDER.length;
                 const tr = document.createElement('tr');
                 tr.innerHTML = '<td>' + (k + 1) + '</td><td>' + step.name + '</td><td>\u2026</td><td></td><td></td>';
                 body.appendChild(tr);
-                const sized = await sizeMembers(step, label);
-                const names = { column: 'columns', beam: 'edge beams', arch: 'arches', cable: 'cables' };
+                const sized = await sizeMembers(step, label, 1);
                 let gov = null;
                 Object.entries(sized.worst).forEach(([t, w]) => { if (!gov || w.u > gov.u) gov = { t, u: w.u }; });
                 tr.children[2].textContent = 'laths ' + sized.lathUtil.toFixed(2) + (gov ? ' \u00B7 ' + names[gov.t] + ' ' + gov.u.toFixed(2) : '');
                 tr.children[2].className = sized.passed ? '' : 'fail';
-                setStatus(label + ' \u00B7 deflection'); await tick();
                 const d = deflectionCheck(sized.fm, sized.frame, step.layers);
                 tr.children[3].textContent = (d.down * 1000).toFixed(0) + ' / ' + (d.limit * 1000).toFixed(0) + ' mm';
                 tr.children[3].className = d.ok ? '' : 'fail';
                 const ok = sized.passed && d.ok;
                 tr.children[4].textContent = ok ? 'passes' : 'short';
                 tr.children[4].className = ok ? 'ok' : 'fail';
-                if (ok) { chosen = { k, sized }; tr.classList.add('chosen'); break; }
+                const score = Math.max(sized.lathUtil, gov ? gov.u : 0, d.down / d.limit);
+                if (ok && !first) { first = { k, sized }; tr.classList.add('chosen'); }
+                if (!closest || score < closest.score) closest = { k, score };
+                await tick();
             }
-            if (!chosen) { setBusy(false); setStatus('No step passes Analyze: the shape itself needs to change (more rise, a different edge). The current design is kept.', true); return; }
-            design = { step: chosen.k, sec: chosen.sized.sec, sized: true, worst: chosen.sized.worst };
-            updatePermanentLoad();
-            // Update the form-finding reference forces for the selected layer count.
-            buildDRModel();
-            lastRelaxConverged = dr.step(0) < drTolerance();
-            showSections();
             setBusy(false);
-            clearAnalysis();
-            document.getElementById('an-design').textContent = designLabel();
-            setStatus('Proposed: ' + designLabel() + '. Laths, members and deflection pass; buckling not checked.');
-            updateSummaries();
-            if (lastRelaxConverged) analyzeStructure(); else kickRelax();
+            if (first) {
+                design = { step: first.k, sec: first.sized.sec, sized: true, worst: first.sized.worst };
+                updatePermanentLoad();
+                buildDRModel();
+                lastRelaxConverged = dr.step(0) < drTolerance();
+                showSections();
+                clearAnalysis();
+                document.getElementById('an-design').textContent = designLabel();
+                setStatus('Suggested: ' + designLabel() + ' (quick estimate; buckling not checked). Press Analyze to confirm.');
+                updateSummaries();
+                if (lastRelaxConverged) analyzeStructure(); else kickRelax();
+            } else {
+                setStatus('Quick estimate: no step passes. Closest is step ' + (closest.k + 1) + ' (' + LADDER[closest.k].name +
+                    ', worst ratio ' + closest.score.toFixed(1) + '). The shape or the edges need to change; the current design is kept.', true);
+            }
         }
 
         function showSections() {
