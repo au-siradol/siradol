@@ -16,27 +16,15 @@
             padding: 0 24px 24px;
         }
 
-        .study-bar {
-            max-width: 1100px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 14px 0 8px 0;
-            border-bottom: 1px solid #111;
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            box-sizing: border-box;
-        }
-        .study-bar a { color:#111; text-decoration:none; font-size:11px; letter-spacing:1px; text-transform:uppercase; flex:none; }
-        .study-bar a:hover { color:#d32f2f; }
-        .study-bar .titlegroup { display:flex; align-items:baseline; gap:10px; min-width:0; }
-        .study-bar .idx { font-family: Helvetica, Arial, sans-serif; font-size:11px; color:#999; letter-spacing:1px; flex:none; }
-        .study-bar .titleline { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; text-align:right; }
-        .study-bar .titleline b { font-weight:bold; color:#111; }
-        .study-bar .titleline .sep { color:#ccc; margin:0 7px; }
-        .study-bar .titleline .sub { color:#666; font-weight:normal; }
+    .study-bar { max-width: 1100px; width: 100%; margin: 0 auto; padding: 14px 0 8px; border-bottom: 1px solid #111; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; box-sizing: border-box; flex-shrink: 0; }
+    .study-bar a { color: #111; text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; flex: none; }
+    .study-bar a:hover { color: #1976d2; }
+    .study-bar .titlegroup { flex: 1 1 0; display: flex; align-items: baseline; justify-content: flex-end; gap: 10px; min-width: 0; }
+    .study-bar .idx { font-size: 11px; color: #999; letter-spacing: 1px; flex: none; }
+    .study-bar .titleline { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; text-align: right; }
+    .study-bar .titleline b { font-weight: bold; color: #111; }
+    .study-bar .titleline .sep { color: #ccc; margin: 0 7px; }
+    .study-bar .titleline .sub { color: #666; font-weight: normal; }
 
         .main-container {
             max-width: 1100px;

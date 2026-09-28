@@ -14,15 +14,22 @@
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         background-color: #f8f9fa;
         color: #111;
-        padding: 10px 24px 10px 24px;
+        padding: 0 24px 10px 24px;
         box-sizing: border-box;
         height: 100vh;
         display: flex;
         flex-direction: column;
     }
-    .header { text-align: right; max-width: 1100px; width: 100%; margin: 0 auto 6px auto; flex-shrink: 0; }
-    .header h1 { margin: 0; font-size: 15px; font-weight: bold; letter-spacing: 1px; }
-    .header h2 { margin: 1px 0 0 0; font-size: 10.5px; font-weight: normal; color: #666; letter-spacing: 0.5px; }
+    .study-bar { max-width: 1100px; width: 100%; margin: 0 auto; padding: 14px 0 8px; border-bottom: 1px solid #111; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; box-sizing: border-box; flex-shrink: 0; }
+    .study-bar a { color: #111; text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; flex: none; }
+    .study-bar a:hover { color: #1976d2; }
+    .study-bar .titlegroup { flex: 1 1 0; display: flex; align-items: baseline; justify-content: flex-end; gap: 10px; min-width: 0; }
+    .study-bar .idx { font-size: 11px; color: #999; letter-spacing: 1px; flex: none; }
+    .study-bar .titleline { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; text-align: right; }
+    .study-bar .titleline b { font-weight: bold; color: #111; }
+    .study-bar .titleline .sep { color: #ccc; margin: 0 7px; }
+    .study-bar .titleline .sub { color: #666; font-weight: normal; }
+    .study-bar { margin-bottom: 16px; }
     .canvas-container {
         max-width: 1100px; width: 100%; margin: 0 auto; border-bottom: 1px dashed #aaa;
         padding-bottom: 6px; position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
@@ -86,14 +93,6 @@
     button.btn-danger:hover:not(:disabled) { background: #d32f2f; color: #fff; }
     button:disabled { cursor: not-allowed; opacity: 0.5; border-style: dashed; }
     button.btn-full { flex: 1 1 100%; }
-    .portfolio-bar {
-        max-width: 1100px; width: 100%; margin: 0 auto 6px auto; display: flex;
-        justify-content: space-between; align-items: baseline; padding-bottom: 5px;
-        border-bottom: 1px solid #111; flex-shrink: 0;
-    }
-    .portfolio-bar a { color: #111; text-decoration: none; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; }
-    .portfolio-bar a:hover { color: #1976d2; }
-    .portfolio-bar .idx { font-family: 'Courier New', monospace; font-size: 10.5px; color: #999; letter-spacing: 1px; }
     .slider-box { padding: 7px 8px; background: #eee; border: 1px solid #ccc; margin-bottom: 7px; }
     .slider-box div { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px; }
     input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin-top: 3px; margin-bottom: 6px; }
@@ -104,13 +103,9 @@
 </head>
 <body>
 
-<div class="portfolio-bar">
+<div class="study-bar">
     <a href="../index.html">&larr; Index</a>
-    <span class="idx">07 / MATERIAL PROCESS & FORM</span>
-</div>
-<div class="header">
-    <h1>Rammed Concrete Sequence</h1>
-    <h2>Peter Zumthor, Bruder Klaus Field Chapel</h2>
+    <span class="titlegroup"><span class="idx">07</span><span class="titleline"><b>Rammed Concrete Sequence</b><span class="sep">&mdash;</span><span class="sub">Peter Zumthor, Bruder Klaus Field Chapel</span></span></span>
 </div>
 <div class="canvas-container">
     <div id="canvas-inner">
