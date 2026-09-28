@@ -2696,8 +2696,19 @@
         sheet: { n: 'metal sheet', g: 0.10 },
         insulated: { n: 'insulated metal panel', g: 0.20 },
         deck: { n: 'concrete deck 10 cm', g: 2.40, concrete: true, maxL: 20 },
-        green: { n: 'green roof', g: 3.00, concrete: true, maxL: 20 }
+        green: { n: 'green roof', g: 3.00, concrete: true, maxL: 20 },
+        // light-letting coverings: span = how far one cushion or pane reaches between the members that carry it
+        etfe: { n: 'ETFE cushions', short: 'ETFE cushions', g: 0.05, span: 3.5, what: 'cushions',
+            also: 'The cushions are kept inflated, at about 200–300 Pa, by blowers that run all the time; a cushion that loses pressure goes slack, so drainage and ponding need a check.',
+            src: 'ETFE foil 1.75 g/cm³, three 200 µm layers ≈ 1 kg/m², with the aluminium edge extrusions ≈ 0.05 kN/m² (estimate); cushion widths and pressure: A. LeCuyer, ETFE: Technology and Design, Birkhäuser 2008' },
+        glass: { n: 'glass, laminated double glazing', short: 'Glass panes', g: 0.55, span: 1.8, what: 'panes',
+            also: 'Overhead glass: the lower pane is laminated, so a broken pane stays in place (DIN 18008-2).',
+            src: 'glass 2500 kg/m³ (EN 572-1): 6 mm + 2 × 6 mm laminated = 0.45 kN/m², with glazing bars ≈ 0.55 kN/m²; pane spans of about 1.8 m are typical, not a rule; overhead glazing: DIN 18008-2' }
     };
+    // how far apart the members are that a covering rests on (a grid's module, or the spacing of frames, trusses, arches); null if unknown
+    const memberGap = r0 => r0 && r0.plan ? (r0.plan.a || r0.plan.s || null) : null;
+    // purlins between members farther apart than a covering spans: steel, a first estimate that grows with the span between members
+    const purlinG = gap => +(0.02 + 0.01 * gap).toFixed(2);
     const SHELL_ROOF = ['folded', 'barrel', 'dome', 'vault', 'hyparT'];
     function ownWeight(sys, m, L, r0) {   // kN/m² of plan, a first estimate
         if (sys.own) return sys.own(m, L, r0);
@@ -2732,7 +2743,8 @@
         let fin, finName, concrete;
         if (sys.id === 'pneu' || sys.roofType === 'membrane') { fin = 0; finName = 'membrane'; concrete = false; }
         else if (SHELL_ROOF.includes(sys.id) || sys.roofType === 'shell') { fin = 0.30; finName = 'waterproofing'; concrete = m === 'concrete' || m === 'masonry'; }
-        else { fin = FINISH[S.finish].g; finName = FINISH[S.finish].n; concrete = !!FINISH[S.finish].concrete; }
+        else { const F = FINISH[S.finish], gap = memberGap(r0); fin = F.g; finName = F.n; concrete = !!F.concrete;
+            if (F.span && gap && gap > F.span + 1e-6) { fin += purlinG(gap); finName += ' + purlins'; } }
         const live = concrete ? 1.0 : 0.3;
         return { own, fin, finName, svc, live, q: own + fin + svc + live };
     }
@@ -3393,6 +3405,15 @@
         ['space', /^(space|st_|sf_fold|sv_|sl_)/], ['node', /^(cy_int$|sa_|dm_long$|sd_|geodesic$)/], ['arch', /^(tarch|garch|arch3|tl_arch)$/],
         ['truss', /^(truss|ptruss|tt_|tb_|tc_|tk_|tl_|tf_|ti_)/], ['beam', /./]
     ];
+    // the covering and what carries it: a light-letting covering spans only a few metres, so wider-spaced members need purlins
+    function coverNote(r) {
+        const F = FINISH[S.finish]; if (!F.span || !r.load.finName.startsWith(F.n)) return null;
+        const gap = memberGap(r), sp = F.span;
+        const t = gap == null ? `${F.short} span about ${sp} m: the ${F.what} need members or purlins at most ${sp} m apart.`
+            : gap > sp + 1e-6 ? `${F.short} span about ${sp} m, the main members are ${f1(gap)} m apart: purlins at most ${sp} m apart between them, counted in the roof load as ${f2(purlinG(gap))} kN/m² (estimate).`
+            : `The main members, ${f1(gap)} m apart, carry the ${F.what} directly (they span about ${sp} m).`;
+        return { t: t + ' ' + F.also, src: F.src };
+    }
     function timberNote(r) {
         if (r.m !== 'timber') return null;
         const id = r.sys.id, L = S.L, g = r.load, qd = 1.35 * (g.own + g.fin + g.svc) + 1.5 * g.live, s = (r.plan && r.plan.s) || 6;
@@ -3444,7 +3465,7 @@
         { t: 'Columns', tip: 'Count for the whole hall', k: 'cols', f: r => r.cols || '—', sub: r => r.colNote },
         { t: 'Roof load', tip: 'Automatic: own weight + covering + services + Thai live load', k: 'q', f: r => f2(r.load.q) + ' kN/m²', sub: r => `own ${f2(r.load.own)} + ${r.load.finName} ${f2(r.load.fin)} + services ${f2(r.load.svc)} + live ${f2(r.load.live)}` },
         { t: 'Thrust / tie', tip: 'Horizontal force that a tie, walls, anchors or a ring must take', f: r => r.thrust == null ? '—' : Math.round(r.thrust) + (r.thrustPerArch || r.thrustIsRing ? ' kN' : ' kN/m'), sub: r => r.thrust == null ? '' : r.thrustNote, sub2: r => r.thrust == null ? '' : THRUST_SRC[r.sys.id] ? 'Source: ' + THRUST_SRC[r.sys.id] : '' },
-        { t: 'Why', tip: '', f: r => { const tn = timberNote(r); return `<div class="why">${esc(r.notes[0])}</div>` + (tn ? `<div class="why tim"><b>Timber:</b> ${esc(tn.t)}<small title="${esc(tn.src)}">Sources: ${esc(tn.src)}</small></div>` : ''); } }
+        { t: 'Why', tip: '', f: r => { const tn = timberNote(r), cn = coverNote(r); return `<div class="why">${esc(r.notes[0])}</div>` + (tn ? `<div class="why tim"><b>Timber:</b> ${esc(tn.t)}<small title="${esc(tn.src)}">Sources: ${esc(tn.src)}</small></div>` : '') + (cn ? `<div class="why tim"><b>Covering:</b> ${esc(cn.t)}<small title="${esc(cn.src)}">Sources: ${esc(cn.src)}</small></div>` : ''); } }
     ];
 
     // results are built on demand and kept until the hall or the load changes: what is on screen first,
@@ -3663,8 +3684,8 @@
         $('mSec').innerHTML = sectionSVG(r, frameBox([r]), { big: true });
         $('mStatus').innerHTML = `<span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
         $('mPlan').innerHTML = planSVG(r);
-        const tn = timberNote(r);
-        $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${THRUST_SRC[r.sys.id] ? `<br><i>Source: ${esc(THRUST_SRC[r.sys.id])}</i>` : ''}</li>` : '');
+        const tn = timberNote(r), cn = coverNote(r);
+        $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + (cn ? `<li><b>Covering:</b> ${esc(cn.t)}<br><i>Sources: ${esc(cn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${THRUST_SRC[r.sys.id] ? `<br><i>Source: ${esc(THRUST_SRC[r.sys.id])}</i>` : ''}</li>` : '');
         $('mVar').innerHTML = MODES[r.sys.id] ? modeVariants(r.sys.id) : '';
     }
     // the same vault with its thrust taken three ways (Engel p.113); the first is the default
