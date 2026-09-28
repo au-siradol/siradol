@@ -82,7 +82,10 @@
     .vi .n { color: var(--mute); }
     .vi.mod { cursor: pointer; }
     .vi.mod:hover { background: #f6f6f6; }
-    .vi.in { background: #f0f0f0; }
+    .vi.in { background: #111; color: #fff; }   /* in the comparison: inverted, white on black */
+    .vi.in:hover { background: #333; }
+    .vi.in .n, .vi.in .nm small { color: #bbb; }
+    .vi.in .vd svg { filter: invert(1); }
     .vi .vd { height: 58px; }
     .vi .vd svg { width: 100%; height: 100%; display: block; }
     .vi .nm small { color: var(--mute); display: block; font-size: 9px; }
@@ -269,7 +272,7 @@
 
 <div class="modal" id="modal"><div class="in">
     <div class="hd"><div><b id="mName"></b><span id="mSub"></span></div><button class="btn" id="mClose">Close</button></div>
-    <div class="pair"><div class="views2"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Inside, at eye height · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div></div><div><div class="k">Section</div><div class="sec" id="mSec"></div></div></div>
+    <div class="pair"><div class="views2"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Inside, eye at 1.68 m · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div></div><div><div class="k">Section</div><div class="sec" id="mSec"></div></div></div>
     <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
 </div></div>
 
@@ -286,7 +289,7 @@
     const toL = s => { const v = Lmin * Math.pow(Lmax / Lmin, s / 1000); return v < 20 ? r05(v) : Math.round(v); };
     const fromL = L => Math.round(1000 * Math.log(L / Lmin) / Math.log(Lmax / Lmin));
 
-    const S = { L: 24, W: 48, H: 6, q: 1.5, mat: 'steel', sel: 'truss', hold: null, sort: 'zone', asc: true, view: '3d', rot: 30, elev: 28, finish: 'insulated' };
+    const S = { L: 24, W: 48, H: 6, q: 1.5, mat: 'steel', sel: 'truss', hold: null, tm: {}, sort: 'zone', asc: true, view: '3d', rot: 30, elev: 28, finish: 'insulated' };
     const MATNAME = { steel: 'steel', timber: 'timber', concrete: 'concrete', membrane: 'membrane', cable: 'steel cable', masonry: 'masonry' };
 
     // ---------- geometry helpers (metres, y up) ----------
@@ -298,6 +301,12 @@
         for (let i = 0; i <= n; i++) { const t = i / n; p.push([xa + (xb - xa) * t, y0 + 4 * f * t * (1 - t)]); }
         return p;
     }
+    // a semicircular (f = half the span) or elliptical arch, sampled by angle so the steep springings get their share of points
+    function arcPts(xa, xb, y0, f, n = 48) {
+        const c = (xa + xb) / 2, h = (xb - xa) / 2;
+        return Array.from({ length: n + 1 }, (_, i) => { const a = Math.PI * i / n; return [c - h * Math.cos(a), y0 + f * Math.sin(a)]; });
+    }
+    const ell = s_ => Math.sqrt(Math.max(0, 1 - (2 * s_ - 1) ** 2));   // height of an elliptical arch at s ∈ [0, 1] of its span, crown = 1
     const band = (pts, t) => poly([...pts, ...pts.slice().reverse().map(([x, y]) => [x, y + t])]);
     const colW = (m, H) => m === 'concrete' ? Math.max(0.3, H / 15) : m === 'timber' ? Math.max(0.2, H / 18) : Math.max(0.2, H / 25);
     const alongSides = (W, s) => 2 * (Math.ceil(W / s - 1e-9) + 1);
@@ -421,10 +430,10 @@
           } },
         { id: 'vault', fam: 1, code: '1.4.2', name: 'Barrel vault (short vault)', mats: ['masonry'],
           spans: { masonry: { lim: [4, 30], typ: [[8, 20]] } },
-          rule: { masonry: 'rise L/4 · shell L/50 · thrust taken by buttresses, ties or neighbours' },
+          rule: { masonry: 'semicircle, rise L/2 (Engel p.47) · shell L/50 · thrust taken by buttresses, ties or neighbours' },
           build(L, H, W, m, q) {
-              const mode = S.vaultMode || 'buttress', f = L / 4, t = Math.max(0.2, L / 50), bay = clamp(r05(L / 4), 4, 8);
-              const inner = parab(0, L, H, f), Hv = q * L * L / (8 * f);
+              const mode = modeOf('vault', 'buttress'), f = L / 2, t = Math.max(0.2, L / 50), bay = clamp(r05(L / 4), 4, 8);
+              const inner = arcPts(0, L, H, f), Hv = q * L * L / (8 * f);
               const V = { mode, bay, t, inner, Hv };
               let parts, foot, cols, colNote, thrustNote, thrust = Hv, perArch = false, notes, tw, bd = 0;
               if (mode === 'buttress') {
@@ -450,19 +459,21 @@
                   notes = ['Ties across the springing close the arch on itself: the walls carry only weight, so they can be thin (Engel p.113, "tied").', `The ties cross the space at ${f1(H)} m — below the vault, above the clear height.`];
               } else {
                   tw = Math.max(0.3, L / 25); const tb = Math.max(0.5, L / 12);
-                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), band(parab(-L - tw, -tw, H, f), t), band(parab(L + tw, 2 * L + tw, H, f), t),
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), band(arcPts(-L - tw, -tw, H, f), t), band(arcPts(L + tw, 2 * L + tw, H, f), t),
                            rect(-L - 2 * tw - tb, 0, -L - tw, H + t, 'light'), rect(2 * L + tw, 0, 2 * L + 2 * tw + tb, H + t, 'light')];
                   foot = [-tw, L + tw]; cols = 2 * (Math.ceil(W / bay) + 1); thrust = 0;
                   colNote = `arcades of piers ${f2(tw)} m between vaults — thrusts cancel`;
                   thrustNote = `balanced: the neighbour's ${Math.round(Hv)} kN/m pushes back; only the outermost walls need mass`;
                   notes = ['Vaults side by side lean on each other: the thrust of one cancels the next, so the inner supports can be slender piers (Engel p.113, "continuous").', 'Works only if the building repeats the hall; the outermost walls still need buttresses or mass.'];
               }
-              V.tw = tw; V.bd = bd;
+              V.tw = tw; V.bd = bd; V.inner3 = arcPts(0, L, H, f, 16);
               return {
                   parts, roof: [[-tw, 0], [-tw, H + t], ...inner.map(([x, y]) => [x, y + t]), [L + tw, H + t], [L + tw, 0]], foot,
                   zoneLabel: `rise ${f2(f)}`, zone: f + t, cols, colNote, thrust: thrust || null, thrustNote, thrustPerArch: perArch,
-                  plan: { kind: 'walls', bw: tw, mode, bay, bd }, surface: true, inner, t, bw: tw, V,
-                  notes: ['Spans ACROSS, like an arch pulled out along the hall: the surface is in compression along the curve.', ...notes, 'Click the drawing to compare buttresses, ties and neighbouring vaults.']
+                  plan: { kind: 'walls', bw: tw, mode, bay, bd }, surface: true, inner, t, bw: tw, V, enclose: mode === 'adjacent' ? null : ['x0', 'x1'],
+                  forces: mode === 'tie' ? [{ p: [L / 2, W / 2, H], tie: true, v: Hv * bay, u: 'kN in each tie' }]
+                      : [{ p: [0, W / 2, H], d: [-1, 0], v: Hv, u: mode === 'adjacent' ? 'kN/m, met by the next vault' : 'kN/m' }, { p: [L, W / 2, H], d: [1, 0], v: Hv, u: mode === 'adjacent' ? 'kN/m, met by the next vault' : 'kN/m' }],
+                  notes: ['Spans ACROSS, like an arch pulled out along the hall: the surface is in compression along the curve.', `A semicircle, as Engel draws it (p.47): it rises ${f1(f)} m, half the span. The thrust H = qL²/8f takes the line of thrust through the crown and the springing, which leaves the thin shell at the haunches — it runs in the fill that masons laid over them (J. Heyman, The Stone Skeleton, 1995).`, ...notes, 'Click the drawing to compare buttresses, ties and neighbouring vaults.']
               };
           } },
         { id: 'tarch', fam: 1, code: '1.4.1', name: 'Tied arch on columns', mats: ['steel', 'timber', 'concrete'],
@@ -728,6 +739,50 @@
         let bd = 0; while (res(bd).e < res(bd).B / 3 && bd < 80) bd += 0.1;
         return Object.assign({ bd: +bd.toFixed(1) }, res(bd));
     }
+    // how a system's thrust is taken, where it can be chosen (Engel p.113: buttressed, tied, continuous); d = the default
+    const modeOf = (id, d) => (S.tm && S.tm[id]) || d;
+    // side rooms as buttresses (Engel p.113, 'continuous'; the side bays of the Basilica of Maxentius): beside the hall, every s,
+    // a cross wall from the hall's edge (wall or pier ti) to an outer wall a further out — each cross wall is a buttress as deep
+    // as the side room — and the rooms between them vaulted.
+    // trans: the room vaults span from cross wall to cross wall (semicircles, rise fr = s/2), so their thrusts meet each other and the outer
+    // wall carries only weight; otherwise a side vault spans from the hall's edge to the outer wall (rise fr = a/4).
+    // tc = the least cross wall for which the resultant of the thrust Hb (per cross wall, at the springing H), the main vault's
+    // Vb, the walls, the room vault with its fill and the cross wall's own weight falls inside the middle third of its base
+    // (masonry rule, J. Heyman, The Stone Skeleton, 1995). wi: weight of what stands on the hall's edge over one spacing s
+    function aisleButtress(Hb, Vb, H, ti, a, s_, q, wi, fr, trans, g = 20) {
+        // the outer wall stands to the springing; no fill over the room vaults is counted (on the safe side)
+        const hO = H, to = Math.max(0.4, Math.min(ti, a / 10)), B = ti + a + to, Wo = g * to * s_ * hO, Wa = q * a * s_;
+        const res = tc => { const Wc = g * tc * a * (trans ? H : H + 2 * fr / 3), N = Vb + wi + Wo + Wa + Wc; return { N, e: (Vb * B + wi * (B - ti / 2) + Wo * to / 2 + (Wa + Wc) * (to + a / 2) - Hb * H) / N }; };
+        let tc = 0.4; while (res(tc).e < B / 3 && tc < s_) tc += 0.05;
+        return Object.assign({ tc: +tc.toFixed(2), to, fa: fr, hO, B, s: s_ }, res(tc));
+    }
+    // a buttress against a wall tw thick, one every s along it, bw wide: bd = the least depth for which the resultant of the thrust
+    // Hb at the springing H, the vault's Vb (on the wall's inner edge), the wall's and the buttress's weight falls inside the
+    // middle third of the base tw + bd (masonry rule, J. Heyman, The Stone Skeleton, 1995)
+    function wallPier(Hb, Vb, H, tw, s_, bw, g = 20) {
+        const res = bd => { const B = tw + bd, Ww = g * tw * s_ * H, Wb = g * bw * bd * H, N = Vb + Ww + Wb; return { B, e: (Vb * B + Ww * (bd + tw / 2) + Wb * bd / 2 - Hb * H) / N }; };
+        let bd = 0; while (res(bd).e < res(bd).B / 3 && bd < 60) bd += 0.1;
+        return Object.assign({ bd: +bd.toFixed(1) }, res(bd));
+    }
+    // a cross wall under a side vault, from p0 (hall side) to p1 (outer side), tc thick, up to the springing (the vault covers
+    // the rest of its height); it goes in with the boxes, so plan and section show it
+    function crossWall(boxes, p0, p1, tc, H) {
+        // 2 cm short of the walls at both ends, so no face of it lies in the plane of theirs (the depth order cannot tell those apart)
+        const g_ = 0.02, dx = Math.sign(p1[0] - p0[0]), dy = Math.sign(p1[1] - p0[1]); p0 = [p0[0] + dx * g_, p0[1] + dy * g_]; p1 = [p1[0] - dx * g_, p1[1] - dy * g_];
+        const vx = p0[0] === p1[0], h = tc / 2;
+        boxes.push(vx ? [p0[0] - h, p0[0] + h, Math.min(p0[1], p1[1]), Math.max(p0[1], p1[1]), 0, H, { skip: ['y0', 'y1'] }] : [Math.min(p0[0], p1[0]), Math.max(p0[0], p1[0]), p0[1] - h, p0[1] + h, 0, H, { skip: ['x0', 'x1'] }]);
+    }
+    // the side vaults as modules of a surface: a strip along each edge given (rect), rising a/4 across its width
+    const aisleMod = (x0, y0, x1, y1, fa, H, across) => ({ rect: [x0, y0, x1, y1], kind: 'shellx', ni: across === 'x' ? 6 : Math.max(6, Math.round((x1 - x0) / 2)), nj: across === 'x' ? Math.max(6, Math.round((y1 - y0) / 2)) : 6,
+        z: (x, y) => H + fa * ell(across === 'x' ? (x - x0) / (x1 - x0) : (y - y0) / (y1 - y0)) });
+    const cornerMod = (x0, y0, x1, y1, fa, H) => ({ rect: [x0, y0, x1, y1], kind: 'shellx', ni: 6, nj: 6, z: (x, y) => H + fa * Math.max(ell((x - x0) / (x1 - x0)), ell((y - y0) / (y1 - y0))) });
+    // thrust arrows for a row of bays on piers: across the hall at an interior pier (both bays), diagonally at an end pier
+    function pierForces(L, H, rs, Hx1, Hy1) {
+        const ys = [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))], F = [];
+        if (ys.length > 2) { const y = ys[Math.floor(ys.length / 2)]; F.push({ p: [0, y, H], d: [-1, 0], v: 2 * Hx1, u: 'kN' }, { p: [L, y, H], d: [1, 0], v: 2 * Hx1, u: 'kN' }); }
+        const n = Math.hypot(Hx1, Hy1) || 1; F.push({ p: [0, ys[0], H], d: [-Hx1 / n, -Hy1 / n], v: n, u: 'kN' });
+        return F;
+    }
     // piers with their buttresses for a row of vaulted bays L × b; thrust per corner from one bay: across Hx1, along Hy1; load per corner V1
     function vaultPiers(L, H, rs, tp, Hx1, Hy1, V1) {
         const ys = [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))], W_ = ys[ys.length - 1], bw = 2 * tp / 3, boxes = [], info = [];
@@ -742,7 +797,7 @@
             }
         }
         const bxi = info.find(i => !i.by) || info[0], bye = info[0];
-        return { boxes, note: `Buttresses from statics, not a rule of thumb: ${info.length > 2 ? `interior piers ${f1_(bxi.bx.bd)} m deep across the hall, ` : ''}end piers ${f1_(bye.bx.bd)} m across and ${f1_(bye.by.bd)} m along — the least depths that keep the resultant of thrust, vault load and masonry weight inside the middle third of each base (masonry rule, J. Heyman, The Stone Skeleton, 1995).` };
+        return { boxes, forces: pierForces(L, H, rs, Hx1, Hy1), note: `Buttresses from statics, not a rule of thumb: ${info.length > 2 ? `interior piers ${f1_(bxi.bx.bd)} m deep across the hall, ` : ''}end piers ${f1_(bye.bx.bd)} m across and ${f1_(bye.by.bd)} m along — the least depths that keep the resultant of thrust, vault load and masonry weight inside the middle third of each base (masonry rule, J. Heyman, The Stone Skeleton, 1995).` };
     }
     // polar parameter t over a w × h rectangle, piecewise so that t = 1/8, 3/8, 5/8, 7/8 fall exactly on its corners
     const angT = (t, w, h) => { const c = Math.atan2(h, w), K = [0, c, Math.PI / 2, Math.PI - c, Math.PI, Math.PI + c, 1.5 * Math.PI, 2 * Math.PI - c, 2 * Math.PI], u = ((t % 1) + 1) % 1 * 8, k = Math.min(7, Math.floor(u)); return K[k] + (K[k + 1] - K[k]) * (u - k) + (t >= 1 ? 2 * Math.PI : 0); };
@@ -1090,26 +1145,105 @@
                   notes: ['Inflated tubes form a skeleton of arches; a separate skin is hung between them (Engel 1.3.3.2).'] });
           } },
         // --- 1.4 vaults and lattices ---
-        { id: 'v_cross', fam: 1, name: 'Cross (groin) vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'bays L × ~L, rise L/4, piers at the corners' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
+        { id: 'v_cross', fam: 1, name: 'Cross (groin) vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'bays L × ~L, semicircular webs rising L/2 (Engel p.47), piers at the corners · thrust taken by side rooms, ties or buttresses' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * (Math.PI - 2),   // two semicircular barrels crossing: surface (π − 2) × plan
           build(L, H, W, m, q) {
-              const f = L / 4, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], tp = Math.max(0.8, L / 12);
-              const VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * f), q * L * b * b / (16 * f), q * L * b / 4);
-              const o = { kind: 'shellx', mods: rs.map(r0 => ({ rect: r0, z: (x, y) => { const u = (x - r0[0]) / L, v = (y - r0[1]) / b; return H + Math.max(f * 4 * u * (1 - u), f * 4 * v * (1 - v)); }, ni: 16, nj: 16 })), secT: 0, boxes: VP.boxes };
-              const r = surfaceHall(o);
-              return Object.assign(r, { zone: f, cols: 2 * (rs.length + 1), colNote: `piers + buttresses at the corners of each ${f1_(L)} × ${f1_(b)} m bay`, thrust: q * L * L * b / (8 * f), thrustNote: `interior pier, across the hall: Hx = qL²b/8f (both bays push the same way); end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * f))} kN diagonal`, thrustPerArch: true,
-                  notes: ['Two barrel vaults cross: the load gathers along the groins into four corner piers, so the sides can open (Engel 1.4.2.2).', VP.note] });
+              const mode = modeOf('v_cross', 'aisles'), f = L / 2, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], tp = Math.max(0.8, L / 12);
+              const Hx1 = q * L * L * b / (16 * f), Hy1 = q * L * b * b / (16 * f), V1 = q * L * b / 4, ys = [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))];
+              const vault = { kind: 'shellx', mods: rs.map(r0 => ({ rect: r0, z: (x, y) => H + f * Math.max(ell((x - r0[0]) / L), ell((y - r0[1]) / b)), ni: 16, nj: 16 })), secT: 0 };
+              const piers = () => ys.flatMap(y => [[-tp, 0, y - tp / 2, y + tp / 2, 0, H], [L, L + tp, y - tp / 2, y + tp / 2, 0, H]]);
+              // the end piers are pushed along the hall by the end bays: buttresses that way (the interior piers are balanced along the hall)
+              const bw = 2 * tp / 3, by = buttressDepth(Hy1, V1, H, tp, bw), endB = () => by.bd > 0 ? [ys[0], ys[ys.length - 1]].flatMap(y => [-tp / 2, L + tp / 2].map(xc => { const sg = y === ys[0] ? -1 : 1; return [xc - bw / 2, xc + bw / 2, sg < 0 ? y - tp / 2 - by.bd : y + tp / 2, sg < 0 ? y - tp / 2 : y + tp / 2 + by.bd, 0, H]; })) : [];
+              const common = ['Two barrel vaults cross: the load gathers along the groins into four corner piers, so the sides can open (Engel 1.4.2.2).', `Semicircular webs, as Engel draws them (p.47): the crown stands ${f1_(f)} m above the springing; the thrust takes the line of thrust through crown and springing, carried by the fill over the haunches.`];
+              let colNote, thrust = q * L * L * b / (8 * f), thrustNote, notes, forces, cols = 2 * ys.length;
+              if (mode === 'aisles') {
+                  // side rooms beside the hall between cross walls that continue the piers; each room is vaulted from cross wall to cross wall
+                  // (a semicircle), so the rooms' thrusts meet one another on the inner cross walls and the outer walls carry weight only
+                  const a = Math.max(3, L / 3), fr = b / 2, Hp = ys.length > 2 ? thrust : thrust / 2;
+                  const AB = aisleButtress(Hp, V1 * (ys.length > 2 ? 2 : 1), H, tp, a, b, q, 20 * tp * tp * H, fr, true), to = AB.to, hO = AB.hO, oo = tp + a;
+                  // the end rooms push the end cross walls outwards along the hall with nothing beyond them: those stand by their mass
+                  const Hr = q * b * b / (8 * fr), Vr = q * b / 2, eE = t_ => { const Ww = 20 * t_ * H; return (Ww * t_ / 2 + Vr * t_ - Hr * H) / (Ww + Vr); };
+                  let tE = AB.tc; while (eE(tE) < tE / 3 && tE < 30) tE += 0.05; tE = +tE.toFixed(2);
+                  const yA = ys[0] - (tE - AB.tc / 2), yB = ys[ys.length - 1] + (tE - AB.tc / 2);
+                  const hb = Math.min(H / 3, b / 6), boxes = [...piers(), ...rs.flatMap(([, ya, , yb]) => [[-tp, 0, ya + tp / 2, yb - tp / 2, H - hb, H], [L, L + tp, ya + tp / 2, yb - tp / 2, H - hb, H]]), ...endB(),
+                      [-oo - to, -oo, yA, yB, 0, hO], [L + oo, L + oo + to, yA, yB, 0, hO]], rooms = [];
+                  ys.forEach((y, k) => { const end = k === 0 || k === ys.length - 1, t_ = end ? tE : AB.tc, yc = y + (k === 0 ? -1 : k === ys.length - 1 ? 1 : 0) * (t_ - AB.tc) / 2;
+                      crossWall(boxes, [-tp, yc], [-oo, yc], t_, H); crossWall(boxes, [L + tp, yc], [L + oo, yc], t_, H); });
+                  for (let k = 0; k < ys.length - 1; k++) rooms.push(aisleMod(-oo, ys[k], -tp, ys[k + 1], fr, H, 'y'), aisleMod(L + tp, ys[k], L + oo, ys[k + 1], fr, H, 'y'));
+                  Object.assign(vault, { mods: [...vault.mods, ...rooms], boxes, extra2d: [line([[-oo, H + fr], [-tp, H + fr]], 'thin'), line([[L + tp, H + fr], [L + oo, H + fr]], 'thin')] });
+                  colNote = `piers ${f2(tp)} m under the groins, each continued outwards by a cross wall ${f2(AB.tc)} m (end walls ${f2(tE)} m); side rooms ${f1_(a)} m deep between them`;
+                  thrustNote = `interior pier, across the hall: Hx = qL²b/8f (both bays push the same way) — taken by the cross wall behind the pier`;
+                  forces = pierForces(L, H, rs, Hx1, Hy1).map(F => F.d[1] ? F : Object.assign(F, { u: 'kN, to the cross wall' }));
+                  notes = [...common, `Each pier is continued outwards by a cross wall ${f1_(a)} m long — a buttress ${f1_(AB.B)} m deep — and the side rooms between them are vaulted from cross wall to cross wall, so their thrusts meet one another and the outer walls carry only weight: the side bays of the Basilica of Maxentius, which buttress its 25 m groin-vaulted nave (Engel p.113, "continuous").`, `Cross walls from statics, not a rule of thumb: ${f2(AB.tc)} m is the least for which the resultant of the ${Math.round(Hp)} kN pier thrust, the vault's load, the pier, the outer wall, the room vault and the cross wall itself (no fill counted) falls ${f2(AB.e)} m in from the outer edge of the ${f1_(AB.B)} m base — inside the middle third (J. Heyman, The Stone Skeleton, 1995).`, `The end rooms push their end cross walls outwards along the hall (${Math.round(Hr)} kN/m) with nothing beyond them: those walls are ${f2(tE)} m, the least for which that push, the room vault's load and the wall's weight stay inside the middle third.`, by.bd > 0 ? `The end piers are pushed along the hall by the end bays (${Math.round(Hy1)} kN): buttresses ${f1_(by.bd)} m deep that way, by the same rule.` : 'The end piers stand against the push along the hall by their own weight.'];
+              } else if (mode === 'tie') {
+                  Object.assign(vault, { boxes: piers(), lines3: [...ys.map(y => ({ c: 'tie', pts: [[0, y, H], [L, y, H]] })), ...[0, L].map(x => ({ c: 'tie', pts: [[x, ys[0], H], [x, ys[ys.length - 1], H]] }))],
+                      planSegs: [...ys.map(y => [0, y, L, y, 0.3]), ...[0, L].map(x => [x, ys[0], x, ys[ys.length - 1], 0.3])], extra2d: [line([[0, H], [L, H]], 'tie')] });
+                  colNote = `piers ${f2(tp)} m, iron ties across at every pier and along both sides`;
+                  thrustNote = `force in the tie across at an interior pier: Hx = qL²b/8f (both bays); the ties along the sides carry ${Math.round(Hy1)} kN from the end bays`;
+                  forces = [{ p: [L / 2, ys[Math.floor(ys.length / 2)], H], tie: true, v: ys.length > 2 ? thrust : thrust / 2, u: 'kN in the tie across' }, { p: [0, (ys[0] + ys[1]) / 2, H], tie: true, v: Hy1, u: 'kN in the tie along' }];
+                  notes = [...common, 'Iron ties at the springing, across the hall at every pier and along both sides, close each bay on itself: the piers carry only weight, as in many Italian vaulted halls (Engel p.113, "tied").', `The ties cross the space at ${f1_(H)} m — below the vault, above the clear height.`];
+              } else {
+                  const VP = vaultPiers(L, H, rs, tp, Hx1, Hy1, V1);
+                  vault.boxes = VP.boxes;
+                  colNote = `piers + buttresses at the corners of each ${f1_(L)} × ${f1_(b)} m bay`;
+                  thrustNote = `interior pier, across the hall: Hx = qL²b/8f (both bays push the same way); end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * f))} kN diagonal`;
+                  forces = pierForces(L, H, rs, Hx1, Hy1);
+                  notes = [...common, VP.note, 'Buttresses this deep are the price of taking the thrust by mass alone; side vaults or ties do it with far less.'];
+              }
+              const r = surfaceHall(vault);
+              return Object.assign(r, { zone: f, cols, colNote, thrust, thrustNote, thrustPerArch: true, forces, notes: [...notes, 'Click the drawing to compare side vaults, ties and buttresses.'] });
           } },
-        { id: 'v_cloister', fam: 1, name: 'Cloister vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'rises L/4 from all four walls' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
+        { id: 'v_cloister', fam: 1, name: 'Cloister vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'semicircular webs rising L/2 from all four walls (Engel p.47) · thrust taken by buttressed walls, ties or wall mass' }, roofType: 'shell',
+          // surface per plan: the two hip ends make one cloister vault over L × L (2L²), the middle is a barrel (π/2 per plan)
+          own: (m, L) => { const W = Math.max(S.W, L); return 20 * Math.max(0.2, L / 50) * (2 * L * L + (W - L) * L * Math.PI / 2) / (L * W); },
           build(L, H, W, m, q) {
-              const f = L / 4, Hm = q * L * L / (8 * f), Vm = q * L / 2, ecc = t_ => { const Ww = 20 * t_ * H; return (Ww * t_ / 2 + Vm * t_ / 2 - Hm * H) / (Ww + Vm); };
-              // wall thickness from statics: per metre, the resultant of the thrust at the springing, the vault's load and the wall's weight inside the middle third
-              let tw = 0.3; while (ecc(tw) < tw / 3 && tw < 30) tw += 0.05; tw = +tw.toFixed(2);
-              const zd = dd => f * 4 * Math.min(0.5, dd / L) * (1 - Math.min(0.5, dd / L));
-              const o = { kind: 'shellx', mods: [{ rect: [0, 0, L, W], z: (x, y) => H + Math.min(zd(x), zd(L - x), zd(y), zd(W - y)), ni: 20, nj: 30 }], secY: W / 2,
-                  boxes: [[-tw, 0, -tw, W + tw, 0, H], [L, L + tw, -tw, W + tw, 0, H], [0, L, -tw, 0, 0, H], [0, L, W, W + tw, 0, H]] };
+              const mode = modeOf('v_cloister', 'piers'), f = L / 2, Hm = q * L * L / (8 * f), Vm = q * L / 2;
+              const zd = dd => f * ell(Math.min(0.5, dd / L));   // each web a quarter of a semicircle, from its wall up to the crown
+              const main = { rect: [0, 0, L, W], z: (x, y) => H + Math.min(zd(x), zd(L - x), zd(y), zd(W - y)), ni: 20, nj: 30 };
+              // every wall is pushed hardest at its middle and hardly at the corners, where the webs meet in the hips; sized here for the middle
+              const push = u => [{ p: [0, W / 2, H], d: [-1, 0], v: Hm, u }, { p: [L, W / 2, H], d: [1, 0], v: Hm, u }, { p: [L / 2, 0, H], d: [0, -1], v: Hm, u }];
+              const common = ['The vault rises from all four walls and meets in hips — the opposite of the groin vault (Engel 1.4.2.3).', `Its webs are semicircles, as Engel draws them (p.47): the crown stands ${f1_(f)} m above the springing. The thrust is ${Math.round(Hm)} kN/m at the middle of each wall (H = qL²/8f, the line of thrust through crown and springing, carried by the fill over the haunches) and falls to nothing at the corners, where the webs meet in the hips.`];
+              // the push at d along a wall of length len: full on the long walls' straight middle, falling to nothing at the corners
+              const hAt = (d, len) => Hm * Math.min(1, Math.min(d, len - d) / (L / 2));
+              let o, colNote, thrust = Hm, thrustNote, perArch = false, notes, forces;
+              if (mode === 'piers') {
+                  // a cloister vault needs its walls all round (every web springs from one); the thrust is taken by buttresses against them,
+                  // each sized for the push where it stands — deepest at mid-wall, none near the corners, where the return walls stiffen the wall
+                  const s0 = clamp(r05(L / 4), 4, 8), tw = +Math.max(0.4, L / 25, s0 / 10).toFixed(2), bw = Math.max(0.6, tw);
+                  const n = Math.max(2, Math.round(W / s0)), mm = Math.max(2, Math.round(L / s0)), sy = W / n, sx = L / mm, deep = [];
+                  const boxes = [[-tw, 0, 0, W, 0, H], [L, L + tw, 0, W, 0, H], [-tw, L + tw, -tw, 0, 0, H], [-tw, L + tw, W, W + tw, 0, H]];
+                  let mid = null;
+                  for (let k = 1; k < n; k++) { const y = k * sy, P = wallPier(hAt(y, W) * sy, Vm * sy, H, tw, sy, bw); deep.push(P.bd); if (!mid || P.bd >= mid.bd) mid = P;
+                      if (P.bd > 0) boxes.push([-tw - P.bd, -tw, y - bw / 2, y + bw / 2, 0, H, { skip: ['x1'] }], [L + tw, L + tw + P.bd, y - bw / 2, y + bw / 2, 0, H, { skip: ['x0'] }]); }
+                  for (let k = 1; k < mm; k++) { const x = k * sx, P = wallPier(hAt(x, L) * sx, Vm * sx, H, tw, sx, bw); deep.push(P.bd);
+                      if (P.bd > 0) boxes.push([x - bw / 2, x + bw / 2, -tw - P.bd, -tw, 0, H, { skip: ['y1'] }], [x - bw / 2, x + bw / 2, W + tw, W + tw + P.bd, 0, H, { skip: ['y0'] }]); }
+                  const bmax = Math.max(0, ...deep), nb = 2 * deep.filter(d => d > 0).length;
+                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes };
+                  colNote = `walls ${f2(tw)} m with ${nb} buttresses ${f2(bw)} m wide, up to ${f1_(bmax)} m deep`;
+                  thrustNote = 'per metre at mid-wall, H = qL²/8f — taken by buttresses against the walls';
+                  forces = push('kN/m, to the buttresses');
+                  notes = [...common, 'A cloister vault needs a wall under every edge — each web springs from one — so it cannot stand on free columns; what can be made thick enough are buttresses against the walls (Engel p.113, "buttressed").', `Buttresses about ${f1_(Math.max(sx, sy))} m apart, each sized for the push where it stands: ${f1_(bmax)} m deep at mid-wall, less towards the corners and none next to them, where the return walls hold the wall. From statics, not a rule of thumb: at mid-wall ${Math.round(hAt(W / 2, W) * sy)} kN of thrust per buttress, the vault's load, the wall and the buttress give a resultant ${f2(mid.e)} m in from the outer edge of the ${f2(mid.B)} m base — inside the middle third (masonry rule, J. Heyman, The Stone Skeleton, 1995).`, `Between the buttresses the ${f2(tw)} m wall carries the push to them, arching sideways in its own thickness.`];
+              } else if (mode === 'tie') {
+                  const tw = Math.max(0.4, L / 25), sp = clamp(r05(L / 4), 4, 8), n = Math.max(2, Math.round(W / sp)), ys = Array.from({ length: n - 1 }, (_, k) => (k + 1) * W / n), T = Hm * L / 4;
+                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes: [[-tw, 0, 0, W, 0, H], [L, L + tw, 0, W, 0, H], [-tw, L + tw, -tw, 0, 0, H], [-tw, L + tw, W, W + tw, 0, H]],
+                      lines3: [...ys.map(y => ({ c: 'tie', pts: [[0, y, H], [L, y, H]] })), { c: 'tie', pts: [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H], [0, 0, H]] }],
+                      planSegs: [...ys.map(y => [0, y, L, y, 0.3]), [0, 0, L, 0, 0.3], [L, 0, L, W, 0.3], [L, W, 0, W, 0.3], [0, W, 0, 0, 0.3]], extra2d: [line([[0, H], [L, H]], 'tie')] };
+                  thrust = Hm * W / n; perArch = true;
+                  colNote = `walls ${f2(tw)} m, iron ties across every ${f1_(W / n)} m and a chain round the springing`;
+                  thrustNote = `force in each tie across (${f1_(W / n)} m apart), at the springing; the chain along each long wall carries ${Math.round(T)} kN`;
+                  forces = [{ p: [L / 2, ys[Math.floor(ys.length / 2)], H], tie: true, v: thrust, u: 'kN in each tie' }, { p: [0, W / 2, H], tie: true, v: T, u: 'kN in the chain' }];
+                  notes = [...common, 'Ties across the springing take the long walls\' push; a chain round the springing takes the end walls\' push into the two long sides — as in Brunelleschi\'s dome in Florence, itself a cloister vault held by chains (Engel p.113, "tied").', `Each end wall gathers ${Math.round(Hm * L / 2)} kN (the push falls from the middle to the corners), shared by the two long runs of the chain: T = HL/4 = ${Math.round(T)} kN.`, `The walls then carry weight only: ${f2(tw)} m instead of a wall that must stand against the thrust.`];
+              } else {
+                  const ecc = t_ => { const Ww = 20 * t_ * H; return (Ww * t_ / 2 + Vm * t_ - Hm * H) / (Ww + Vm); };   // the vault bears on the wall's inner edge, as in the other modes
+                  let tw = 0.3; while (ecc(tw) < tw / 3 && tw < 30) tw += 0.05; tw = +tw.toFixed(2);
+                  o = { kind: 'shellx', secY: W / 2, mods: [main], boxes: [[-tw, 0, 0, W, 0, H], [L, L + tw, 0, W, 0, H], [-tw, L + tw, -tw, 0, 0, H], [-tw, L + tw, W, W + tw, 0, H]] };
+                  colNote = `continuous walls ${f2(tw)} m on all four sides`;
+                  thrustNote = 'per metre at mid-wall, H = qL²/8f — the webs act as arches from each wall to the crown or hip';
+                  forces = push('kN/m');
+                  notes = [...common, `Wall thickness from statics, not a rule of thumb: ${f2(tw)} m is the least that keeps the resultant of the ${Math.round(Hm)} kN/m thrust, the vault's ${Math.round(Vm)} kN/m and the wall's weight inside the middle third of its base (masonry rule, J. Heyman, 1995).`, 'A wall this thick is the price of taking the thrust by mass alone; side vaults or ties do it with far less.'];
+              }
+              o.enclosed = true;   // walls on all four sides: seen from inside, nothing beyond them shows
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: f, cols: 0, colNote: `continuous walls ${f2(tw)} m on all four sides`, thrust: q * L * L / (8 * f), thrustNote: 'per metre at mid-wall, H = qL²/8f — the webs act as arches from each wall to the crown or hip',
-                  notes: ['The vault rises from all four walls and meets in hips — the opposite of the groin vault (Engel 1.4.2.3).', `Wall thickness from statics, not a rule of thumb: ${f2(tw)} m is the least that keeps the resultant of the ${Math.round(Hm)} kN/m thrust, the vault's ${Math.round(Vm)} kN/m and the wall's weight inside the middle third of its base (masonry rule, J. Heyman, 1995).`] });
+              return Object.assign(r, { zone: f, cols: 0, colNote, thrust, thrustNote, thrustPerArch: perArch, forces, notes: [...notes, 'Click the drawing to compare buttressed walls, ties and walls by mass.'] });
           } },
         { id: 'v_arch', fam: 1, name: 'Sail vault on four arches', ...M(SP.vault, ['masonry']), rule: { masonry: 'one sphere through the four corners, cut by the four sides' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
@@ -1126,7 +1260,7 @@
                   extra2d: [line(Array.from({ length: 33 }, (_, i) => { const a = Math.PI * i / 32; return [L / 2 - L / 2 * Math.cos(a), H + L / 2 * Math.sin(a)]; }), 'thin')],
                   boxes: (VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * R1), q * L * b * b / (16 * R1), q * L * b / 4)).boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: R1, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, open arches on all four sides`,
+              return Object.assign(r, { forces: VP.forces, zone: R1, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, open arches on all four sides`,
                   thrust: q * L * L * b / (8 * R1), thrustNote: `interior pier, across the hall — minimum thrust with the line of thrust through the crown ${f2(R1)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * R1))} kN diagonal`, thrustPerArch: true,
                   notes: ['One spherical cap through the four corners, cut by the four side planes: the cuts are the arches, the bay stands on four piers (Engel 1.4.2.4, p.47).', `The crown stands ${f1_(R1)} m above the springing — half the diagonal of the bay.`, VP.note] });
           } },
@@ -1146,7 +1280,7 @@
                   extra2d: [line(Array.from({ length: 25 }, (_, i) => { const x = L * i / 24; return [x, H + Math.sqrt(Math.max(0, R1 * R1 - (x - L / 2) ** 2 - (b / 2) ** 2))]; }), 'thin')],
                   boxes: (VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * c), q * L * b * b / (16 * c), q * L * b / 4)).boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: c, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, edge arches between them`,
+              return Object.assign(r, { forces: VP.forces, zone: c, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, edge arches between them`,
                   thrust: q * L * L * b / (8 * c), thrustNote: `interior pier, across the hall — minimum thrust (Heyman), line of thrust through the crown ${f2(c)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * c))} kN diagonal`, thrustPerArch: true,
                   notes: ['Pendentives — spherical triangles cut from one sphere through the four corners — carry the round dome down to four piers; the cut edges are the arches between piers (Engel 1.4.2.5).', `A hemispherical dome over a ${f1_(a)} m square stands ${f1_(c)} m above the springing — that height is the geometry of the system (Hagia Sophia proportions).`, VP.note] });
           } },
@@ -1198,7 +1332,7 @@
                             rect(L / 2 - h - tw, Hs, L / 2 - h, Hq, 'light'), rect(L / 2 + h, Hs, L / 2 + h + tw, Hq, 'light'), line([[0, Hs], [L, Hs]], 'thin')],
                   boxes: (VP = vaultPiers(L, H, rs, tp, q * L * L * b / (16 * c), q * L * b * b / (16 * c), q * L * b / 4)).boxes };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: c, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, arches on all four sides`,
+              return Object.assign(r, { forces: VP.forces, zone: c, cols: 2 * (rs.length + 1), colNote: `four buttressed piers per ${f1_(L)} × ${f1_(b)} m bay, arches on all four sides`,
                   thrust: q * L * L * b / (8 * c), thrustNote: `interior pier, across the hall — minimum thrust with the line of thrust through the crown ${f2(c)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * c))} kN diagonal`, thrustPerArch: true,
                   notes: ['Four arches on four piers carry a square; squinches — small arches with conical niches — bridge its corners and turn it into an octagon; the dome sits on the octagon (Engel 1.4.2.6, p.47).', `Arches ${f1_(Math.max(L, b) / 2)} m high, squinch band ${f1_(hq)} m, dome ${f1_(a / 2)} m: the crown stands ${f1_(c)} m above the springing.`, VP.note] });
           } },
@@ -2566,7 +2700,7 @@
             case 'folded': return m === 'concrete' ? 25 * t(L / 300) * 1.35 : 0.35;
             case 'barrel': return 25 * t(L / 600) * 1.25 + 0.4;
             case 'dome': return 25 * t(L / 500) * 1.15;
-            case 'vault': return 20 * r0.t * 1.2;
+            case 'vault': return 20 * r0.t * Math.PI / 2;   // a semicircle's surface is π/2 × its plan
             case 'hyparT': return m === 'timber' ? 0.4 : 25 * t(L / 500) * 1.3;
             case 'ctruss': return 0.05 + 0.0008 * L;
             case 'arch3': { const c = r0.plan.S / 45; return m === 'concrete' ? 25 * c * c * 0.6 * 1.3 / r0.plan.s : k * (0.05 + 0.003 * r0.plan.S); }
@@ -2750,13 +2884,14 @@
             add('face', [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)], c, [hb, hr, ht, hl]);
         }
     }
-    // at: { x0: [y…], x1: [y…] } — where something is attached to the x0 or x1 face (that face is cut there, with a corner line)
+    // at: { x0: [y…], x1: [y…] } — where something is attached to the x0 or x1 face (that face is cut there, with a corner line);
+    // at.skip: faces not drawn because they stand against another wall and can never be seen ('x0', 'x1', 'y0', 'y1')
     function box3(add, x0, x1, y0, y1, z0, z1, c = 'solid', at = {}) {
-        const P = (x, y, z) => [x, y, z], fr = ys => (ys || []).map(y => (y - y0) / (y1 - y0));
-        quadPieces(add, P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1), c);
-        quadPieces(add, P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1), c);
-        quadPieces(add, P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1), c, 3, fr(at.x0));
-        quadPieces(add, P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1), c, 3, fr(at.x1));
+        const P = (x, y, z) => [x, y, z], fr = ys => (ys || []).map(y => (y - y0) / (y1 - y0)), on = f => !(at.skip && at.skip.includes(f));
+        if (on('y0')) quadPieces(add, P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1), c);
+        if (on('y1')) quadPieces(add, P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1), c);
+        if (on('x0')) quadPieces(add, P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1), c, 3, fr(at.x0));
+        if (on('x1')) quadPieces(add, P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1), c, 3, fr(at.x1));
         quadPieces(add, P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1), c);   // the top runs on flush into what is attached: no line
     }
     function resample(chain, n) {
@@ -2901,7 +3036,7 @@
             }
             add('line', [[x0, Y0, 0], [x0, W + e, 0], [x0 + Sp, W + e, 0], [x0 + Sp, Y0, 0], [x0, Y0, 0]], 'member');
         } else if (sys === 'vault') {
-            const V = r.V, t = V.t, tw = V.tw, bay = V.bay, inner = resample(V.inner, 14), ys = ysOf(W, bay);
+            const V = r.V, t = V.t, tw = V.tw, bay = V.bay, inner = V.inner3 || resample(V.inner, 14), ys = ysOf(W, bay);
             const shell = (dx, mode) => {
                 const nyv = Math.max(1, Math.round(W / 3));
                 for (let i = 0; i < inner.length - 1; i++) for (let j = 0; j < nyv; j++) {
@@ -2997,7 +3132,7 @@
     // everything around head height (a mast, a column, the plane of a frame), so nothing passes through the viewer
     function eyeAt(r, sc) {
         if (r._eye) return r._eye;
-        const L = S.L, W = S.W, z = 1.6, clear = 1;
+        const L = S.L, W = S.W, z = 1.68, clear = 1;
         const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
         const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], len = a => Math.hypot(a[0], a[1], a[2]);
         const segD = (p, a, b) => { const ab = sub(b, a), t = Math.max(0, Math.min(1, dot(sub(p, a), ab) / (dot(ab, ab) || 1))); return len(sub(p, [a[0] + ab[0] * t, a[1] + ab[1] * t, a[2] + ab[2] * t])); };
@@ -3296,7 +3431,7 @@
     let resKey = '', EV = new Map(), restJob = 0;
     function compute() {
         PR = projector();
-        const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, S.vaultMode, S.q]);
+        const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, JSON.stringify(S.tm), S.q]);
         if (k === resKey) return;
         resKey = k; EV = new Map(); RES = []; clearTimeout(restJob); DRAW.clear(); asked.clear(); CEIL.clear(); askedC.clear(); drawJob++;
         let i = 0; const key = k;
@@ -3509,18 +3644,37 @@
         $('mPlan').innerHTML = planSVG(r);
         const tn = timberNote(r);
         $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${THRUST_SRC[r.sys.id] ? `<br><i>Source: ${esc(THRUST_SRC[r.sys.id])}</i>` : ''}</li>` : '');
-        $('mVar').innerHTML = r.sys.id === 'vault' ? vaultVariants() : '';
+        $('mVar').innerHTML = MODES[r.sys.id] ? modeVariants(r.sys.id) : '';
     }
-    // the same vault with its thrust taken three ways (Engel p.113)
-    function vaultVariants() {
-        const keep = S.vaultMode || 'buttress', sys = SYS.find(x => x.id === 'vault'), pr = projector();
-        const V = ['buttress', 'tie', 'adjacent'].map(mode => { S.vaultMode = mode; const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return r; });
-        S.vaultMode = keep;
-        const bb = bounds3(V.map(r => r.P3)), name = { buttress: 'Buttresses', tie: 'Ties', adjacent: 'Neighbouring vaults' };
-        return `<div class="k" style="margin:6px 0 4px">Taking the thrust</div><div class="vv">` + V.map(r => `<div class="vvi ${r.V.mode === keep ? 'on' : ''}" data-vmode="${r.V.mode}">${axoSVG(r.P3, bb)}<b>${name[r.V.mode]}</b><small>footprint ${f1(r.footW)} m · wall ${f2(r.V.tw)} m${r.thrust ? '' : ' · thrust balanced'}</small></div>`).join('') + '</div>';
+    // the same vault with its thrust taken three ways (Engel p.113); the first is the default
+    const MODES = {
+        vault: [['buttress', 'Buttresses'], ['tie', 'Ties'], ['adjacent', 'Neighbouring vaults']],
+        v_cloister: [['piers', 'Buttressed walls'], ['tie', 'Ties and a chain'], ['mass', 'Walls by mass']],
+        v_cross: [['aisles', 'Side vaults'], ['tie', 'Ties'], ['mass', 'Buttresses']]
+    };
+    function modeVariants(id) {
+        const keep = S.tm, sys = SYS.find(x => x.id === id), pr = projector(), cur = (keep && keep[id]) || MODES[id][0][0];
+        const V = MODES[id].map(([mode, name]) => { S.tm = Object.assign({}, keep, { [id]: mode }); const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return { r, mode, name }; });
+        S.tm = keep;
+        const bb = bounds3(V.map(v => v.r.P3));
+        return `<div class="k" style="margin:6px 0 4px">Taking the thrust · Engel p.113</div><div class="vv">` + V.map(({ r, mode, name }) => `<div class="vvi ${mode === cur ? 'on' : ''}" data-vmode="${mode}">${axoSVG(r.P3, bb)}<b>${name}</b><small>footprint ${f1(r.footW)} m · ${esc(r.colNote)}</small></div>`).join('') + '</div>';
+    }
+    // the thrust where it leaves the vault, over the enlarged drawing: an arrow the way it pushes, with its size; for a tie, the force in it
+    function forceMarks(r, pr, w) {
+        if (!r.forces || !r.forces.length) return '';
+        const len = Math.max(2, S.L / 5), fs = w * 0.017, txt = F => `${Math.round(F.v).toLocaleString('en')} ${esc(F.u)}`;
+        const label = (x, y, anchor, t) => `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="${anchor}" font-size="${fs.toFixed(2)}" font-family="Helvetica, Arial, sans-serif" fill="#111" stroke="#fff" stroke-width="${(fs * 0.3).toFixed(2)}" stroke-linejoin="round" paint-order="stroke">${t}</text>`;
+        return r.forces.map(F => {
+            const a = pr(F.p);
+            if (F.tie) return `<circle cx="${a[0].toFixed(2)}" cy="${a[1].toFixed(2)}" r="${(fs * 0.22).toFixed(2)}" fill="#111"/>` + label(a[0], a[1] - fs * 0.6, 'middle', txt(F));
+            const b = pr([F.p[0] + F.d[0] * len, F.p[1] + F.d[1] * len, F.p[2]]), dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l, h = fs * 0.7;
+            const h1 = [b[0] - ux * h - uy * h * 0.6, b[1] - uy * h + ux * h * 0.6], h2 = [b[0] - ux * h + uy * h * 0.6, b[1] - uy * h - ux * h * 0.6], P = q => `${q[0].toFixed(2)},${q[1].toFixed(2)}`;
+            return `<path d="M${P(a)}L${P(b)}M${P(h1)}L${P(b)}L${P(h2)}" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`
+                + label(b[0] + ux * fs * 0.5, b[1] + uy * fs * 0.5 + fs * 0.35, ux >= 0 ? 'start' : 'end', txt(F));
+        }).join('');
     }
 
-    $('mVar').addEventListener('click', e => { const v = e.target.closest('[data-vmode]'); if (v) { S.vaultMode = v.dataset.vmode; render(); } });
+    $('mVar').addEventListener('click', e => { const v = e.target.closest('[data-vmode]'); if (v && modalId) { S.tm = Object.assign({}, S.tm, { [modalId]: v.dataset.vmode }); render(); } });
     // ---- inputs ----
     const clampK = (k, v) => Math.min(FIELDS[k].max, Math.max(FIELDS[k].min, v));
     // C: while a size is being dragged or typed only the numbers follow; the hall is rebuilt when the hand stops (90 ms) or lets go
@@ -3588,11 +3742,30 @@
     // the view from inside: standing still at eye height a quarter of the way along the hall, looking down its length and a little up;
     // dragging only turns the head (the scene follows the hand), 90° across the width of the view
     const EYE0 = { yaw: 0, pitch: 20 * Math.PI / 180 }, EYE = { ...EYE0 }; let edrag = null, eyeFrame = 0;
+    // a hall closed by walls on all sides: only what reaches into it can be seen from inside (the depth order alone lets slivers
+    // of what stands behind the walls through where wall and vault meet)
+    // (dropped: whatever lies wholly beyond one of the four wall planes — the walls' tops and what stands behind them; kept: the rest)
+    const inside = (r, sc) => { const sides = r.enclose || (r.surf && r.surf.enclosed ? ['x0', 'x1', 'y0', 'y1'] : null); if (!sides) return sc;
+        const t = 0.01, P = { x0: [0, 0, -1], x1: [0, S.L, 1], y0: [1, 0, -1], y1: [1, S.W, 1] };
+        const beyond = (o, [k, v, s_]) => o.pts.every(p => s_ * (p[k] - v) >= -t) && o.pts.some(p => s_ * (p[k] - v) > t);
+        return sc.filter(o => !sides.some(sd => beyond(o, P[sd]))); };
     function drawEye() {
         const r = byId(modalId); if (!r) return;
         const el = $('mEye'), a = (el.clientHeight || 300) / (el.clientWidth || 480);
-        const sc = r._sc || (r._sc = scene3D(r)), P = eyeScene(sc, { ...eyeAt(r, sc), yaw: EYE.yaw, pitch: EYE.pitch, ay: a });
-        el.innerHTML = axoFrame(axoBody(P, !!edrag), { x0: -1, x1: 1, y0: -a, y1: a });
+        const sc = r._sc || (r._sc = scene3D(r)), cam = { ...eyeAt(r, sc), yaw: EYE.yaw, pitch: EYE.pitch, ay: a };
+        const P = eyeScene(r._scIn || (r._scIn = inside(r, sc).filter(o => o.c !== 'hatch')), cam);
+        el.innerHTML = axoFrame(floorSVG(cam) + axoBody(P, !!edrag), { x0: -1, x1: 1, y0: -a, y1: a });
+    }
+    // the floor of the hall seen from inside: light grey, with a faint 1 × 1 m grid. Everything else stands on or above it
+    // and the eye is above it, so it is simply painted first
+    function floorSVG(cam) {
+        const L = S.L, W = S.W, it = [{ t: 'face', c: 'floor', pts: [[0, 0, 0], [L, 0, 0], [L, W, 0], [0, W, 0]] }];
+        for (let x = 0; x <= L + 1e-6; x += 1) it.push({ t: 'line', c: 'grid', pts: [[x, 0, 0], [x, W, 0]] });
+        for (let y = 0; y <= W + 1e-6; y += 1) it.push({ t: 'line', c: 'grid', pts: [[0, y, 0], [L, y, 0]] });
+        const d = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(4)},${p[1].toFixed(4)}`).join('');
+        let face = '', grid = '';
+        for (const o of eyeScene(it, { ...cam, ay: 50 })) { if (o.t === 'face') face += d(o.P) + 'Z'; else grid += d(o.P); }
+        return `<path d="${face}" fill="#f0f0f0" stroke="none"/><path d="${grid}" fill="none" stroke="#d6d6d6" stroke-width="0.5" vector-effect="non-scaling-stroke"/>`;
     }
     $('mEye').addEventListener('pointerdown', e => { edrag = { x: e.clientX, y: e.clientY, yaw: EYE.yaw, pitch: EYE.pitch, w: $('mEye').clientWidth || 480 }; try { $('mEye').setPointerCapture(e.pointerId); } catch (_) {} });
     $('mEye').addEventListener('pointermove', e => { if (!edrag) return; const k = (Math.PI / 2) / edrag.w;
@@ -3610,7 +3783,7 @@
         const pc = pr(r._c);
         if (refit || !bigFit || bigFit.id !== r.sys.id) { const b = bounds3([P3]); bigFit = { id: r.sys.id, w: (b.x1 - b.x0) * 1.15, h: (b.y1 - b.y0) * 1.15, dx: (b.x0 + b.x1) / 2 - pc[0], dy: (b.y0 + b.y1) / 2 - pc[1] }; }
         const cx = pc[0] + bigFit.dx, cy = pc[1] + bigFit.dy;
-        $('mBig').innerHTML = axoFrame(axoBody(P3, !!mdrag), { x0: cx - bigFit.w / 2, x1: cx + bigFit.w / 2, y0: cy - bigFit.h / 2, y1: cy + bigFit.h / 2 });
+        $('mBig').innerHTML = axoFrame(axoBody(P3, !!mdrag), { x0: cx - bigFit.w / 2, x1: cx + bigFit.w / 2, y0: cy - bigFit.h / 2, y1: cy + bigFit.h / 2 }, forceMarks(r, pr, Math.max(bigFit.w, bigFit.h)));
     }
     // closing the enlarged view always brings the drawings back to the standard axonometric angle
     const closeModal = () => { if (!$('modal').classList.contains('show')) return; modalId = null; $('modal').classList.remove('show'); mdrag = null; };
