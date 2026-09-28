@@ -2993,6 +2993,32 @@
         // keep only what reaches the view (±1.2 across, ±1 up and down, generous)
         return out.filter(o => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of o.P) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); } const ay = (cam.ay || 1) + 0.2; return x1 > -1.2 && x0 < 1.2 && y1 > -ay && y0 < ay; });
     }
+    // where the eye stands: a quarter of the way along the hall, on its middle line — or the nearest spot a metre clear of
+    // everything around head height (a mast, a column, the plane of a frame), so nothing passes through the viewer
+    function eyeAt(r, sc) {
+        if (r._eye) return r._eye;
+        const L = S.L, W = S.W, z = 1.6, clear = 1;
+        const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], len = a => Math.hypot(a[0], a[1], a[2]);
+        const segD = (p, a, b) => { const ab = sub(b, a), t = Math.max(0, Math.min(1, dot(sub(p, a), ab) / (dot(ab, ab) || 1))); return len(sub(p, [a[0] + ab[0] * t, a[1] + ab[1] * t, a[2] + ab[2] * t])); };
+        // distance to a flat polygon: to its plane when the foot falls inside it (even–odd, so L- and Π-shaped outlines work), else to its edges
+        const polyD = (p, P) => {
+            let n = [0, 0, 0]; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; n = [n[0] + (a[1] - b[1]) * (a[2] + b[2]), n[1] + (a[2] - b[2]) * (a[0] + b[0]), n[2] + (a[0] - b[0]) * (a[1] + b[1])]; }
+            const nl = len(n); let e = 1e9; for (let i = 0; i < P.length; i++) e = Math.min(e, segD(p, P[i], P[(i + 1) % P.length]));
+            if (!nl) return e;
+            const u = n.map(v => v / nl), d = dot(sub(p, P[0]), u), ax = Math.abs(u[0]) > Math.abs(u[1]) ? (Math.abs(u[0]) > Math.abs(u[2]) ? 0 : 2) : (Math.abs(u[1]) > Math.abs(u[2]) ? 1 : 2);
+            const i0 = ax === 0 ? 1 : 0, i1 = ax === 2 ? 1 : 2; let inside = false;
+            for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[i1] > p[i1]) !== (b[i1] > p[i1]) && p[i0] < (b[i0] - a[i0]) * (p[i1] - a[i1]) / (b[i1] - a[i1]) + a[i0]) inside = !inside; }
+            return inside ? Math.min(Math.abs(d), e) : e;
+        };
+        const near = sc.filter(o => o.c !== 'hatch' && o.c !== 'box' && o.t !== 'person' && Math.min(...o.pts.map(p => p[2])) < z + clear && Math.max(...o.pts.map(p => p[2])) > z - clear);
+        const gap = p => { let m = 1e9; for (const o of near) { const P = o.pts; if (o.t === 'line') { for (let i = 0; i < P.length - 1; i++) m = Math.min(m, segD(p, P[i], P[i + 1])); } else if (P.length > 2) m = Math.min(m, polyD(p, P)); if (m < clear) return m; } return m; };
+        const x0 = L / 2, y0 = W / 4, st = 0.5, cand = [];
+        for (let k = 0; k <= 2 * Math.ceil(W / 8 / st); k++) for (const dx of [0, 1, -1, 2, -2]) { const dy = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * st; cand.push([x0 + dx * Math.min(2, L / 8), y0 + dy]); }
+        let best = [x0, y0], bg = -1;
+        for (const [x, y] of cand) { if (x < 0.5 || x > L - 0.5 || y < 0.5 || y > W - 0.5) continue; const g = gap([x, y, z]); if (g >= clear) { best = [x, y]; bg = g; break; } if (g > bg) { bg = g; best = [x, y]; } }
+        return (r._eye = { x: best[0], y: best[1], z });
+    }
     // the ceiling seen from below, in plan over the hall: a raster of the cells that structure covers. From it,
     // dens = visible line length per m² (the covered area's outline ÷ 2, so parts stacked above one another count once).
     // Our reading of Moussavi's 'affects', measured from the geometry — not a figure from her book.
@@ -3102,7 +3128,8 @@
     const ghostPaths = ghost => ghost.filter(o => o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box').map(o => `<path d="${pathD(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`).join('');
     // quick = while a view is being dragged: order by depth only (cheap); the full plane-based order is drawn on release
     function axoBody(proj, quick = false) {
-        const path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');   // metres: 1 cm is plenty
+        // metres in an axonometric (1 cm is plenty); a perspective is in view units of ±1, so it needs finer steps
+        const dp = proj.length && proj[0].Q ? 4 : 2, path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(dp)},${p[1].toFixed(dp)}`).join('');
         // B: the drawing of a scene is made once and reused wherever the same scene is shown (only the frame differs)
         let s = quick ? null : bodyCache.get(proj);
         if (s == null) { s = '';
@@ -3111,7 +3138,7 @@
                 // a piece of a larger face: filled, its seams hidden, and only the edges flagged in o.e drawn — in its own place in the depth order
                 const st = (STYLE3.face[o.c] || STYLE3.face.solid).match(/stroke="([^"]*)" stroke-width="([^"]*)"/), fill = (STYLE3.face[o.c] || STYLE3.face.solid).match(/fill="([^"]*)"/)[1];
                 // fill; hide only the seams to its sibling pieces (a fill-coloured stroke on the outer edges would erase neighbours' lines)
-                const segP = on => o.e.map((f, i) => f === on ? `M${o.P[i][0].toFixed(2)},${o.P[i][1].toFixed(2)}L${o.P[(i + 1) % o.P.length][0].toFixed(2)},${o.P[(i + 1) % o.P.length][1].toFixed(2)}` : '').join('');
+                const segP = on => o.e.map((f, i) => f === on ? `M${o.P[i][0].toFixed(dp)},${o.P[i][1].toFixed(dp)}L${o.P[(i + 1) % o.P.length][0].toFixed(dp)},${o.P[(i + 1) % o.P.length][1].toFixed(dp)}` : '').join('');
                 s += `<path d="${path(o.P)}Z" fill="${fill}" stroke="none"/>`;
                 const d = segP(true);
                 if (d) s += `<path d="${d}" fill="none" stroke="${st[1]}" stroke-width="${st[2]}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
@@ -3564,7 +3591,7 @@
     function drawEye() {
         const r = byId(modalId); if (!r) return;
         const el = $('mEye'), a = (el.clientHeight || 300) / (el.clientWidth || 480);
-        const P = eyeScene(r._sc || (r._sc = scene3D(r)), { x: S.L / 2, y: S.W / 4, z: 1.6, yaw: EYE.yaw, pitch: EYE.pitch, ay: a });
+        const sc = r._sc || (r._sc = scene3D(r)), P = eyeScene(sc, { ...eyeAt(r, sc), yaw: EYE.yaw, pitch: EYE.pitch, ay: a });
         el.innerHTML = axoFrame(axoBody(P, !!edrag), { x0: -1, x1: 1, y0: -a, y1: a });
     }
     $('mEye').addEventListener('pointerdown', e => { edrag = { x: e.clientX, y: e.clientY, yaw: EYE.yaw, pitch: EYE.pitch, w: $('mEye').clientWidth || 480 }; try { $('mEye').setPointerCapture(e.pointerId); } catch (_) {} });
