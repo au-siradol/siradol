@@ -261,30 +261,41 @@
                     </details>
 
 
-                    <div class="k">Permanent load</div>
+                    <div class="k">Material &amp; load</div>
+                    <div class="control-row">
+                        <label>Members</label>
+                        <select id="material" class="wide">
+                            <option value="timber" selected>Timber laths, bent on site</option>
+                            <option value="glulam">Glulam ribs, pre-curved</option>
+                            <option value="steel">Steel, pre-fabricated</option>
+                            <option value="gfrp">GFRP tubes, bent on site</option>
+                            <option value="aluminium">Aluminium, pre-fabricated</option>
+                        </select>
+                    </div>
+                    <p class="legend" id="materialNote"></p>
                     <div class="control-row">
                         <label>Covering</label>
                         <select id="covering" class="wide">
-                            <option value="pvc" selected>PVC-coated polyester mesh (Mannheim 1975) · 1.2 kg/m²</option>
-                            <option value="ptfe">PTFE / glass membrane · 1.5 kg/m²</option>
-                            <option value="etfe">ETFE foil cushions with frames · 3 kg/m²</option>
-                            <option value="timber">Timber boarding / plywood · 12 kg/m²</option>
-                            <option value="glass">Glass with frames · 40 kg/m²</option>
+                            <option value="pvc" selected title="PVC-coated polyester mesh, as Mannheim 1975">PVC mesh</option>
+                            <option value="ptfe" title="PTFE-coated glass-fibre membrane">PTFE membrane</option>
+                            <option value="etfe" title="ETFE foil cushions with their frames">ETFE cushions</option>
+                            <option value="timber" title="Timber boarding or plywood">Timber boarding</option>
+                            <option value="glass" title="Glass with its frames">Glass</option>
                         </select>
                     </div>
                     <div class="stats">
-                        <div class="stat-line"><span class="lbl">Permanent load G</span><span class="num" id="stat-g">—</span></div>
-                        <div class="stat-line"><span class="lbl">Crown height (built)</span><span class="num" id="stat-crown">—</span></div>
-                        <div class="stat-line"><span class="lbl">Total G / sum of vertical reactions</span><span class="num" id="stat-reac">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max lath force (per lath line)</span><span class="num" id="stat-nmax">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max edge thrust</span><span class="num" id="stat-thrust">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max strain while hanging</span><span class="num" id="stat-strain">—</span></div>
-                        <div class="stat-line"><span class="lbl">Relaxation</span><span class="num" id="stat-dr">—</span></div>
+                        <div class="stat-line" title="Permanent load: members + fittings + covering"><span class="lbl">G</span><span class="num" id="stat-g">—</span></div>
+                        <div class="stat-line" title="Design load: the partial factor 1.35 on the whole permanent load, covering included"><span class="lbl">1.35 G</span><span class="num" id="stat-gd">—</span></div>
+                        <div class="stat-line"><span class="lbl">Crown</span><span class="num" id="stat-crown">—</span></div>
+                        <div class="stat-line" title="Sum of the vertical reactions, checked against the total G"><span class="lbl">Reactions</span><span class="num" id="stat-reac">—</span></div>
+                        <div class="stat-line" title="Largest axial force in one line of members, from form-finding"><span class="lbl">Max member force</span><span class="num" id="stat-nmax">—</span></div>
+                        <div class="stat-line" title="Largest push on the edge per metre; with cable edges, the largest cable tension (1975: 125 kN)"><span class="lbl">Edge thrust</span><span class="num" id="stat-thrust">—</span></div>
+                        <div class="stat-line" title="Largest stretch of a link while hanging, and dynamic relaxation iterations"><span class="lbl">Hanging net</span><span class="num" id="stat-strain">—</span></div>
                     </div>
                     <details class="note"><summary>How the forces are found</summary>
-                        The shape is found for the permanent load: laths (5 kg/m² per layer: hemlock, 50 &times; 50 mm
-                        at 0.5 m both ways), bolts, blocks, nailing strips and ties (9 kg/m², set so the Mannheim double
-                        layer gives Liddell's 20 kg/m²) and the covering. It is uniform, so the shape does not depend on
+                        The shape is found for the permanent load: the lattice (from its sections and spacing; timber
+                        laths 5 kg/m² per layer), its fittings (timber: bolts, blocks, nailing strips and ties 9 kg/m²,
+                        set so the Mannheim double layer gives Liddell's 20 kg/m²) and the covering. It is uniform, so the shape does not depend on
                         how heavy it is, only the forces do. Dynamic relaxation (<code>karamba-lite.js</code>) returns
                         the equilibrium forces of the found shape: tension while hanging, the same values in
                         compression once inverted; the reactions must add up to the weight. Karamba's
@@ -326,7 +337,7 @@
                     </p>
                     <p class="legend" id="shearHint"></p>
                     <div class="stats">
-                        <div class="stat-line"><span class="lbl">Lath thickness that bends to shape</span><span class="num" id="val-lathThickness">—</span></div>
+                        <div class="stat-line"><span class="lbl">Bends to shape</span><span class="num" id="val-lathThickness">—</span></div>
                         <div class="stat-line"><span class="lbl">Min bend radius</span><span class="num" id="stat-radius">—</span></div>
                         <div class="stat-line"><span class="lbl">Max shear deviation</span><span class="num" id="stat-shear">—</span></div>
                         <div class="stat-line"><span class="lbl">Rise / span</span><span class="num" id="stat-ratio">—</span></div>
@@ -340,29 +351,12 @@
                     </details>
 
 
-                    <div class="k">Loads</div>
-                    <div class="checkbox-row">
-                        <input type="checkbox" id="useSnow" checked>
-                        <label for="useSnow">Snow (untick for a site without snow)</label>
-                    </div>
-                    <div class="control-row" id="snowRow">
-                        <label>Snow on plan, characteristic</label>
-                        <div style="display:flex; gap:8px; align-items:baseline;">
-                            <select id="snowPreset" style="flex:1;">
-                                <option value="40" selected>Mannheim, unheated: 40 kg/m² (1975)</option>
-                                <option value="15">Mannheim, heated hall: 15 kg/m² (1975)</option>
-                                <option value="custom">Other site</option>
-                            </select>
-                            <input type="number" id="snowCustom" value="40" min="5" max="400" step="5" style="display:none;">
-                            <span class="val" id="snowUnit" style="display:none;">kg/m²</span>
-                        </div>
-                    </div>
-                    <details class="note"><summary>How the loads are combined</summary>
-                        No imposed load is added. Stresses are checked for 1.35 G, and with snow also for
-                        1.35 G + 1.5 S over the whole plan and over half of it (a shell suffers most from load on
-                        one side). This study uses 2.5 as a comparison target for verified equilibrium under unfactored loads,
-                        motivated by the historical study; it is not a complete modern design safety check.
-                        Wind is not included (Mannheim was tested in a wind tunnel).
+                    <details class="note"><summary>How the loads are taken</summary>
+                        The only load is the permanent one: the lattice, its fittings and the covering. Stresses
+                        are checked for 1.35&nbsp;G, the partial factor on permanent load, so the covering is
+                        factored with the structure; the deflection for G against span&nbsp;/&nbsp;250. No snow,
+                        wind or imposed load is added: a light covering in a warm climate. Wind can govern a
+                        light shell and is not checked (Mannheim was tested in a wind tunnel).
                     </details>
 
             </div>
@@ -379,16 +373,16 @@
                     </div>
                     <div class="stats">
                         <div class="stat-line"><span class="lbl">Design in use</span><span class="num" id="an-design">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max deflection (G + S)</span><span class="num" id="an-defl">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max compression per lath (ULS)</span><span class="num" id="an-nmax">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max moment per lath line (ULS)</span><span class="num" id="an-mmax">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max deflection (G)</span><span class="num" id="an-defl">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max compression per member (1.35 G)</span><span class="num" id="an-nmax">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max moment per line (1.35 G)</span><span class="num" id="an-mmax">—</span></div>
                         <div id="an-util"></div>
                         <div class="stat-line"><span class="lbl">Deflection limit (span / 250)</span><span class="num" id="an-deflLim">—</span></div>
                     </div>
                     <details class="note"><summary>What Analyze does</summary>
-                        First-order analysis (Karamba's <i>Analyze</i>) for every load combination: 1.35 G, and with snow
-                        1.35 G + 1.5 S over the whole plan and over half of it. It reports the worst lath force and
-                        moment, the utilisation of the laths and edge members, and the deflection under G + S against
+                        First-order analysis (Karamba's <i>Analyze</i>) for 1.35&nbsp;G, covering included. It reports
+                        the worst lattice force and moment, the utilisation of the lattice (axial force and bending out
+                        of and in the shell surface) and of the edge members, and the deflection under G against
                         span / 250. Buckling of the shell is not checked here, and in a gridshell buckling often
                         governs: Mannheim was designed against a collapse load (Happold &amp; Liddell 1975).
                         A simplified browser calculation, not Karamba3D.
@@ -406,15 +400,17 @@
                         <tbody id="ladderBody"><tr><td colspan="5" class="val">Not run yet. The shell starts as built at Mannheim (step 4). A quick estimate of the trend, one analysis per step.</td></tr></tbody>
                     </table>
                     <details class="note"><summary>How the suggestion is made</summary>
-                        A quick estimate of the trend, not a design. The shell is stiffened in the order it was at
-                        Mannheim and each step is analysed once, with its edge members sized from that one analysis:
+                        A quick estimate of the trend, not a design. Each step is analysed once, with its edge members
+                        sized from that one analysis. Timber laths are stiffened in the order Mannheim was:
                         (1) one layer each way, as Essen; (2) two layers, their bolts giving the composite action
                         measured in 1974 (joint shear stiffness at 40 % of the design value, &gamma; 0.5 &rarr; 0.29);
                         (3) shear blocks where the lath forces are highest (&gamma; = 1 there); (4) diagonal cable ties,
-                        2 &times; 6 mm through every sixth node; (5) a third layer (the 2018 renovation plan). A step passes
-                        when every lath and edge member is within its strength and the deflection under G + S within
-                        span / 250; the first that passes is suggested. The laths stay 50 &times; 50 mm, a size set by how far
-                        they bend. &gamma; = 0.5 before the 40 % reduction is an assumption. Not checked: buckling of the shell.
+                        2 &times; 6 mm through every sixth node; (5) a third layer (the 2018 renovation plan). The laths stay
+                        50 &times; 50 mm, a size set by how far they bend; &gamma; = 0.5 before the 40 % reduction is an assumption.
+                        Other materials are first braced with diagonal ties, since a square grid of rigid members is a
+                        mechanism in shear, then given deeper sections. A step passes when every lattice and edge member is
+                        within its strength under 1.35&nbsp;G and the deflection under G within span / 250; the first that
+                        passes is suggested. Not checked: buckling of the shell.
                     </details>
 
 
@@ -483,7 +479,6 @@
         let stageTween = null;
         let showShear = true;
         let lathColourMode = 'plain'; // 'force' | 'radius' | 'plain'
-        const REAL_LATH_SPACING = 0.5; // Mannheim: 50 x 50 mm laths at 0.5 m
 
         // Boundary: boundaryPts[k] = { x, z, h, t, r } — h = edge height at the node
         // [m above ground, as built], t = type of the edge from node k to k+1,
@@ -1376,8 +1371,6 @@
            ANALYSIS AND DESIGN: the found shell as a 3D frame
            Units: kN, m. E in kN/m2 (10 GPa = 10e6 kN/m2).
         ============================================================ */
-        const LATH_B = 0.05;
-        const E_TIMBER = 10e6, G_TIMBER = E_TIMBER / 16;  // Western hemlock, indicative
         const TIE_PAIR_A = 2 * 21e-6;                     // 2 x 6 mm 19-wire strand, ~21 mm2 each
         const E_STRAND = 160e6;
 
@@ -1404,31 +1397,84 @@
         const GAMMA_REF = 0.5;                                  // assumed design value (the papers give only the ratio)
         const GAMMA_TEST = gammaAtJointFactor(GAMMA_REF, 0.4);  // joints at 40 % of the assumed shear stiffness (1974 tests)
 
-        // The design ladder: stiffened in the order Mannheim was
-        const LADDER = [
-            { name: '1 layer each way (Essen)', layers: 1, gamma: 0, blocks: false, ties: false },
-            { name: '2 layers, tested joints (γ ' + GAMMA_TEST.toFixed(2) + ')', layers: 2, gamma: GAMMA_TEST, blocks: false, ties: false },
-            { name: '+ shear blocks where the force is high', layers: 2, gamma: GAMMA_TEST, blocks: true, ties: false },
-            { name: '+ diagonal cable ties', layers: 2, gamma: GAMMA_TEST, blocks: true, ties: true },
-            { name: '+ a third layer (2018 plan)', layers: 3, gamma: GAMMA_TEST, blocks: true, ties: true }
-        ];
+        /* ---- The lattice material (gridshell materials by how they reach their shape) ----
+           elastic: straight members bent into the shape on site, so their depth is limited by the
+           tightest curve; pre-fabricated: members made to the shape, no bend limit.
+           One lattice member: A, Iout (out of the shell surface), Iin (in the surface), J, depth
+           (out of plane), cIn (in-plane outer fibre). Values indicative. */
+        function rectSec(w, h) {
+            const a = Math.max(w, h), b = Math.min(w, h);
+            return { A: w * h, Iout: w * h ** 3 / 12, Iin: h * w ** 3 / 12, J: a * b ** 3 * (1 / 3 - 0.21 * b / a * (1 - b ** 4 / (12 * a ** 4))),
+                depth: h, cIn: w / 2, name: Math.round(w * 1000) + ' × ' + Math.round(h * 1000) };
+        }
+        function rhsSec(w, h, t) {
+            const A = w * h - (w - 2 * t) * (h - 2 * t);
+            return { A, Iout: (w * h ** 3 - (w - 2 * t) * (h - 2 * t) ** 3) / 12, Iin: (h * w ** 3 - (h - 2 * t) * (w - 2 * t) ** 3) / 12,
+                J: 2 * t * (w - t) ** 2 * (h - t) ** 2 / (w + h - 2 * t), depth: h, cIn: w / 2,
+                name: 'RHS ' + Math.round(w * 1000) + ' × ' + Math.round(h * 1000) + ' × ' + +(t * 1000).toFixed(1) };
+        }
+        function tubeSec(D, t) {
+            const d = D - 2 * t, I = Math.PI / 64 * (D ** 4 - d ** 4);
+            return { A: Math.PI / 4 * (D * D - d * d), Iout: I, Iin: I, J: 2 * I, depth: D, cIn: D / 2, name: 'Ø' + +(D * 1000).toFixed(1) + ' × ' + +(t * 1000).toFixed(1) };
+        }
+        const MATERIALS = {
+            timber: { example: 'Mannheim 1975', label: 'Timber laths, bent on site', elastic: true, E: 10e6, G: 10e6 / 16, f: 14.8e3, rho: 500, spacing: 0.5, fittings: 9,
+                strainAllow: 0.05 / (2 * 11), sizes: [rectSec(0.05, 0.05)],
+                note: 'Western hemlock 50 × 50 mm at 0.5 m both ways, as Mannheim; strength 24 MPa × 0.8 / 1.3 = 14.8 MPa; bolts, blocks and ties 9 kg/m² (Liddell\'s 20 kg/m² for the double layer)' },
+            glulam: { example: 'Pompidou-Metz 2010', label: 'Glulam ribs, pre-curved', elastic: false, E: 11.5e6, G: 0.65e6, f: 14.8e3, rho: 480, spacing: 2.5, fittings: 12,
+                sizes: [[0.12, 0.24], [0.14, 0.32], [0.16, 0.4], [0.2, 0.48], [0.24, 0.56]].map(([w, h]) => rectSec(w, h)),
+                note: 'GL24h ribs curved in the factory, about 2.5 m apart, as the Centre Pompidou-Metz (2010); steel connectors 12 kg/m² assumed' },
+            steel: { example: 'British Museum 2000', label: 'Steel, pre-fabricated', elastic: false, E: 210e6, G: 81e6, f: 355e3, rho: 7850, spacing: 1.5, fittings: 10,
+                sizes: [[0.06, 0.08, 0.004], [0.08, 0.12, 0.005], [0.08, 0.16, 0.006], [0.08, 0.2, 0.008], [0.1, 0.25, 0.01]].map(([w, h, t]) => rhsSec(w, h, t)),
+                note: 'S355 box sections about 1.5 m apart, as the British Museum Great Court roof (2000, 80 mm wide boxes); Shukhov\'s Vyksa shells (1897) were riveted strips and angles; nodes 10 kg/m² assumed' },
+            gfrp: { example: 'Solidays 2011', label: 'GFRP tubes, bent on site', elastic: true, E: 25.5e6, G: 3e6, f: 400e3 / 3, rho: 1900, spacing: 1.0, fittings: 3,
+                strainAllow: 0.4 * 400e3 / 25.5e6, sizes: [[0.0417, 0.0035], [0.05, 0.004], [0.06, 0.005], [0.075, 0.006]].map(([D, t]) => tubeSec(D, t)),
+                note: 'pultruded glass-fibre tubes Ø41.7 × 3.5 mm, E 25.5 GPa, 400 MPa at failure, as Solidays (2011) and the Créteil cathedral (2013); a third of the failure stress for loads and 40 % for bending into shape (the fibres creep to rupture); couplers 3 kg/m² assumed' },
+            aluminium: { example: '', label: 'Aluminium, pre-fabricated', elastic: false, E: 70e6, G: 26e6, f: 200e3, rho: 2700, spacing: 1.5, fittings: 6,
+                sizes: [[0.06, 0.1, 0.004], [0.08, 0.12, 0.005], [0.08, 0.16, 0.006], [0.1, 0.2, 0.008], [0.12, 0.25, 0.01]].map(([w, h, t]) => rhsSec(w, h, t)),
+                note: '6061-T6 box sections about 1.5 m apart, design strength 200 MPa; nodes 6 kg/m² assumed' }
+        };
+        let materialKey = 'timber';
+        const mat = () => MATERIALS[materialKey];
+
+        // The design ladder. Timber: stiffened in the order Mannheim was. Other materials: diagonal
+        // bracing first (a rigid grid is triangulated, as the British Museum), then deeper sections.
+        function ladderFor(key) {
+            const M = MATERIALS[key];
+            if (key === 'timber') return [
+                { name: '1 layer each way (Essen)', size: 0, layers: 1, gamma: 0, blocks: false, ties: false },
+                { name: '2 layers, tested joints (γ ' + GAMMA_TEST.toFixed(2) + ')', size: 0, layers: 2, gamma: GAMMA_TEST, blocks: false, ties: false },
+                { name: '+ shear blocks where the force is high', size: 0, layers: 2, gamma: GAMMA_TEST, blocks: true, ties: false },
+                { name: '+ diagonal cable ties', size: 0, layers: 2, gamma: GAMMA_TEST, blocks: true, ties: true },
+                { name: '+ a third layer (2018 plan)', size: 0, layers: 3, gamma: GAMMA_TEST, blocks: true, ties: true }
+            ];
+            const steps = [{ name: M.sizes[0].name + ', square grid', size: 0, layers: 1, gamma: 0, blocks: false, ties: false }];
+            M.sizes.forEach((s, i) => steps.push({ name: s.name + ' + diagonal ties', size: i, layers: 1, gamma: 0, blocks: false, ties: true }));
+            return steps;
+        }
+        let LADDER = ladderFor(materialKey);
         // the design in use: Mannheim as built (step 4) with the starting member sizes (assumed)
         let design = { step: 3, sec: { column: chs(0.2191, 0.008), beam: glulam(0.5), arch: glulam(0.5), cable: strand(500e-6) }, sized: false };
-        const lathLayersOf = () => LADDER[design.step].layers;
+        const stepOf = () => LADDER[design.step];
 
-        let useSnow = true, snowLoad = 40 * 0.00981; // 40 kg/m2, Mannheim unheated areas (1975)
+        // sum of y^2 of n layers stacked at a pitch of twice their depth (the other direction between)
+        const layerY2 = (n, h) => { let s = 0; for (let i = 0; i < n; i++) s += ((i - (n - 1) / 2) * 2 * h) ** 2; return s; };
+        // one lattice line of a ladder step, gamma-method: I = n I1 + gamma A1 sum y^2
+        function latticeLine(step, g = step.gamma) {
+            const s = mat().sizes[step.size], n = step.layers;
+            return { A: n * s.A, Iout: n * s.Iout + g * s.A * layerY2(n, s.depth), Iin: n * s.Iin, J: n * s.J,
+                cOut: (2 * n - 1) * s.depth / 2, cIn: s.cIn, sec: s };
+        }
+        // stress in a lattice model member over the design strength: axial + bending out of and in the surface
+        const lathUtilOf = (e, N, My, Mz) => (Math.abs(N) / e.A + My * e.cOut / e.Iy + Mz * e.cIn / e.Iz) / mat().f;
+        // lattice self-weight [kg/m2]: two directions of members at their spacing
+        const latticeKg = (step = stepOf()) => 2 * step.layers * mat().sizes[step.size].A * mat().rho / mat().spacing;
+
         let analysisDisp = null;     // Float64Array(3n) node displacements (built frame) to draw
         let analysisN = null;        // axial force per lath member [kN, + tension]
         let analysisAutoScale = 1, defScaleUser = 0;
         let analysisBusy = false;
         let lastCheck = null;        // { collapse, util } for the summaries
-
-        // Out-of-plane I of one lath line (all layers of one direction), in b^4/12
-        function outOfPlaneFactor(layers, g) {
-            if (layers === 1) return 1;
-            if (layers === 2) return 2 + 24 * g;   // 2 (loose bolts) ... 26 (fully composite)
-            return 3 + 96 * g;                      // 3 ... 99: laths at 0, 2b, 4b
-        }
 
         // shell normal at each node (built frame, pointing up), from the grid neighbours
         function nodeNormals() {
@@ -1458,7 +1504,7 @@
         }
 
         function buildFrameModel(step = LADDER[design.step], sec = design.sec) {
-            const cw = cellWidth(), nLines = cw / REAL_LATH_SPACING;
+            const cw = cellWidth(), nLines = cw / mat().spacing, M = mat();
             const nNet = netNodes.length;
             const X = [], fix = [];
             netNodes.forEach(n => { X.push(n.x, -n.y, n.z); fix.push(0, 0, 0, 0, 0, 0); });
@@ -1481,7 +1527,7 @@
                 }
             });
 
-            // laths: one model member stands for nLines lath lines of `layers` laths.
+            // laths: one model member stands for nLines lattice lines of `layers` members.
             // Shear blocks where the form-finding force is in the top quarter.
             const T = lastForces ? lastForces.T : null;
             const positiveT = T ? Array.from(T).filter(t => t > 0).sort((a, b) => a - b) : [];
@@ -1490,16 +1536,11 @@
             drLaths.forEach((mi, e) => {
                 const m = netMembers[mi];
                 const g = step.blocks && T && T[e] >= tBlock ? 1 : step.gamma;
-                const b4 = LATH_B ** 4 / 12;
-                const s = {
-                    E: E_TIMBER, G: G_TIMBER,
-                    A: step.layers * nLines * LATH_B * LATH_B,
-                    Iy: nLines * outOfPlaneFactor(step.layers, g) * b4,
-                    Iz: step.layers * nLines * b4,
-                    J: step.layers * nLines * 0.141 * LATH_B ** 4
-                };
+                const ln = latticeLine(step, g);
+                const s = { E: M.E, G: M.G, A: nLines * ln.A, Iy: nLines * ln.Iout, Iz: nLines * ln.Iin, J: nLines * ln.J };
                 lathIndex.push(el.length);
                 addEl(m.a, m.b, s, avgUp(m.a, m.b), false, 'lath');
+                el[el.length - 1].cOut = ln.cOut; el[el.length - 1].cIn = ln.cIn;
                 // lath ends are bolted to the edge boards (Fig 55): hinged there, as in the 1975 model
                 // (a short lath with both ends on the edge keeps one end fixed: hinged at both it would be a
                 // loose strut with no sideways stiffness at all)
@@ -1530,37 +1571,28 @@
                     }
                 });
             }
-            return { X: Float64Array.from(X), fix: Uint8Array.from(fix), el, lathIndex, nNet, nLines, layers: step.layers };
+            return { X: Float64Array.from(X), fix: Uint8Array.from(fix), el, lathIndex, nNet, nLines, step };
         }
 
-        // permanent load G [kN/m2]: laths 5 kg/m2 per layer + fittings 9 + covering
+        // permanent load G [kN/m2]: lattice (from its sections) + fittings + covering
         const COVERING_KG = { pvc: 1.2, ptfe: 1.5, etfe: 3, timber: 12, glass: 40 };
         let covering = 'pvc';
         const KG = 0.00981; // kN per kg
-        const permanentKg = (layers = lathLayersOf()) => 5 * layers + 9 + COVERING_KG[covering];
+        const permanentKg = (step = stepOf()) => latticeKg(step) + mat().fittings + COVERING_KG[covering];
 
-        // load combinations. 'uls': factored, for stresses. 'char': unfactored, for collapse and deflection.
-        function combos(kind) {
-            const g = kind === 'uls' ? 1.35 : 1, s = kind === 'uls' ? 1.5 : 1;
-            const G = kind === 'uls' ? '1.35 G' : 'G', S = kind === 'uls' ? '1.5 S' : 'S';
-            const list = [{ name: G, g, s: 0, half: false }];
-            if (useSnow) list.push({ name: G + ' + ' + S, g, s, half: false }, { name: G + ' + ' + S + ' on left half', g, s, half: 'left' }, { name: G + ' + ' + S + ' on right half', g, s, half: 'right' });
-            return list;
-        }
-        function planCentreX() { let cx = 0; boundaryPts.forEach(p => { cx += p.x; }); return cx / boundaryPts.length; }
+        // The only load is the permanent one, covering included: 'uls' factored by 1.35 for stresses,
+        // 'char' unfactored for deflection. No snow, wind or imposed load.
+        const combos = kind => [kind === 'uls' ? { name: '1.35 G', g: 1.35 } : { name: 'G', g: 1 }];
 
-        // nodal loads (built frame, gravity -y): G on the shell surface, snow on the plan
-        function loadVector(nNodes, c, layers = lathLayersOf(), fm = null) {
+        // nodal loads (built frame, gravity -y): G on the shell surface, edge members' own weight
+        function loadVector(nNodes, c, step = stepOf(), fm = null) {
             const P = new Float64Array(6 * nNodes);
-            const cw = cellWidth(), cx = planCentreX(), g = permanentKg(layers) * KG;
+            const cw = cellWidth(), g = permanentKg(step) * KG;
             drLaths.forEach(mi => {
                 const m = netMembers[mi], A = netNodes[m.a], B = netNodes[m.b];
-                const L = Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z), Lp = Math.hypot(A.x - B.x, A.z - B.z);
-                const surf = L * cw / 4, plan = Lp * netSpacing / 4;
-                [[m.a, A], [m.b, B]].forEach(([i, N]) => {
-                    const sn = c.s && (!c.half || (c.half === 'left' ? N.x < cx : N.x >= cx)) ? snowLoad * c.s : 0;
-                    P[6 * i + 1] -= g * c.g * surf + sn * plan;
-                });
+                const surf = Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z) * cw / 4;
+                P[6 * m.a + 1] -= g * c.g * surf;
+                P[6 * m.b + 1] -= g * c.g * surf;
             });
             if (fm) fm.el.forEach(e => {
                 if (!['column', 'beam', 'arch', 'cable'].includes(e.tag)) return;
@@ -1570,8 +1602,6 @@
             });
             return P;
         }
-        // a combination read as an average load on the shell [kN/m2]
-        const comboUniform = (c, layers = lathLayersOf()) => permanentKg(layers) * KG * c.g + (c.s ? snowLoad * c.s * (c.half ? 0.5 : 1) : 0);
 
         // utilisation of an edge member for forces N (+ tension), My, Mz with section s
         function memberUtil(e, s, N, My, Mz) {
@@ -1627,10 +1657,11 @@
         }
 
         function designLabel() {
-            const st = LADDER[design.step];
-            return 'step ' + (design.step + 1) + ': ' + st.layers + ' layer' + (st.layers > 1 ? 's' : '') +
-                (st.layers > 1 ? ', γ ' + st.gamma.toFixed(2) : '') + (st.blocks ? ', blocks' : '') + (st.ties ? ', ties' : '') +
-                (design.sized ? '' : ' · members assumed');
+            const st = stepOf();
+            const shell = materialKey === 'timber'
+                ? st.layers + ' layer' + (st.layers > 1 ? 's' : '') + (st.layers > 1 ? ', γ ' + st.gamma.toFixed(2) : '') + (st.blocks ? ', blocks' : '')
+                : mat().sizes[st.size].name;
+            return 'step ' + (design.step + 1) + ': ' + shell + (st.ties ? ', ties' : '') + (design.sized ? '' : ' · members assumed');
         }
 
         function storeDisplacements(fm, frame, scaleToSpan = 0.04) {
@@ -1659,12 +1690,12 @@
 
         // First order over every ULS combination: the worst of each result.
         // Returns per-element envelopes for member sizing.
-        function envelopeULS(fm, frame, layers) {
+        function envelopeULS(fm, frame) {
             const m = fm.el.length;
             const env = { N: new Float64Array(m), Nt: new Float64Array(m), My: new Float64Array(m), Mz: new Float64Array(m), stable: true, ratio: 1 };
             for (const c of combos('uls')) {
-                env.ratio = Math.max(env.ratio, comboUniform(c, layers) / comboUniform({ g: 1, s: 0 }, layers));
-                const r = frame.linear(loadVector(frame.X.length / 3, c, layers, fm));
+                env.ratio = Math.max(env.ratio, c.g);
+                const r = frame.linear(loadVector(frame.X.length / 3, c, fm.step, fm));
                 env.stable = env.stable && r.stable;
                 for (let i = 0; i < m; i++) {
                     env.N[i] = Math.min(env.N[i], frame.N[i]);    // most compression
@@ -1681,32 +1712,29 @@
             return Math.max(memberUtil(e, s, env.N[i] + pre, env.My[i], env.Mz[i]), memberUtil(e, s, env.Nt[i] + pre, env.My[i], env.Mz[i]));
         }
 
-        // Analyze (Karamba "Analyze"): stresses for the ULS envelope, deflection for G + S
+        // Analyze (Karamba "Analyze"): stresses for 1.35 G, deflection for G
         function runAnalyze() {
             if (!readyForAnalysis()) return;
-            setBusy(true, 'Analysing, first order, every load combination …');
+            setBusy(true, 'Analysing, first order, 1.35 G \u2026');
             setTimeout(() => {
-                const fm = buildFrameModel(), frame = createFrame(fm), layers = fm.layers;
-                const env = envelopeULS(fm, frame, layers);
+                const fm = buildFrameModel(), frame = createFrame(fm), layers = fm.step.layers;
+                const env = envelopeULS(fm, frame);
                 let nMin = 0, mMax = 0;
                 fm.lathIndex.forEach(ei => { nMin = Math.min(nMin, env.N[ei]); mMax = Math.max(mMax, env.My[ei]); });
-                const perLath = 1 / (fm.nLines * layers), perLine = 1 / fm.nLines;
-                const I = outOfPlaneFactor(layers, LADDER[design.step].gamma) * LATH_B ** 4 / 12, W = I / ((2 * layers - 1) * LATH_B / 2);
-                const sigma = (-nMin * perLath) / (LATH_B * LATH_B) / 1000 + (mMax * perLine) / W / 1000; // MPa
-                // deflection and the drawn shape under the characteristic load with most snow
-                const cs = combos('char'), cDef = cs[Math.min(1, cs.length - 1)];
-                frame.linear(loadVector(frame.X.length / 3, cDef, layers, fm));
-                const { maxDown } = storeDisplacements(fm, frame);
-                document.getElementById('an-defl').textContent = (maxDown * 1000).toFixed(0) + ' mm (' + cDef.name + ')' + (env.stable ? '' : ' · unstable');
-                const lim = spanOfPlan() / 250, dEl = document.getElementById('an-defl');
-                dEl.classList.toggle('fail', maxDown > lim);
-                document.getElementById('an-deflLim').textContent = (lim * 1000).toFixed(0) + ' mm' + (maxDown > lim ? ' \u00B7 exceeded' : ' \u00B7 ok');
-                document.getElementById('an-nmax').textContent = (-nMin * perLath).toFixed(2) + ' kN';
-                document.getElementById('an-mmax').textContent = (mMax * perLine).toFixed(3) + ' kNm (σ ≈ ' + sigma.toFixed(1) + ' MPa)';
+                const perMember = 1 / (fm.nLines * layers), perLine = 1 / fm.nLines;
+                // deflection and the drawn shape under G
+                const d = deflectionCheck(fm, frame);
+                storeDisplacements(fm, frame);
+                const dEl = document.getElementById('an-defl');
+                dEl.textContent = (d.down * 1000).toFixed(0) + ' mm (' + d.combo.name + ')' + (env.stable ? '' : ' \u00B7 unstable');
+                dEl.classList.toggle('fail', !d.ok);
+                document.getElementById('an-deflLim').textContent = (d.limit * 1000).toFixed(0) + ' mm' + (d.ok ? ' \u00B7 ok' : ' \u00B7 exceeded');
+                document.getElementById('an-nmax').textContent = (-nMin * perMember).toFixed(2) + ' kN';
+                document.getElementById('an-mmax').textContent = (mMax * perLine).toFixed(3) + ' kNm';
                 showUtilisation(fm, env);
                 setBusy(false);
                 showAnalysisColours();
-                setStatus('Analysed: ' + combos('uls').map(c => c.name).join(', ') + '. The shape shows ' + cDef.name + ', scaled.');
+                setStatus('Analysed for 1.35 G (covering included). The shape shows G, scaled.');
             }, 20);
         }
 
@@ -1723,26 +1751,31 @@
                 return '<div class="stat-line"><span class="lbl">' + label[t] + ' (' + w.name + ', ' + w.n + ')</span><span class="num' +
                     (w.u > 1 ? ' fail' : '') + '">utilisation ' + w.u.toFixed(2) + '</span></div>';
             });
-            // the laths: axial + out-of-plane bending per lath line, solid timber 24 MPa x 0.8 / 1.3
-            const st = LADDER[design.step], layers = st.layers, nl = fm.nLines, fLath = 14.8e3;
-            const I = outOfPlaneFactor(layers, st.gamma) * LATH_B ** 4 / 12, W = I / ((2 * layers - 1) * LATH_B / 2);
-            let over = 0, uMax = 0;
-            fm.lathIndex.forEach(ei => {
-                const u = (Math.abs(env.N[ei]) / nl / (layers * LATH_B * LATH_B) + env.My[ei] / nl / W) / fLath;
-                uMax = Math.max(uMax, u); if (u > 1) over++;
-            });
-            const pct = 100 * over / fm.lathIndex.length;
-            rows.unshift('<div class="stat-line"><span class="lbl">Laths (' + fm.lathIndex.length + ')</span><span class="num' + (over ? ' fail' : '') +
-                '">' + (over ? pct.toFixed(1) + ' % over, max ' + uMax.toFixed(2) : 'utilisation ' + uMax.toFixed(2)) + '</span></div>');
+            // the lattice: axial + bending out of and in the surface, the same check the suggestion uses
+            const lu = lathUtilStats(fm, env);
+            rows.unshift('<div class="stat-line"><span class="lbl">Lattice (' + fm.lathIndex.length + ')</span><span class="num' + (lu.over ? ' fail' : '') +
+                '">' + (lu.over ? lu.pct.toFixed(1) + ' % over, max ' + lu.max.toFixed(2) : 'utilisation ' + lu.max.toFixed(2)) + '</span></div>');
+            const pct = lu.pct;
             document.getElementById('an-util').innerHTML = rows.join('');
             lastCheck = Object.assign(lastCheck || {}, { util: Math.max(0, ...Object.values(worst).map(w => w.u)), lathOver: pct });
             updateSummaries();
         }
 
-        // deflection under the characteristic load with the most snow, and its limit span / 250
-        function deflectionCheck(fm, frame, layers) {
-            const cs = combos('char'), c = cs[Math.min(1, cs.length - 1)];
-            frame.linear(loadVector(frame.X.length / 3, c, layers, fm));
+        // lattice utilisation over all members: the worst, and how many are over
+        function lathUtilStats(fm, env) {
+            let max = 0, over = 0, maxAt = -1;
+            fm.lathIndex.forEach(i => {
+                const u = lathUtilOf(fm.el[i], Math.max(Math.abs(env.N[i]), Math.abs(env.Nt[i])), env.My[i], env.Mz[i]);
+                if (!(u <= max)) { max = u; maxAt = i; }
+                if (!(u <= 1)) over++;
+            });
+            return { max, over, maxAt, pct: 100 * over / Math.max(1, fm.lathIndex.length) };
+        }
+
+        // deflection under G, and its limit span / 250
+        function deflectionCheck(fm, frame) {
+            const c = combos('char')[0];
+            frame.linear(loadVector(frame.X.length / 3, c, fm.step, fm));
             let down = 0;
             for (let i = 0; i < fm.nNet; i++) down = Math.max(down, -(frame.X[3 * i + 1] - frame.X0[3 * i + 1]));
             const limit = spanOfPlan() / 250;
@@ -1758,7 +1791,7 @@
                 setStatus(label + ' · sizing the edge members, round ' + (round + 1));
                 await tick();
                 const fm = buildFrameModel(step, sec), frame = createFrame(fm);
-                const env = envelopeULS(fm, frame, step.layers);
+                const env = envelopeULS(fm, frame);
                 let changed = false;
                 worst = {};
                 for (const tag of Object.keys(MEMBER_LISTS)) {
@@ -1780,21 +1813,15 @@
             // Reuse the envelope only when these exact sections were already solved.
             const fm = verified ? verified.fm : buildFrameModel(step, sec);
             const frame = verified ? verified.frame : createFrame(fm);
-            const env = verified ? verified.env : envelopeULS(fm, frame, step.layers);
+            const env = verified ? verified.env : envelopeULS(fm, frame);
             worst = {};
             fm.el.forEach((e, i) => {
                 if (!MEMBER_LISTS[e.tag]) return;
                 const w = worst[e.tag] || (worst[e.tag] = { u: 0, n: 0, len: 0, name: e.sec.name, sec: e.sec });
                 w.u = Math.max(w.u, utilOf(e, e.sec, env, i)); w.n++; w.len += e.L0;
             });
-            let lathUtil = 0;
-            fm.lathIndex.forEach(i => {
-                const e = fm.el[i], n = Math.max(Math.abs(env.N[i]), Math.abs(env.Nt[i]));
-                const cy = (2 * step.layers - 1) * LATH_B / 2;
-                const stress = n / e.A + env.My[i] * cy / e.Iy + env.Mz[i] * (LATH_B / 2) / e.Iz;
-                lathUtil = Math.max(lathUtil, stress / 14.8e3);
-            });
-            return { sec, worst, lathUtil, fm, frame, passed: env.stable && Number.isFinite(lathUtil) && lathUtil <= 1 &&
+            const lu = lathUtilStats(fm, env), lathUtil = lu.max;
+            return { sec, worst, lathUtil, lathOver: lu.pct, env, fm, frame, passed: env.stable && Number.isFinite(lathUtil) && lathUtil <= 1 &&
                 Object.values(worst).every(w => Number.isFinite(w.u) && w.u <= 1) };
         }
 
@@ -1815,9 +1842,9 @@
                 const sized = await sizeMembers(step, label, 1);
                 let gov = null;
                 Object.entries(sized.worst).forEach(([t, w]) => { if (!gov || w.u > gov.u) gov = { t, u: w.u }; });
-                tr.children[2].textContent = 'laths ' + sized.lathUtil.toFixed(2) + (gov ? ' \u00B7 ' + names[gov.t] + ' ' + gov.u.toFixed(2) : '');
+                tr.children[2].textContent = 'lattice ' + sized.lathUtil.toFixed(2) + (sized.lathOver > 0 ? ' (' + sized.lathOver.toFixed(1) + ' % over)' : '') + (gov ? ' \u00B7 ' + names[gov.t] + ' ' + gov.u.toFixed(2) : '');
                 tr.children[2].className = sized.passed ? '' : 'fail';
-                const d = deflectionCheck(sized.fm, sized.frame, step.layers);
+                const d = deflectionCheck(sized.fm, sized.frame);
                 tr.children[3].textContent = (d.down * 1000).toFixed(0) + ' / ' + (d.limit * 1000).toFixed(0) + ' mm';
                 tr.children[3].className = d.ok ? '' : 'fail';
                 const ok = sized.passed && d.ok;
@@ -1858,11 +1885,12 @@
                 return '<div class="stat-line"><span class="lbl">' + label[t] + ' (' + w.n + ')</span><span class="num' + (w.u > 1 ? ' fail' : '') + '">' +
                     w.name + ' · ' + w.u.toFixed(2) + '</span></div>';
             });
-            // the laths themselves: layers x 2 directions x b^2 per 0.5 m, over the shell surface
+            // the lattice itself: layers x 2 directions of members at their spacing, over the shell surface
             let surf = 0;
             drLaths.forEach(mi => { const m = netMembers[mi], A = netNodes[m.a], B = netNodes[m.b]; surf += Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z) * cellWidth() / 2; });
-            const lathM3 = LADDER[design.step].layers * 2 * LATH_B * LATH_B / REAL_LATH_SPACING * surf;
-            rows.push('<div class="stat-line"><span class="lbl">Laths, 50 × 50 mm</span><span class="num">' + lathM3.toFixed(0) + ' m³</span></div>');
+            const st = stepOf(), M = mat(), latticeM3 = st.layers * 2 * M.sizes[st.size].A / M.spacing * surf;
+            rows.push('<div class="stat-line"><span class="lbl">Lattice, ' + M.sizes[st.size].name + (st.layers > 1 ? ' × ' + st.layers + ' layers' : '') + '</span><span class="num">' +
+                (M.rho > 1000 ? (latticeM3 * M.rho / 1000).toFixed(1) + ' t' : latticeM3.toFixed(0) + ' m³') + '</span></div>');
             rows.push('<div class="stat-line"><span class="lbl">Edge members: steel / glulam</span><span class="num">' + steelT.toFixed(1) + ' t / ' + timberM3.toFixed(1) + ' m³</span></div>');
             box.innerHTML = rows.join('');
         }
@@ -1950,12 +1978,23 @@
                 }
             }
 
-            // lath thickness in use: the thickest standard size that still clears
-            // this shape's tightest curve, and the bend radius that follows from it
-            lathThicknessMM = computeRecommendedThicknessMM(minRadius);
-            curvatureThreshold = radiusForThickness(lathThicknessMM);
-            const lathLabel = document.getElementById('val-lathThickness');
-            if (lathLabel) lathLabel.textContent = lathThicknessMM.toFixed(0) + ' mm \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m';
+            // Only members bent on site have a bend limit. Timber: the thickest standard lath that
+            // still clears this shape's tightest curve. GFRP: the tube in use and its smallest radius.
+            const M = mat(), lathLabel = document.getElementById('val-lathThickness');
+            let bendText;
+            if (!M.elastic) {
+                curvatureThreshold = 0;
+                bendText = 'made to shape, no bend limit';
+            } else if (materialKey === 'timber') {
+                lathThicknessMM = computeRecommendedThicknessMM(minRadius);
+                curvatureThreshold = radiusForThickness(lathThicknessMM);
+                bendText = lathThicknessMM.toFixed(0) + ' mm \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m';
+            } else {
+                const sz = M.sizes[stepOf().size];
+                curvatureThreshold = sz.depth / (2 * M.strainAllow);
+                bendText = sz.name + ' \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m' + (minRadius < curvatureThreshold ? ' \u00B7 too tight' : '');
+            }
+            if (lathLabel) lathLabel.textContent = bendText;
 
             if (lathColourMode === 'radius') {
                 curvatureSamples.forEach((R, mi) => { memberColors[mi] = radiusToColor(R, curvatureThreshold); });
@@ -2048,28 +2087,31 @@
                 T, maxT, minT, slack, maxStrain, edgeSpringForce, W: W + Wedge,
                 // colour scale: most laths, not the few peaks where an edge rises steeply
                 p95: (() => { const v = Array.from(T).filter(t => t > 0).sort((a, b) => a - b); return v.length ? v[Math.floor(0.95 * (v.length - 1))] : 1; })(), Ry: Ry + Wedge, maxThrust,
-                perLath: REAL_LATH_SPACING / cellWidth(), // share of a model member's force carried by one 0.5 m lath line
+                perLath: mat().spacing / cellWidth(), // share of a model member's force carried by one lattice line
                 iter: dr.iter, converged: lastRelaxConverged
             };
         }
 
         function updateForcePanel(f) {
             const set = (id, v) => { document.getElementById(id).textContent = v; };
-            set('stat-crown', crownHeight().toFixed(2) + ' m');
+            set('stat-crown', crownHeight().toFixed(1) + ' m');
             if (!f) return;
             const err = Math.abs(f.Ry - f.W) / Math.max(f.W, 1e-9) * 100;
-            set('stat-g', permanentKg().toFixed(1) + ' kg/m\u00B2 = ' + selfWeight.toFixed(2) + ' kN/m\u00B2 (laths ' + 5 * lathLayersOf() + ' + fittings 9 + covering ' + COVERING_KG[covering] + ')');
-            set('stat-reac', f.W.toFixed(0) + ' / ' + f.Ry.toFixed(0) + ' kN (' + (err < 0.1 ? 'balances' : err.toFixed(1) + ' % off') + ')');
-            set('stat-nmax', (f.maxT * f.perLath).toFixed(2) + ' kN');
-            set('stat-thrust', f.maxThrust.toFixed(2) + ' kN/m' + (cableSpans.length
-                ? ' \u00B7 cable up to ' + Math.max(...cableSpans.map(c => c.T)).toFixed(0) + ' kN (1975: 125 kN)' : ''));
-            set('stat-strain', (f.maxStrain * 100).toFixed(2) + ' %' + (f.maxStrain > 0.01 ? ' \u2014 net too short, add slack' : ''));
-            set('stat-dr', f.iter + ' it. ' + (f.converged ? 'converged' : 'not converged'));
+            const r1 = v => +v.toFixed(1);
+            set('stat-g', r1(latticeKg()) + ' + ' + r1(mat().fittings) + ' + ' + r1(COVERING_KG[covering]) + ' = ' + r1(permanentKg()) + ' kg/m\u00B2');
+            set('stat-gd', (1.35 * selfWeight).toFixed(2) + ' kN/m\u00B2');
+            updateMaterialLine();
+            set('stat-reac', f.Ry.toFixed(0) + ' kN' + (err < 0.1 ? ' = G' : ', ' + err.toFixed(1) + ' % off G'));
+            set('stat-nmax', (f.maxT * f.perLath).toFixed(2) + ' kN per line');
+            set('stat-thrust', f.maxThrust.toFixed(1) + ' kN/m' + (cableSpans.length
+                ? ' \u00B7 cable ' + Math.max(...cableSpans.map(c => c.T)).toFixed(0) + ' kN' : ''));
+            set('stat-strain', 'strain ' + (f.maxStrain * 100).toFixed(2) + ' % \u00B7 ' + f.iter + ' it.' +
+                (f.converged ? '' : ', not settled') + (f.maxStrain > 0.01 ? ' \u00B7 add slack' : ''));
         }
 
         function updateInfoPanel(s) {
             document.getElementById('stat-count').textContent = s.nodeCount + ' nodes / ' + s.memberCount + ' laths \u00B7 ' +
-                (cellWidth() / REAL_LATH_SPACING).toFixed(1) + ' lath lines per member';
+                (cellWidth() / mat().spacing).toFixed(1) + ' lattice lines per member';
             document.getElementById('stat-ratio').textContent = s.ratio.toFixed(2) + ' (' + s.rise.toFixed(1) + ' m / ' + s.span.toFixed(1) + ' m)';
             document.getElementById('stat-shear').textContent = s.maxShearDev.toFixed(0) + '\u00B0';
             document.getElementById('stat-radius').textContent = isFinite(s.minRadius) ? s.minRadius.toFixed(1) + ' m' : '\u2014';
@@ -2909,6 +2951,28 @@
             startRelax(false); // the shape does not change (uniform load), the forces do
         });
 
+        // lattice material: its own ladder and starting step; the shape is the same, the load and stiffness change
+        function setMaterial(key) {
+            materialKey = key;
+            LADDER = ladderFor(key);
+            design = { step: key === 'timber' ? 3 : 1, sec: design.sec, sized: false };
+            updateMaterialLine();
+            document.getElementById('ladderBody').innerHTML = '<tr><td colspan="5" class="val">Not run yet. Starts at step ' + (design.step + 1) +
+                ' (' + LADDER[design.step].name + '), edge members assumed.</td></tr>';
+            document.getElementById('sectionsBox').innerHTML = '<div class="stat-line"><span class="lbl">Not sized yet &mdash; the starting sizes are assumed</span><span class="num"></span></div>';
+            updatePermanentLoad();
+            clearAnalysis();
+            startRelax(false);
+        }
+        document.getElementById('material').addEventListener('change', e => setMaterial(e.target.value));
+        // one line under the select: how it takes its shape, the section in use, an example; the full note on hover
+        function updateMaterialLine() {
+            const M = mat(), st = stepOf(), el = document.getElementById('materialNote');
+            el.textContent = [M.sizes[st.size].name + (st.layers > 1 ? ' \u00D7 ' + st.layers : '') + ' @ ' + M.spacing + ' m', M.example].filter(Boolean).join(' \u00B7 ');
+            el.title = M.note + '.';
+        }
+        updateMaterialLine();
+
         document.getElementById('btnFit').addEventListener('click', () => {
             const target = parseFloat(document.getElementById('fitHeight').value);
             if (!(target > 0)) return;
@@ -3146,7 +3210,7 @@
             const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
             set('sumForm', 'crown ' + crownHeight().toFixed(1) + ' m \u00B7 slack ' + (lathSlack * 100).toFixed(1) + ' % \u00B7 G ' +
                 permanentKg().toFixed(0) + ' kg/m\u00B2' + (f ? ' \u00B7 max ' + (f.maxT * f.perLath).toFixed(1) + ' kN per lath line' : ''));
-            const parts = [useSnow ? 'snow ' + (snowLoad / KG).toFixed(0) + ' kg/m\u00B2' : 'no snow'];
+            const parts = ['1.35 G'];
             if (lastCheck && lastCheck.util !== undefined) parts.push('members ' + (lastCheck.util <= 1 ? 'pass' : 'fail') + ' (' + lastCheck.util.toFixed(2) + ')');
             set('sumCheck', parts.join(' \u00B7 '));
             set('sumDesign', designLabel());
@@ -3176,21 +3240,7 @@
             netDirty = true;
         });
 
-        /* ---- Check: snow, analysis ---- */
-        document.getElementById('useSnow').addEventListener('change', e => {
-            useSnow = e.target.checked;
-            document.getElementById('snowRow').style.display = useSnow ? '' : 'none';
-            clearAnalysis();
-        });
-        // snow is a site value (code or design figure), not something to scrub through
-        function setSnowKg(kg) { snowLoad = kg * KG; clearAnalysis(); }
-        document.getElementById('snowPreset').addEventListener('change', e => {
-            const custom = e.target.value === 'custom';
-            document.getElementById('snowCustom').style.display = custom ? '' : 'none';
-            document.getElementById('snowUnit').style.display = custom ? '' : 'none';
-            setSnowKg(custom ? parseFloat(document.getElementById('snowCustom').value) || 0 : parseFloat(e.target.value));
-        });
-        document.getElementById('snowCustom').addEventListener('input', e => setSnowKg(parseFloat(e.target.value) || 0));
+        /* ---- Check: analysis ---- */
         document.getElementById('defScale').addEventListener('input', e => {
             defScaleUser = parseFloat(e.target.value);
             document.getElementById('val-defScale').textContent = defScaleUser > 0 ? defScaleUser.toFixed(0) : 'auto';
