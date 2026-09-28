@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Space First</title>
+<title>Heino Engel: Structure Systems</title>
 
 <style>
     :root { --bg: #fff; --paper: #fff; --ink: #111; --mute: #888; --faint: #aaa; --line: #e0e0e0; }
@@ -203,37 +203,11 @@
 </style>
 </head>
 <body>
-<!-- gate: same password as H60 -->
-<div id="h60gate" style="position:fixed;inset:0;z-index:2147483647;background:#fdfdfd;display:flex;align-items:center;justify-content:center;font:14px/1.4 -apple-system,system-ui,sans-serif;color:#222">
-  <form id="h60gateForm" style="display:flex;flex-direction:column;gap:10px;width:240px">
-    <div style="font-weight:600;letter-spacing:.12em">Space First</div>
-    <input id="h60gatePw" type="password" placeholder="Password" autocomplete="current-password" style="padding:9px 10px;border:1px solid #bbb;border-radius:4px;font:inherit">
-    <button type="submit" style="padding:9px;border:0;background:#222;color:#fff;border-radius:4px;font:inherit;cursor:pointer">Enter</button>
-    <div id="h60gateMsg" style="color:#b33;min-height:1.3em"></div>
-  </form>
-</div>
-<script>
-(() => {
-  const H = "4b761be9db1390854617809c27a357a88929900dba51aa8d858bf6ba0faf57f1", K = "h60-gate", gate = document.getElementById("h60gate");
-  const open = () => gate.remove();
-  try { if (localStorage.getItem(K) === H) { open(); return; } } catch (e) {}
-  const form = document.getElementById("h60gateForm"), pw = document.getElementById("h60gatePw");
-  const sha = async t => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
-  form.addEventListener("keydown", e => e.stopPropagation());   // the page's own keys stay out of the box
-  form.addEventListener("submit", async e => {
-    e.preventDefault();
-    if (await sha(pw.value) === H) { try { localStorage.setItem(K, H); } catch (e) {} open(); }
-    else { document.getElementById("h60gateMsg").textContent = "Wrong password"; pw.select(); }
-  });
-  pw.focus();
-})();
-</script>
-<!-- /gate -->
 <div class="wrap">
     <div class="top">
         <div class="study-bar">
             <a href="../index.html">&larr; Index</a>
-            <span class="titlegroup"><span class="idx">12</span><span class="titleline"><b>Space First</b><span class="sep">&mdash;</span><span class="sub">set the column-free hall, then compare the structures that can span it &middot; after Heino Engel, <i>Structure Systems</i></span></span></span>
+            <span class="titlegroup"><span class="idx">12</span><span class="titleline"><b>Heino Engel: Structure Systems</b><span class="sep">&mdash;</span><span class="sub">set the column-free hall, then compare the structures that can span it</span></span></span>
         </div>
         <div class="fields">
             <div class="fld"><span class="k">Span — column-free</span><span class="line"><input id="L" type="number" min="3" max="200" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
