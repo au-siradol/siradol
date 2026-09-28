@@ -31,7 +31,7 @@ body.study-page { padding: 0 24px 32px; }
 
 .study-page .cluster-desc { white-space:normal; overflow:visible; }
 
-.study-page .fold,.study-page .fold span { font-size:11px!important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+.study-page .fold,.study-page .fold span { font-size:10.5px!important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
 
 @media(max-width:760px){body.study-page{padding:0 16px 32px;}
 }
@@ -42,7 +42,7 @@ body.page-space-first .fields{ margin-top:16px; }
 
 body.page-space-first .k{font-size:11px;letter-spacing:.5px;color:#555;}
 
-body.page-space-first .fold,body.page-space-first .fold span{font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;}
+body.page-space-first .fold,body.page-space-first .fold span{font-size:10.5px!important;letter-spacing:.5px;text-transform:uppercase;}
 
 body.page-space-first .fld input[type=number],body.page-space-first .fld select,body.page-space-first .fld .auto,body.page-space-first .cell,body.page-space-first .slot-h select{font-size:11px;}
 
