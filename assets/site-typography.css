@@ -211,3 +211,37 @@ body.page-space-first .wrap,body.page-emerging-grid-catenoid .study-bar,body.pag
 
 @media(pointer:coarse){body.study-page button,body.study-page select{min-height:44px;}
 }
+
+/* Final control metrics intentionally override legacy ID and inline typography.
+   Height is a minimum so wrapping labels and icon controls remain usable. */
+body.study-page {
+  --control-font: 10.5px;
+  --control-height: 26px;
+  --control-gap: 4px;
+  --section-gap: 14px;
+}
+body.study-page button,
+body.study-page select {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+  font-size: var(--control-font) !important;
+  line-height: 1.25 !important;
+  letter-spacing: .2px !important;
+  min-height: var(--control-height) !important;
+  height: auto !important;
+  padding: 4px 9px !important;
+  border-radius: 0 !important;
+  max-width: 100%;
+}
+body.study-page button span { font-size: inherit !important; line-height: inherit; }
+body.study-page :is(.btn-row,.btn-group,.btn-grid3,.cluster,.fld) { gap:var(--control-gap); }
+body.study-page :is(.controls-strip,.col) { row-gap:var(--section-gap); }
+body.study-page :is(.panel,.cluster-fields) { row-gap:var(--control-gap); }
+body.study-page :is(.control-row,.field label) { margin-bottom:var(--control-gap); }
+body.study-page :is(.panel h4.gap,.panels .k) { margin-top:var(--section-gap); }
+body.study-page .scrub-row { min-height:26px; height:auto; gap:var(--control-gap); }
+body.study-page :is(.timeline,.panels) { margin-top:var(--section-gap); }
+body.study-page :is(.column p,.cluster-desc,.panel .note,.view-hint) { line-height:1.25; }
+@media(pointer:coarse) {
+  body.study-page { --control-height:44px; }
+  body.study-page .scrub-row { min-height:44px; }
+}
