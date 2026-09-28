@@ -55,7 +55,7 @@ body {
 .column::-webkit-scrollbar-thumb { background: #ccc; }
 .column:first-child { border-left: none; padding-left: 0; }
 .column h3 { margin: 2px 0 1px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: .6px; color: #999; }
-.control-row { display: grid; grid-template-columns: minmax(0, 1fr) 42% 38px; align-items: center; gap: 6px; }
+.control-row { display: grid; grid-template-columns: minmax(0, 1fr) 34% 38px; align-items: center; gap: 6px; }
 .control-row label { color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .control-row label.dim { color: #aaa; }
 .val { color: #555; text-align: right; font-variant-numeric: tabular-nums; }
@@ -92,6 +92,7 @@ button.toggle-btn:focus-visible { outline: 1px dashed #111; outline-offset: 2px;
   .controls-container { grid-template-columns: 1fr; grid-template-rows: none; }
   .column { border-left: none; padding: 6px 0 0; border-top: 1px solid #ddd; overflow: visible; }
 }
+.bar, .canvas-container, .controls-container { width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; }
 </style>
 </head>
 <body>
