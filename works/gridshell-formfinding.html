@@ -95,7 +95,7 @@
         .seg-row button.active { background: var(--ink); color: #fff; }
 
         .stats { font-size: 11px; }
-        .stat-line { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-top: 1px solid #f0f0f0; }
+        .stat-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 1px 0; line-height: 1.35; border-top: 1px solid #f0f0f0; }
         .stat-line .lbl { color: #666; }
         .stat-line .num { color: var(--ink); font-weight: bold; text-align: right; }
         .stat-line .num.fail { color: var(--fail); }
@@ -431,7 +431,7 @@
 
                     <div class="k">Edge members (sized from the forces)</div>
                     <div class="stats" id="sectionsBox">
-                        <div class="stat-line"><span class="lbl">Not sized yet &mdash; the starting sizes are assumed</span><span class="num"></span></div>
+                        <div class="stat-line"><span class="lbl">Not sized yet, sizes assumed</span><span class="num"></span></div>
                     </div>
                     <details class="note"><summary>How the members are sized</summary>
                         Each group takes the smallest section in its list that passes every load combination:
@@ -1794,13 +1794,13 @@
             const label = { column: 'Columns', beam: 'Edge beams', arch: 'Arches', cable: 'Edge cables' };
             const rows = Object.keys(label).filter(t => worst[t]).map(t => {
                 const w = worst[t];
-                return '<div class="stat-line"><span class="lbl">' + label[t] + ' (' + w.name + ', ' + w.n + ')</span><span class="num' +
-                    (w.u > 1 ? ' fail' : '') + '">utilisation ' + w.u.toFixed(2) + '</span></div>';
+                return '<div class="stat-line" title="' + w.n + ' members, utilisation"><span class="lbl">' + label[t] + ', ' + w.name + '</span><span class="num' +
+                    (w.u > 1 ? ' fail' : '') + '">' + w.u.toFixed(2) + '</span></div>';
             });
             // the lattice: axial + bending out of and in the surface, the same check the suggestion uses
             const lu = lathUtilStats(fm, env);
-            rows.unshift('<div class="stat-line"><span class="lbl">Grid members (' + fm.lathIndex.length + ')</span><span class="num' + (lu.over ? ' fail' : '') +
-                '">' + (lu.over ? lu.pct.toFixed(1) + ' % over, max ' + lu.max.toFixed(2) : 'utilisation ' + lu.max.toFixed(2)) + '</span></div>');
+            rows.unshift('<div class="stat-line" title="' + fm.lathIndex.length + ' members, largest utilisation"><span class="lbl">Grid members</span><span class="num' + (lu.over ? ' fail' : '') +
+                '">' + lu.max.toFixed(2) + (lu.over ? ' \u00B7 ' + lu.pct.toFixed(1) + ' % over' : '') + '</span></div>');
             document.getElementById('an-util').innerHTML = rows.join('');
             updateSummaries();
         }
@@ -1932,7 +1932,7 @@
                 lastRelaxConverged = dr.step(0) < drTolerance();
                 showSections();
                 clearAnalysis();
-                document.getElementById('an-design').textContent = designLabel();
+                updateSummaries();
                 const msg = 'Suggested: ' + designLabel() + (first.local ? ', with local reinforcement where a few grid members are over' : '') +
                     ' (quick estimate). Press Analyze to confirm.';
                 document.getElementById('suggestNote').textContent = msg; setStatus(msg);
@@ -2053,10 +2053,10 @@
             // Only members bent on site have a bend limit: the size in use (the one analysed) sets the
             // smallest radius; where the shape is tighter, timber names the lath that would still bend.
             const M = mat(), lathLabel = document.getElementById('val-lathThickness');
-            let bendText;
+            let bendText, bendShort; // the line shows the short text, the full one on hover
             if (!M.elastic) {
                 curvatureThreshold = 0;
-                bendText = 'made to shape, no bend limit';
+                bendText = 'made to shape, no bend limit'; bendShort = 'none, made to shape';
             } else {
                 const sz = M.sizes[stepOf().size];
                 curvatureThreshold = sz.depth / (2 * M.strainAllow);
@@ -2070,8 +2070,9 @@
                     lathThicknessMM = computeRecommendedThicknessMM(minRadius);
                     bendText += ', the tightest needs ' + (lathThicknessMM <= tMax ? lathThicknessMM.toFixed(0) + ' mm' : '\u2264 ' + Math.floor(tMax) + ' mm');
                 } else if (!tight) bendText += ' \u00B7 ok';
+                bendShort = 'R \u2265 ' + curvatureThreshold.toFixed(1) + ' m \u00B7 ' + (tight ? (100 * nTight / radii.length).toFixed(0) + ' % tighter' : 'ok');
             }
-            if (lathLabel) lathLabel.textContent = bendText;
+            if (lathLabel) { lathLabel.textContent = bendShort; lathLabel.title = bendText; }
 
             if (lathColourMode === 'radius') {
                 curvatureSamples.forEach((R, mi) => { memberColors[mi] = radiusToColor(R, curvatureThreshold); });
@@ -2187,8 +2188,9 @@
         }
 
         function updateInfoPanel(s) {
-            document.getElementById('stat-count').textContent = s.nodeCount + ' nodes / ' + s.memberCount + ' members \u00B7 ' +
-                (cellWidth() / mat().spacing).toFixed(1) + ' grid lines per member';
+            const count = document.getElementById('stat-count');
+            count.textContent = s.nodeCount + ' nodes \u00B7 ' + s.memberCount + ' members';
+            count.title = 'each model member stands for ' + (cellWidth() / mat().spacing).toFixed(1) + ' grid lines';
             document.getElementById('stat-ratio').textContent = s.ratio.toFixed(2) + ' (' + s.rise.toFixed(1) + ' m / ' + s.span.toFixed(1) + ' m)';
             document.getElementById('stat-shear').textContent = s.maxShearDev.toFixed(0) + '\u00B0';
             document.getElementById('stat-radius').textContent = isFinite(s.minRadius) ? s.minRadius.toFixed(1) + ' m' : '\u2014';
@@ -3098,7 +3100,7 @@
             document.getElementById('ladderBody').innerHTML = '<tr><td colspan="5" class="val">Not run yet. Starts at step ' + (design.step + 1) +
                 ' (' + LADDER[design.step].name + '), edge members assumed.</td></tr>';
             document.getElementById('suggestNote').textContent = '';
-            document.getElementById('sectionsBox').innerHTML = '<div class="stat-line"><span class="lbl">Not sized yet &mdash; the starting sizes are assumed</span><span class="num"></span></div>';
+            document.getElementById('sectionsBox').innerHTML = '<div class="stat-line"><span class="lbl">Not sized yet, sizes assumed</span><span class="num"></span></div>';
             updatePermanentLoad();
             clearAnalysis();
             startRelax(false, false, true);
@@ -3347,7 +3349,12 @@
             window.dispatchEvent(new Event('resize'));
             if (!folded) { cachedCenterOffset = null; drawEditor(); }
         });
-        function updateSummaries() { document.getElementById('an-design').textContent = designLabel(); }
+        // "Design in use": the step and whether the edge members are sized; the full label on hover
+        function updateSummaries() {
+            const el = document.getElementById('an-design');
+            el.textContent = 'step ' + (design.step + 1) + ' of ' + LADDER.length + (design.sized ? ' \u00B7 sized' : ' \u00B7 assumed');
+            el.title = designLabel();
+        }
 
         /* ---- Stages: 1 flat grid -> 2 hanging model (tension) -> 3 built shell (compression) ---- */
         function setStage(st) {
