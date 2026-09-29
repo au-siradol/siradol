@@ -558,6 +558,20 @@ export function createFrame(frame) {
             });
         },
 
+        // linearMany, awaiting each(k) between cases so a page can show progress
+        async linearManyAsync(Ps, each) {
+            reset();
+            assemble(K, { elastic: true });
+            K.factor();
+            const stable = K.negPivots === 0, factored = Float64Array.from(K.a);
+            for (let k = 0; k < Ps.length; k++) {
+                if (k) { reset(); K.a.set(factored); }
+                applyIncrement(K.solve(loadVector(Ps[k])));
+                assemble(K, { elastic: true });
+                await each(k, { stable });
+            }
+        },
+
         // Linear buckling (Karamba "Buckling Modes"): smallest lambda with
         // (K + lambda K_G(N)) x = 0, N from the first-order solution under P.
         // Happold & Liddell rejected this as the collapse load for Mannheim:

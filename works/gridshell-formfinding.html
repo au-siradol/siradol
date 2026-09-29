@@ -100,6 +100,11 @@
         .stat-line .num { color: var(--ink); font-weight: bold; text-align: right; }
         .stat-line .num.fail { color: var(--fail); }
 
+        .advice { font-size: 11px; line-height: 1.5; color: #333; margin-top: 8px; }
+        .advice:empty { display: none; }
+        .advice b { display: block; font-size: 8px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--faint); margin-bottom: 3px; }
+        .advice ol { margin: 0; padding-left: 16px; }
+        .advice li { margin-bottom: 3px; }
         details.note { margin-top: 10px; font-size: 11px; color: #555; line-height: 1.55; }
         details.note summary { cursor: pointer; color: var(--mute); font-size: 11px; list-style: none; }
         details.note summary::-webkit-details-marker { display: none; }
@@ -402,6 +407,7 @@
                         <div class="stat-line"><span class="lbl">Deflection limit (span / 250)</span><span class="num" id="an-deflLim">—</span></div>
                         <div class="stat-line" title="Linear buckling factor under G, an indicator against the target 2.5 (see What Analyze does)"><span class="lbl">Buckling factor &lambda; (linear, G)</span><span class="num" id="an-buck">—</span></div>
                     </div>
+                    <div class="advice" id="an-advice" role="status"></div>
                     <details class="note"><summary>What Analyze does</summary>
                         First-order analysis (Karamba's <i>Analyze</i>) for every load case. It reports the worst grid
                         force and moment, the utilisation of the grid members (axial force and bending out of and in the
@@ -477,7 +483,7 @@
         import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
         import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
         import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-29b';
+        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-29c';
 
         /* ============================================================
            STATE
@@ -1506,6 +1512,7 @@
         // lattice self-weight [kg/m2]: two directions of members at their spacing
         const latticeKg = (step = stepOf()) => 2 * step.layers * mat().sizes[step.size].A * mat().rho / mat().spacing;
 
+        let bendTightShare = 0;      // % of the grid curves tighter than the members bend (elastic materials)
         let analysisDisp = null;     // Float64Array(3n) node displacements (built frame) to draw
         let analysisN = null;        // axial force per lath member [kN, + tension]
         let analysisAutoScale = 1, defScaleUser = 0;
@@ -1679,6 +1686,7 @@
                 const el = document.getElementById(id); if (el) { el.textContent = '—'; el.classList.remove('fail'); }
             });
             const ut = document.getElementById('an-util'); if (ut) ut.innerHTML = '';
+            document.getElementById('an-advice').innerHTML = '';
             if (lathColourMode === 'analysis') lathColourMode = 'plain';
             const sel = document.getElementById('lathColour'); if (sel && sel.value === 'analysis') sel.value = 'plain';
             updateSummaries();
@@ -1739,19 +1747,23 @@
             boundaryPts.forEach(p => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); });
             return Math.min(maxX - minX, maxZ - minZ);
         }
-        function showAnalysisColours() {
-            lathColourMode = 'analysis';
-            document.getElementById('lathColour').value = 'analysis';
-            analyzeStructure();
-        }
 
         // First order over every ULS combination: the worst of each result.
         // Returns per-element envelopes for member sizing.
-        function envelopeULS(fm, frame) {
+        // progress on a busy button: its label and how far the work is, 0-100 %
+        const BUTTON_LABEL = { btnAnalyze: 'Analyze', btnPropose: 'Suggest (quick estimate)' };
+        async function showProgress(id, frac) {
+            document.getElementById(id).textContent = BUTTON_LABEL[id] + ' \u00B7 ' + Math.min(100, Math.round(100 * frac)) + ' %';
+            await tick();
+        }
+        const endProgress = id => { document.getElementById(id).textContent = BUTTON_LABEL[id]; };
+
+        // onCase(fraction done) is awaited after each load case
+        async function envelopeULS(fm, frame, onCase = null) {
             const m = fm.el.length;
             const env = { N: new Float64Array(m), Nt: new Float64Array(m), My: new Float64Array(m), Mz: new Float64Array(m), stable: true };
             const cs = combos('uls');
-            frame.linearMany(cs.map(c => loadVector(frame.X.length / 3, c, fm.step, fm)), (k, r) => {
+            await frame.linearManyAsync(cs.map(c => loadVector(frame.X.length / 3, c, fm.step, fm)), async (k, r) => {
                 env.stable = env.stable && r.stable;
                 for (let i = 0; i < m; i++) {
                     // a cable already carries its form-found tension under G, scaled with G in this case
@@ -1761,24 +1773,28 @@
                     env.My[i] = Math.max(env.My[i], frame.M[i]);
                     env.Mz[i] = Math.max(env.Mz[i], frame.Mz[i]);
                 }
+                if (onCase) await onCase((k + 1) / cs.length);
             });
             return env;
         }
         const utilOf = (e, s, env, i) => Math.max(memberUtil(e, s, env.N[i], env.My[i], env.Mz[i]), memberUtil(e, s, env.Nt[i], env.My[i], env.Mz[i]));
 
         // Analyze (Karamba "Analyze"): stresses for 1.35 G, deflection for G
-        function runAnalyze() {
+        // progress: the stress cases to 55 %, the deflection cases to 75 %, buckling to 95 %
+        async function runAnalyze() {
             if (!readyForAnalysis()) return;
             setBusy(true, 'Analysing, first order, every load case, and buckling \u2026');
-            setTimeout(() => {
+            try {
+                await showProgress('btnAnalyze', 0);
                 const fm = buildFrameModel(), frame = createFrame(fm), layers = fm.step.layers;
-                const env = envelopeULS(fm, frame);
+                const env = await envelopeULS(fm, frame, f => showProgress('btnAnalyze', 0.55 * f));
                 let nMin = 0, mMax = 0;
                 fm.lathIndex.forEach(ei => { nMin = Math.min(nMin, env.N[ei]); mMax = Math.max(mMax, env.My[ei]); });
                 const perMember = 1 / (fm.nLines * layers), perLine = 1 / fm.nLines;
                 // deflection over the characteristic cases; the drawn shape is the worst of them
-                const d = deflectionCheck(fm, frame);
+                const d = await deflectionCheck(fm, frame, f => showProgress('btnAnalyze', 0.55 + 0.2 * f));
                 const b = bucklingCheck(fm, frame);
+                await showProgress('btnAnalyze', 0.95);
                 frame.linear(d.P);
                 storeDisplacements(fm, frame);
                 const bEl = document.getElementById('an-buck');
@@ -1791,11 +1807,13 @@
                 document.getElementById('an-nmax').textContent = (-nMin * perMember).toFixed(2) + ' kN';
                 document.getElementById('an-mmax').textContent = (mMax * perLine).toFixed(3) + ' kNm';
                 showUtilisation(fm, env);
+                showAdvice(fm, env, d, b);
+                endProgress('btnAnalyze');
                 setBusy(false);
-                showAnalysisColours();
+                analyzeStructure(); // redraw: the shell as it stands, the deformed shape over it (colour by force is in the select)
                 setStatus('Analysed: ' + combos('uls').length + ' load cases' + (windQ > 0 ? ' (G and wind from four sides)' : ' (G only)') +
-                    '. The shape shows ' + d.combo.name + ', scaled.');
-            }, 20);
+                    '. The model shows the shell before (solid) and after deforming (orange, ' + d.combo.name + ', scaled).');
+            } catch (error) { endProgress('btnAnalyze'); analysisFailed(error); }
         }
 
         function showUtilisation(fm, env) {
@@ -1821,24 +1839,71 @@
 
         // lattice utilisation over all members: the worst, and how many are over
         function lathUtilStats(fm, env) {
-            let max = 0, over = 0, maxAt = -1;
+            let max = 0, over = 0, maxAt = -1, overEdge = 0;
+            // a member "at the edge" has an end on the outline or next to it (one grid step in)
+            const atEdge = e => [e.a, e.b].some(v => v < netNodes.length && (netNodes[v].bk !== null ||
+                (edgeNeighbour || (edgeNeighbour = edgeNeighbours())).has(v)));
             fm.lathIndex.forEach(i => {
                 const u = lathUtilOf(fm.el[i], Math.max(Math.abs(env.N[i]), Math.abs(env.Nt[i])), env.My[i], env.Mz[i]);
                 if (!(u <= max)) { max = u; maxAt = i; }
-                if (!(u <= 1)) over++;
+                if (!(u <= 1)) { over++; if (atEdge(fm.el[i])) overEdge++; }
             });
-            return { max, over, maxAt, pct: 100 * over / Math.max(1, fm.lathIndex.length) };
+            return { max, over, overEdge, maxAt, pct: 100 * over / Math.max(1, fm.lathIndex.length) };
+        }
+
+        // nodes one grid step in from the outline (cached until the net is rebuilt)
+        let edgeNeighbour = null;
+        function edgeNeighbours() {
+            const set = new Set();
+            netMembers.forEach(m => {
+                if (m.kind !== 'lath') return;
+                if (netNodes[m.a].bk !== null) set.add(m.b);
+                if (netNodes[m.b].bk !== null) set.add(m.a);
+            });
+            return set;
+        }
+
+        // What to change: rules of thumb read from the results, the most pressing first (at most three).
+        // Suggestions, not calculations.
+        function showAdvice(fm, env, d, b) {
+            const out = [], lu = lathUtilStats(fm, env), M = mat();
+            const rise = parseFloat(document.getElementById('stat-ratio').textContent);
+            // the next ladder step names the stiffening that comes next for this material
+            const next = LADDER[design.step + 1], stiffen = next ? 'go to step ' + (design.step + 2) + ' (' + next.name.replace(/^\+ /, '') + ')' : 'a deeper grid section or a higher crown';
+            if (!env.stable) out.push('The frame is unstable: check that every edge is held (a wall, or columns under a beam or cable).');
+            if (!b.ok) out.push('Buckling \u03BB ' + b.lambda.toFixed(1) + ' is below ' + BUCKLING_TARGET + ': raise the crown' +
+                (rise < 0.12 ? ' (rise/span is only ' + rise.toFixed(2) + ')' : '') + ', or ' + stiffen + '.');
+            if (lu.over && !(lu.pct <= LOCAL_SHARE && lu.max <= LOCAL_MAX && lu.overEdge >= 0.5 * lu.over))
+                out.push('Grid members are over across ' + lu.pct.toFixed(1) + ' % of the grid (max ' + lu.max.toFixed(2) + '): ' +
+                    stiffen + ', or press Suggest to find the step that passes.');
+            const over = fm.el.map((e, i) => ({ e, u: ['column', 'beam', 'arch', 'cable'].includes(e.tag) ? utilOf(e, e.sec, env, i) : 0 })).filter(x => x.u > 1);
+            if (over.length) {
+                const names = { column: 'columns', beam: 'edge beams', arch: 'arches', cable: 'edge cables' }, worst = {};
+                over.forEach(x => { worst[x.e.tag] = Math.max(worst[x.e.tag] || 0, x.u); });
+                const list = Object.entries(worst).map(([t, u]) => names[t] + ' ' + u.toFixed(2)).join(', ');
+                out.push(list[0].toUpperCase() + list.slice(1) + ': larger sections; Suggest sizes them from the forces.');
+            }
+            if (!d.ok) out.push('Deflection ' + (d.down * 1000).toFixed(0) + ' mm is over span / 250 (' + d.combo.name + '): raise the crown, or ' + stiffen + '.');
+            if (lu.over && lu.pct <= LOCAL_SHARE && lu.max <= LOCAL_MAX && lu.overEdge >= 0.5 * lu.over)
+                out.push(lu.over + ' grid members are over, mostly at the edges and supports: reinforce them locally (shear blocks or extra members there).');
+            if (M.elastic && bendTightShare > 0)
+                out.push(bendTightShare.toFixed(0) + ' % of the grid bends tighter than ' + M.sizes[stepOf().size].name + ' allows: less extra length, gentler edge heights, or thinner members.');
+            const box = document.getElementById('an-advice');
+            box.innerHTML = out.length
+                ? '<b>What to change</b><ol>' + out.slice(0, 3).map(t => '<li>' + t + '</li>').join('') + '</ol>'
+                : '<b>What to change</b> Nothing: every check passes for this design.';
         }
 
         // the largest vertical movement, down or up, over the characteristic cases, and its limit span / 250
-        function deflectionCheck(fm, frame) {
+        async function deflectionCheck(fm, frame, onCase = null) {
             const cs = combos('char'), Ps = cs.map(c => loadVector(frame.X.length / 3, c, fm.step, fm));
             let down = 0, worst = 0;
-            frame.linearMany(Ps, k => {
+            await frame.linearManyAsync(Ps, async k => {
                 for (let i = 0; i < fm.nNet; i++) {
                     const d = Math.abs(frame.X[3 * i + 1] - frame.X0[3 * i + 1]);
                     if (d > down) { down = d; worst = k; }
                 }
+                if (onCase) await onCase((k + 1) / cs.length);
             });
             const limit = spanOfPlan() / 250;
             return { down, limit, ok: down <= limit, combo: cs[worst], P: Ps[worst] };
@@ -1856,14 +1921,15 @@
 
         // Size the edge members for a ladder step: smallest passing section per group,
         // repeated until the sizes settle (a stiffer member draws more force).
-        async function sizeMembers(step, label, rounds = 5) {
+        async function sizeMembers(step, label, rounds = 5, onProgress = null) {
+            const report = f => onProgress ? onProgress(f) : null;
             const sec = Object.assign({}, design.sec);
             let worst = {}, verified = null;
             for (let round = 0; round < rounds; round++) {
                 setStatus(label + ' · sizing the edge members, round ' + (round + 1));
                 await tick();
                 const fm = buildFrameModel(step, sec), frame = createFrame(fm);
-                const env = envelopeULS(fm, frame);
+                const env = await envelopeULS(fm, frame, f => report((round + f) / (rounds + 1)));
                 let changed = false;
                 worst = {};
                 const lists = memberLists();
@@ -1886,7 +1952,7 @@
             // Reuse the envelope only when these exact sections were already solved.
             const fm = verified ? verified.fm : buildFrameModel(step, sec);
             const frame = verified ? verified.frame : createFrame(fm);
-            const env = verified ? verified.env : envelopeULS(fm, frame);
+            const env = verified ? verified.env : await envelopeULS(fm, frame, f => report((rounds + f) / (rounds + 1)));
             worst = {};
             fm.el.forEach((e, i) => {
                 if (!memberLists()[e.tag]) return;
@@ -1918,11 +1984,13 @@
                 tr.innerHTML = '<td>' + (k + 1) + '</td><td>' + step.name + '</td><td>…</td><td></td><td></td>';
                 body.appendChild(tr);
                 // two rounds: size from the current members, then again from the forces the new sizes draw
-                const sized = await sizeMembers(step, label, 2);
+                const at = f => showProgress('btnPropose', (k + f) / LADDER.length);
+                const sized = await sizeMembers(step, label, 2, f => at(0.6 * f));
                 let gov = null;
                 Object.entries(sized.worst).forEach(([t, w]) => { if (!gov || w.u > gov.u) gov = { t, u: w.u }; });
-                const d = deflectionCheck(sized.fm, sized.frame);
+                const d = await deflectionCheck(sized.fm, sized.frame, f => at(0.6 + 0.2 * f));
                 const b = bucklingCheck(sized.fm, sized.frame);
+                await at(1);
                 const membersOk = sized.env.stable && Object.values(sized.worst).every(w => Number.isFinite(w.u) && w.u <= 1);
                 const gridOk = sized.lathUtil <= 1, local = !gridOk && sized.lathOver <= LOCAL_SHARE && sized.lathUtil <= LOCAL_MAX;
                 tr.children[2].textContent = 'grid ' + sized.lathUtil.toFixed(2) + (sized.lathOver > 0 ? ' (' + sized.lathOver.toFixed(1) + ' % over)' : '') +
@@ -1938,6 +2006,7 @@
                 if (!closest || score < closest.score) closest = { k, score };
                 await tick();
             }
+            endProgress('btnPropose');
             setBusy(false);
             if (first) {
                 design = { step: first.k, sec: first.sized.sec, sized: true, worst: first.sized.worst };
@@ -2068,6 +2137,7 @@
             // smallest radius; where the shape is tighter, timber names the lath that would still bend.
             const M = mat(), lathLabel = document.getElementById('val-lathThickness');
             let bendText, bendShort; // the line shows the short text, the full one on hover
+            bendTightShare = 0;
             if (!M.elastic) {
                 curvatureThreshold = 0;
                 bendText = 'made to shape, no bend limit'; bendShort = 'none, made to shape';
@@ -2076,6 +2146,7 @@
                 curvatureThreshold = sz.depth / (2 * M.strainAllow);
                 const tight = isFinite(minRadius) && minRadius < curvatureThreshold;
                 const nTight = radii.filter(R => R < curvatureThreshold).length;
+                bendTightShare = 100 * nTight / Math.max(1, radii.length);
                 bendText = sz.name + ' in use: R \u2265 ' + curvatureThreshold.toFixed(1) + ' m' +
                     (tight ? ' \u00B7 ' + (100 * nTight / radii.length).toFixed(0) + ' % of the grid tighter' : '');
                 if (tight && materialKey === 'timber') {
@@ -2251,6 +2322,7 @@
         let shearMesh = null, shearSamples = [];
         let linesGeom = null, linesMesh = null;
         let edgeGeom = null, edgeMesh = null;   // edge beams, arches, cables, walls and columns
+        let deformGeom = null, deformMesh = null; // the analysed shell after deforming, over the one before
         let boundaryLine = null;
 
         function lineMat(width) {
@@ -2267,6 +2339,7 @@
             if (pointsMesh) { scene.remove(pointsMesh); pointsGeom.dispose(); pointsMesh.material.dispose(); }
             if (linesMesh) { scene.remove(linesMesh); linesGeom.dispose(); linesMesh.material.dispose(); }
             if (edgeMesh) { scene.remove(edgeMesh); edgeGeom.dispose(); edgeMesh.material.dispose(); }
+            if (deformMesh) { scene.remove(deformMesh); deformGeom.dispose(); deformMesh.material.dispose(); }
 
             const n = netNodes.length;
             pointsGeom = new THREE.BufferGeometry();
@@ -2302,6 +2375,13 @@
             edgeGeom = new LineSegmentsGeometry();
             edgeMesh = new LineSegments2(edgeGeom, lineMat(2));
             scene.add(edgeMesh);
+            // deformed shape: translucent orange, drawn after (over) the shell as it stands
+            deformGeom = new LineSegmentsGeometry();
+            deformMesh = new LineSegments2(deformGeom, new LineMaterial({ color: 0xe07b1f, linewidth: 1.6, transparent: true, opacity: 0.55,
+                depthWrite: false, resolution: new THREE.Vector2(simContainer.clientWidth, simContainer.clientHeight) }));
+            deformMesh.renderOrder = 5;
+            deformMesh.visible = false;
+            scene.add(deformMesh);
 
             updateNetGeometryPositions();
         }
@@ -2316,12 +2396,13 @@
             // analysis results are drawn on the built shell, scaled
             const D = inverted && analysisDisp && analysisDisp.length === 3 * netNodes.length ? analysisDisp : null;
             const ds = D ? (defScaleUser > 0 ? defScaleUser : analysisAutoScale) : 0;
+            // the shell as it stands; the deformed one (Pd) is drawn over it
             const P = i => {
                 const n = netNodes[i];
-                const target = viewStage === 'flat' ? [n.x0, 0, n.z0] :
-                    D ? [n.x + ds * D[3 * i], -n.y + ds * D[3 * i + 1], n.z + ds * D[3 * i + 2]] : [n.x, sy(n.y), n.z];
+                const target = viewStage === 'flat' ? [n.x0, 0, n.z0] : [n.x, sy(n.y), n.z];
                 return tween ? target.map((v, k) => tween.from[3 * i + k] * (1 - blend) + v * blend) : target;
             };
+            const Pd = i => { const n = netNodes[i]; return [n.x + ds * D[3 * i], -n.y + ds * D[3 * i + 1], n.z + ds * D[3 * i + 2]]; };
             const posA = pointsGeom.attributes.position.array;
             const colA = pointsGeom.attributes.color.array;
             for (let i = 0; i < netNodes.length; i++) {
@@ -2378,6 +2459,14 @@
             if (!ep.length) { ep.push(0, 0, 0, 0, 0, 0); ec.push(1, 1, 1, 1, 1, 1); }
             updateLineBuffers(linesGeom, lp, lc);
             updateLineBuffers(edgeGeom, ep, ec);
+            deformMesh.visible = !!D && !tween;
+            // orange over plain members; dark grey when the members already show tension in orange
+            deformMesh.material.color.set(lathColourMode === 'analysis' ? 0x333333 : 0xe07b1f);
+            if (deformMesh.visible) {
+                const dp = [], dc = [];
+                netMembers.forEach(mem => { dp.push(...Pd(mem.a), ...Pd(mem.b)); dc.push(1, 1, 1, 1, 1, 1); });
+                updateLineBuffers(deformGeom, dp, dc);
+            }
             pointsGeom.computeBoundingSphere();
             // All edit markers and selected-edge highlights follow the displayed nodes,
             // including cable offsets, inverted geometry and magnified displacement.
@@ -2497,6 +2586,7 @@
             renderer.setSize(w, h);
             if (linesMesh) linesMesh.material.resolution.set(w, h);
             if (edgeMesh) edgeMesh.material.resolution.set(w, h);
+            if (deformMesh) deformMesh.material.resolution.set(w, h);
             if (selEdgeLine) selEdgeLine.material.resolution.set(w, h);
             if (scaleRefLine) scaleRefLine.material.resolution.set(w, h);
         }
@@ -2597,6 +2687,7 @@
             netNodes = built.nodes;
             netMembers = built.members;
             netSpacing = built.spacing;
+            edgeNeighbour = null;
             document.getElementById('gridActual').textContent = 'Requested ' + meshSpacing.toFixed(2) +
                 ' m · used ' + netSpacing.toFixed(2) + ' m' + (netSpacing > meshSpacing + 1e-6 ? ' (4,000-cell limit)' : '') +
                 '. Calculation grid, not physical member spacing.';
@@ -3409,8 +3500,8 @@
             document.getElementById('val-defScale').textContent = defScaleUser > 0 ? defScaleUser.toFixed(0) : 'auto';
             netDirty = true;
         });
-        document.getElementById('btnAnalyze').addEventListener('click', runAnalyze);
-        document.getElementById('btnPropose').addEventListener('click', () => runPropose().catch(analysisFailed));
+        document.getElementById('btnAnalyze').addEventListener('click', () => runAnalyze());
+        document.getElementById('btnPropose').addEventListener('click', () => runPropose().catch(error => { endProgress('btnPropose'); analysisFailed(error); }));
         updatePermanentLoad();
 
         /* ============================================================
