@@ -275,6 +275,27 @@ function matMul(A, B) {
 const matVec = (A, v) => [A[0] * v[0] + A[1] * v[1] + A[2] * v[2], A[3] * v[0] + A[4] * v[1] + A[5] * v[2], A[6] * v[0] + A[7] * v[1] + A[8] * v[2]];
 
 // local 12x12 stiffness: elastic part (Euler-Bernoulli), geometric part for axial force N
+// Eigenvalues and eigenvectors (columns) of the symmetric tridiagonal matrix with diagonal a and
+// off-diagonal b, by cyclic Jacobi rotations; small (the Lanczos matrix), so a dense method will do.
+function symTridiagEig(a, b) {
+    const m = a.length, A = Array.from({ length: m }, (_, i) => { const r = new Float64Array(m); r[i] = a[i]; if (i) r[i - 1] = b[i - 1]; if (i < m - 1) r[i + 1] = b[i]; return r; });
+    const V = Array.from({ length: m }, (_, i) => { const r = new Float64Array(m); r[i] = 1; return r; });
+    for (let sweep = 0; sweep < 60; sweep++) {
+        let off = 0;
+        for (let p = 0; p < m; p++) for (let q = p + 1; q < m; q++) off += A[p][q] * A[p][q];
+        if (off < 1e-30) break;
+        for (let p = 0; p < m; p++) for (let q = p + 1; q < m; q++) {
+            if (Math.abs(A[p][q]) < 1e-300) continue;
+            const th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+            const t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c;
+            for (let k = 0; k < m; k++) { const akp = A[k][p], akq = A[k][q]; A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq; }
+            for (let k = 0; k < m; k++) { const apk = A[p][k], aqk = A[q][k]; A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk; }
+            for (let k = 0; k < m; k++) { const vkp = V[k][p], vkq = V[k][q]; V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq; }
+        }
+    }
+    return { values: A.map((r, i) => r[i]), vectors: V };
+}
+
 function localK(e, L, elastic, N) {
     const k = Array.from({ length: 12 }, () => new Float64Array(12));
     const set = (i, j, v) => { k[i][j] += v; if (i !== j) k[j][i] += v; };
@@ -522,6 +543,21 @@ export function createFrame(frame) {
             return { stable };
         },
 
+        // First order for several load cases on one factorisation: each(k, { stable }) is called
+        // with the element forces and displacements of case k in place.
+        linearMany(Ps, each) {
+            reset();
+            assemble(K, { elastic: true });
+            K.factor();
+            const stable = K.negPivots === 0, factored = Float64Array.from(K.a);
+            Ps.forEach((P, k) => {
+                if (k) { reset(); K.a.set(factored); }
+                applyIncrement(K.solve(loadVector(P)));
+                assemble(K, { elastic: true }); // element forces at the displaced state (overwrites K)
+                each(k, { stable });
+            });
+        },
+
         // Linear buckling (Karamba "Buckling Modes"): smallest lambda with
         // (K + lambda K_G(N)) x = 0, N from the first-order solution under P.
         // Happold & Liddell rejected this as the collapse load for Mannheim:
@@ -535,33 +571,46 @@ export function createFrame(frame) {
             assemble(K, { elastic: true });
             K.factor();
             if (K.negPivots) return { lambda: 0, mode: null };
-            // power iteration on A = K^-1 (-K_G): its largest positive eigenvalue mu
-            // gives lambda = 1/mu. Tension-dominated modes give negative mu; if one
-            // of those dominates, shift by it and iterate again.
-            const power = (shift, start) => {
-                let x = start || new Float64Array(neq + 1);
-                if (!start) for (let i = 1; i <= neq; i++) x[i] = 0.5 + 0.5 * Math.sin(i * 12.9898);
-                let mu = 0;
-                for (let it = 0; it < iters; it++) {
-                    const y = KG.mul(x);
-                    for (let i = 1; i <= neq; i++) y[i] = -y[i];
-                    const z = K.solve(y);
-                    for (let i = 1; i <= neq; i++) z[i] -= shift * x[i];
-                    let num = 0, den = 0;
-                    for (let i = 1; i <= neq; i++) { num += z[i] * x[i]; den += x[i] * x[i]; }
-                    mu = num / den;
-                    const nz = vnorm(z) || 1;
-                    for (let i = 1; i <= neq; i++) x[i] = z[i] / nz;
+            // Lanczos on A = K^-1 (-K_G), self-adjoint in the K inner product: its largest positive
+            // eigenvalue mu gives lambda = 1/mu. Tension-dominated modes give negative mu and are
+            // skipped. Plain power iteration converged far too slowly on a large shell (80 steps
+            // read lambda 0.95 where 1500 gave 0.21).
+            const dotv = (u, v) => { let t = 0; for (let i = 1; i <= neq; i++) t += u[i] * v[i]; return t; };
+            const Q = [], KQ = [], alpha = [], beta = [];
+            let Kr = new Float64Array(neq + 1);
+            for (let i = 1; i <= neq; i++) Kr[i] = 0.5 + 0.5 * Math.sin(i * 12.9898);
+            let r = K.solve(Float64Array.from(Kr));               // r = K^-1 b, so K r = b
+            let bnorm = Math.sqrt(Math.max(dotv(r, Kr), 0));
+            let mu = 0, s = null, last = Infinity;
+            const maxSteps = Math.min(Math.max(iters, 40), 200, neq);
+            for (let j = 0; j < maxSteps && bnorm > 1e-14; j++) {
+                const q = r.map(v => v / bnorm), Kq = Kr.map(v => v / bnorm);
+                Q.push(q); KQ.push(Kq); if (j) beta.push(bnorm);
+                Kr = KG.mul(q); for (let i = 1; i <= neq; i++) Kr[i] = -Kr[i];   // K w = -K_G q
+                r = K.solve(Float64Array.from(Kr));
+                alpha.push(dotv(q, Kr));
+                // full reorthogonalisation against every Lanczos vector, in the K inner product
+                for (let pass = 0; pass < 2; pass++) for (let k = 0; k < Q.length; k++) {
+                    const c = dotv(r, KQ[k]);
+                    for (let i = 1; i <= neq; i++) { r[i] -= c * Q[k][i]; Kr[i] -= c * KQ[k][i]; }
                 }
-                return { mu: mu + shift, x };
-            };
-            let { mu, x } = power(0);
-            if (mu < 0) ({ mu, x } = power(mu));
+                bnorm = Math.sqrt(Math.max(dotv(r, Kr), 0));
+                if ((j + 1) % 10 === 0 || j + 1 === maxSteps || bnorm <= 1e-14) {
+                    const eig = symTridiagEig(alpha, beta);
+                    let top = -1;
+                    eig.values.forEach((v, k) => { if (v > 0 && (top < 0 || v > eig.values[top])) top = k; });
+                    if (top < 0) { mu = 0; s = null; } else { mu = eig.values[top]; s = eig.vectors.map(row => row[top]); }
+                    if (Math.abs(mu - last) <= 1e-7 * Math.abs(mu)) break;
+                    last = mu;
+                }
+            }
+            const x = new Float64Array(neq + 1);
+            if (s) Q.forEach((q, k) => { for (let i = 1; i <= neq; i++) x[i] += s[k] * q[i]; });
             // mode shape as node displacements (translations only)
             const mode = new Float64Array(3 * n);
             for (let v = 0; v < n; v++) for (let d = 0; d < 3; d++) { const g = eq[DOF * v + d]; if (g) mode[3 * v + d] = x[g]; }
             reset();
-            return { lambda: mu > 0 ? 1 / mu : Infinity, mode };
+            return { lambda: mu > 0 ? 1 / mu : Infinity, mode, steps: Q.length };
         },
 
         // Geometrically nonlinear Newton-Raphson at load factor lam, from the

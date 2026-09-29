@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timber Gridshell Form-Finder — Hanging Net to Inverted Dome</title>
+    <title>Gridshell Form-Finder — Hanging Net to Inverted Dome</title>
     <style>
         /* type, lines and controls after Space First (study 12); colours kept, they carry the structure */
         :root { --ink: #111; --mute: #888; --faint: #aaa; --line: #e0e0e0; --fail: #d32f2f; }
@@ -45,19 +45,11 @@
             .bnd-panel { width: 220px; }
         }
 
-        /* sections that fold away: the title is the switch, ▾ open, ▸ folded (as Space First) */
+        /* the 2D outline folds to a rail: the title is the switch, ▾ open, ▸ folded (as Space First) */
         .fold { font-family: inherit; font-size: 17px; font-weight: 700; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; line-height: 1.3; text-align: left; }
         .fold::before { content: '▾'; display: inline-block; width: 1em; color: #999; font-weight: 400; }
-        .fsec.folded .fold::before, .canvases-wrapper.editor-folded .editor-header .fold::before { content: '▸'; }
+        .canvases-wrapper.editor-folded .editor-header .fold::before { content: '▸'; }
         .fold:hover { text-decoration: underline; text-underline-offset: 3px; }
-        .fsec { border-bottom: 1px solid var(--ink); padding: 14px 0 16px; }
-        .fsec .fhead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-        .fsec .fsum { display: none; font-size: 11px; color: #555; }
-        .fsec.folded .fsum { display: inline; }
-        .fsec .flead { font-size: 11px; color: var(--mute); }
-        .fsec.folded .flead { display: none; }
-        .fsec.folded .fbody { display: none !important; }
-        .fbody { display: flex; gap: 36px; flex-wrap: wrap; margin-top: 12px; }
         .column { flex: 1; min-width: 260px; }
         .k { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px; color: var(--faint); margin: 0 0 8px; }
 
@@ -148,7 +140,7 @@
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
             <span class="idx">05</span>
-            <span class="titleline"><b>Timber Gridshell Form-Finder</b><span class="sep">&mdash;</span><span class="sub">Hanging net &rarr; built shell &rarr; check &rarr; design, after Otto / Happold &amp; Liddell, Mannheim 1975</span></span>
+            <span class="titleline"><b>Gridshell Form-Finder</b><span class="sep">&mdash;</span><span class="sub">Hanging net &rarr; built shell &rarr; check &rarr; design, after Otto / Happold &amp; Liddell, Mannheim 1975</span></span>
         </span>
     </div>
 
@@ -253,17 +245,17 @@
                     <details class="note"><summary>How the net is made</summary>
                         A square grid is laid over the plan and trimmed at the edge. Every edge is held at its
                         height, as Otto's chain model was held on posts (Fig 13&ndash;14, Happold &amp; Liddell 1975).
-                        The laths are pin-jointed and a little longer than the plan grid, like the chain links, so
-                        the net hangs by changing shape, not by stretching; slack sets how deep it hangs. The links
-                        to the edge pull with one set force, as Otto's springs did, so the lath lines share the
-                        load. Each model member stands for several real 50 mm laths at 0.5 m, as the 1975 computer
-                        model used one member for many laths.
+                        The links are pin-jointed and a little longer than the plan grid, like the chain links, so
+                        the net hangs by changing shape, not by stretching; the extra length sets how deep it hangs. The
+                        links to the edge pull with one set force, as Otto's springs did, so the grid lines share the
+                        load. Each model member stands for several real grid members (the spacing under <i>Grid
+                        members</i>), as the 1975 computer model used one member for many laths.
                     </details>
 
 
                     <div class="k">Material &amp; load</div>
                     <div class="control-row">
-                        <label>Members</label>
+                        <label>Grid members</label>
                         <select id="material" class="wide">
                             <option value="timber" selected>Timber laths, bent on site</option>
                             <option value="glulam">Glulam ribs, pre-curved</option>
@@ -284,16 +276,16 @@
                         </select>
                     </div>
                     <div class="stats">
-                        <div class="stat-line" title="Permanent load: members + fittings + covering"><span class="lbl">G</span><span class="num" id="stat-g">—</span></div>
+                        <div class="stat-line" title="Permanent load: grid + fittings + covering"><span class="lbl">G</span><span class="num" id="stat-g">—</span></div>
                         <div class="stat-line" title="Design load: the partial factor 1.35 on the whole permanent load, covering included"><span class="lbl">1.35 G</span><span class="num" id="stat-gd">—</span></div>
                         <div class="stat-line"><span class="lbl">Crown</span><span class="num" id="stat-crown">—</span></div>
                         <div class="stat-line" title="Sum of the vertical reactions, checked against the total G"><span class="lbl">Reactions</span><span class="num" id="stat-reac">—</span></div>
-                        <div class="stat-line" title="Largest axial force in one line of members, from form-finding"><span class="lbl">Max member force</span><span class="num" id="stat-nmax">—</span></div>
+                        <div class="stat-line" title="Largest axial force in one grid line, from form-finding"><span class="lbl">Max grid force</span><span class="num" id="stat-nmax">—</span></div>
                         <div class="stat-line" title="Largest push on the edge per metre; with cable edges, the largest cable tension (1975: 125 kN)"><span class="lbl">Edge thrust</span><span class="num" id="stat-thrust">—</span></div>
                         <div class="stat-line" title="Largest stretch of a link while hanging, and dynamic relaxation iterations"><span class="lbl">Hanging net</span><span class="num" id="stat-strain">—</span></div>
                     </div>
                     <details class="note"><summary>How the forces are found</summary>
-                        The shape is found for the permanent load: the lattice (from its sections and spacing; timber
+                        The shape is found for the permanent load: the grid (from its sections and spacing; timber
                         laths 5 kg/m² per layer), its fittings (timber: bolts, blocks, nailing strips and ties 9 kg/m²,
                         set so the Mannheim double layer gives Liddell's 20 kg/m²) and the covering. It is uniform, so the shape does not depend on
                         how heavy it is, only the forces do. Dynamic relaxation (<code>karamba-lite.js</code>) returns
@@ -308,7 +300,7 @@
 
                     <div class="k">Geometry (instant)</div>
                     <div class="control-row">
-                        <label>Colour laths by</label>
+                        <label>Colour grid by</label>
                         <select id="lathColour" class="wide">
                             <option value="force">Axial force (form-finding)</option>
                             <option value="analysis">Axial force (analysis: blue compression, orange tension)</option>
@@ -324,7 +316,7 @@
                     <p class="legend" id="radiusLegend" style="display:none;">
                         <span class="legend-line" style="background:#4caf50;"></span>0–8° &nbsp;
                         <span class="legend-line" style="background:#f2c40f;"></span>8–25° &nbsp;
-                        <span class="legend-line" style="background:#d32f2f;"></span>needs thinner laths
+                        <span class="legend-line" style="background:#d32f2f;"></span>tighter than the members bend
                     </p>
                     <div class="checkbox-row">
                         <input type="checkbox" id="showShear" checked>
@@ -344,19 +336,35 @@
                         <div class="stat-line"><span class="lbl">Model</span><span class="num" id="stat-count">—</span></div>
                     </div>
                     <details class="note"><summary>What the geometry tells</summary>
-                        A 50 mm lath breaks at a radius of about 10&ndash;12 m (Liddell 2015); where the shell curves
-                        tighter the laths were split into two 25 mm layers. The square grid curves by turning into
+                        Members bent on site have a smallest radius set by their depth: a 50 mm timber lath about
+                        10&ndash;12 m (Liddell 2015; where the shell curved tighter the laths were split into two 25 mm
+                        layers), a &Oslash;41.7 GFRP tube about 3.3 m. The share of the grid tighter than that is given.
+                        Pre-fabricated members are made to the curve and have no such limit. The square grid curves by turning into
                         rhombi: a large change of angle is where the covering and the ties have to follow the
                         shear. A low rise over span makes a shell that buckles sooner.
                     </details>
 
 
+                    <div class="k">Wind</div>
+                    <div class="control-row">
+                        <label>Peak velocity pressure q<sub>p</sub></label>
+                        <select id="wind" class="wide">
+                            <option value="0">No wind</option>
+                            <option value="0.3">0.3 kN/m² (sheltered, low)</option>
+                            <option value="0.5" selected>0.5 kN/m² (inland, open)</option>
+                            <option value="0.8">0.8 kN/m² (exposed or coastal)</option>
+                        </select>
+                    </div>
                     <details class="note"><summary>How the loads are taken</summary>
-                        The only load is the permanent one: the lattice, its fittings and the covering. Stresses
-                        are checked for 1.35&nbsp;G, the partial factor on permanent load, so the covering is
-                        factored with the structure; the deflection for G against span&nbsp;/&nbsp;250. No snow,
-                        wind or imposed load is added: a light covering in a warm climate. Wind can govern a
-                        light shell and is not checked (Mannheim was tested in a wind tunnel).
+                        The permanent load G is the grid, its fittings and the covering. Wind W acts normal to the
+                        surface from four directions, pushing in on the windward base (c<sub>p</sub> +0.4) and pulling
+                        out over the crown (&minus;0.8) and the leeward side (&minus;0.4), a dome-like pattern after
+                        EN 1991-1-4 &sect;7.2.8 with assumed values; no internal pressure. Stresses are checked for
+                        1.35&nbsp;G, 1.0&nbsp;G + 1.5&nbsp;W (G holding the shell down against suction) and
+                        1.35&nbsp;G + 1.5&nbsp;W; the deflection for G and G + W against span&nbsp;/&nbsp;250. The covering
+                        is factored with the structure. No snow or imposed load: a light covering in a warm climate.
+                        The q<sub>p</sub> values are indicative; take the site's from its wind code (Mannheim was
+                        tested in a wind tunnel).
                     </details>
 
             </div>
@@ -373,19 +381,22 @@
                     </div>
                     <div class="stats">
                         <div class="stat-line"><span class="lbl">Design in use</span><span class="num" id="an-design">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max deflection (G)</span><span class="num" id="an-defl">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max compression per member (1.35 G)</span><span class="num" id="an-nmax">—</span></div>
-                        <div class="stat-line"><span class="lbl">Max moment per line (1.35 G)</span><span class="num" id="an-mmax">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max deflection</span><span class="num" id="an-defl">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max compression per member</span><span class="num" id="an-nmax">—</span></div>
+                        <div class="stat-line"><span class="lbl">Max moment per line</span><span class="num" id="an-mmax">—</span></div>
                         <div id="an-util"></div>
                         <div class="stat-line"><span class="lbl">Deflection limit (span / 250)</span><span class="num" id="an-deflLim">—</span></div>
+                        <div class="stat-line" title="Linear buckling factor under G, an indicator against the target 2.5 (see What Analyze does)"><span class="lbl">Buckling factor &lambda; (linear, G)</span><span class="num" id="an-buck">—</span></div>
                     </div>
                     <details class="note"><summary>What Analyze does</summary>
-                        First-order analysis (Karamba's <i>Analyze</i>) for 1.35&nbsp;G, covering included. It reports
-                        the worst lattice force and moment, the utilisation of the lattice (axial force and bending out
-                        of and in the shell surface) and of the edge members, and the deflection under G against
-                        span / 250. Buckling of the shell is not checked here, and in a gridshell buckling often
-                        governs: Mannheim was designed against a collapse load (Happold &amp; Liddell 1975).
-                        A simplified browser calculation, not Karamba3D.
+                        First-order analysis (Karamba's <i>Analyze</i>) for every load case. It reports the worst grid
+                        force and moment, the utilisation of the grid members (axial force and bending out of and in the
+                        shell surface) and of the edge members, and the largest deflection against span / 250. Buckling
+                        is Karamba's <i>Buckling Modes</i> under G: a linear factor &lambda; against a target of 2.5. It is an
+                        indicator, not a collapse load: in general it overestimates a shell (Happold &amp; Liddell 1975
+                        rejected it for Mannheim and computed the collapse step by step), but this model reads low,
+                        about 2.7 for Mannheim as built against a collapse at about 8 &times; G in 1975. A simplified
+                        browser calculation, not Karamba3D.
                     </details>
 
             </div>
@@ -396,21 +407,25 @@
                         <button class="action-btn" id="btnPropose">Suggest (quick estimate)</button>
                     </div>
                     <table class="ladder" id="ladderTable">
-                        <thead><tr><th>Step</th><th>Shell</th><th>Laths &amp; members</th><th>Deflection</th><th></th></tr></thead>
-                        <tbody id="ladderBody"><tr><td colspan="5" class="val">Not run yet. The shell starts as built at Mannheim (step 4). A quick estimate of the trend, one analysis per step.</td></tr></tbody>
+                        <thead><tr><th>Step</th><th>Shell</th><th>Utilisation &middot; &lambda;</th><th>Deflection</th><th></th></tr></thead>
+                        <tbody id="ladderBody"><tr><td colspan="5" class="val">Not run yet. The shell starts as built at Mannheim (step 4). A quick estimate of the trend.</td></tr></tbody>
                     </table>
+                    <p class="legend" id="suggestNote" role="status"></p>
                     <details class="note"><summary>How the suggestion is made</summary>
-                        A quick estimate of the trend, not a design. Each step is analysed once, with its edge members
-                        sized from that one analysis. Timber laths are stiffened in the order Mannheim was:
+                        A quick estimate of the trend, not a design. Each step is analysed with its edge members sized
+                        twice (a stiffer member draws more force). Timber laths are stiffened in the order Mannheim was:
                         (1) one layer each way, as Essen; (2) two layers, their bolts giving the composite action
                         measured in 1974 (joint shear stiffness at 40 % of the design value, &gamma; 0.5 &rarr; 0.29);
                         (3) shear blocks where the lath forces are highest (&gamma; = 1 there); (4) diagonal cable ties,
-                        2 &times; 6 mm through every sixth node; (5) a third layer (the 2018 renovation plan). The laths stay
+                        2 &times; 6 mm about 3 m apart (every sixth node of the timber grid); (5) a third layer (the 2018 renovation plan). The laths stay
                         50 &times; 50 mm, a size set by how far they bend; &gamma; = 0.5 before the 40 % reduction is an assumption.
                         Other materials are first braced with diagonal ties, since a square grid of rigid members is a
-                        mechanism in shear, then given deeper sections. A step passes when every lattice and edge member is
-                        within its strength under 1.35&nbsp;G and the deflection under G within span / 250; the first that
-                        passes is suggested. Not checked: buckling of the shell.
+                        mechanism in shear, then given deeper sections; the ties are also 3 m apart. A step passes when
+                        every grid and edge member is within its strength in every load case, the deflection within
+                        span / 250 and the buckling factor &lambda; at least 2.5. It <i>passes with local reinforcement</i>
+                        when all that holds except that at most 1 % of the grid members are over, by at most 1.5: the peaks
+                        at supports and edges, met at Mannheim with shear blocks and extra laths. The first step that
+                        passes is suggested.
                     </details>
 
 
@@ -427,11 +442,14 @@
                         (glulam 14.8 MPa, S355, strand 0.45 f<sub>u</sub>), not a full Eurocode design.
                     </details>
                     <details class="note"><summary>Benchmarks (1975)</summary>
-                        Collapse load incl. own weight (Happold &amp; Liddell 1975, Table 3): Multihalle single layer
-                        3.8 &middot; double 100 &middot; double + ties 160 kg/m²; restaurant 5.8 &middot; 150 &middot; 240 kg/m².
-                        Computer run 105 kg/m². Load test: 40 kg/m² on 500 m² off centre, 79 mm measured against 70 mm
-                        (Liddell 2015) or 80 mm (Bauwelt 2017) computed. Maximum lath force about 750 kgf. Compare the
-                        trend, not the number: the traced geometry and its edge heights are not Mannheim's own.
+                        Mannheim, timber laths. Collapse load incl. own weight (Happold &amp; Liddell 1975, Table 3):
+                        Multihalle single layer 3.8 &middot; double 100 &middot; double + ties 160 kg/m²; restaurant 5.8 &middot;
+                        150 &middot; 240 kg/m²; computer run 105 kg/m². With G about 20 kg/m² the double layer collapses at
+                        about 5 &times; G, with ties about 8 &times; G, against &lambda; about 2.7 in this model (single layer 0.2, double 0.8).
+                        Maximum lath force about 750 kgf (7.4 kN): compare with <i>Max grid force</i>. The 1975 load test
+                        (40 kg/m² on 500 m² off centre, 79 mm measured against 70&ndash;80 mm computed) is a patch load this
+                        page does not apply. Compare the trend, not the number: the traced geometry and its edge heights
+                        are not Mannheim's own.
                     </details>
 
             </div>
@@ -445,7 +463,7 @@
         import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
         import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
         import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-28u';
+        import { createDR, BAR, CABLE, createFrame } from './karamba-lite.js?v=2026-09-29b';
 
         /* ============================================================
            STATE
@@ -1391,7 +1409,10 @@
         const CHS_LIST = [[0.1397, 0.005], [0.1683, 0.0063], [0.2191, 0.008], [0.273, 0.010], [0.3239, 0.0125], [0.4064, 0.0125], [0.508, 0.016]].map(([D, t]) => chs(D, t));
         const GLULAM_LIST = [0.4, 0.5, 0.6, 0.8, 1.0, 1.2].map(glulam);
         const STRAND_LIST = [150, 300, 500, 800, 1200, 2000, 3000].map(a => strand(a * 1e-6));
-        const MEMBER_LISTS = { column: CHS_LIST, beam: [...GLULAM_LIST, ...CHS_LIST], arch: GLULAM_LIST, cable: STRAND_LIST };
+        // edge members: glulam either side of a timber grid (Mannheim), steel tubes for the other grids
+        const memberLists = () => ['timber', 'glulam'].includes(materialKey)
+            ? { column: CHS_LIST, beam: [...GLULAM_LIST, ...CHS_LIST], arch: GLULAM_LIST, cable: STRAND_LIST }
+            : { column: CHS_LIST, beam: CHS_LIST, arch: CHS_LIST, cable: STRAND_LIST };
 
         // gamma-method: gamma = 1 / (1 + c/K); slip modulus K x f  ->  gamma'
         const gammaAtJointFactor = (g, f) => g <= 0 ? 0 : g >= 1 ? 1 : g / (g + (1 - g) / f);
@@ -1475,7 +1496,6 @@
         let analysisN = null;        // axial force per lath member [kN, + tension]
         let analysisAutoScale = 1, defScaleUser = 0;
         let analysisBusy = false;
-        let lastCheck = null;        // { collapse, util } for the summaries
 
         // shell normal at each node (built frame, pointing up), from the grid neighbours
         function nodeNormals() {
@@ -1581,20 +1601,42 @@
         const KG = 0.00981; // kN per kg
         const permanentKg = (step = stepOf()) => latticeKg(step) + mat().fittings + COVERING_KG[covering];
 
-        // The only load is the permanent one, covering included: 'uls' factored by 1.35 for stresses,
-        // 'char' unfactored for deflection. No snow, wind or imposed load.
-        const combos = kind => [kind === 'uls' ? { name: '1.35 G', g: 1.35 } : { name: 'G', g: 1 }];
+        // Loads: the permanent load G (covering included) and wind W from four plan directions.
+        // 'uls' for stresses: 1.35 G, and 1.0 G + 1.5 W (G holding the shell down against suction) and
+        // 1.35 G + 1.5 W (G adding to pressure). 'char' for deflection: G, G + W. No snow or imposed load.
+        let windQ = 0.5; // peak velocity pressure q_p [kN/m2]
+        const WIND_DIRS = [{ name: 'W', d: [1, 0] }, { name: 'E', d: [-1, 0] }, { name: 'S', d: [0, 1] }, { name: 'N', d: [0, -1] }];
+        // pressure coefficients along the wind: windward base, crown, leeward base (a dome-like pattern
+        // after EN 1991-1-4 7.2.8; the values are assumed, not read from the code's figure)
+        const WIND_CP = [0.4, -0.8, -0.4];
+        function combos(kind) {
+            if (kind !== 'uls') return [{ name: 'G', g: 1 }, ...(windQ > 0 ? WIND_DIRS.map(w => ({ name: 'G + W from ' + w.name, g: 1, w: 1, dir: w.d })) : [])];
+            const list = [{ name: '1.35 G', g: 1.35 }];
+            if (windQ > 0) WIND_DIRS.forEach(w => list.push({ name: 'G + 1.5 W from ' + w.name, g: 1, w: 1.5, dir: w.d },
+                { name: '1.35 G + 1.5 W from ' + w.name, g: 1.35, w: 1.5, dir: w.d }));
+            return list;
+        }
+        const windCp = s => s < 0 ? WIND_CP[0] + (WIND_CP[1] - WIND_CP[0]) * (s + 1) : WIND_CP[1] + (WIND_CP[2] - WIND_CP[1]) * s;
 
         // nodal loads (built frame, gravity -y): G on the shell surface, edge members' own weight
         function loadVector(nNodes, c, step = stepOf(), fm = null) {
             const P = new Float64Array(6 * nNodes);
-            const cw = cellWidth(), g = permanentKg(step) * KG;
+            const cw = cellWidth(), g = permanentKg(step) * KG, area = new Float64Array(netNodes.length);
             drLaths.forEach(mi => {
                 const m = netMembers[mi], A = netNodes[m.a], B = netNodes[m.b];
                 const surf = Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z) * cw / 4;
-                P[6 * m.a + 1] -= g * c.g * surf;
-                P[6 * m.b + 1] -= g * c.g * surf;
+                area[m.a] += surf; area[m.b] += surf;
             });
+            area.forEach((a, i) => { P[6 * i + 1] -= g * c.g * a; });
+            // wind: normal to the surface, cp from the windward base (s = -1) over the crown to the leeward base (s = 1)
+            if (c.w && windQ > 0) {
+                const nrm = nodeNormals(), proj = netNodes.map(n => n.x * c.dir[0] + n.z * c.dir[1]);
+                const lo = Math.min(...proj), hi = Math.max(...proj);
+                netNodes.forEach((n, i) => {
+                    const p = -windCp(2 * (proj[i] - lo) / Math.max(hi - lo, 1e-9) - 1) * windQ * c.w * area[i]; // + cp pushes in
+                    for (let k = 0; k < 3; k++) P[6 * i + k] += p * nrm[i][k];
+                });
+            }
             if (fm) fm.el.forEach(e => {
                 if (!['column', 'beam', 'arch', 'cable'].includes(e.tag)) return;
                 const L = Math.hypot(...[0, 1, 2].map(k => fm.X[3 * e.b + k] - fm.X[3 * e.a + k]));
@@ -1618,8 +1660,8 @@
         }
 
         function clearAnalysis() {
-            analysisDisp = null; analysisN = null; lastCheck = null;
-            ['an-defl', 'an-nmax', 'an-mmax', 'an-deflLim'].forEach(id => {
+            analysisDisp = null; analysisN = null;
+            ['an-defl', 'an-nmax', 'an-mmax', 'an-deflLim', 'an-buck'].forEach(id => {
                 const el = document.getElementById(id); if (el) { el.textContent = '—'; el.classList.remove('fail'); }
             });
             const ut = document.getElementById('an-util'); if (ut) ut.innerHTML = '';
@@ -1693,39 +1735,41 @@
         // Returns per-element envelopes for member sizing.
         function envelopeULS(fm, frame) {
             const m = fm.el.length;
-            const env = { N: new Float64Array(m), Nt: new Float64Array(m), My: new Float64Array(m), Mz: new Float64Array(m), stable: true, ratio: 1 };
-            for (const c of combos('uls')) {
-                env.ratio = Math.max(env.ratio, c.g);
-                const r = frame.linear(loadVector(frame.X.length / 3, c, fm.step, fm));
+            const env = { N: new Float64Array(m), Nt: new Float64Array(m), My: new Float64Array(m), Mz: new Float64Array(m), stable: true };
+            const cs = combos('uls');
+            frame.linearMany(cs.map(c => loadVector(frame.X.length / 3, c, fm.step, fm)), (k, r) => {
                 env.stable = env.stable && r.stable;
                 for (let i = 0; i < m; i++) {
-                    env.N[i] = Math.min(env.N[i], frame.N[i]);    // most compression
-                    env.Nt[i] = Math.max(env.Nt[i], frame.N[i]);  // most tension
+                    // a cable already carries its form-found tension under G, scaled with G in this case
+                    const N = frame.N[i] + (fm.el[i].tag === 'cable' ? (fm.el[i].nGeo || 0) * cs[k].g : 0);
+                    env.N[i] = Math.min(env.N[i], N);    // most compression
+                    env.Nt[i] = Math.max(env.Nt[i], N);  // most tension
                     env.My[i] = Math.max(env.My[i], frame.M[i]);
                     env.Mz[i] = Math.max(env.Mz[i], frame.Mz[i]);
                 }
-            }
+            });
             return env;
         }
-        function utilOf(e, s, env, i) {
-            // a cable already carries its tension under G; it grows with the load (env.ratio = worst load / G)
-            const pre = e.tag === 'cable' ? (e.nGeo || 0) * (env.ratio || 1) : 0;
-            return Math.max(memberUtil(e, s, env.N[i] + pre, env.My[i], env.Mz[i]), memberUtil(e, s, env.Nt[i] + pre, env.My[i], env.Mz[i]));
-        }
+        const utilOf = (e, s, env, i) => Math.max(memberUtil(e, s, env.N[i], env.My[i], env.Mz[i]), memberUtil(e, s, env.Nt[i], env.My[i], env.Mz[i]));
 
         // Analyze (Karamba "Analyze"): stresses for 1.35 G, deflection for G
         function runAnalyze() {
             if (!readyForAnalysis()) return;
-            setBusy(true, 'Analysing, first order, 1.35 G \u2026');
+            setBusy(true, 'Analysing, first order, every load case, and buckling \u2026');
             setTimeout(() => {
                 const fm = buildFrameModel(), frame = createFrame(fm), layers = fm.step.layers;
                 const env = envelopeULS(fm, frame);
                 let nMin = 0, mMax = 0;
                 fm.lathIndex.forEach(ei => { nMin = Math.min(nMin, env.N[ei]); mMax = Math.max(mMax, env.My[ei]); });
                 const perMember = 1 / (fm.nLines * layers), perLine = 1 / fm.nLines;
-                // deflection and the drawn shape under G
+                // deflection over the characteristic cases; the drawn shape is the worst of them
                 const d = deflectionCheck(fm, frame);
+                const b = bucklingCheck(fm, frame);
+                frame.linear(d.P);
                 storeDisplacements(fm, frame);
+                const bEl = document.getElementById('an-buck');
+                bEl.textContent = b.lambda.toFixed(1) + (b.ok ? ' \u00B7 ok' : ' \u00B7 below ' + BUCKLING_TARGET);
+                bEl.classList.toggle('fail', !b.ok);
                 const dEl = document.getElementById('an-defl');
                 dEl.textContent = (d.down * 1000).toFixed(0) + ' mm (' + d.combo.name + ')' + (env.stable ? '' : ' \u00B7 unstable');
                 dEl.classList.toggle('fail', !d.ok);
@@ -1735,7 +1779,8 @@
                 showUtilisation(fm, env);
                 setBusy(false);
                 showAnalysisColours();
-                setStatus('Analysed for 1.35 G (covering included). The shape shows G, scaled.');
+                setStatus('Analysed: ' + combos('uls').length + ' load cases' + (windQ > 0 ? ' (G and wind from four sides)' : ' (G only)') +
+                    '. The shape shows ' + d.combo.name + ', scaled.');
             }, 20);
         }
 
@@ -1754,11 +1799,9 @@
             });
             // the lattice: axial + bending out of and in the surface, the same check the suggestion uses
             const lu = lathUtilStats(fm, env);
-            rows.unshift('<div class="stat-line"><span class="lbl">Lattice (' + fm.lathIndex.length + ')</span><span class="num' + (lu.over ? ' fail' : '') +
+            rows.unshift('<div class="stat-line"><span class="lbl">Grid members (' + fm.lathIndex.length + ')</span><span class="num' + (lu.over ? ' fail' : '') +
                 '">' + (lu.over ? lu.pct.toFixed(1) + ' % over, max ' + lu.max.toFixed(2) : 'utilisation ' + lu.max.toFixed(2)) + '</span></div>');
-            const pct = lu.pct;
             document.getElementById('an-util').innerHTML = rows.join('');
-            lastCheck = Object.assign(lastCheck || {}, { util: Math.max(0, ...Object.values(worst).map(w => w.u)), lathOver: pct });
             updateSummaries();
         }
 
@@ -1773,14 +1816,28 @@
             return { max, over, maxAt, pct: 100 * over / Math.max(1, fm.lathIndex.length) };
         }
 
-        // deflection under G, and its limit span / 250
+        // the largest vertical movement, down or up, over the characteristic cases, and its limit span / 250
         function deflectionCheck(fm, frame) {
-            const c = combos('char')[0];
-            frame.linear(loadVector(frame.X.length / 3, c, fm.step, fm));
-            let down = 0;
-            for (let i = 0; i < fm.nNet; i++) down = Math.max(down, -(frame.X[3 * i + 1] - frame.X0[3 * i + 1]));
+            const cs = combos('char'), Ps = cs.map(c => loadVector(frame.X.length / 3, c, fm.step, fm));
+            let down = 0, worst = 0;
+            frame.linearMany(Ps, k => {
+                for (let i = 0; i < fm.nNet; i++) {
+                    const d = Math.abs(frame.X[3 * i + 1] - frame.X0[3 * i + 1]);
+                    if (d > down) { down = d; worst = k; }
+                }
+            });
             const limit = spanOfPlan() / 250;
-            return { down, limit, ok: down <= limit, combo: c };
+            return { down, limit, ok: down <= limit, combo: cs[worst], P: Ps[worst] };
+        }
+
+        // Linear buckling under G (Karamba "Buckling Modes"). In general it overestimates a shell's
+        // collapse load (Happold & Liddell 1975 rejected it for Mannheim), but this model reads low:
+        // Mannheim as built gives about 2.7 here against a collapse at about 8 x G in 1975. So it is an
+        // indicator against the target 2.5, not a collapse load.
+        const BUCKLING_TARGET = 2.5;
+        function bucklingCheck(fm, frame) {
+            const lambda = frame.buckling(loadVector(frame.X.length / 3, combos('char')[0], fm.step, fm)).lambda;
+            return { lambda, ok: lambda >= BUCKLING_TARGET };
         }
 
         // Size the edge members for a ladder step: smallest passing section per group,
@@ -1795,11 +1852,12 @@
                 const env = envelopeULS(fm, frame);
                 let changed = false;
                 worst = {};
-                for (const tag of Object.keys(MEMBER_LISTS)) {
+                const lists = memberLists();
+                for (const tag of Object.keys(lists)) {
                     const idx = [];
                     fm.el.forEach((e, i) => { if (e.tag === tag) idx.push(i); });
                     if (!idx.length) continue;
-                    const list = MEMBER_LISTS[tag];
+                    const list = lists[tag];
                     let pick = list[list.length - 1], u = Infinity;
                     for (const s of list) {
                         const us = Math.max(...idx.map(i => utilOf(fm.el[i], s, env, i)));
@@ -1817,7 +1875,7 @@
             const env = verified ? verified.env : envelopeULS(fm, frame);
             worst = {};
             fm.el.forEach((e, i) => {
-                if (!MEMBER_LISTS[e.tag]) return;
+                if (!memberLists()[e.tag]) return;
                 const w = worst[e.tag] || (worst[e.tag] = { u: 0, n: 0, len: 0, name: e.sec.name, sec: e.sec });
                 w.u = Math.max(w.u, utilOf(e, e.sec, env, i)); w.n++; w.len += e.L0;
             });
@@ -1828,31 +1886,41 @@
 
         // Suggest (quick estimate): every ladder step analysed once, its edge members sized from
         // that one analysis, so the table shows the trend in seconds. A recommendation, not a design.
+        // A step "passes with local reinforcement" when the edge members, deflection and buckling pass and
+        // only a few grid members are over, mildly: the peaks at supports and edges that Mannheim met with
+        // shear blocks and extra laths where needed.
+        const LOCAL_SHARE = 1, LOCAL_MAX = 1.5; // % of grid members over, their largest utilisation
+
         async function runPropose() {
             if (!readyForAnalysis()) return;
-            setBusy(true, 'Quick estimate \u2026');
+            setBusy(true, 'Quick estimate …');
             const body = document.getElementById('ladderBody');
-            body.innerHTML = '';
+            body.innerHTML = ''; document.getElementById('suggestNote').textContent = '';
             const names = { column: 'columns', beam: 'edge beams', arch: 'arches', cable: 'cables' };
             let first = null, closest = null;
             for (let k = 0; k < LADDER.length; k++) {
                 const step = LADDER[k], label = 'Step ' + (k + 1) + ' of ' + LADDER.length;
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td>' + (k + 1) + '</td><td>' + step.name + '</td><td>\u2026</td><td></td><td></td>';
+                tr.innerHTML = '<td>' + (k + 1) + '</td><td>' + step.name + '</td><td>…</td><td></td><td></td>';
                 body.appendChild(tr);
-                const sized = await sizeMembers(step, label, 1);
+                // two rounds: size from the current members, then again from the forces the new sizes draw
+                const sized = await sizeMembers(step, label, 2);
                 let gov = null;
                 Object.entries(sized.worst).forEach(([t, w]) => { if (!gov || w.u > gov.u) gov = { t, u: w.u }; });
-                tr.children[2].textContent = 'lattice ' + sized.lathUtil.toFixed(2) + (sized.lathOver > 0 ? ' (' + sized.lathOver.toFixed(1) + ' % over)' : '') + (gov ? ' \u00B7 ' + names[gov.t] + ' ' + gov.u.toFixed(2) : '');
-                tr.children[2].className = sized.passed ? '' : 'fail';
                 const d = deflectionCheck(sized.fm, sized.frame);
+                const b = bucklingCheck(sized.fm, sized.frame);
+                const membersOk = sized.env.stable && Object.values(sized.worst).every(w => Number.isFinite(w.u) && w.u <= 1);
+                const gridOk = sized.lathUtil <= 1, local = !gridOk && sized.lathOver <= LOCAL_SHARE && sized.lathUtil <= LOCAL_MAX;
+                tr.children[2].textContent = 'grid ' + sized.lathUtil.toFixed(2) + (sized.lathOver > 0 ? ' (' + sized.lathOver.toFixed(1) + ' % over)' : '') +
+                    (gov ? ' · ' + names[gov.t] + ' ' + gov.u.toFixed(2) : '') + ' · λ ' + b.lambda.toFixed(1);
+                tr.children[2].className = membersOk && (gridOk || local) && b.ok ? '' : 'fail';
                 tr.children[3].textContent = (d.down * 1000).toFixed(0) + ' / ' + (d.limit * 1000).toFixed(0) + ' mm';
                 tr.children[3].className = d.ok ? '' : 'fail';
-                const ok = sized.passed && d.ok;
-                tr.children[4].textContent = ok ? 'passes' : 'short';
+                const ok = membersOk && d.ok && b.ok && (gridOk || local);
+                tr.children[4].textContent = !ok ? 'short' : gridOk ? 'passes' : 'passes, local reinforcement';
                 tr.children[4].className = ok ? 'ok' : 'fail';
-                const score = Math.max(sized.lathUtil, gov ? gov.u : 0, d.down / d.limit);
-                if (ok && !first) { first = { k, sized }; tr.classList.add('chosen'); }
+                const score = Math.max(sized.lathUtil, gov ? gov.u : 0, d.down / d.limit, BUCKLING_TARGET / Math.max(b.lambda, 1e-9));
+                if (ok && !first) { first = { k, sized, local }; tr.classList.add('chosen'); }
                 if (!closest || score < closest.score) closest = { k, score };
                 await tick();
             }
@@ -1865,12 +1933,14 @@
                 showSections();
                 clearAnalysis();
                 document.getElementById('an-design').textContent = designLabel();
-                setStatus('Suggested: ' + designLabel() + ' (quick estimate; buckling not checked). Press Analyze to confirm.');
-                updateSummaries();
+                const msg = 'Suggested: ' + designLabel() + (first.local ? ', with local reinforcement where a few grid members are over' : '') +
+                    ' (quick estimate). Press Analyze to confirm.';
+                document.getElementById('suggestNote').textContent = msg; setStatus(msg);
                 if (lastRelaxConverged) analyzeStructure(); else kickRelax();
             } else {
-                setStatus('Quick estimate: no step passes. Closest is step ' + (closest.k + 1) + ' (' + LADDER[closest.k].name +
-                    ', worst ratio ' + closest.score.toFixed(1) + '). The shape or the edges need to change; the current design is kept.', true);
+                const msg = 'No step passes. Closest is step ' + (closest.k + 1) + ' (' + LADDER[closest.k].name +
+                    ', worst ratio ' + closest.score.toFixed(1) + '). The shape or the edges need to change; the current design is kept.';
+                document.getElementById('suggestNote').textContent = msg; setStatus('Quick estimate: ' + msg, true);
             }
         }
 
@@ -1890,7 +1960,7 @@
             let surf = 0;
             drLaths.forEach(mi => { const m = netMembers[mi], A = netNodes[m.a], B = netNodes[m.b]; surf += Math.hypot(A.x - B.x, A.y - B.y, A.z - B.z) * cellWidth() / 2; });
             const st = stepOf(), M = mat(), latticeM3 = st.layers * 2 * M.sizes[st.size].A / M.spacing * surf;
-            rows.push('<div class="stat-line"><span class="lbl">Lattice, ' + M.sizes[st.size].name + (st.layers > 1 ? ' × ' + st.layers + ' layers' : '') + '</span><span class="num">' +
+            rows.push('<div class="stat-line"><span class="lbl">Grid, ' + M.sizes[st.size].name + (st.layers > 1 ? ' × ' + st.layers + ' layers' : '') + '</span><span class="num">' +
                 (M.rho > 1000 ? (latticeM3 * M.rho / 1000).toFixed(1) + ' t' : latticeM3.toFixed(0) + ' m³') + '</span></div>');
             rows.push('<div class="stat-line"><span class="lbl">Edge members: steel / glulam</span><span class="num">' + steelT.toFixed(1) + ' t / ' + timberM3.toFixed(1) + ' m³</span></div>');
             box.innerHTML = rows.join('');
@@ -1928,6 +1998,7 @@
             memberColors = new Array(netMembers.length).fill(null);
             let maxShearDev = 0;
             let minRadius = Infinity;
+            const radii = []; // every three-node curve along a grid line, for the share that is too tight
 
             // Always computed, regardless of showShear — the checkbox only
             // controls whether the deviation gets drawn as node colour, not
@@ -1967,7 +2038,7 @@
                     const R = circumRadius(netNodes[leftIdx], netNodes[idx], netNodes[rightIdx]);
                     collectCurvatureSample(curvatureSamples, leftIdx, idx, R);
                     collectCurvatureSample(curvatureSamples, idx, rightIdx, R);
-                    if (isFinite(R)) minRadius = Math.min(minRadius, R);
+                    if (isFinite(R)) { minRadius = Math.min(minRadius, R); radii.push(R); }
                 }
                 const downIdx = gridMap.get(gi + '_' + (gj - 1));
                 const upIdx2 = gridMap.get(gi + '_' + (gj + 1));
@@ -1975,7 +2046,7 @@
                     const R = circumRadius(netNodes[downIdx], netNodes[idx], netNodes[upIdx2]);
                     collectCurvatureSample(curvatureSamples, downIdx, idx, R);
                     collectCurvatureSample(curvatureSamples, idx, upIdx2, R);
-                    if (isFinite(R)) minRadius = Math.min(minRadius, R);
+                    if (isFinite(R)) { minRadius = Math.min(minRadius, R); radii.push(R); }
                 }
             }
 
@@ -1990,13 +2061,15 @@
                 const sz = M.sizes[stepOf().size];
                 curvatureThreshold = sz.depth / (2 * M.strainAllow);
                 const tight = isFinite(minRadius) && minRadius < curvatureThreshold;
-                bendText = sz.name + ' in use: R \u2265 ' + curvatureThreshold.toFixed(1) + ' m';
+                const nTight = radii.filter(R => R < curvatureThreshold).length;
+                bendText = sz.name + ' in use: R \u2265 ' + curvatureThreshold.toFixed(1) + ' m' +
+                    (tight ? ' \u00B7 ' + (100 * nTight / radii.length).toFixed(0) + ' % of the grid tighter' : '');
                 if (tight && materialKey === 'timber') {
                     // the smallest standard lath may still be too thick: then give the thickness that would bend
                     const tMax = 2 * M.strainAllow * minRadius * 1000;
                     lathThicknessMM = computeRecommendedThicknessMM(minRadius);
-                    bendText += ' \u00B7 too tight here, ' + (lathThicknessMM <= tMax ? lathThicknessMM.toFixed(0) + ' mm would bend' : 'needs \u2264 ' + Math.floor(tMax) + ' mm');
-                } else bendText += tight ? ' \u00B7 too tight here' : ' \u00B7 ok';
+                    bendText += ', the tightest needs ' + (lathThicknessMM <= tMax ? lathThicknessMM.toFixed(0) + ' mm' : '\u2264 ' + Math.floor(tMax) + ' mm');
+                } else if (!tight) bendText += ' \u00B7 ok';
             }
             if (lathLabel) lathLabel.textContent = bendText;
 
@@ -2114,8 +2187,8 @@
         }
 
         function updateInfoPanel(s) {
-            document.getElementById('stat-count').textContent = s.nodeCount + ' nodes / ' + s.memberCount + ' laths \u00B7 ' +
-                (cellWidth() / mat().spacing).toFixed(1) + ' lattice lines per member';
+            document.getElementById('stat-count').textContent = s.nodeCount + ' nodes / ' + s.memberCount + ' members \u00B7 ' +
+                (cellWidth() / mat().spacing).toFixed(1) + ' grid lines per member';
             document.getElementById('stat-ratio').textContent = s.ratio.toFixed(2) + ' (' + s.rise.toFixed(1) + ' m / ' + s.span.toFixed(1) + ' m)';
             document.getElementById('stat-shear').textContent = s.maxShearDev.toFixed(0) + '\u00B0';
             document.getElementById('stat-radius').textContent = isFinite(s.minRadius) ? s.minRadius.toFixed(1) + ' m' : '\u2014';
@@ -3018,16 +3091,27 @@
         function setMaterial(key) {
             materialKey = key;
             LADDER = ladderFor(key);
-            design = { step: key === 'timber' ? 3 : 1, sec: design.sec, sized: false };
+            const timberEdges = ['timber', 'glulam'].includes(key);
+            design = { step: key === 'timber' ? 3 : 1, sized: false, sec: { column: chs(0.2191, 0.008), cable: strand(500e-6),
+                beam: timberEdges ? glulam(0.5) : chs(0.3239, 0.0125), arch: timberEdges ? glulam(0.5) : chs(0.3239, 0.0125) } };
             updateMaterialLine();
             document.getElementById('ladderBody').innerHTML = '<tr><td colspan="5" class="val">Not run yet. Starts at step ' + (design.step + 1) +
                 ' (' + LADDER[design.step].name + '), edge members assumed.</td></tr>';
+            document.getElementById('suggestNote').textContent = '';
             document.getElementById('sectionsBox').innerHTML = '<div class="stat-line"><span class="lbl">Not sized yet &mdash; the starting sizes are assumed</span><span class="num"></span></div>';
             updatePermanentLoad();
             clearAnalysis();
             startRelax(false, false, true);
         }
-        document.getElementById('material').addEventListener('change', e => setMaterial(e.target.value));
+        document.getElementById('material').addEventListener('change', e => { setMaterial(e.target.value); updateRadiusOption(); });
+        // colouring by bend radius only means something for members bent on site
+        function updateRadiusOption() {
+            const sel = document.getElementById('lathColour'), opt = sel.querySelector('option[value="radius"]');
+            opt.disabled = !mat().elastic;
+            opt.textContent = mat().elastic ? 'Bend radius' : 'Bend radius (members bent on site only)';
+            if (opt.disabled && sel.value === 'radius') { sel.value = 'plain'; lathColourMode = 'plain'; if (!simRunning) analyzeStructure(); }
+        }
+        document.getElementById('wind').addEventListener('change', e => { windQ = parseFloat(e.target.value); clearAnalysis(); });
         // one line under the select: how it takes its shape, the section in use, an example; the full note on hover
         function updateMaterialLine() {
             const M = mat(), st = stepOf(), el = document.getElementById('materialNote');
@@ -3263,21 +3347,7 @@
             window.dispatchEvent(new Event('resize'));
             if (!folded) { cachedCenterOffset = null; drawEditor(); }
         });
-        document.querySelectorAll('.fsec .fhead .fold').forEach(btn => btn.addEventListener('click', () => {
-            btn.closest('.fsec').classList.toggle('folded');
-        }));
-        // what a folded section still says
-        function updateSummaries() {
-            const f = lastForces;
-            const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
-            set('sumForm', 'crown ' + crownHeight().toFixed(1) + ' m \u00B7 slack ' + (lathSlack * 100).toFixed(1) + ' % \u00B7 G ' +
-                permanentKg().toFixed(0) + ' kg/m\u00B2' + (f ? ' \u00B7 max ' + (f.maxT * f.perLath).toFixed(1) + ' kN per lath line' : ''));
-            const parts = ['1.35 G'];
-            if (lastCheck && lastCheck.util !== undefined) parts.push('members ' + (lastCheck.util <= 1 ? 'pass' : 'fail') + ' (' + lastCheck.util.toFixed(2) + ')');
-            set('sumCheck', parts.join(' \u00B7 '));
-            set('sumDesign', designLabel());
-            set('an-design', designLabel());
-        }
+        function updateSummaries() { document.getElementById('an-design').textContent = designLabel(); }
 
         /* ---- Stages: 1 flat grid -> 2 hanging model (tension) -> 3 built shell (compression) ---- */
         function setStage(st) {
