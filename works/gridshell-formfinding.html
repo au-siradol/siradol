@@ -105,6 +105,16 @@
         details.note summary::-webkit-details-marker { display: none; }
         details.note summary::before { content: '▸ '; color: #999; }
         details.note[open] summary::before { content: '▾ '; }
+        /* a group of results folded to one line: its name and the key values; open for all of them */
+        details.statfold { font-size: 11px; margin-top: 6px; }
+        details.statfold summary { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; cursor: pointer; list-style: none; padding: 3px 0; border-top: 1px solid #f0f0f0; }
+        details.statfold summary::-webkit-details-marker { display: none; }
+        details.statfold summary .lbl { color: var(--ink); white-space: nowrap; }
+        details.statfold summary .lbl::before { content: '▸ '; color: #999; }
+        details.statfold[open] summary .lbl::before { content: '▾ '; }
+        details.statfold summary .num { color: var(--ink); font-weight: bold; text-align: right; }
+        details.statfold[open] summary .num { visibility: hidden; }
+        details.statfold .stats .stat-line:first-child { border-top: 0; }
         .legend { font-size: 9.5px; color: var(--mute); margin: -4px 0 10px; line-height: 1.7; }
         .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
         .legend-line { display: inline-block; width: 14px; height: 3px; margin-right: 4px; vertical-align: middle; }
@@ -275,6 +285,7 @@
                             <option value="glass" title="Glass with its frames">Glass</option>
                         </select>
                     </div>
+                    <details class="statfold"><summary><span class="lbl">Loads &amp; forces</span><span class="num" id="sumLoads">—</span></summary>
                     <div class="stats">
                         <div class="stat-line" title="Permanent load: grid + fittings + covering"><span class="lbl">G</span><span class="num" id="stat-g">—</span></div>
                         <div class="stat-line" title="Design load: the partial factor 1.35 on the whole permanent load, covering included"><span class="lbl">1.35 G</span><span class="num" id="stat-gd">—</span></div>
@@ -284,6 +295,7 @@
                         <div class="stat-line" title="Largest push on the edge per metre; with cable edges, the largest cable tension (1975: 125 kN)"><span class="lbl">Edge thrust</span><span class="num" id="stat-thrust">—</span></div>
                         <div class="stat-line" title="Largest stretch of a link while hanging, and dynamic relaxation iterations"><span class="lbl">Hanging net</span><span class="num" id="stat-strain">—</span></div>
                     </div>
+                    </details>
                     <details class="note"><summary>How the forces are found</summary>
                         The shape is found for the permanent load: the grid (from its sections and spacing; timber
                         laths 5 kg/m² per layer), its fittings (timber: bolts, blocks, nailing strips and ties 9 kg/m²,
@@ -328,6 +340,7 @@
                         <span class="legend-dot" style="background:#d32f2f;"></span>25–50°+
                     </p>
                     <p class="legend" id="shearHint"></p>
+                    <details class="statfold"><summary><span class="lbl">Geometry</span><span class="num" id="sumGeom">—</span></summary>
                     <div class="stats">
                         <div class="stat-line"><span class="lbl">Bend limit</span><span class="num" id="val-lathThickness">—</span></div>
                         <div class="stat-line"><span class="lbl">Min bend radius</span><span class="num" id="stat-radius">—</span></div>
@@ -335,6 +348,7 @@
                         <div class="stat-line"><span class="lbl">Rise / span</span><span class="num" id="stat-ratio">—</span></div>
                         <div class="stat-line"><span class="lbl">Model</span><span class="num" id="stat-count">—</span></div>
                     </div>
+                    </details>
                     <details class="note"><summary>What the geometry tells</summary>
                         Members bent on site have a smallest radius set by their depth: a 50 mm timber lath about
                         10&ndash;12 m (Liddell 2015; where the shell curved tighter the laths were split into two 25 mm
@@ -2073,6 +2087,7 @@
                 bendShort = 'R \u2265 ' + curvatureThreshold.toFixed(1) + ' m \u00B7 ' + (tight ? (100 * nTight / radii.length).toFixed(0) + ' % tighter' : 'ok');
             }
             if (lathLabel) { lathLabel.textContent = bendShort; lathLabel.title = bendText; }
+            updateFoldSummaries();
 
             if (lathColourMode === 'radius') {
                 curvatureSamples.forEach((R, mi) => { memberColors[mi] = radiusToColor(R, curvatureThreshold); });
@@ -2170,10 +2185,17 @@
             };
         }
 
+        // the one-line summaries of the folded result groups
+        function updateFoldSummaries() {
+            const t = id => document.getElementById(id).textContent, total = t('stat-g').split('= ').pop();
+            document.getElementById('sumLoads').textContent = total === '\u2014' ? '\u2014' : 'G ' + total;
+            document.getElementById('sumGeom').textContent = 'rise/span ' + t('stat-ratio').split(' ')[0];
+        }
+
         function updateForcePanel(f) {
             const set = (id, v) => { document.getElementById(id).textContent = v; };
             set('stat-crown', crownHeight().toFixed(1) + ' m');
-            if (!f) return;
+            if (!f) { updateFoldSummaries(); return; }
             const err = Math.abs(f.Ry - f.W) / Math.max(f.W, 1e-9) * 100;
             const r1 = v => +v.toFixed(1);
             set('stat-g', r1(latticeKg()) + ' + ' + r1(mat().fittings) + ' + ' + r1(COVERING_KG[covering]) + ' = ' + r1(permanentKg()) + ' kg/m\u00B2');
@@ -2185,6 +2207,7 @@
                 ? ' \u00B7 cable ' + Math.max(...cableSpans.map(c => c.T)).toFixed(0) + ' kN' : ''));
             set('stat-strain', 'strain ' + (f.maxStrain * 100).toFixed(2) + ' % \u00B7 ' + f.iter + ' it.' +
                 (f.converged ? '' : ', not settled') + (f.maxStrain > 0.01 ? ' \u00B7 add slack' : ''));
+            updateFoldSummaries();
         }
 
         function updateInfoPanel(s) {
@@ -2197,6 +2220,7 @@
             setStatus((lastRelaxConverged ? 'Net settled \u00B7 ' : 'Iteration limit — equilibrium not confirmed \u00B7 ') + s.nodeCount + ' nodes \u00B7 rise/span ' + s.ratio.toFixed(2) +
                 (s.ratio < 0.1 ? ' \u2014 very flat: a shell this shallow buckles early; add slack or lower the edges' : ''), s.ratio < 0.1);
             updateSummaries();
+            updateFoldSummaries();
         }
 
         /* ============================================================
