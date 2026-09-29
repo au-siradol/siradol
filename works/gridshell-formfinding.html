@@ -238,10 +238,11 @@
                     <div class="control-row">
                         <label>Model grid (plan) <span id="val-spacing" class="val">2.00 m</span></label>
                         <input type="range" id="meshSpacing" min="0.8" max="4" step="0.1" value="2">
+                        <p class="legend" id="gridActual">Calculation grid; separate from physical member spacing.</p>
                     </div>
                     <div class="control-row">
-                        <label>Lath slack (extra length over plan) <span id="val-slack" class="val">5.0 %</span></label>
-                        <input type="range" id="lathSlack" min="0.5" max="20" step="0.5" value="5">
+                        <label>Extra length for form-finding <span id="val-slack" class="val">5.00 %</span></label>
+                        <input type="range" id="lathSlack" min="0.5" max="20" step="0.01" value="5">
                     </div>
                     <div class="control-row" style="display:flex; gap:8px; align-items:baseline;">
                         <span style="flex:1; color:#333;">Fit crown height to</span>
@@ -249,6 +250,7 @@
                         <span class="val">m</span>
                         <button class="action-btn" id="btnFit">Fit</button>
                     </div>
+                    <p class="legend" id="fitResult" role="status" aria-live="polite">Extra length is a form-finding setting, not material strain. Fit target: height above ground.</p>
                     <details class="note"><summary>How the net is made</summary>
                         A square grid is laid over the plan and trimmed at the edge. Every edge is held at its
                         height, as Otto's chain model was held on posts (Fig 13&ndash;14, Happold &amp; Liddell 1975).
@@ -336,7 +338,7 @@
                     </p>
                     <p class="legend" id="shearHint"></p>
                     <div class="stats">
-                        <div class="stat-line"><span class="lbl">Bends to shape</span><span class="num" id="val-lathThickness">—</span></div>
+                        <div class="stat-line"><span class="lbl">Bend limit</span><span class="num" id="val-lathThickness">—</span></div>
                         <div class="stat-line"><span class="lbl">Min bend radius</span><span class="num" id="stat-radius">—</span></div>
                         <div class="stat-line"><span class="lbl">Max shear deviation</span><span class="num" id="stat-shear">—</span></div>
                         <div class="stat-line"><span class="lbl">Rise / span</span><span class="num" id="stat-ratio">—</span></div>
@@ -439,6 +441,7 @@
 
     <script type="module">
         import * as THREE from 'three';
+        import { searchCrown } from './gridshell-fit.js?v=1';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
         import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
@@ -1977,21 +1980,24 @@
                 }
             }
 
-            // Only members bent on site have a bend limit. Timber: the thickest standard lath that
-            // still clears this shape's tightest curve. GFRP: the tube in use and its smallest radius.
+            // Only members bent on site have a bend limit: the size in use (the one analysed) sets the
+            // smallest radius; where the shape is tighter, timber names the lath that would still bend.
             const M = mat(), lathLabel = document.getElementById('val-lathThickness');
             let bendText;
             if (!M.elastic) {
                 curvatureThreshold = 0;
                 bendText = 'made to shape, no bend limit';
-            } else if (materialKey === 'timber') {
-                lathThicknessMM = computeRecommendedThicknessMM(minRadius);
-                curvatureThreshold = radiusForThickness(lathThicknessMM);
-                bendText = lathThicknessMM.toFixed(0) + ' mm \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m';
             } else {
                 const sz = M.sizes[stepOf().size];
                 curvatureThreshold = sz.depth / (2 * M.strainAllow);
-                bendText = sz.name + ' \u2192 R\u2098\u1d62\u2099 ' + curvatureThreshold.toFixed(1) + ' m' + (minRadius < curvatureThreshold ? ' \u00B7 too tight' : '');
+                const tight = isFinite(minRadius) && minRadius < curvatureThreshold;
+                bendText = sz.name + ' in use: R \u2265 ' + curvatureThreshold.toFixed(1) + ' m';
+                if (tight && materialKey === 'timber') {
+                    // the smallest standard lath may still be too thick: then give the thickness that would bend
+                    const tMax = 2 * M.strainAllow * minRadius * 1000;
+                    lathThicknessMM = computeRecommendedThicknessMM(minRadius);
+                    bendText += ' \u00B7 too tight here, ' + (lathThicknessMM <= tMax ? lathThicknessMM.toFixed(0) + ' mm would bend' : 'needs \u2264 ' + Math.floor(tMax) + ' mm');
+                } else bendText += tight ? ' \u00B7 too tight here' : ' \u00B7 ok';
             }
             if (lathLabel) lathLabel.textContent = bendText;
 
@@ -2087,7 +2093,7 @@
                 // colour scale: most laths, not the few peaks where an edge rises steeply
                 p95: (() => { const v = Array.from(T).filter(t => t > 0).sort((a, b) => a - b); return v.length ? v[Math.floor(0.95 * (v.length - 1))] : 1; })(), Ry: Ry + Wedge, maxThrust,
                 perLath: mat().spacing / cellWidth(), // share of a model member's force carried by one lattice line
-                iter: dr.iter, converged: lastRelaxConverged
+                iter: restoredIter ?? dr.iter, converged: lastRelaxConverged
             };
         }
 
@@ -2400,7 +2406,7 @@
         new ResizeObserver(fitRenderer).observe(simContainer);
 
         let lastRelaxConverged = false;
-        let fitRevision = 0, fittingHeight = false;
+        let fitRevision = 0, fittingHeight = false, restoredIter = null; // restoredIter: iterations of the fit trial whose shape was restored
 
         // The relaxation runs in its own timer loop, so it keeps going when the
         // page is not being drawn (hidden tab); animate() only draws.
@@ -2459,9 +2465,11 @@
         /* ============================================================
            REGENERATE PIPELINE
         ============================================================ */
-        function startRelax(fromFlat, cableRound = false) {
+        // loadOnly: the covering or members changed; a uniform load keeps the shape, so a crown fit still holds
+        function startRelax(fromFlat, cableRound = false, loadOnly = false) {
             stageTween = null;
-            fitRevision++; fittingHeight = false;
+            fitRevision++; fittingHeight = false; restoredIter = null;
+            if (!cableRound && !loadOnly) document.getElementById('fitResult').textContent = 'Geometry changed — any previous crown fit needs checking again.';
             lastRelaxConverged = false;
             if (!cableRound) cablePass = 0;
             clearAnalysis();
@@ -2491,6 +2499,9 @@
             netNodes = built.nodes;
             netMembers = built.members;
             netSpacing = built.spacing;
+            document.getElementById('gridActual').textContent = 'Requested ' + meshSpacing.toFixed(2) +
+                ' m · used ' + netSpacing.toFixed(2) + ' m' + (netSpacing > meshSpacing + 1e-6 ? ' (4,000-cell limit)' : '') +
+                '. Calculation grid, not physical member spacing.';
             buildLookups();
             applyBoundaryHeights();
             rebuildNetMeshes();
@@ -2501,39 +2512,92 @@
         }
 
 
-        // Fit: find the lath slack that gives the requested crown height
-        // (crown height grows with slack, so bisect on it)
-        async function fitCrownHeight(target) {
-            const revision = ++fitRevision;
-            fittingHeight = true;
-            simRunning = true; // structural analysis must wait for the fitted net
-            lastRelaxConverged = false;
-            clearTimeout(pumpTimer); pumpTimer = null;
-            let lo = 0.002, hi = 0.40;
-            for (let it = 0; it < 14; it++) {
-                if (revision !== fitRevision) return;
-                lathSlack = Math.sqrt(lo * hi);
-                buildDRModel();
-                let res = Infinity;
-                while (dr.iter < 20000) {
-                    const began = performance.now();
-                    do { res = dr.step(25); }
-                    while (dr.iter < 20000 && res >= drTolerance() && performance.now() - began < 8);
-                    syncNodesFromDR(); netDirty = true;
-                    document.getElementById('status-bar').textContent =
-                        'FITTING CROWN · ' + (it + 1) + '/14 · ' + crownHeight().toFixed(1) + ' / ' + target.toFixed(1) + ' m';
-                    await new Promise(resolve => setTimeout(resolve, 0));
-                    if (revision !== fitRevision) return; // a newer edit owns the model
-                    if (dr.iter > 200 && res < drTolerance()) break;
-                }
-                const height = crownHeight();
-                // Stop only once both equilibrium and the requested height are close.
-                if (res < drTolerance() && Math.abs(height - target) < 0.02) break;
-                if (height < target) lo = lathSlack; else hi = lathSlack;
-            }
-            document.getElementById('lathSlack').value = Math.min(20, Math.max(0.5, lathSlack * 100));
+        function updateSlackDisplay() {
+            document.getElementById('lathSlack').value = lathSlack * 100;
             document.getElementById('val-slack').textContent = (lathSlack * 100).toFixed(2) + ' %';
-            startRelax(false);
+        }
+
+        async function fitCrownHeight(target) {
+            const field = document.getElementById('fitHeight'), report = document.getElementById('fitResult');
+            if (!Number.isFinite(target) || target < Number(field.min) || target > Number(field.max)) {
+                report.textContent = 'Enter a target between ' + field.min + ' and ' + field.max + ' m above ground.';
+                setStatus(report.textContent, true);
+                return;
+            }
+            const pendingGeometry = meshDebounce !== null || bndDebounce !== null;
+            clearTimeout(meshDebounce); clearTimeout(slackDebounce); clearTimeout(bndDebounce);
+            meshDebounce = slackDebounce = bndDebounce = null;
+            if (pendingGeometry) regenerateNetAndRelax();
+            const revision = ++fitRevision, cancelled = () => revision !== fitRevision;
+            const slider = document.getElementById('lathSlack');
+            const initialSlack = lathSlack;
+            fittingHeight = true; simRunning = true; lastRelaxConverged = false;
+            clearTimeout(pumpTimer); pumpTimer = null;
+            clearAnalysis();
+            const capture = () => ({ positions: netNodes.map(n => [n.x, n.y, n.z]),
+                offsets: new Map([...cableOffsets].map(([i, v]) => [i, [...v]])),
+                spans: cableSpans.map(s => ({ ...s })), tensions: new Map(cableNodeT) });
+            const initial = capture();
+            const restore = (state, slack) => {
+                lathSlack = slack;
+                cableOffsets = state.offsets; cableSpans = state.spans; cableNodeT = state.tensions;
+                applyBoundaryHeights();
+                netNodes.forEach((n, i) => { [n.x, n.y, n.z] = state.positions[i]; });
+                buildDRModel(); updateSlackDisplay(); netDirty = true;
+                restoredIter = state.iter ?? null; // the rebuilt solver starts at 0; report the fitted trial's iterations
+            };
+            try {
+                const result = await searchCrown({ target, min: Number(slider.min) / 100, max: Number(slider.max) / 100,
+                    current: initialSlack, cancelled,
+                    evaluate: async (slack, attempt) => {
+                        lathSlack = slack; updateSlackDisplay();
+                        // Every candidate includes the same cable-adjustment passes as a normal solve.
+                        cableOffsets = new Map(); cableSpans = []; cableNodeT = new Map();
+                        const cableRounds = boundaryPts.some(p => p.t === 'cable' && p.r > 0) ? 2 : 0;
+                        let its = 0;
+                        for (let pass = 0; pass <= cableRounds; pass++) {
+                            applyBoundaryHeights(); buildDRModel();
+                            let res = Infinity;
+                            while (dr.iter < 20000) {
+                                const began = performance.now();
+                                do { res = dr.step(25); }
+                                while (dr.iter < 20000 && res >= drTolerance() && performance.now() - began < 8);
+                                syncNodesFromDR(); netDirty = true;
+                                report.textContent = 'Fitting ' + target.toFixed(2) + ' m · trial ' + attempt +
+                                    ' · edge pass ' + (pass + 1) + '/' + (cableRounds + 1) + ' · ' + crownHeight().toFixed(2) + ' m';
+                                await new Promise(resolve => setTimeout(resolve, 0));
+                                if (cancelled()) return null;
+                                if (!Number.isFinite(res)) return { converged: false };
+                                if (dr.iter > 200 && res < drTolerance()) break;
+                            }
+                            if (!(res < drTolerance())) return { converged: false };
+                            its += dr.iter;
+                            if (pass < cableRounds) computeCableOffsets();
+                        }
+                        return { converged: true, height: crownHeight(), state: { ...capture(), iter: its } };
+                    }
+                });
+                if (cancelled()) return;
+                const chosen = result.best;
+                restore(chosen ? chosen.state : initial, chosen ? chosen.slack : initialSlack);
+                fittingHeight = false; simRunning = false;
+                lastRelaxConverged = !!chosen && dr.step(0) < drTolerance();
+                analyzeStructure(); rebuildHandles();
+                (viewStage === 'flat' ? fitCameraToBounds : fitCameraToNet)();
+                const actual = crownHeight(), error = Math.abs(actual - target);
+                const prefix = !lastRelaxConverged ? 'Not converged — target not verified' :
+                    error <= 0.02 ? 'Target reached' : 'Closest verified sample — target not reached';
+                report.textContent = prefix + ' · target ' + target.toFixed(2) + ' m · actual ' + actual.toFixed(2) +
+                    ' m · difference ' + error.toFixed(2) + ' m · extra length ' + (lathSlack * 100).toFixed(2) + '%.' +
+                    (result.failures ? ' ' + result.failures + ' unverified trial(s) excluded.' : '');
+                setStatus(report.textContent, !lastRelaxConverged || error > 0.02);
+            } catch (error) {
+                if (cancelled()) return;
+                restore(initial, initialSlack);
+                fittingHeight = false; simRunning = false; lastRelaxConverged = false;
+                report.textContent = 'Fit stopped; previous geometry restored. ' + error.message;
+                setStatus(report.textContent, true);
+            }
         }
 
         /* ============================================================
@@ -2879,7 +2943,6 @@
             const h = PRESET_CROWN[v];
             if (!h) return;
             document.getElementById('fitHeight').value = h;
-            document.getElementById('status-bar').textContent = 'FITTING LATH SLACK TO A ' + h.toFixed(1) + ' M CROWN \u2026';
             void fitCrownHeight(h);
         }
 
@@ -2927,19 +2990,21 @@
         let meshDebounce = null;
         const meshSpacingSlider = document.getElementById('meshSpacing');
         meshSpacingSlider.addEventListener('input', () => {
+            fitRevision++; fittingHeight = false; simRunning = false; lastRelaxConverged = false;
             meshSpacing = parseFloat(meshSpacingSlider.value);
             document.getElementById('val-spacing').textContent = meshSpacing.toFixed(2) + ' m';
             clearTimeout(meshDebounce);
-            meshDebounce = setTimeout(regenerateNetAndRelax, 300);
+            meshDebounce = setTimeout(() => { meshDebounce = null; regenerateNetAndRelax(); }, 300);
         });
 
         let slackDebounce = null;
         const slackSlider = document.getElementById('lathSlack');
         slackSlider.addEventListener('input', () => {
+            fitRevision++; fittingHeight = false; simRunning = false; lastRelaxConverged = false;
             lathSlack = parseFloat(slackSlider.value) / 100;
-            document.getElementById('val-slack').textContent = (lathSlack * 100).toFixed(1) + ' %';
+            document.getElementById('val-slack').textContent = (lathSlack * 100).toFixed(2) + ' %';
             clearTimeout(slackDebounce);
-            slackDebounce = setTimeout(() => startRelax(false), 120);
+            slackDebounce = setTimeout(() => { slackDebounce = null; startRelax(false); }, 120);
         });
 
         // permanent load: laths + fittings + covering (see permanentKg)
@@ -2947,7 +3012,7 @@
         document.getElementById('covering').addEventListener('change', e => {
             covering = e.target.value;
             updatePermanentLoad();
-            startRelax(false); // the shape does not change (uniform load), the forces do
+            startRelax(false, false, true); // the shape does not change (uniform load), the forces do
         });
 
         // lattice material: its own ladder and starting step; the shape is the same, the load and stiffness change
@@ -2961,7 +3026,7 @@
             document.getElementById('sectionsBox').innerHTML = '<div class="stat-line"><span class="lbl">Not sized yet &mdash; the starting sizes are assumed</span><span class="num"></span></div>';
             updatePermanentLoad();
             clearAnalysis();
-            startRelax(false);
+            startRelax(false, false, true);
         }
         document.getElementById('material').addEventListener('change', e => setMaterial(e.target.value));
         // one line under the select: how it takes its shape, the section in use, an example; the full note on hover
@@ -2974,8 +3039,6 @@
 
         document.getElementById('btnFit').addEventListener('click', () => {
             const target = parseFloat(document.getElementById('fitHeight').value);
-            if (!(target > 0)) return;
-            document.getElementById('status-bar').textContent = 'FITTING LATH SLACK TO A ' + target.toFixed(1) + ' M CROWN \u2026';
             void fitCrownHeight(target);
         });
 
@@ -3014,12 +3077,13 @@
             }
         }
         function boundaryChanged(retopo) {
+            fitRevision++; fittingHeight = false; simRunning = false; lastRelaxConverged = false;
             cableOffsets = new Map(); cableSpans = []; cableNodeT = new Map();
             drawEditor();
             rebuildHandles();
             clearTimeout(bndDebounce);
             // heights only move the held nodes; a new edge type changes the chain, so rebuild
-            bndDebounce = setTimeout(() => retopo ? regenerateNetAndRelax() : startRelax(false), 150);
+            bndDebounce = setTimeout(() => { bndDebounce = null; retopo ? regenerateNetAndRelax() : startRelax(false); }, 150);
         }
         vHeightSlider.addEventListener('input', () => {
             if (selectedIdx < 0) return;

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const source = await readFile(new URL('../works/gridshell-fit.js', import.meta.url),'utf8');
+const { searchCrown } = await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const calls=[];
+const options={target:10,min:.005,max:.2,current:.05,evaluate:async s=>{calls.push(s);return{converged:true,height:100*s}}};
+const reached=await searchCrown(options);assert.equal(reached.status,'matched');assert.ok(Math.abs(reached.best.height-10)<=.02);assert.ok(calls.every(x=>x>=.005&&x<=.2));
+assert.equal(calls[0],.005);assert.equal(calls[1],.2);
+const outside=await searchCrown({...options,target:30});assert.equal(outside.status,'closest');assert.equal(outside.best.slack,.2);
+const failed=await searchCrown({...options,evaluate:async s=>({converged:false,height:10})});assert.equal(failed.status,'unconverged');assert.equal(failed.best,null);
+const partial=await searchCrown({...options,evaluate:async s=>({converged:s===.005||s===.2,height:100*s})});assert.equal(partial.status,'closest');assert.ok(partial.best.slack===.005||partial.best.slack===.2);assert.ok(partial.failures>0);
+let cancelled=false;const cancel=await searchCrown({...options,cancelled:()=>cancelled,evaluate:async()=>{cancelled=true;return{converged:true,height:10}}});assert.equal(cancel.status,'cancelled');
+const decreasing=await searchCrown({...options,evaluate:async s=>({converged:true,height:21-100*s})});assert.equal(decreasing.status,'matched');
+console.log('PASS: fit bounds, bracketed targets, unreachable targets, failed equilibria, cancellation, descending response');
