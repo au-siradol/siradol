@@ -119,7 +119,12 @@ body.page-h60 .controls-container{grid-template-columns:repeat(3,minmax(0,1fr));
 
 body.page-h60 .column:nth-child(4){border-left:0;padding-left:0;}
 
-body.page-gridshell-formfinding .panels,body.page-truss-lab .panels{grid-template-columns:repeat(2,minmax(0,1fr));}
+body.page-truss-lab .panels{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+/* gridshell: form-finding, geometry, structure and design side by side down to a small window */
+body.page-gridshell-formfinding .panels{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:20px;}
+@media(max-width:860px){body.page-gridshell-formfinding .panels{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;}
+}
 
 @media(max-width:760px){body.study-page .controls-container{flex-wrap:wrap;}
 body.study-page .controls-container>.column{flex:1 1 240px;}
