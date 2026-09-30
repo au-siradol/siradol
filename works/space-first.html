@@ -636,9 +636,10 @@
           } },
         { id: 'dome', fam: 4, code: '4.3.2', name: 'Dome shell', mats: ['concrete'],
           spans: { concrete: { lim: [20, 200], typ: [[40, 150]] } },
-          rule: { concrete: 'rise f = L/7 on a ring beam' },
+          rule: { concrete: 'rise f = L/7 on a ring beam, or cut by four planes and standing on the ground (Engel p.53)' },
           twoWay: true,
           build(L, H, W, m, q) {
+              if (modeOf('dome', 'ring') === 'ground') return domeGround(L, H, W, m, q);
               const f = L / 7, a = L / 2, R = (a * a + f * f) / (2 * f), yc = H + f - R, c = colW('concrete', H), t = Math.max(0.08, L / 500), s = 6;
               const pts = []; for (let i = 0; i <= 60; i++) { const x = L * i / 60; pts.push([x, yc + Math.sqrt(R * R - (x - a) ** 2)]); }
               const phi0 = Math.asin(a / R), Nphi = q * R / 2, ring = Nphi * Math.cos(phi0) * a;
@@ -654,8 +655,9 @@
           } },
         { id: 'hyparT', fam: 4, code: '4.3 · saddle shell', name: 'Hypar roof on side supports + tie', mats: ['concrete', 'timber'],
           spans: { concrete: { lim: [15, 70], typ: [[25, 60]] }, timber: { lim: [15, 60], typ: [[20, 50]] } },
-          rule: { concrete: 'rise L/6 · shell L/500 · tie at eaves', timber: 'rise L/6 · boarded shell · tie at eaves' },
+          rule: { concrete: 'rise L/6 · shell L/500 · tie at eaves, or on two points on the ground (Engel p.53)', timber: 'rise L/6 · boarded shell · tie at eaves, or on two points on the ground (Engel p.53)' },
           build(L, H, W, m, q) {
+              if (modeOf('hyparT', 'columns') === 'ground') return hyparGround(L, H, W, m, q);
               const f = L / 6, t = Math.max(0.08, L / 500), c = colW('concrete', H), b = clamp(r05(L / 3), 6, 15);
               const ridge = [[0, H], [L / 2, H + f], [L, H]];
               return {
@@ -1662,6 +1664,58 @@
     const MAT4 = ['concrete', 'timber'];
     const plateOwn = (m, d, s) => m === 'concrete' ? 25 * 0.25 * d / s + 0.2 : 5 * 0.15 * d / s + 0.15;
     const foldOwn = (m, L) => m === 'concrete' ? 25 * clamp(L / 300, 0.08, 0.25) * 1.35 : 0.35;
+    // ---- shells landing on the ground (Engel p.53 draws these with no columns) ----
+    // 4.3.2.1, right: a dome cut by four vertical planes, standing on its corners on the ground. The sphere's centre lies on the
+    // floor, so R² = (A² + b²)/4 for a bay A × b; under an edge arch at the hall's wall the shell stands √(e(L + e)) high, so the
+    // points stand e = (√(L² + 4Hc²) − L)/2 outside the hall to keep the clear height. A long hall gets a row of them, sharing edge arches.
+    function domeGround(L, H, W, m, q) {
+        const t = Math.max(0.08, L / 500), Hc = H + t, e = (Math.sqrt(L * L + 4 * Hc * Hc) - L) / 2, A = L + 2 * e;
+        const n = Math.max(1, Math.round((W + 2 * e) / A)), b = (W + 2 * e) / n, R = Math.hypot(A, b) / 2;
+        const rs = Array.from({ length: n }, (_, k) => [-e, -e + k * b, L + e, -e + (k + 1) * b]), mods = [], lines3 = [], anchors = [];
+        const redge = th => Math.min(A / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th))));
+        rs.forEach(([x0, y0, x1, y1], k) => {
+            const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, zs = (x, y) => Math.sqrt(Math.max(0, R * R - (x - cx) ** 2 - (y - cy) ** 2));
+            mods.push({ rect: [x0, y0, x1, y1], map: (s_, tt) => { const th = angT(tt, A, b), rr = s_ * redge(th); return [cx + rr * Math.cos(th), cy + rr * Math.sin(th)]; }, z: zs, ni: 12, nj: 48 });
+            const edges = [[x0, y0, x1, y0], [x1, y0, x1, y1], [x0, y1, x0, y0]].concat(k === n - 1 ? [[x1, y1, x0, y1]] : []);
+            for (const [ax, ay, bx, by] of edges) lines3.push({ c: 'member', pts: Array.from({ length: 33 }, (_, i) => { const x = ax + (bx - ax) * i / 32, y = ay + (by - ay) * i / 32; return [x, y, zs(x, y)]; }) });
+        });
+        for (let k = 0; k <= n; k++) anchors.push([-e, -e + k * b, 0], [L + e, -e + k * b, 0]);
+        // surface per plan of one bay (for the own weight)
+        let ar = 0; const N = 40;
+        for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const dx = -A / 2 + A * (i + 0.5) / N, dy = -b / 2 + b * (j + 0.5) / N, z = Math.sqrt(Math.max(1e-6, R * R - dx * dx - dy * dy)); ar += R / z; }
+        const areaK = Math.min(3, ar / (N * N));
+        const sec = Array.from({ length: 49 }, (_, i) => { const x = -e + A * i / 48; return [x, Math.sqrt(Math.max(0, R * R - (x - L / 2) ** 2))]; });
+        const edge = Array.from({ length: 49 }, (_, i) => { const x = -e + A * i / 48; return [x, Math.sqrt(Math.max(0, R * R - (x - L / 2) ** 2 - b * b / 4))]; });
+        const r = surfaceHall({ kind: 'shellx', mods, lines3, anchors, secY: rs[0][1] + b / 2, sec, extra2d: [line(edge, 'thin')] });
+        // minimum thrust, the line of thrust through the crown R up: half a bay about its springing, Hx = qA²b/16R per point from each bay
+        const Hx1 = q * A * A * b / (16 * R), Hy1 = q * A * b * b / (16 * R), thrust = n > 1 ? 2 * Hx1 : Math.hypot(Hx1, Hy1), yI = -e + b * Math.max(1, Math.floor(n / 2));
+        const forces = (n > 1 ? [{ p: [-e, yI, 0], d: [-1, 0], v: 2 * Hx1, u: 'kN, into the ground' }, { p: [L + e, yI, 0], d: [1, 0], v: 2 * Hx1, u: 'kN, into the ground' }] : [])
+            .concat([{ p: [-e, -e, 0], d: [-Hx1 / Math.hypot(Hx1, Hy1), -Hy1 / Math.hypot(Hx1, Hy1)], v: Math.hypot(Hx1, Hy1), u: 'kN' }]);
+        return Object.assign(r, { areaK, zone: R - H, cols: 0, thrustSrc: 'Not in Engel (p.53 shows the form only) · derived here as for the sail vault: moment equilibrium of half a bay about its springing, the line of thrust through the crown (method: J. Heyman, The Stone Skeleton, 1995)', colNote: `no columns — ${n > 1 ? `${n} domes` : 'a dome'} standing on ${anchors.length} points on the ground, ${f1_(e)} m outside the hall`,
+            thrust, thrustNote: n > 1 ? `at an inner point, across the hall — both domes push it: 2 × qA²b/16R (A = ${f1_(A)} m, b = ${f1_(b)} m, crown R = ${f1_(R)} m); an end point ${Math.round(Math.hypot(Hx1, Hy1))} kN diagonal` : `at each point, diagonal: from qA²b/16R across and qAb²/16R along (crown R = ${f1_(R)} m)`, thrustPerArch: true, forces,
+            notes: ['A dome cut by four vertical planes stands on its four corners on the ground; the cuts are arches (Engel 4.3.2.1, p.53, drawn beside the dome on a ring of columns).', `The sphere's centre lies on the floor, so the crown is ${f1_(R)} m up — half the bay's diagonal. The points stand ${f1_(e)} m outside the hall: the least that keeps the clear ${f1_(H)} m under the edge arches.`, 'The thrust goes into the ground at the points: abutments, or ties under the floor between opposite points.'] });
+    }
+    // 4.3.3.3, left: one hypar standing on two points on the ground, outside the long walls (low corners), its high corners over
+    // the middle of the end walls; a tie under the floor joins the points. Its plan is a diamond, so the surface is z = h·f with f = p − (p² − m²)/2
+    // (p, m: the diamond's coordinates); h is the least that keeps the clear height over the whole hall.
+    function hyparGround(L, H, W, m, q) {
+        const t = m === 'timber' ? 0.1 : Math.max(0.08, L / 500), e = L / 2, d = 0;   // high corners over the middle of the end walls
+        const fz = (x, y) => { const p = (x + e) / (L / 2 + e), mm = (y - W / 2) / (W / 2 + d); return p - (p * p - mm * mm) / 2; };
+        let fmin = 1e9; for (let i = 0; i <= 12; i++) for (let j = 0; j <= 24; j++) fmin = Math.min(fmin, fz(L * i / 12, W * j / 24));
+        const h = (H + t) / fmin, S1 = [-e, W / 2], E1 = [L / 2, -d], E2 = [L / 2, W + d];
+        const P = (u, v) => [S1[0] + u * (E1[0] - S1[0]) + v * (E2[0] - S1[0]), S1[1] + u * (E1[1] - S1[1]) + v * (E2[1] - S1[1])];
+        const z = (x, y) => h * fz(x, y), corners = [[-e, W / 2, 0], [L / 2, -d, h], [L + e, W / 2, 0], [L / 2, W + d, h]];
+        const sec = Array.from({ length: 49 }, (_, i) => { const x = -e + (L + 2 * e) * i / 48; return [x, z(x, W / 2)]; });
+        const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [-e, -d, L + e, W + d], map: P, z, ni: 20, nj: 20 }], anchors: [[-e, W / 2, 0], [L + e, W / 2, 0]],
+            lines3: [{ c: 'member', pts: [...corners, corners[0]] }, { c: 'tie', pts: [[-e, W / 2, 0], [L + e, W / 2, 0]] }],
+            planSegs: [[-e, W / 2, L + e, W / 2, 0.3]], secY: W / 2, sec, extra2d: [line([[-e, 0], [L + e, 0]], 'tie')] });
+        // tie force: half the shell (the triangle on one point) about that point, the cut along the high diagonal at its mean height 2h/3
+        const Ah = (L / 2 + e) * (W + 2 * d) / 2, T = q * Ah * (L / 2 + e) / (2 * h / 3), V = q * Ah;
+        return Object.assign(r, { zone: h - H, cols: 0, thrustSrc: 'Not in Engel (p.53 shows the form only) · an estimate by statics: moment equilibrium of half the shell about its point, the cut along the high diagonal taken at its mean height 2h/3', colNote: `no columns — one hypar ${f1_(L + 2 * e)} × ${f1_(W + 2 * d)} m on two points on the ground, ${f1_(e)} m outside the long walls; high corners ${f1_(h)} m up`,
+            thrust: T, thrustNote: `force in the tie under the floor between the two points (estimate: half the shell about its point, the cut along the high diagonal at its mean height 2h/3); each point also carries ${Math.round(V)} kN down`, thrustPerArch: true,
+            forces: [{ p: [L / 2, W / 2, 0], tie: true, v: T, u: 'kN in the tie under the floor' }, { p: [-e, W / 2, 0], d: [-1, 0], v: V, u: 'kN down at each point' }],
+            notes: ['One hyperbolic paraboloid standing on two low corners on the ground, its two high corners in the air (Engel 4.3.3.3, p.53 — drawn beside the hypar roof on columns); as in Eduardo Catalano’s house in Raleigh, 1954.', `To keep the clear ${f1_(H)} m over the whole hall the low points stand ${f1_(e)} m outside the long walls and the high corners rise ${f1_(h)} m: the form is large for the room it covers.`, 'Its straight edges gather the load down to the two points; a tie under the floor holds them together.'] });
+    }
     const shellOwn = (m, L, f = 1.2) => m === 'timber' ? 0.4 : 25 * Math.max(0.08, L / 500) * f;
     const zigAt = (y, b) => { const p = ((y / b) % 2 + 2) % 2; return p <= 1 ? p : 2 - p; };
     const foldYs = (W, b) => { const n = Math.max(2, Math.round(W / b / 2) * 2), bb = W / n; return { n, bb, ys: Array.from({ length: n + 1 }, (_, k) => k * bb) }; };
@@ -1978,6 +2032,20 @@
               const F = L / 5, k = 1.35, r0 = (L * L / 4 + F * F) / (2 * F), zc = H + F - r0, c = (W / 2) / Math.sqrt(k * k - 1);
               const rad = y => r0 * Math.sqrt(1 + ((y - W / 2) / c) ** 2), ex = y => Math.sqrt(Math.max(0, rad(y) ** 2 - (H - zc) ** 2));
               const z = (x, y) => zc + Math.sqrt(Math.max(0, rad(y) ** 2 - (x - L / 2) ** 2)), s = 6;
+              // from the ground (Engel draws it so, with no columns): the same circles carried on down to the floor, on footings along both
+              // sides — possible while each circle's centre lies below the floor, so the shell meets the ground before it turns back in
+              if (modeOf('ss_rot', 'columns') === 'ground' && zc < 0) {
+                  const exg = y => Math.sqrt(Math.max(0, rad(y) ** 2 - zc * zc)), g0 = exg(0), gw = exg(W / 2), yy = Array.from({ length: 25 }, (_, i) => W * i / 24);
+                  const arcG = y => Array.from({ length: 33 }, (_, i) => { const x = L / 2 - exg(y) + 2 * exg(y) * i / 32; return [x, y, z(x, y)]; });
+                  const r = surfaceHall({ kind: 'shellx', mods: [{ rect: [L / 2 - g0, 0, L / 2 + g0, W], map: (u, v) => { const y = W * v; return [L / 2 + (2 * u - 1) * exg(y), y]; }, z, ni: 20, nj: 24 }],
+                      lines3: [-1, 1].map(sd => ({ c: 'member', pts: yy.map(y => [L / 2 + sd * exg(y), y, 0]) })).concat([0, W].map(y => ({ c: 'member', pts: arcG(y) }))),
+                      planSegs: [-1, 1].flatMap(sd => yy.slice(1).map((y, i) => [L / 2 + sd * exg(yy[i]), yy[i], L / 2 + sd * exg(y), y, 1])), secT: 0.5,
+                      secParts: [line(arcG(0).map(p => [p[0], p[2]]), 'thin')] });
+                  const Sg = 2 * gw, fg = zc + r0;
+                  return Object.assign(withZone(r, H), { cols: 0, thrustSrc: 'Not in Engel (p.53 shows the form only) · H = qS²/8f for the arching direction alone, as for the shell on columns — an upper bound', colNote: `no columns — the shell comes down to footings on both sides, ${f1_(Sg)} m apart at the waist and ${f1_(2 * g0)} m at the ends`,
+                      thrust: q * Sg * Sg / (8 * fg), thrustNote: `per metre at the waist, into the footings: H = qS²/8f over the ${f1_(Sg)} m between them, crown ${f1_(fg)} m up — the arching direction alone, an upper bound`,
+                      notes: ['A hyperboloid lying along the hall, carried on down to the ground: Engel draws the rotational saddle with no columns (4.3.3.1, p.53).', `It lands ${f1_(gw - L / 2)} m outside the walls at the waist and ${f1_(g0 - L / 2)} m at the ends — an hourglass on the ground.`, 'Footings along both sides take the thrust, or ties under the floor.'] });
+              }
               const ey = [...new Set([...Array.from({ length: 25 }, (_, i) => W * i / 24), ...ysOf(W, s)].map(v => +v.toFixed(4)))].sort((p_, q_) => p_ - q_);
               const P = ysOf(W, s).flatMap(y => [[L / 2 - ex(y), y, H], [L / 2 + ex(y), y, H]]);
               const arc = y => Array.from({ length: 33 }, (_, i) => { const x = L / 2 - ex(y) + 2 * ex(y) * i / 32; return [x, y, z(x, y)]; });
@@ -1989,7 +2057,7 @@
               tieAcross(r, P);
               return Object.assign(withZone(r, H), { cols: P.length, colNote: `level eaves on columns every ${f1_(s)} m, curving out in plan from the ${f1_(L)} m waist to ${f1_(2 * e0)} m at the ends · ties across at the eaves`,
                   thrust: q * L * L / (8 * F), thrustNote: 'per metre at the waist, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
-                  notes: ['A hyperboloid lying along the hall: every cross-section is a circle, smallest at mid-length and growing towards the ends, so the roof sags along and arches across — a saddle (Engel 4.3.3.1, p.53).', `The ends open into arches ${f1_(z(L / 2, 0) - H)} m high over ${f1_(2 * e0)} m; the eaves stay level and pinch in to the ${f1_(L)} m waist. Unlike the translational saddle, no two cross-sections are the same.`] });
+                  notes: [...(modeOf('ss_rot', 'columns') === 'ground' ? ['From the ground is not possible at this height: the circles’ centres stand above the floor, so the shell would turn back in before reaching it — shown on columns.'] : []), 'A hyperboloid lying along the hall: every cross-section is a circle, smallest at mid-length and growing towards the ends, so the roof sags along and arches across — a saddle (Engel 4.3.3.1, p.53).', `The ends open into arches ${f1_(z(L / 2, 0) - H)} m high over ${f1_(2 * e0)} m; the eaves stay level and pinch in to the ${f1_(L)} m waist. Unlike the translational saddle, no two cross-sections are the same.`] });
           } },
         { id: 'ss_trans', fam: 4, name: 'Translational saddle shell', mats: ['concrete', 'timber'], spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'arch L/8 across, sag W/16 along', timber: 'arch L/8 across, sag W/16 along' },
           own: (m, L) => shellOwn(m, L, 1.2),
@@ -2701,7 +2769,7 @@
             case 'pneu': return 0.01;
             case 'folded': return m === 'concrete' ? 25 * t(L / 300) * 1.35 : 0.35;
             case 'barrel': return 25 * t(L / 600) * 1.25 + 0.4;
-            case 'dome': return 25 * t(L / 500) * 1.15;
+            case 'dome': return 25 * t(L / 500) * (r0.areaK || 1.15);   // surface per plan
             case 'vault': return 20 * r0.t * Math.PI / 2;   // a semicircle's surface is π/2 × its plan
             case 'hyparT': return m === 'timber' ? 0.4 : 25 * t(L / 500) * 1.3;
             case 'ctruss': return 0.05 + 0.0008 * L;
@@ -3439,7 +3507,7 @@
         { t: 'Ceiling from below', tip: 'Length of structure seen from below, per m² of floor — low is a calm ceiling, high a busy one. Parts stacked above each other count once. Our reading of Moussavi, measured from the geometry', k: 'calm', f: r => { const c = ceilOf(r); return c ? f2(c.dens) + ' m/m²' : '<span class="cwait">…</span>'; }, sub: r => { const c = CEIL.get(r.sys.id); return !c ? '' : c.dens < 0.02 ? 'a smooth surface' : `like one line every ${f1(1 / c.dens)} m`; } },
         { t: 'Columns', tip: 'Count for the whole hall', k: 'cols', f: r => r.cols || '—', sub: r => r.colNote },
         { t: 'Roof load', tip: 'Automatic: own weight + covering + services + Thai live load', k: 'q', f: r => f2(r.load.q) + ' kN/m²', sub: r => `own ${f2(r.load.own)} + ${r.load.finName} ${f2(r.load.fin)} + services ${f2(r.load.svc)} + live ${f2(r.load.live)}` },
-        { t: 'Thrust / tie', tip: 'Horizontal force that a tie, walls, anchors or a ring must take', f: r => r.thrust == null ? '—' : Math.round(r.thrust) + (r.thrustPerArch || r.thrustIsRing ? ' kN' : ' kN/m'), sub: r => r.thrust == null ? '' : r.thrustNote, sub2: r => r.thrust == null ? '' : THRUST_SRC[r.sys.id] ? 'Source: ' + THRUST_SRC[r.sys.id] : '' },
+        { t: 'Thrust / tie', tip: 'Horizontal force that a tie, walls, anchors or a ring must take', f: r => r.thrust == null ? '—' : Math.round(r.thrust) + (r.thrustPerArch || r.thrustIsRing ? ' kN' : ' kN/m'), sub: r => r.thrust == null ? '' : r.thrustNote, sub2: r => r.thrust == null ? '' : (r.thrustSrc || THRUST_SRC[r.sys.id]) ? 'Source: ' + (r.thrustSrc || THRUST_SRC[r.sys.id]) : '' },
         { t: 'Why', tip: '', f: r => { const tn = timberNote(r), cn = coverNote(r); return `<div class="why">${esc(r.notes[0])}</div>` + (tn ? `<div class="why tim"><b>Timber:</b> ${esc(tn.t)}<small title="${esc(tn.src)}">Sources: ${esc(tn.src)}</small></div>` : '') + (cn ? `<div class="why tim"><b>Covering:</b> ${esc(cn.t)}<small title="${esc(cn.src)}">Sources: ${esc(cn.src)}</small></div>` : ''); } }
     ];
 
@@ -3660,21 +3728,25 @@
         $('mStatus').innerHTML = `<span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
         $('mPlan').innerHTML = planSVG(r);
         const tn = timberNote(r), cn = coverNote(r);
-        $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + (cn ? `<li><b>Covering:</b> ${esc(cn.t)}<br><i>Sources: ${esc(cn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${THRUST_SRC[r.sys.id] ? `<br><i>Source: ${esc(THRUST_SRC[r.sys.id])}</i>` : ''}</li>` : '');
+        $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + (cn ? `<li><b>Covering:</b> ${esc(cn.t)}<br><i>Sources: ${esc(cn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${(r.thrustSrc || THRUST_SRC[r.sys.id]) ? `<br><i>Source: ${esc((r.thrustSrc || THRUST_SRC[r.sys.id]))}</i>` : ''}</li>` : '');
         $('mVar').innerHTML = MODES[r.sys.id] ? modeVariants(r.sys.id) : '';
     }
     // the same vault with its thrust taken three ways (Engel p.113); the first is the default
     const MODES = {
         vault: [['buttress', 'Buttresses'], ['tie', 'Ties'], ['adjacent', 'Neighbouring vaults']],
         v_cloister: [['piers', 'Buttressed walls'], ['tie', 'Ties and a chain'], ['mass', 'Walls by mass']],
-        v_cross: [['aisles', 'Side vaults'], ['tie', 'Ties'], ['mass', 'Buttresses']]
+        v_cross: [['aisles', 'Side vaults'], ['tie', 'Ties'], ['mass', 'Buttresses']],
+        dome: [['ring', 'On a ring of columns'], ['ground', 'On four points on the ground']],
+        ss_rot: [['columns', 'On columns'], ['ground', 'From the ground']],
+        hyparT: [['columns', 'On side columns + tie'], ['ground', 'On two points on the ground']]
     };
+    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel p.53' };
     function modeVariants(id) {
         const keep = S.tm, sys = SYS.find(x => x.id === id), pr = projector(), cur = (keep && keep[id]) || MODES[id][0][0];
         const V = MODES[id].map(([mode, name]) => { S.tm = Object.assign({}, keep, { [id]: mode }); const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return { r, mode, name }; });
         S.tm = keep;
         const bb = bounds3(V.map(v => v.r.P3));
-        return `<div class="k" style="margin:6px 0 4px">Taking the thrust · Engel p.113</div><div class="vv">` + V.map(({ r, mode, name }) => `<div class="vvi ${mode === cur ? 'on' : ''}" data-vmode="${mode}">${axoSVG(r.P3, bb)}<b>${name}</b><small>footprint ${f1(r.footW)} m · ${esc(r.colNote)}</small></div>`).join('') + '</div>';
+        return `<div class="k" style="margin:6px 0 4px">${MODE_T[id] || 'Taking the thrust · Engel p.113'}</div><div class="vv">` + V.map(({ r, mode, name }) => `<div class="vvi ${mode === cur ? 'on' : ''}" data-vmode="${mode}">${axoSVG(r.P3, bb)}<b>${name}</b><small>footprint ${f1(r.footW)} m · ${esc(r.colNote)}</small></div>`).join('') + '</div>';
     }
     // the thrust where it leaves the vault, over the enlarged drawing: an arrow the way it pushes, with its size; for a tie, the force in it
     function forceMarks(r, pr, w) {
