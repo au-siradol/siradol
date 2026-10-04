@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heino Engel: Structure Systems</title>
+<title>Space First — Structural System Explorer</title>
 
 <style>
     :root { --bg: #fff; --paper: #fff; --ink: #111; --mute: #888; --faint: #aaa; --line: #e0e0e0; }
@@ -145,7 +145,13 @@
     .mini .me { position: absolute; top: 0; width: 1px; height: 9px; background: #c62828; }
     .addslot { border: 1px dashed #ccc !important; display: flex; align-items: center; justify-content: center; color: var(--faint); cursor: pointer; font-size: 11px; }
     .addslot:hover { color: var(--ink); border-color: var(--ink) !important; }
-    .cell small.src { color: #aaa; font-style: italic; }
+    .cell small.src { color: #666; font-style: italic; white-space: normal; }
+    .scope-note, .ranking-method { font-size: 11px; color: #555; line-height: 1.6; margin: 12px 0; }
+    .cell small, .slot-h .sub { white-space: normal; overflow-wrap: anywhere; }
+    .eligibility { font-size: 11px; line-height: 1.5; }
+    .eligibility.fail { color: #a32626; }
+    .source-label { font-size: 10px; color: #666; }
+    #suggestNotice { font-size: 11px; color: #a32626; }
     .why { font-size: 11px; color: #555; line-height: 1.45; }
 
     /* ---- ranking ---- */
@@ -208,46 +214,56 @@
     <div class="top">
         <div class="study-bar">
             <a href="../index.html">&larr; Index</a>
-            <span class="titlegroup"><span class="idx">12</span><span class="titleline"><b>Heino Engel: Structure Systems</b><span class="sep">&mdash;</span><span class="sub">set the column-free hall, then compare the structures that can span it</span></span></span>
+            <span class="titlegroup"><span class="idx">12</span><span class="titleline"><b>Space First — Structural System Explorer</b><span class="sep">&mdash;</span><span class="sub">an independent parametric study informed by Heino Engel</span></span></span>
         </div>
         <div class="fields">
             <div class="fld"><span class="k">Span — column-free</span><span class="line"><input id="L" type="number" min="3" max="200" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
             <div class="fld"><span class="k">Length · ≥ span</span><span class="line"><input id="W" type="number" min="3" max="200" step="1"><span class="u">m</span></span><input id="rW" type="range" min="3" max="200" step="1"></div>
             <div class="fld"><span class="k">Clear height</span><span class="line"><input id="H" type="number" min="2.5" max="30" step="0.5"><span class="u">m</span></span><input id="rH" type="range" min="2.5" max="30" step="0.5"></div>
             <div class="fld" title="Roof load is worked out per system: its own weight (estimated) + the roof covering + services 0.10 + live load from the Thai Ministerial Regulation No. 6 (B.E. 2527): 30 kg/m² on a roof, 100 kg/m² on a concrete roof"><span class="k">Roof covering · load auto</span><span class="line"><select id="finish"></select></span><span class="third u" id="qNote"></span></div>
-            <div class="fld"><span class="k">Material</span><span class="line"><select id="mat"><option value="steel">steel</option><option value="timber">timber</option><option value="concrete">concrete</option></select></span><span class="third"></span></div>
+            <div class="fld"><span class="k">Material</span><span class="line"><select id="mat"><option value="steel">steel</option><option value="timber">timber · product per model</option><option value="concrete">reinforced concrete</option><option value="prestressed">prestressed concrete</option><option value="cable">steel cable</option><option value="membrane">membrane</option><option value="masonry">masonry</option></select></span><span class="third"></span></div>
         </div>
         <div class="presets" id="presets"><span class="k">Start from</span></div>
     </div>
 
+    <p class="scope-note"><b>About this study:</b> Classification and reference span ranges are drawn from Heino Engel’s <i>Structure Systems</i>. Geometry, supports, preliminary dimensions, loads and comparison scores are selected or adapted by this tool’s developer. These schematic models do not reproduce the book’s illustrations exactly and are not verified structural designs.</p>
     <section class="tree fsec" data-sec="tree">
-        <div class="thead"><button class="fold" type="button">Engel’s genealogy of structures</button><span>pick a type (p.44), then a variant (pp.45–53) — drawn for your space; click a drawn variant to add it to the comparison</span></div>
+        <div class="thead"><button class="fold" type="button">Engel’s genealogy of structures</button><span>pick a type (p.44), then a variant (pp.46–55) — drawn for your space; click a drawn variant to add it to the comparison</span></div>
         <div id="types" class="fbody"></div>
     </section>
 
     <section class="fsec" data-sec="cmp">
     <div class="bar">
-        <p class="lead"><button class="fold" type="button">Comparison</button> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value in each row is underlined · click a drawing to enlarge it and turn it</span></p>
-        <span class="sgrp"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion (50%) — the same list as the ranking of all systems"></select><span class="then">then</span><select id="crit2" title="Second criterion (30%), optional"></select><span class="then">then</span><select id="crit3" title="Third criterion (20%), optional"></select></span><span class="basis" id="cmpBasis"></span>
+        <p class="lead"><button class="fold" type="button">Comparison</button> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value among matching options in each row is underlined · click a drawing to enlarge it and turn it</span></p>
+        <span class="sgrp"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion — weight 100% alone, 62.5% with two criteria, 50% with three"></select><span class="then">then</span><select id="crit2" title="Second criterion — optional; weights renormalize to 100%"></select><span class="then">then</span><select id="crit3" title="Third criterion — optional; duplicate criteria count once"></select></span><span class="basis" id="cmpBasis"></span>
         <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div>
     </div>
+    <p class="scope-note">Suggestions require no interior columns or supports, a matching material and a span inside the reference intervals. These are screening checks, not a structural or full-height clearance verification. Other options remain available for manual comparison.</p>
+    <p id="suggestNotice" role="status" aria-live="polite"></p>
     <div class="grid fbody" id="grid"></div>
     </section>
 
     <div class="rank fsec" data-sec="rank">
-        <div class="hd"><button class="fold" type="button">All <span id="nSys"></span> systems</button><select id="metric"><option value="span">Engel span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">footprint width (m)</option><option value="eff">space efficiency (%)</option><option value="cols">columns</option><option value="q">roof load (kN/m²)</option><option value="calm">calm ceiling (least structure seen)</option><option value="busy">busy ceiling (most structure seen)</option></select><span class="fbody" id="rankNote"></span></div>
+        <div class="hd"><button class="fold" type="button"><span id="nSys"></span> modeled options</button><select id="metric"><option value="span">Reference span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">overall footprint width (m)</option><option value="eff">clear-section ratio (%)</option><option value="cols">reported support count</option><option value="q">roof load (kN/m²)</option><option value="calm">visible line density (lower first)</option><option value="busy">visible line density (higher first)</option></select><span class="fbody" id="rankNote"></span></div>
+        <p id="rankingMethod" class="ranking-method"></p>
         <svg id="dots" class="fbody"></svg>
     </div>
 
-    <details class="notes">
+    <p class="scope-note"><b>Reading the results:</b> Engel supplies the classification and reference span charts. The modeled geometry, preliminary sizing, weights and comparison scores are this tool’s assumptions or adaptations; ≈ marks estimates. Each result names its basis below.</p>
+    <p class="scope-note"><b>Coverage:</b> the genealogy includes all five families (pp.44–55). The comparison models selected options in families 1–4 and one hybrid. Slabs (3.4) are not modeled yet, including short-span applications; height-active systems (5) are listed for reference, outside this single-storey comparison. “Modeled options” is not the number of systems in Engel’s book.</p>
+    <details class="notes" id="sources">
         <summary>Sources and limits</summary>
-        <p>Classification and span ranges: Heino Engel, <i>Structure Systems</i>, pp. 62, 138, 176, 216 (read off his bar charts, ± one grid step). Depths, rises and sags are preliminary rules of thumb, cross-checked with Thomas Leslie's ARCH 445 lectures. Roof load is automatic: the system's own weight (a rough estimate from its type, material and span) + the roof covering + 0.10 kN/m² services + live load per the Thai Ministerial Regulation No. 6 (B.E. 2527) — 30 kg/m² (0.30 kN/m²) on roofs, 100 kg/m² (1.0 kN/m²) on concrete roofs. Wind, asymmetric load and buckling are not included; this is for choosing a scheme, not for design.</p>
+        <p>Book: Heino Engel, <i>Structure Systems</i>, Hatje Cantz, 5th edition, 2013, ISBN 978-3-7757-1876-9. Classification: pp.44–55; span charts: pp.62, 138, 176, 216. Page numbers are printed book pages (PDF page = printed page + 2 in the supplied scan). Chart values are historical reference intervals, not a capacity calculation. Some chart rows cover several variants; transferred ranges are identified per option. Lower ends below this tool’s 3 m input limit are clipped in the database.</p>
+        <p><b>Author assumptions:</b> depths, rises, sags, support spacing and own weights are preliminary estimates. Thomas Leslie’s ARCH 445 lectures inform selected models where named. Engel p.200 illustrates two equal-section crossing beams under a point load: at length ratio 1:2, the shorter beam takes 8/9. This tool’s extension to whole grids and space trusses, and its depth multiplier √(2α), are author heuristics, not a general design rule from Engel.</p>
+        <p><b>Loads and forces:</b> roof load combines estimated self-weight and covering, services (usually 0.10 kN/m²), and the existing live-load assumptions attributed to Thai Ministerial Regulation No.6 (B.E.2527): 0.30 kN/m², or 1.0 for the concrete-roof cases in this model. These assumptions are separate from Engel and are not a check of current regulatory compliance. Individual force estimates name their statics model and sources. Wind, asymmetric loading, buckling, connection design and prestress losses are not checked. Prestressed concrete span references do not make the displayed dimensions a prestress design.</p>
+        <p><b>Measurements:</b> clear-section ratio = L×H divided by the modeled enclosing section area, not usable floor area or volume. Overall footprint width is a transverse distance, not a site area. Interior support counts use modeled support locations inside 0&lt;x&lt;L and 0&lt;y&lt;W; boundary supports and continuous walls are described separately. Visible line density is projected visible structural line length per floor area, not a validated measure of visual calmness.</p>
+        <p><b>Ranking:</b> only matching options enter suggestions and combined scores. Single criteria retain equal values; ties are ordered alphabetically, not by an undisclosed depth preference. Combined scores use average ranks for ties, normalized to 0–1 and weighted 50/30/20 (one criterion: 100%; two: 62.5/37.5%). Displayed score = 100×(1−weighted rank); higher is preferred. Scores are relative to the current matching set and are not engineering performance ratings.</p>
     </details>
 </div>
 
 <div class="modal" id="modal"><div class="in">
     <div class="hd"><div><b id="mName"></b><span id="mSub"></span></div><button class="btn" id="mClose">Close</button></div>
-    <div class="pair"><div class="views2"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Inside, eye at 1.68 m · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div></div><div><div class="k">Section</div><div class="sec" id="mSec"></div></div></div>
+    <div class="pair"><div class="views2"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Inside, eye at 1.68 m · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div></div><div><div class="k">Section A–A · across the hall</div><div class="sec" id="mSec"></div><div class="k">Section B–B · along the hall</div><div class="sec" id="mSecB"></div><p class="scope-note">Cuts through the modeled surfaces at the dashed plan lines. A–A passes through a nearby frame where the system consists of separate frames. Members outside the cut plane are omitted. Thin surfaces are shown as lines.</p></div></div>
     <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
 </div></div>
 
@@ -295,7 +311,7 @@
         const a = Math.min(L, W), b = Math.max(L, W), sh = b ** 3 / (a ** 3 + b ** 3);
         return { short: a, share: sh, k: Math.sqrt(2 * sh) };
     }
-    const SP_BEAM1 = { steel: { lim: [5, 25], typ: [[7, 20]] }, timber: { lim: [3, 12], typ: [[4, 8]] }, concrete: { lim: [3, 15], typ: [[4, 10]] } };
+    const SP_BEAM1 = { steel: { lim: [5, 25], typ: [[7, 20]] }, timber: { lim: [3, 12], typ: [[4, 8]] }, concrete: { lim: [3, 15], typ: [[2, 10]] } };
     const SYS = [
         // ===== 1 FORM-ACTIVE =====
         { id: 'cable', fam: 1, code: '1.1.1', name: 'Suspended cable roof', mats: ['cable'],
@@ -315,7 +331,7 @@
               };
           } },
         { id: 'pneu', fam: 1, code: '1.3.1', name: 'Air-supported hall', mats: ['membrane'],
-          spans: { membrane: { lim: [10, 300], typ: [[10, 40], [80, 220]] } },
+          spans: { membrane: { lim: [10, 300], ranges: [[10, 50], [70, 300]], typ: [[10, 40], [90, 220]] } },
           rule: { membrane: 'circular section, crown H + L/5' },
           build(L, H, W, m, q) {
               const Ht = H + L / 5, a = L / 2;
@@ -403,13 +419,15 @@
                   notes: ['A hinge at the crown and at both feet: no moment there, so the rib is thin at the hinges and deepest at the quarter points (Engel p.117).', 'Statically determinate — tolerates settling foundations and temperature change without extra stress.']
               };
           } },
-        { id: 'vault', fam: 1, code: '1.4.2', name: 'Barrel vault (short vault)', mats: ['masonry'],
+        { id: 'vault', fam: 1, code: '1.4.2', name: 'Masonry barrel vault', mats: ['masonry'],
           spans: { masonry: { lim: [4, 30], typ: [[8, 20]] } },
           rule: { masonry: 'semicircle, rise L/2 (Engel p.47) · shell L/50 · thrust taken by buttresses, ties or neighbours' },
           build(L, H, W, m, q) {
               const mode = modeOf('vault', 'buttress'), f = L / 2, t = Math.max(0.2, L / 50), bay = clamp(r05(L / 4), 4, 8);
               const inner = arcPts(0, L, H, f), Hv = q * L * L / (8 * f);
-              const V = { mode, bay, t, inner, Hv };
+              const outer = arcPts(-t, L + t, H, f + t);
+              const vaultBand = poly([...inner, ...outer.slice().reverse()]);
+              const V = { mode, bay, t, inner, outer, Hv };
               let parts, foot, cols, colNote, thrustNote, thrust = Hv, perArch = false, notes, tw, bd = 0;
               if (mode === 'buttress') {
                   tw = Math.max(0.4, L / 15);
@@ -420,32 +438,32 @@
                       const N = Ww + Wb + Vv; return { B, e: (Ww * (b_ + tw / 2) + Wb * xb + Vv * B - Hb * hW) / N }; };
                   bd = Math.max(1, L / 10); while (resultant(bd).e < resultant(bd).B / 3 && bd < L) bd += 0.1;
                   const R_ = resultant(bd); V.check = R_;
-                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), poly([[-tw, 0], [-tw - bd, 0], [-tw - bd * 0.35, hW], [-tw, hW]], 'light'), poly([[L + tw, 0], [L + tw + bd, 0], [L + tw + bd * 0.35, hW], [L + tw, hW]], 'light'), band(inner, t)];
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), poly([[-tw, 0], [-tw - bd, 0], [-tw - bd * 0.35, hW], [-tw, hW]], 'light'), poly([[L + tw, 0], [L + tw + bd, 0], [L + tw + bd * 0.35, hW], [L + tw, hW]], 'light'), vaultBand];
                   foot = [-tw - bd, L + tw + bd]; cols = 2 * (Math.ceil(W / bay) + 1);
                   colNote = `walls ${f2(tw)} m + buttresses every ${f1(bay)} m, ${f1(bd)} m deep`;
                   thrustNote = `per metre, ${f1(Hv * bay)} kN into each buttress`;
                   notes = [`Buttresses every ${f1(bay)} m take the thrust as leaning masses; between them the wall is ${f2(tw)} m instead of L/5 = ${f2(L / 5)} m (Engel p.113, "buttressed").`, `Buttress depth from statics, not a rule of thumb: per bay the thrust ${Math.round(Hb)} kN at ${f1(hW)} m, the vault's ${Math.round(Vv)} kN and the masonry's weight give a resultant ${f2(R_.e)} m in from the outer edge of the ${f2(R_.B)} m base — inside the middle third, so no joint opens (masonry rule, J. Heyman, The Stone Skeleton, 1995).`, 'The buttresses stand outside the space: they cost ground width, not clear height.'];
               } else if (mode === 'tie') {
                   tw = Math.max(0.3, L / 25);
-                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), line([[0, H], [L, H]], 'tie')];
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), vaultBand, line([[0, H], [L, H]], 'tie')];
                   foot = [-tw, L + tw]; cols = 0; perArch = true; thrust = Hv * bay;
                   colNote = `walls ${f2(tw)} m, iron ties across every ${f1(bay)} m`;
                   thrustNote = `force in each tie (${f1(bay)} m apart), at the springing`;
-                  notes = ['Ties across the springing close the arch on itself: the walls carry only weight, so they can be thin (Engel p.113, "tied").', `The ties cross the space at ${f1(H)} m — below the vault, above the clear height.`];
+                  notes = ['Ties across the springing close the arch on itself: the walls carry only weight, so they can be thin (Engel p.113, "tied").', `The ties cross the space at ${f1(H)} m — below the vault, at the clear-height boundary.`];
               } else {
                   tw = Math.max(0.3, L / 25); const tb = Math.max(0.5, L / 12);
-                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), band(inner, t), band(arcPts(-L - tw, -tw, H, f), t), band(arcPts(L + tw, 2 * L + tw, H, f), t),
+                  parts = [rect(-tw, 0, 0, H + t), rect(L, 0, L + tw, H + t), vaultBand, poly([...inner.map(([x,z]) => [x-L-tw,z]), ...outer.slice().reverse().map(([x,z]) => [x-L-tw,z])]), poly([...inner.map(([x,z]) => [x+L+tw,z]), ...outer.slice().reverse().map(([x,z]) => [x+L+tw,z])]),
                            rect(-L - 2 * tw - tb, 0, -L - tw, H + t, 'light'), rect(2 * L + tw, 0, 2 * L + 2 * tw + tb, H + t, 'light')];
-                  foot = [-tw, L + tw]; cols = 2 * (Math.ceil(W / bay) + 1); thrust = 0;
-                  colNote = `arcades of piers ${f2(tw)} m between vaults — thrusts cancel`;
+                  foot = [-L - 2 * tw - tb, 2 * L + 2 * tw + tb]; cols = 2 * (Math.ceil(W / bay) + 1); thrust = 0;
+                  colNote = `arcades of piers ${f2(tw)} m between vaults — thrust balance assumes equal loading`;
                   thrustNote = `balanced: the neighbour's ${Math.round(Hv)} kN/m pushes back; only the outermost walls need mass`;
-                  notes = ['Vaults side by side lean on each other: the thrust of one cancels the next, so the inner supports can be slender piers (Engel p.113, "continuous").', 'Works only if the building repeats the hall; the outermost walls still need buttresses or mass.'];
+                  notes = ['Vaults side by side lean on each other: equal opposing thrusts can balance under symmetric loading; unequal loading still acts on the shared piers (Engel p.113, "continuous").', 'Adaptation: three repeated bays are shown. Footprint width includes all three bays and their outer walls; the clear-section ratio still refers to the central hall. Outer wall dimensions are schematic, not a verified abutment design.'];
               }
-              V.tw = tw; V.bd = bd; V.inner3 = arcPts(0, L, H, f, 16);
+              V.tw = tw; V.bd = bd; V.inner3 = inner;
               // a way in through each side wall, in the middle bay (the ends of the vault stand open as well)
               if (mode !== 'adjacent') { const yb = ysOf(W, bay), nb = yb.length - 1, kb = Math.min(nb - 1, Math.floor(nb / 2)); V.door = Object.assign({ y: (yb[kb] + yb[kb + 1]) / 2 }, doorOf(H, yb[kb + 1] - yb[kb] - (mode === 'buttress' ? Math.max(0.5, L / 30) : 0))); }
               return {
-                  parts, roof: [[-tw, 0], [-tw, H + t], ...inner.map(([x, y]) => [x, y + t]), [L + tw, H + t], [L + tw, 0]], foot,
+                  parts, roof: [[-tw, 0], [-tw, H + t], ...outer, [L + tw, H + t], [L + tw, 0]], foot,
                   zoneLabel: `rise ${f2(f)}`, zone: f + t, cols, colNote, thrust: thrust || null, thrustNote, thrustPerArch: perArch,
                   plan: { kind: 'walls', bw: tw, mode, bay, bd, door: V.door }, surface: true, inner, t, bw: tw, V, enclose: mode === 'adjacent' ? null : ['x0', 'x1'],
                   forces: mode === 'tie' ? [{ p: [L / 2, W / 2, H], tie: true, v: Hv * bay, u: 'kN in each tie' }]
@@ -466,7 +484,7 @@
                   thrust: q * s * Ls * Ls / (8 * f), thrustNote: `tie force per arch (arches ${f1(s)} m apart, ${f1(Ls)} m between column axes) — the tie crosses the space at eave height`,
                   thrustPerArch: true,
                   plan: { kind: 'oneway', s },
-                  notes: ['The tie keeps the columns free of thrust; without it they need buttresses.', 'Rise L/5–L/8: flatter means a larger tie force (H = qL²/8f).']
+                  notes: ['The tie closes the modeled arch thrust between its springings. Columns and connections still need checks for eccentricity, lateral loading and stability; without the tie a different thrust-resisting support is needed.', 'Rise L/5–L/8: flatter means a larger tie force (H = qL²/8f).']
               };
           } },
 
@@ -522,7 +540,7 @@
                   roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `d ${f2(d)}`, zone: d, cols: perimeter(L, W, s), colNote: `perimeter columns every ${f1(s)} m, module ${f1(p)} m`,
                   plan: { kind: 'grid', s, a: p },
-                  notes: ['A node pushed down must bend trusses in two or three directions at once (Engel p.156) — hence L/20–L/25 on a square plan.', `Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (stiffness ∝ 1/span³, Engel p.200), so the depth is ×${tw.k.toFixed(2)} of the square-plan value.`]
+                  notes: ['A node pushed down must bend trusses in two or three directions at once (Engel p.156) — hence L/20–L/25 on a square plan.', `Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (author approximation from Engel p.200’s equal-section crossing-beam example), author depth heuristic: ×${tw.k.toFixed(2)} of the square-plan value.`]
               };
           } },
 
@@ -603,21 +621,21 @@
                   roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
                   zoneLabel: `d ${f2(d)}`, zone: d, cols: perimeter(L, W, s), colNote: `perimeter columns every ${f1(s)} m, grid ${f1(a)} m`,
                   plan: { kind: 'grid', s, a },
-                  notes: [`Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (Engel p.200: square 50/50, 1:2 → 8/9), so the depth is ×${tw.k.toFixed(2)} of the square-plan value.`, tw.share > 0.85 ? 'At this ratio the grid works almost one-way — one-way beams would do the same with less.' : 'Both directions share the load: that is what the grid pays for.']
+                  notes: [`Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (author approximation from Engel p.200: two equal-section beams, point load at their crossing), author depth heuristic: ×${tw.k.toFixed(2)} of the square-plan value.`, tw.share > 0.85 ? 'At this ratio the grid works almost one-way — one-way beams would do the same with less.' : 'Both directions share the load: that is what the grid pays for.']
               };
           } },
 
         // ===== 4 SURFACE-ACTIVE =====
-        { id: 'folded', fam: 4, code: '4.2.1', name: 'Folded plate', mats: ['concrete', 'timber'],
+        { id: 'folded', fam: 4, code: '4.2.1', name: 'Folded-plate roof', mats: ['concrete', 'timber'],
           spans: { concrete: { lim: [10, 60], typ: [[15, 50]] }, timber: { lim: [8, 50], typ: [[10, 40]] } },
           rule: { concrete: 'h = L/12', timber: 'h = L/10' },
           build(L, H, W, m, q) {
-              const h = L / ({ concrete: 12, timber: 10 }[m]), c = colW(m, H), b = clamp(h * 1.6, 1.5, 5), s = 2 * b;
+              const h = L / ({ concrete: 12, timber: 10 }[m]), c = colW(m, H), b = clamp(h * 1.6, 1.5, 5), s = 2 * b, folds = foldYs(W, b);
               return {
                   parts: [...columns(L, H, c), poly([[-c, H], [L + c, H], [L + c, H + h], [-c, H + h]], 'light'), line([[-c, H + h], [L + c, H + h]], 'member'), line([[-c, H], [L + c, H]], 'member')],
                   roof: [[-c, 0], [-c, H + h], [L + c, H + h], [L + c, 0]], foot: [-c, L + c],
-                  zoneLabel: `fold ${f2(h)}`, zone: h, cols: alongSides(W, s), colNote: `edge beams on columns every ${f1(s)} m, folds ${f1(b)} m wide`,
-                  plan: { kind: 'folded', b },
+                  zoneLabel: `fold ${f2(h)}`, zone: h, cols: folds.n + 2, colNote: `end diaphragms on columns every ${f1(2 * folds.bb)} m, folds ${f1(folds.bb)} m wide`,
+                  plan: { kind: 'folded', b: folds.bb, n: folds.n, c },
                   notes: ['A thin plate made to act as a deep beam by its folds: ridge in compression, valley in tension (ARCH 445 02b).', 'Needs edge stiffeners or diaphragms, or the folds flatten out.']
               };
           } },
@@ -696,7 +714,7 @@
         tentPeak: { membrane: { lim: [5, 40], typ: [[10, 25]] } },
         tentWave: { membrane: { lim: [20, 100], typ: [[30, 70]] } },
         tentInd: { membrane: { lim: [20, 150], typ: [[30, 80]] } },
-        airHall: { membrane: { lim: [10, 300], typ: [[10, 40], [80, 220]] } },
+        airHall: { membrane: { lim: [10, 300], ranges: [[10, 50], [70, 300]], typ: [[10, 40], [90, 220]] } },
         cushion: { membrane: { lim: [20, 120], typ: [[30, 70]] } },
         tube: { membrane: { lim: [10, 70], typ: [[10, 50]] } },
         vault: { masonry: { lim: [4, 30], typ: [[8, 20]] } },
@@ -1345,7 +1363,7 @@
 
     // ---------- family 3 variants (Engel pp.50–51; spans p.176) ----------
     const SP3 = {
-        beam1: { timber: { lim: [3, 12], typ: [[4, 8]] }, steel: { lim: [5, 25], typ: [[7, 20]] }, concrete: { lim: [3, 15], typ: [[4, 10]] } },
+        beam1: { timber: { lim: [3, 12], typ: [[4, 8]] }, steel: { lim: [5, 25], typ: [[7, 20]] }, concrete: { lim: [3, 15], typ: [[2, 10]] } },
         beam2: { timber: { lim: [7, 35], typ: [[10, 30]] }, steel: { lim: [5, 30], typ: [[8, 25]] }, concrete: { lim: [7, 30], typ: [[10, 25]] } },
         beam3: { timber: { lim: [3, 12], typ: [[4, 8]] }, steel: { lim: [5, 25], typ: [[7, 20]] }, concrete: { lim: [3, 12], typ: [[4, 8]] } },
         frame1: { timber: { lim: [10, 50], typ: [[15, 40]] }, steel: { lim: [10, 80], typ: [[15, 60]] }, concrete: { lim: [7, 30], typ: [[10, 25]] } },
@@ -1957,15 +1975,22 @@
               for (let i = 0; i < 6; i++) { faces3.push(tri(A, C[i], Mp[i], 'fold1'), tri(A, Mp[i], C[(i + 1) % 6], 'fold2')); lines3.push({ c: 'member', pts: [C[i], Mp[i], C[(i + 1) % 6]] }); }
               const e = a * Math.sqrt(3) / 2, sec = a0 ? [[cx - e, H + f], [cx + e, H + f]] : [[cx - a, H], [cx, H + f], [cx + a, H]];   // cut along x: on the ridge (a0 = 90°) or down the valleys
               const r = surfaceHall({ kind: 'none', mods: [polyMod(C, () => H)], faces3, lines3, posts: C, secY: cy, sec, planSegs: [...C.map(p => [cx, cy, p[0], p[1], 0.3]), ...Mp.map(p => [cx, cy, p[0], p[1], 1])], secParts: a0 ? [line([[cx - e, H], [cx - e, H + f]], 'thin'), line([[cx + e, H], [cx + e, H + f]], 'thin'), rect(cx - e - 0.3, 0, cx - e, H), rect(cx + e, 0, cx + e + 0.3, H)] : [rect(cx - a - 0.3, 0, cx - a, H), rect(cx + a, 0, cx + a + 0.3, H), rect(cx - a / 2 - 0.15, 0, cx - a / 2 + 0.15, H, 'light'), rect(cx + a / 2 - 0.15, 0, cx + a / 2 + 0.15, H, 'light')] });
-              return Object.assign(withZone(r, H), { spanUsed: 2 * a, spanLabel: `needs a hexagon ${f1_(2 * a)} m corner to corner`, cols: 6, colNote: `one hexagon, ${f1_(2 * a)} m corner to corner, contains the hall; six corner supports`,
-                  notes: ['Three gable-shaped folded plates cross at 60°: ridges run from the top to the middle of each side, valleys to the six corners, where it stands (Engel 4.2.3.2).', 'No thrust figure: the load path through three crossing folds is not reduced to one statical formula here.'] });
+              r.surf.lines3.push({ c: 'tie', pts: [...C, C[0]] });
+              r.plan.segs.push(...C.map((p,i)=>[p[0],p[1],C[(i+1)%C.length][0],C[(i+1)%C.length][1],0.3]));
+              return Object.assign(withZone(r, H), { spanUsed: 2 * a, spanLabel: `needs a hexagon ${f1_(2 * a)} m corner to corner`, cols: 6, colNote: `one hexagon, ${f1_(2 * a)} m corner to corner, contains the hall; six corner supports joined by a proposed perimeter tie`,
+                  notes: ['Three gable-shaped folded plates cross at 60°: ridges run from the top to the middle of each side, valleys to the six corners, where it stands (Engel 4.2.3.2).', 'Adaptation: a closed perimeter tie is proposed to collect horizontal reactions at the six supports. Its force, connections and interaction with the plates are not analyzed; no thrust figure is reported.'] });
           } },
         { id: 'fl_beam', fam: 4, name: 'Folded-plate beams', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section, h = L/12 · glazing between', timber: 'V-section, h = L/10 · glazing between' },
           own: (m, L) => foldOwn(m, L) * 0.75,
           build(L, H, W, m, q) {
               const h = L / (m === 'timber' ? 10 : 12), B = bays(W, m === 'timber' ? 5 : 6, 0.75), P = B.ys.flatMap(y => [[0, y, H], [L, y, H]]);
               const r = stripHall(L, H, W, { path: [[0, H], [L, H]], prof: t => h * Math.abs(2 * t - 1), nt: 2, ys: B.ys, b: B.b, cl: 'fold', posts: P });
-              return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} V-beams ${f1_(B.b)} m wide on end columns; glazing between`,
+              for (const x of [0,L]) for (const y of B.ys) {
+                  r.surf.faces3.push(tri([x,y-B.b/2,H+h],[x,y,H],[x,y+B.b/2,H+h],'solid'));
+                  r.surf.lines3 = r.surf.lines3 || [];
+                  r.surf.lines3.push({c:'member',pts:[[x,y-B.b/2,H+h],[x,y+B.b/2,H+h]]});
+              }
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} V-beams ${f1_(B.b)} m wide; end diaphragms transfer load to columns at each valley; glazing between`,
                   notes: ['Each beam is a narrow folded plate — two inclined plates meeting at a fold (Engel 4.2.4.1).'] });
           } },
         { id: 'fl_frame', fam: 4, name: 'Folded frames', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section rafters and legs, h = L/12', timber: 'V-section rafters and legs, h = L/10' },
@@ -2650,7 +2675,7 @@
     };
     const FAM = { 1: 'Form-active', 2: 'Vector-active', 3: 'Section-active', 4: 'Surface-active', 6: 'Hybrid' };
     const FAMSUB = { 1: 'redirects forces by its form — single stress, compression or tension', 2: 'splits forces into bars — tension and compression together', 3: 'holds forces inside the section — bending', 4: 'spreads forces over a surface — membrane stresses', 6: 'two families share one load path' };
-    // ---------- Engel's genealogy of structures (pp. 44–54): family → type → subtype → variant ----------
+    // ---------- Engel's genealogy of structures (pp. 44–55): family → type → subtype → variant ----------
     // variants read from pp. 46, 48, 50, 52, 54. A variant with m: '<id>' has a model on this page.
     const TREE = {
         '1.1': ['Cable structures', { '1.1.1': ['parallel cable systems', ['weight stabilization', 'isoplane cable stabilization', 'staggered cable stabilization'], { 1: 'cable', 2: 'c_iso', 3: 'c_stag' }],
@@ -2693,7 +2718,7 @@
         '3.4': ['Slab structures', { '3.4.1': ['uniform slabs', ['edge-supported slab', 'continuous slab', 'mushroom slab']],
             '3.4.2': ['ribbed slabs', ['ribbed slab', 'waffle (coffered) slab', 'T-beam floor']],
             '3.4.3': ['box frames', ['open box frame', 'closed box frame', 'multi-storey box frame']],
-            '3.4.4': ['cantilever slabs', ['unilateral cantilever slab', 'bilateral cantilever slab']] }, 'slabs span 4–20 m (Engel p.176): too short for a long-span hall'],
+            '3.4.4': ['cantilever slabs', ['unilateral cantilever slab', 'bilateral cantilever slab']] }, 'not modeled yet; short-span slab options remain relevant (Engel pp.50–51, 176)'],
         '4.1': ['Plate structures', { '4.1.1': ['one-bay plates', ['rectangular plate', 'pitched plate', 'stepped plate'], { 1: 'p_rect', 2: 'p_pitch', 3: 'p_step' }],
             '4.1.2': ['continuous plates', ['rectangular plate', 'stepped plate'], { 1: 'p_cont', 2: 'p_cstep' }],
             '4.1.3': ['cantilever plates', ['unilateral cantilever plate', 'bilateral cantilever plate'], { 1: 'p_can1', 2: 'p_can2' }],
@@ -2723,14 +2748,51 @@
     for (const t in TREE) for (const st in TREE[t][1]) { const [, , mm] = TREE[t][1][st]; if (mm) for (const k in mm) CODE_OF[mm[k]] = `${st}.${k}`; }
     for (const s of SYS) { if (CODE_OF[s.id]) s.code = CODE_OF[s.id]; s.type = (s.code.match(/^\d\.\d/) || [''])[0]; }
 
-    const matOf = sys => sys.mats.includes(S.mat) ? S.mat : sys.mats[0];
+    const PRESTRESSED_IDS = new Set(['cb_h', 'cb_p', 'cb_a']);
+    const selectedBaseMaterial = () => S.mat === 'prestressed' ? 'concrete' : S.mat;
+    const matOf = sys => sys.mats.includes(selectedBaseMaterial()) ? selectedBaseMaterial() : sys.mats[0];
+    function materialLabel(sys, m) {
+        if (m === 'concrete') return PRESTRESSED_IDS.has(sys.id) ? 'prestressed concrete (Engel p.176)' : 'reinforced concrete';
+        if (m === 'timber') {
+            if (sys.type === '3.1') return /^cb_/.test(sys.id) ? 'glued wood / glulam (Engel p.176)' : 'wood (Engel p.176; sizing here assumes glulam)';
+            if (['3.2', '3.3'].includes(sys.type) || sys.type === '1.4' && !['gshell', 'g_arch'].includes(sys.id)) return 'glued / laminated wood';
+            return 'wood (product and joints specified in model notes)';
+        }
+        return MATNAME[m];
+    }
+    function materialMatches(sys) {
+        if (!sys.mats.includes(selectedBaseMaterial())) return false;
+        if (selectedBaseMaterial() === 'concrete') return PRESTRESSED_IDS.has(sys.id) === (S.mat === 'prestressed');
+        return true;
+    }
+    const rangesOf = sp => sp.ranges || [sp.lim];
+    const rangeText = ranges => ranges.map(([a, b]) => `${a}–${b}`).join(' / ');
+    const spanPage = sys => ({ 1: 62, 2: 138, 3: 176, 4: 216 }[sys.fam]);
+    function spanSource(sys) {
+        if (sys.spanSrc || !spanPage(sys)) return 'Author estimate; not an Engel chart interval';
+        return `Engel p.${spanPage(sys)}${sys.spanNote ? ' · author mapping: ' + sys.spanNote : ' · chart row applied to this modeled variant'}`;
+    }
+    function supportCheck(r) {
+        const pl = r.plan || {}, eps = 1e-6, inside = (x, y) => x > eps && x < S.L - eps && y > eps && y < S.W - eps;
+        let pts = pl.posts || [];
+        if (pl.colsX) pts = pl.colsX.flatMap(x => ysOf(S.W, pl.s).map(y => [x, y]));
+        const interior = new Set(pts.filter(([x, y]) => inside(x, y)).map(([x, y]) => `${x.toFixed(5)},${y.toFixed(5)}`)).size;
+        const internalWalls = (pl.boxes || []).some(([x0, x1, y0, y1, z0, z1]) => z0 < S.H && z1 > 0 && x0 < S.L - eps && x1 > eps && y0 < S.W - eps && y1 > eps);
+        return { interior, internalWalls, columnFree: interior === 0 && !internalWalls };
+    }
+    const eligible = r => r.columnFree && materialMatches(r.sys) && r.st !== 'out';
+    function exclusionReasons(r) {
+        return [!r.columnFree ? `${r.interior} interior supports${r.internalWalls ? ' / internal wall or pier' : ''}` : '', !materialMatches(r.sys) ? 'different material / product' : '', r.st === 'out' ? 'outside reference intervals' : ''].filter(Boolean);
+    }
+    const localVariantCode = sys => ['gc_ring', 'gc_pin', 'dm_long'].includes(sys.id);
+    const codeLabel = sys => localVariantCode(sys) ? `${sys.type === '2.3' ? '2.3.3' : '3.3.3'} · local variant ${sys.code.split('.').pop()}` : sys.code;
     function status(sys, L, m) {
         const sp = sys.spans[m];
         if (sp.typ.some(([a, b]) => L >= a && L <= b)) return 'typ';
-        if (L >= sp.lim[0] && L <= sp.lim[1]) return 'pos';
+        if (rangesOf(sp).some(([a, b]) => L >= a && L <= b)) return 'pos';
         return 'out';
     }
-    const CHIP = { typ: 'usual span', pos: 'possible', out: 'outside range' };
+    const CHIP = { typ: 'usual reference span', pos: 'within reference interval', out: 'outside reference intervals' };
 
     function polyArea(pts) { let a = 0; for (let i = 0; i < pts.length; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length]; a += x1 * y2 - x2 * y1; } return Math.abs(a) / 2; }
     // ---------- roof load, worked out per system ----------
@@ -2793,12 +2855,26 @@
     }
 
     let PR = null;
+    function supportScheme(r) {
+        const id=r.sys.id;
+        if(id==='tarch') return ['Arch → springing joints → columns', 'Tie between springings; anchorage not designed', 'Proposed side-plane X bracing and eave collectors shown; roof-plane restraint still to be designed'];
+        if(['garch','arch3','fl_arch','fb_barrel'].includes(id)) return ['Arch / folded arch → ground bearings', 'Footings must resist horizontal thrust, or use an engineered ground tie; foundation design not modeled', 'Out-of-plane restraint and connections remain to be designed'];
+        if(id==='vault') return ['Vault → continuous side walls, or shared arcades in the repeated-bay option', r.V.mode==='tie'?'Springing ties; anchorage not designed':r.V.mode==='adjacent'?'Shared thrust balance only for equal loading; outer walls are schematic':'Wall buttresses shown; dimensions are preliminary equilibrium estimates', 'Wall stability, openings, unequal loading and foundations are not verified'];
+        if(id==='v_cloister') return ['Vault webs → continuous perimeter walls', 'Wall mass / buttresses / ties according to the selected variant', 'Do not substitute four isolated columns for these walls without redesign'];
+        if(['v_cross','v_arch','v_pend','v_squinch'].includes(id)) return ['Vault / supporting arches → corner piers', 'Ties, side walls or buttresses as shown; pier and joint resistance not verified', 'Unequal loading, masonry stability and foundations remain to be checked'];
+        if(id==='folded') return ['Folded plates → triangular end diaphragms → valley columns', 'End diaphragms and outer edge members shown; joints and forces not designed', 'Proposed side-plane X bracing and eave collectors shown; roof diaphragm action not verified'];
+        if(id==='fl_beam') return ['V plates → end diaphragms → valley columns', 'End diaphragms close the V at the supports; bearing and joints not designed', 'Building bracing and out-of-plane restraint remain to be designed'];
+        if(['fp_pyr','fp_tri','fi_2','fi_3'].includes(id)) return ['Facets / folds → corner supports through the modeled edge system', id==='fi_3'?'Proposed closed perimeter tie shown; forces not analyzed':'Base ties or ring as shown; force estimates do not verify joints', 'Column lateral stability and roof-to-support connections remain to be designed'];
+        if(['fb_box','fl_frame'].includes(id)) return ['Folded roof → integrated folded walls / legs → foundations', 'Fold continuity and frame corners must transfer forces; not ordinary columns', 'Connections and spatial stability remain to be designed'];
+        return ['Support positions shown schematically; see system notes', 'No complete support or connection design', 'Lateral stability and foundations not verified'];
+    }
     function evaluate(sys) {
         const m = matOf(sys), r0 = sys.build(S.L, S.H, S.W, m, 1), load = roofLoad(sys, m, S.L, r0);
         const r = sys.build(S.L, S.H, S.W, m, load.q); r.load = load;
         const top = r.topOverride != null ? r.topOverride : Math.max(...r.parts.flatMap(p => p.pts.map(q => q[1])));
         const enclosed = polyArea(r.roof.concat(r.roof[0][1] === 0 ? [] : [[r.roof[r.roof.length - 1][0], 0], [r.roof[0][0], 0]]));
         const res = Object.assign(r, { sys, m, top, st: status(sys, r.spanUsed || S.L, m), eff: S.L * S.H / enclosed, footW: r.foot[1] - r.foot[0] });
+        Object.assign(res, supportCheck(res));
         let p3 = null;
         Object.defineProperty(res, 'P3', { get() { return p3 || (p3 = projectScene(scene3D(res), PR || projector())); }, set(v) { p3 = v; }, configurable: true });
         return res;
@@ -2818,6 +2894,43 @@
             const w = p.c === 'thin' || p.c === 'cable' ? sw * 0.55 : p.c === 'tie' ? sw * 0.9 : sw * 0.9;
             return `<path d="${d}" class="${cls}" stroke-width="${ghost ? sw * 1.1 : w}" vector-effect="none"/>`;
         }).join('');
+    }
+    function cutPlane(r, axis='A') {
+        if(axis==='A' && r.plan.s && ['arch','oneway'].includes(r.plan.kind)) {
+            const ys=ysOf(S.W,r.plan.s); return ys.reduce((a,b)=>Math.abs(b-S.W/2)<Math.abs(a-S.W/2)?b:a);
+        }
+        if(axis==='A' && r.surf?.kind==='none' && r.surf.mods.every(m=>m.rect && !m.map) && !r.surf.mods.some(m=>m.rect[1]<=S.W/2 && m.rect[3]>=S.W/2)) {
+            const ys=r.surf.mods.map(m=>(m.rect[1]+m.rect[3])/2);
+            return ys.reduce((a,b)=>Math.abs(b-S.W/2)<Math.abs(a-S.W/2)?b:a);
+        }
+        return axis==='A'?S.W/2:S.L/2;
+    }
+    function sectionSegments(r, axis = 'A') {
+        const k = axis === 'A' ? 1 : 0, u = 1-k, plane = cutPlane(r,axis), eps=1e-7, out=[];
+        for (const o of scene3D(r)) {
+            if (['hatch','box'].includes(o.c)) continue;
+            const p=o.pts, closed=o.t==='face', hits=[];
+            for(let i=0;i<p.length-(closed?0:1);i++) {
+                const a=p[i], b=p[(i+1)%p.length], da=a[k]-plane, db=b[k]-plane;
+                if(Math.abs(da)<eps && Math.abs(db)<eps) out.push([[a[u],a[2]],[b[u],b[2]]]);
+                else if((da<=eps && db>=-eps)||(db<=eps && da>=-eps)) {
+                    const t=da/(da-db);
+                    if(t>=0 && t<=1 && Number.isFinite(t)) hits.push([a[u]+t*(b[u]-a[u]), a[2]+t*(b[2]-a[2])]);
+                }
+            }
+            if(closed && hits.length>=2) {
+                const unique=hits.filter((p,i)=>!hits.slice(0,i).some(q=>Math.hypot(p[0]-q[0],p[1]-q[1])<eps));
+                unique.sort((a,b)=>a[0]-b[0] || a[1]-b[1]);
+                for(let i=0;i+1<unique.length;i+=2) out.push([unique[i],unique[i+1]]);
+            }
+        }
+        return out.filter(([a,b])=>Math.hypot(a[0]-b[0],a[1]-b[1])>eps);
+    }
+    function cutSVG(r, axis='A', common=null) {
+        const segs=sectionSegments(r,axis), length=axis==='A'?S.L:S.W;
+        const pts=segs.flat(), lo=Math.min(common?.x0 ?? 0,...pts.map(p=>p[0])), hi=Math.max(common?.x1 ?? length,...pts.map(p=>p[0]));
+        const top=Math.max(common?.y1 ?? S.H,...pts.map(p=>p[1])), pad=(hi-lo)*0.08+1, width=hi-lo+pad*2, sw=width/650;
+        return `<svg viewBox="${lo-pad} ${-top-pad} ${width} ${top+2*pad}" role="img" aria-label="Section ${axis}–${axis} from modeled geometry"><rect class="s-box" x="0" y="${-S.H}" width="${length}" height="${S.H}" stroke-width="${sw}"/><line class="s-ground" x1="${lo-pad}" x2="${hi+pad}" y1="0" y2="0" stroke-width="${sw}"/>`+segs.map(([a,b])=>`<path d="M${a[0]},${-a[1]} L${b[0]},${-b[1]}" fill="none" stroke="#222" stroke-width="${sw}"/>`).join('')+`<text x="${length/2}" y="${pad*0.7}" text-anchor="middle" font-size="${width/45}">${axis}–${axis} · ${f1(length)} m clear ${axis==='A'?'width':'length'}</text></svg>`;
     }
     function sectionSVG(r, box, opts = {}) {
         const { big = false, ghost = null } = opts;
@@ -2892,7 +3005,7 @@
             for (let i = 0; i <= nx; i++) s += dot(L * i / nx, 0) + dot(L * i / nx, W);
             for (let j = 1; j < ny; j++) s += dot(0, W * j / ny) + dot(L, W * j / ny);
         } else if (pl.kind === 'folded') {
-            let k = 0; for (let y = 0; y <= W + 1e-6; y += pl.b, k++) { s += ln(0, y, L, y, sw * (k % 2 ? 0.7 : 1.4), '#111', k % 2 ? `${sw * 3} ${sw * 2}` : ''); if (k % 2 === 0) s += dot(0, y) + dot(L, y); }
+            for (let k = 0; k <= pl.n; k++) { const y = k * pl.b; s += ln(0, y, L, y, sw * (k % 2 ? 0.7 : 1.4), '#111', k % 2 ? `${sw * 3} ${sw * 2}` : ''); if (k % 2 === 0) s += dot(0, y) + dot(L, y); }
         } else if (pl.kind === 'barrel') {
             for (const y of ys(pl.b)) { s += ln(0, y, L, y, sw * 1.4); s += dot(0, y) + dot(L, y); }
             const yy = ys(pl.b); for (let i = 0; i < yy.length - 1; i++) s += ln(0, (yy[i] + yy[i + 1]) / 2, L, (yy[i] + yy[i + 1]) / 2, sw * 0.6, '#999', `${sw * 3} ${sw * 3}`);
@@ -2911,8 +3024,13 @@
         } else if (pl.kind === 'geo') {
             for (let k = 0; k < pl.n; k++) s += `<circle cx="${L / 2}" cy="${(k + 0.5) * W / pl.n}" r="${pl.R}" fill="rgba(0,0,0,0.03)" stroke="#111" stroke-width="${sw * 1.4}"/>`;
         } else if (pl.kind === 'walls') {
-            s += `<rect x="${-pl.bw}" y="0" width="${pl.bw}" height="${W}" fill="#111"/><rect x="${L}" y="0" width="${pl.bw}" height="${W}" fill="#111"/>`;
-            const yb = []; for (let y = 0; y <= W + 1e-6; y += W / Math.max(1, Math.ceil(W / pl.bay))) yb.push(y);
+            const yb = ysOf(W, pl.bay);
+            if (pl.mode === 'adjacent') {
+                const tb=Math.max(0.5,L/12);
+                for (const x of [-pl.bw,L]) for (const y of yb) s += `<rect x="${x}" y="${y-pl.bw/2}" width="${pl.bw}" height="${pl.bw}" fill="#111"/>`;
+                for (const x of [-L-2*pl.bw-tb,2*L+pl.bw]) s += `<rect x="${x}" y="0" width="${pl.bw+tb}" height="${W}" fill="#111"/>`;
+                for(const x of [-L-pl.bw,L+pl.bw]) s += `<rect x="${x}" y="0" width="${L}" height="${W}" fill="none" stroke="#777" stroke-width="${sw}"/>`;
+            } else s += `<rect x="${-pl.bw}" y="0" width="${pl.bw}" height="${W}" fill="#111"/><rect x="${L}" y="0" width="${pl.bw}" height="${W}" fill="#111"/>`;
             if (pl.mode === 'buttress') for (const y of yb) s += `<rect x="${-pl.bw - pl.bd}" y="${y - 0.4}" width="${pl.bd}" height="0.8" fill="#111"/><rect x="${L + pl.bw}" y="${y - 0.4}" width="${pl.bd}" height="0.8" fill="#111"/>`;
             if (pl.mode === 'tie') for (const y of yb) s += ln(0, y, L, y, sw, '#c62828', `${sw * 3} ${sw * 2}`);
             if (pl.door) for (const x of [-pl.bw, L]) s += `<rect x="${x - 0.05}" y="${pl.door.y - pl.door.w / 2}" width="${pl.bw + 0.1}" height="${pl.door.w}" fill="#fff"/>`;   // the doors
@@ -2925,6 +3043,7 @@
             s += `<circle cx="${L / 2}" cy="${Math.min(W, L) / 2}" r="${L / 2}" fill="rgba(0,0,0,0.04)" stroke="#111" stroke-width="${sw * 1.6}"/>`;
             for (let i = 0; i < n; i++) { const a = 2 * Math.PI * i / n; s += dot(L / 2 + L / 2 * Math.cos(a), Math.min(W, L) / 2 + L / 2 * Math.sin(a)); }
         }
+        s += `<g stroke="#1565c0" stroke-width="${sw}" stroke-dasharray="${sw*5} ${sw*3}"><line x1="0" y1="${cutPlane(r,'A')}" x2="${L}" y2="${cutPlane(r,'A')}"/><line x1="${L/2}" y1="0" x2="${L/2}" y2="${W}"/></g><g fill="#1565c0" font-size="${Math.max(vw,vh)/35}"><text x="0" y="${cutPlane(r,'A')}">A</text><text x="${L}" y="${cutPlane(r,'A')}">A</text><text x="${L/2}" y="0">B</text><text x="${L/2}" y="${W}">B</text></g>`;
         s += `<text x="${L / 2}" y="${W + pad * 0.8}" font-size="${Math.max(vw, vh) / 30}" text-anchor="middle" fill="#888" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">${f1(L)} × ${f1(W)} m</text>`;
         return s + '</svg>';
     }
@@ -3032,14 +3151,15 @@
             }
             for (const y of ysb) { add('line', [[0, y, H], [L, y, H]], 'member'); for (const x of [0, L]) box3(add, x - 0.15, x + 0.15, y - 0.15, y + 0.15, 0, H); }
         } else if (sys === 'folded') {
-            const h = r.zone, b = pl.b, ny = Math.max(2, Math.round(W / b / 2) * 2), bb = W / ny;
+            const h = r.zone, b = pl.b, ny = pl.n, bb = pl.b;
             const zig = []; for (let k = 0; k <= ny; k++) zig.push([k * bb, k % 2 ? H + h : H]);
             for (let k = 0; k < ny; k++) {
                 const [ya, za] = zig[k], [yb, zb] = zig[k + 1];
                 add('face', [[0, ya, za], [L, ya, za], [L, yb, zb], [0, yb, zb]], k % 2 ? 'fold2' : 'fold1');
             }
             for (const x of [0, L]) for (let k = 0; k < ny; k += 2) add('face', [[x, zig[k][0], H], [x, zig[k + 1][0], H + h], [x, zig[k + 2][0], H]], 'solid');
-            for (let k = 0; k <= ny; k += 2) for (const x of [0, L]) box3(add, x - 0.15, x + 0.15, zig[k][0] - 0.15, zig[k][0] + 0.15, 0, H);
+            for (const y of [0,W]) add('line', [[0,y,H],[L,y,H]], 'member');
+            for (let k = 0; k <= ny; k += 2) for (const x of [0, L]) box3(add, x - pl.c/2, x + pl.c/2, zig[k][0] - pl.c/2, zig[k][0] + pl.c/2, 0, H);
         } else if (sys === 'pneu') {
             const chain = resample(r.roof.filter(p => p[1] >= 0), 18), cx = L / 2, g = pl.g;
             const yA = Math.min(g, W / 2), yB = Math.max(W - g, W / 2), nφ = 6;
@@ -3114,13 +3234,18 @@
             const shell = (dx, mode) => {
                 const nyv = Math.max(1, Math.round(W / 3));
                 for (let i = 0; i < inner.length - 1; i++) for (let j = 0; j < nyv; j++) {
-                    const [xa, za] = inner[i], [xb, zb] = inner[i + 1], ya = W * j / nyv, yb = W * (j + 1) / nyv;
-                    add('face', [[xa + dx, ya, za + t], [xb + dx, ya, zb + t], [xb + dx, yb, zb + t], [xa + dx, yb, za + t]], mode);
+                    const [xa, za] = V.outer[i], [xb, zb] = V.outer[i + 1], ya = W * j / nyv, yb = W * (j + 1) / nyv;
+                    add('face', [[xa + dx, ya, za], [xb + dx, ya, zb], [xb + dx, yb, zb], [xa + dx, yb, za]], mode);
+                    const A = inner[i], B = inner[i + 1];
+                    add('face', [[A[0]+dx,ya,A[1]], [B[0]+dx,ya,B[1]], [B[0]+dx,yb,B[1]], [A[0]+dx,yb,A[1]]], mode);
                 }
-                for (const ye of [0, W]) add('face', [...inner.map(([x, z]) => [x + dx, ye, z]), ...inner.slice().reverse().map(([x, z]) => [x + dx, ye, z + t])], 'solid');
+                for (const ye of [0, W]) add('face', [...inner.map(([x, z]) => [x + dx, ye, z]), ...V.outer.slice().reverse().map(([x, z]) => [x + dx, ye, z])], 'solid');
             };
             if (V.mode === 'adjacent') {
-                for (const dx of [-L - tw, L + tw]) shell(dx, 'membrane');
+                for (const dx of [-L - tw, L + tw]) shell(dx, 'shellx');
+                const tb = Math.max(0.5, L / 12);
+                box3(add, -L-2*tw-tb, -L-tw, 0, W, 0, H+t);
+                box3(add, 2*L+tw, 2*L+2*tw+tb, 0, W, 0, H+t);
                 for (const xw of [-tw, L]) for (let k = 0; k < ys.length; k++) box3(add, xw, xw + tw, ys[k] - tw / 2, ys[k] + tw / 2, 0, H);
                 for (const xw of [-tw, L]) box3(add, xw, xw + tw, 0, W, H - 0.4, H + t);
             } else {
@@ -3149,6 +3274,19 @@
                 for (const [x, z] of resample(chain, n)) add('line', [[x, 0, z], [x, W, z]], 'thin');
             }
             if (sys === 'cable') for (const y of ys) for (const x of [-(r.foot[1] - L - 0.6), L + (r.foot[1] - L - 0.6)]) box3(add, x - 0.5, x + 0.5, y - 0.5, y + 0.5, -0.1, 0.3, 'solid');
+        }
+        if (['tarch','folded'].includes(sys)) {
+            const ys = sys==='folded' ? Array.from({length:pl.n/2+1},(_,i)=>2*i*pl.b) : ysOf(W,pl.s);
+            const c = sys==='folded'?pl.c:colW(r.m,H), xs = sys==='folded'?[0,L]:[-c/2,L+c/2];
+            const bays = [...new Set([0,ys.length-2])];
+            // Proposed side-plane X bracing and eave collectors. It is not a designed connection system.
+            for(const x of xs) {
+                add('line',[[x,0,H],[x,W,H]],'member');
+                for(const k of bays) {
+                    add('line',[[x,ys[k],0],[x,ys[k+1],H]],'tie');
+                    add('line',[[x,ys[k],H],[x,ys[k+1],0]],'tie');
+                }
+            }
         }
         return it;
     }
@@ -3367,8 +3505,9 @@
     const AXO = { rot: 38, elev: 32 };
     S.view = '3d'; S.rot = AXO.rot; S.elev = AXO.elev;
     let slots = ['truss', 'portal', 'tarch', 'vault', 'barrel'], selType = null, metric = 'span', RES = [], modalId = null;
+    let suggestionNotice = '';
     let basis = null;   // what the last Suggest picked, and by which criteria
-    // up to three criteria: each ranks all systems (ties share the average rank); the ranks, scaled 0–1, are weighted 50/30/20
+    // up to three criteria: each ranks matching options (ties share the average rank); the ranks, scaled 0–1, are weighted 50/30/20
     // by the order the criteria were chosen in (renormalised when fewer are chosen); lower score = better
     let crit2 = '', crit3 = '';
     const WEIGHT = [0.5, 0.3, 0.2], critList = () => [...new Set([metric, crit2, crit3].filter(Boolean))];
@@ -3377,7 +3516,7 @@
     function mixScore() {
         const cl = critList(), key = resKey + '|' + cl.join() + '|' + CEIL.size;
         if (mixCache.key === key) return mixCache.map;
-        const all = resAll(), N = all.length, w = critW(), map = new Map(all.map(r => [r.sys.id, 0]));
+        const all = resAll().filter(eligible), N = all.length, w = critW(), map = new Map(all.map(r => [r.sys.id, 0]));
         cl.forEach((c, k) => {
             const vals = all.map(r => [r.sys.id, MEASURE[c].v(r)]).sort((a, b) => a[1] - b[1]);
             for (let i = 0; i < N;) { let j = i; while (j + 1 < N && vals[j + 1][1] === vals[i][1]) j++; const rk = (i + j) / 2 / Math.max(1, N - 1);
@@ -3385,13 +3524,13 @@
         });
         return (mixCache = { key, map }).map;
     }
-    const MIX = { v: r => mixScore().get(r.sys.id), show: r => 100 * (1 - mixScore().get(r.sys.id)), fmt: v => Math.round(v) };
+    const MIX = { v: r => mixScore().get(r.sys.id) ?? Infinity, show: r => eligible(r) ? 100 * (1 - mixScore().get(r.sys.id)) : null, fmt: v => v == null ? 'not scored' : Math.round(v) };
     const needCeil = () => critList().some(c => CEILM.includes(c));
-    const critName = c => { const o = [...$('metric').options].find(o_ => o_.value === c); return o ? o.text.replace(/ \(.*\)/, '') : c; };
-    const SORTROW = { span: 'Engel span', zone: 'zone', top: 'top', footW: 'footW', eff: 'eff', cols: 'cols', q: 'q', calm: 'calm', busy: 'calm' };
+    const critName = c => { const o = [...$('metric').options].find(o_ => o_.value === c); return o ? o.text.replace(/ \((?:m|%|kN\/m²)\)/, '') : c; };
+    const SORTROW = { span: 'Reference span', zone: 'zone', top: 'top', footW: 'footW', eff: 'eff', cols: 'cols', q: 'q', calm: 'calm', busy: 'calm' };
     // the three sections fold away when not in use; each viewer's choice is kept in this browser, and a folded section is not drawn
     const FOLD_KEY = 'space-first-folded'; let folded = {};
-    const FOLD0 = { tree: true, cmp: true, rank: true };   // first visit: all three folded
+    const FOLD0 = { tree: true, cmp: false, rank: true };   // show the comparison on first visit
     try { folded = JSON.parse(localStorage.getItem(FOLD_KEY)) || { ...FOLD0 }; } catch (_) { folded = { ...FOLD0 }; }
     function applyFold() {
         document.querySelectorAll('.fsec').forEach(sec => { const f = !!folded[sec.dataset.sec]; sec.classList.toggle('folded', f); const b = sec.querySelector('.fold'); if (b) { b.setAttribute('aria-expanded', String(!f)); b.title = f ? 'Show' : 'Hide'; } });
@@ -3413,7 +3552,7 @@
 
     // one definition of every measure: the table rows, the ranking and "Suggest five" all use it
     const MEASURE = {
-        span:  { v: r => RANKST[r.st] * 1000 + r.zone, fmt: () => '' },
+        span:  { v: r => RANKST[r.st], fmt: () => '' },
         zone:  { v: r => r.zone, fmt: v => f2(v) },
         top:   { v: r => r.top, fmt: v => f2(v) },
         footW: { v: r => r.footW, fmt: v => f1(v) },
@@ -3499,15 +3638,20 @@
         return say(`Glulam GL28h ${/^(portal|f_|mf_)/.test(id) ? 'frames' : 'beams'}, ${secTxt(x, 'about')} for M = ${Math.round(M)} kNm (${k === 1 / 90 ? 'continuous over the two cable posts, spans of L/3' : k === 1 / 2 ? 'cantilever' : k === 1 / 10 ? 'continuous or framed' : k === 1 / 16 ? 'two-way grid' : 'simple span'}, every ${f1_(s)} m).${extra}`, [TIMBER_SRC.glulam]);
     }
     const ROWS = [
-        { t: 'Engel span', tip: 'Where your span sits in Engel’s range for this system and material', f: r => { const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(v) - Math.log(3)) / (Math.log(500) - Math.log(3)); return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini"><span class="lim" style="left:${X(sp.lim[0])}%;width:${X(sp.lim[1]) - X(sp.lim[0])}%"></span>${sp.typ.map(([a, b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6, X(b) - X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${r.spanUsed ? (r.spanLabel || `needs Ø${f1(r.spanUsed)} m`) + ' · ' : ''}${sp.lim[0]}–${sp.lim[1]} m · usual ${sp.typ.map(t => t.join('–')).join(', ')}${r.sys.spanSrc ? ' · rule of thumb, not in Engel' : ''}${r.sys.spanNote ? ' · ' + r.sys.spanNote : ''}</small>`; } },
-        { t: 'Structure zone', tip: 'Height given to structure above the clear height', k: 'zone', f: r => f2(r.zone) + ' m', sub: r => r.sys.rule[r.m] },
-        { t: 'Total height', tip: 'Ground to the highest point', k: 'top', f: r => f2(r.top) + ' m' },
-        { t: 'Footprint', tip: 'Ground width the system needs, incl. arch feet, anchors, walls', k: 'footW', f: r => f1(r.footW) + ' m', sub: r => r.footW > S.L + 1 ? `${f1(r.footW - S.L)} m beyond the space` : '' },
-        { t: 'Space efficiency', tip: 'Clear section L×H ÷ the whole enclosed section', k: 'eff', f: r => Math.round(r.eff * 100) + '%', barv: r => r.eff },
-        { t: 'Ceiling from below', tip: 'Length of structure seen from below, per m² of floor — low is a calm ceiling, high a busy one. Parts stacked above each other count once. Our reading of Moussavi, measured from the geometry', k: 'calm', f: r => { const c = ceilOf(r); return c ? f2(c.dens) + ' m/m²' : '<span class="cwait">…</span>'; }, sub: r => { const c = CEIL.get(r.sys.id); return !c ? '' : c.dens < 0.02 ? 'a smooth surface' : `like one line every ${f1(1 / c.dens)} m`; } },
-        { t: 'Columns', tip: 'Count for the whole hall', k: 'cols', f: r => r.cols || '—', sub: r => r.colNote },
-        { t: 'Roof load', tip: 'Automatic: own weight + covering + services + Thai live load', k: 'q', f: r => f2(r.load.q) + ' kN/m²', sub: r => `own ${f2(r.load.own)} + ${r.load.finName} ${f2(r.load.fin)} + services ${f2(r.load.svc)} + live ${f2(r.load.live)}` },
-        { t: 'Thrust / tie', tip: 'Horizontal force that a tie, walls, anchors or a ring must take', f: r => r.thrust == null ? '—' : Math.round(r.thrust) + (r.thrustPerArch || r.thrustIsRing ? ' kN' : ' kN/m'), sub: r => r.thrust == null ? '' : r.thrustNote, sub2: r => r.thrust == null ? '' : (r.thrustSrc || THRUST_SRC[r.sys.id]) ? 'Source: ' + (r.thrustSrc || THRUST_SRC[r.sys.id]) : '' },
+        { t: 'Interior supports', tip: 'Support axes strictly inside the requested plan; boundary/outside supports excluded. Not a full clearance check.', f: r => `<span class="eligibility ${r.columnFree ? '' : 'fail'}">${r.columnFree ? 'None in modeled plan' : `${r.interior} interior supports${r.internalWalls ? ' + wall / pier intrusion' : ''} — fails column-free brief`}</span>`, sub2: () => 'Basis: modeled support locations; author screening check' },
+        { t: 'Reference span', tip: 'Historical reference intervals, not a structural capacity or clearance check', f: r => {
+            const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(Math.max(3, v)) - Math.log(3)) / (Math.log(500) - Math.log(3));
+            return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini">${rangesOf(sp).map(([a,b]) => `<span class="lim" style="left:${X(a)}%;width:${X(b)-X(a)}%"></span>`).join('')}${sp.typ.map(([a,b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6,X(b)-X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${r.spanUsed ? (r.spanLabel || `uses Ø${f1(r.spanUsed)} m`) + ' · ' : ''}${rangeText(rangesOf(sp))} m · usual ${rangeText(sp.typ)}</small>`;
+        }, sub2: r => spanSource(r.sys) },
+        { t: 'Structure zone', tip: 'Height given to structure above the clear height', k: 'zone', f: r => '≈ ' + f2(r.zone) + ' m', sub: r => r.sys.rule[r.m], sub2: r => 'Author sizing assumption' + (['grid', 'space', 'st_tetra'].includes(r.sys.id) ? '; √(2α) extends Engel p.200’s crossing-beam example' : '; source example where named, proportions selected for this model') },
+        { t: 'Total height', tip: 'Ground to the highest point', k: 'top', f: r => '≈ ' + f2(r.top) + ' m', sub2: () => 'Derived from assumed geometry' },
+        { t: 'Overall footprint width', tip: 'Ground width the system needs, incl. arch feet, anchors, walls', k: 'footW', f: r => '≈ ' + f1(r.footW) + ' m', sub: r => r.footW > S.L + 1 ? `${f1(r.footW - S.L)} m beyond the space` : '' },
+        { t: 'Clear-section ratio', tip: 'Clear section L×H ÷ the whole enclosed section', k: 'eff', f: r => '≈ ' + Math.round(r.eff * 100) + '%', barv: r => r.eff, sub2: () => 'Author metric: L×H / modeled enclosing section area; not floor-area efficiency' },
+        { t: 'Visible line density', tip: 'Projected visible structural line length per m² of floor; overlapping parts count once. Geometric proxy, not visual calmness', k: 'calm', f: r => { const c = ceilOf(r); return c ? '≈ ' + f2(c.dens) + ' m/m²' : '<span class="cwait">…</span>'; }, sub: r => { const c = CEIL.get(r.sys.id); return !c ? '' : c.dens < 0.02 ? 'very few modeled lines' : `like one line every ${f1(1 / c.dens)} m`; } },
+        { t: 'Support load path', f: r => esc(supportScheme(r)[0]), sub: r => supportScheme(r)[1], sub2: r => supportScheme(r)[2] },
+        { t: 'Reported supports', tip: 'Total reported by the model, including boundary/outside supports; walls and integrated legs differ by system. See notes.', k: 'cols', f: r => String(r.cols), sub: r => r.colNote, sub2: r => `${r.interior} interior; ${Math.max(0, r.cols - r.interior)} other reported supports. Dimensions are schematic, not designed column sizes. Continuous walls / footings described above.` },
+        { t: 'Roof load', tip: 'Automatic: own weight + covering + services + Thai live load', k: 'q', f: r => '≈ ' + f2(r.load.q) + ' kN/m²', sub: r => `own ${f2(r.load.own)} + ${r.load.finName} ${f2(r.load.fin)} + services ${f2(r.load.svc)} + live ${f2(r.load.live)}`, sub2: () => 'Author weight estimates + separate live-load assumptions; see Sources and limits' },
+        { t: 'Thrust / tie', tip: 'Horizontal force that a tie, walls, anchors or a ring must take', f: r => r.thrust == null ? '—' : '≈ ' + Math.round(r.thrust) + (r.thrustPerArch || r.thrustIsRing ? ' kN' : ' kN/m'), sub: r => r.thrust == null ? '' : r.thrustNote, sub2: r => r.thrust == null ? '' : (r.thrustSrc || THRUST_SRC[r.sys.id]) ? 'Source: ' + (r.thrustSrc || THRUST_SRC[r.sys.id]) : 'Author statics approximation; not an Engel sizing formula' },
         { t: 'Why', tip: '', f: r => { const tn = timberNote(r), cn = coverNote(r); return `<div class="why">${esc(r.notes[0])}</div>` + (tn ? `<div class="why tim"><b>Timber:</b> ${esc(tn.t)}<small title="${esc(tn.src)}">Sources: ${esc(tn.src)}</small></div>` : '') + (cn ? `<div class="why tim"><b>Covering:</b> ${esc(cn.t)}<small title="${esc(cn.src)}">Sources: ${esc(cn.src)}</small></div>` : ''); } }
     ];
 
@@ -3518,6 +3662,7 @@
         PR = projector();
         const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, JSON.stringify(S.tm), S.q]);
         if (k === resKey) return;
+        suggestionNotice = '';
         resKey = k; EV = new Map(); RES = []; clearTimeout(restJob); DRAW.clear(); asked.clear(); CEIL.clear(); askedC.clear(); drawJob++;
         let i = 0; const key = k;
         const step = () => { if (key !== resKey) return; const t0 = performance.now(); while (i < SYS.length && performance.now() - t0 < 8) byId(SYS[i++].id);
@@ -3526,7 +3671,7 @@
     }
     function resAll() { if (RES.length !== SYS.length) RES = SYS.map(s_ => byId(s_.id)); return RES; }
     const byId = id => { let r = EV.get(id); if (!r) { const sys = SYS.find(s_ => s_.id === id); if (!sys) return undefined; r = evaluate(sys); EV.set(id, r); } return r; };
-    const matOk = r => r.sys.mats.includes(S.mat);
+    const matOk = r => materialMatches(r.sys);
     // F: axonometric drawings are made in a background worker built from the engine script itself — it evaluates, projects,
     // orders and writes the paths, and sends back only text; the page places it. Without workers everything is drawn here.
     const DRAW = new Map(), asked = new Set(); let drawJob = 0;
@@ -3571,7 +3716,7 @@
     function drawingOf(r, sel, view) {
         if (view === '3d') { const ids = sel.map(x => x.sys.id); wantDraw(ids); return ids.every(id => DRAW.has(id)) ? axoFrame(DRAW.get(r.sys.id).body, unionBox(ids)) : '<div class="wait"></div>'; }
         if (view === 'plan') return planSVG(r);
-        return sectionSVG(r, frameBox(sel));
+        return cutSVG(r, 'A', frameBox(sel));
     }
 
     function render(light = false) {   // light: while turning, only the compared drawings and the enlarged view are redrawn
@@ -3580,19 +3725,19 @@
         const g = $('grid'); g.style.setProperty('--n', sel.length + (more ? 1 : 0));
         const opts = r => [...Object.keys(TREE), ''].map(t => { const ss = SYS.filter(s => s.type === t); return ss.length ? `<optgroup label="${t ? t + ' ' + TREE[t][0] : '6 Hybrid'}">${ss.map(s => `<option value="${s.id}" ${s.id === r.sys.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</optgroup>` : ''; }).join('');
         const pad = more ? '<div></div>' : '';
-        let h = `<div class="rh"></div>` + sel.map((r, i) => `<div class="slot-h"><span class="k">${r.sys.fam} ${FAM[r.sys.fam]}</span><select data-i="${i}" title="Change system">${opts(r)}</select><span class="sub">${r.sys.code} · ${MATNAME[r.m]}</span>${matOk(r) ? '' : `<span class="nomat">not built in ${S.mat} — shown in ${MATNAME[r.m]} (Engel: ${r.sys.mats.map(x => MATNAME[x]).join(', ')} only)</span>`}${sel.length > 1 ? `<button class="x" data-rm="${i}">remove</button>` : ''}</div>`).join('') + (more ? `<div class="addslot" id="add">+ add</div>` : '');
-        const viewName = S.view === 'plan' ? 'Plan' : S.view === '3d' ? 'Axonometric' : 'Section';
-        h += `<div class="rh k" title="All drawn at one scale">${viewName}</div>` + sel.map(r => `<div class="draw ${S.view === '3d' ? 'orbit' : ''} ${matOk(r) ? '' : 'alt'}" style="--dh:230px" data-open="${r.sys.id}">${drawingOf(r, sel, S.view)}</div>`).join('') + pad;
+        let h = `<div class="rh"></div>` + sel.map((r, i) => `<div class="slot-h"><span class="k">${r.sys.fam} ${FAM[r.sys.fam]}</span><select data-i="${i}" title="Change system">${opts(r)}</select><span class="sub">Engel ref. ${codeLabel(r.sys)} · ${materialLabel(r.sys, r.m)}</span><span class="sub">Parametric adaptation</span>${matOk(r) ? '' : `<span class="nomat">not a match for the selected material — shown as ${materialLabel(r.sys, r.m)}</span>`}${sel.length > 1 ? `<button class="x" data-rm="${i}">remove</button>` : ''}</div>`).join('') + (more ? `<div class="addslot" id="add">+ add</div>` : '');
+        const viewName = S.view === 'plan' ? 'Plan' : S.view === '3d' ? 'Axonometric' : 'Section A–A';
+        h += `<div class="rh k" title="All drawn at one scale">${viewName}</div>` + sel.map(r => `<div class="draw ${S.view === '3d' ? 'orbit' : ''} ${eligible(r) ? '' : 'alt'}" style="--dh:230px" data-open="${r.sys.id}">${drawingOf(r, sel, S.view)}</div>`).join('') + pad;
         for (const row of ROWS) {
-            const M = row.k && MEASURE[row.k], vals = M ? sel.map(M.v) : null, best = vals ? Math.min(...vals) : null;
+            const M = row.k && MEASURE[row.k === 'calm' && critList().find(c => CEILM.includes(c)) === 'busy' ? 'busy' : row.k], vals = M ? sel.map(M.v) : null, best = vals ? Math.min(...vals) : null;
             const bv = M ? sel.map(row.barv || M.v) : null, mx = bv ? Math.max(...bv.map(Math.abs), 1e-9) : 1;
-            const okv = vals ? vals.filter((v, i) => matOk(sel[i])) : [], bestOk = okv.length ? Math.min(...okv) : null;
-            const mark = i => M && sel.length > 1 && matOk(sel[i]) && vals[i] === bestOk && vals.some(v => v !== bestOk);
+            const okv = vals ? vals.filter((v, i) => eligible(sel[i])) : [], bestOk = okv.length ? Math.min(...okv) : null;
+            const mark = i => M && sel.length > 1 && eligible(sel[i]) && vals[i] === bestOk && vals.some(v => v !== bestOk);
             const ci = critList().findIndex(c => SORTROW[c] === (row.k || row.t)), on = ci >= 0 ? 'sorted' : '';   // ข: the rows of the criteria
-            const lab = ci < 0 ? '' : critList().length > 1 ? `criterion ${ci + 1} · ${Math.round(critW()[ci] * 100)}%` : 'sorted by';
+            const lab = ci < 0 ? '' : critList().length > 1 ? `criterion ${ci + 1} · ${Number((critW()[ci] * 100).toFixed(1))}%` : 'sorted by';
             h += `<div class="rh k ${on}" data-lab="${lab}" title="${esc(row.tip)}">${row.t}</div>` + sel.map((r, i) => {
                 const sub = row.sub ? row.sub(r) : '', sub2 = row.sub2 ? row.sub2(r) : '';
-                return `<div class="cell ${on} ${mark(i) ? 'best' : ''} ${matOk(r) ? '' : 'alt'}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}${sub2 ? `<small class="src" title="${esc(sub2)}">${esc(sub2)}</small>` : ''}</div>`;
+                return `<div class="cell ${on} ${mark(i) ? 'best' : ''} ${eligible(r) ? '' : 'alt'}"><span class="v">${row.f(r)}</span>${M ? `<div class="b"><i style="width:${Math.round(100 * Math.abs(bv[i]) / mx)}%"></i></div>` : ''}${sub ? `<small title="${esc(sub)}">${esc(sub)}</small>` : ''}${sub2 ? `<small class="src" title="${esc(sub2)}">${esc(sub2)}</small>` : ''}</div>`;
             }).join('') + pad;
         }
         if (!folded.cmp) g.innerHTML = h;
@@ -3604,8 +3749,10 @@
         if (!$('metric2').options.length) { $('metric2').innerHTML = $('metric').innerHTML; for (const k of ['crit2', 'crit3']) $(k).innerHTML = '<option value="">—</option>' + $('metric').innerHTML; }
         $('metric').value = $('metric2').value = metric; $('crit2').value = crit2; $('crit3').value = crit3;
         // ง: say whether the five on the table are still the ones this criterion picked
-        const cl = critList(), mName = cl.map(critName).join(', then '), own = !(basis && basis.crit === cl.join() && basis.slots.join() === slots.join());
-        $('cmpBasis').textContent = own ? (basis ? 'your own selection — changed after the suggestion' : 'your own selection') : `the best five by ${mName}${cl.length > 1 ? ` (weighted ${critW().map(w => Math.round(w * 100)).join('/')})` : ''}, of ${SYS.length}`;
+        const cl = critList(), mName = cl.map(critName).join(', then '), own = !(basis && basis.key === resKey && basis.crit === cl.join() && basis.slots.join() === slots.join());
+        $('cmpBasis').textContent = own ? (basis ? 'your own selection — changed after the suggestion' : 'your own selection') : `top ${slots.length} matching options by ${mName}${cl.length > 1 ? ` (weighted ${critW().map(w => (w * 100).toFixed(1)).join('/')})` : ''}`;
+        $('suggestNotice').textContent = suggestionNotice;
+        $('rankingMethod').textContent = rankingExplanation();
         $('cmpBasis').classList.toggle('own', own && !!basis);
         applyFold();
         if (!light) { drawTree(); if (RES.length === SYS.length) drawRank(); }
@@ -3630,7 +3777,7 @@
                 const [name, subs, why] = TREE[t], mods = SYS.filter(s_ => s_.type === t);
                 let nv = 0; for (const st in subs) nv += Math.max(1, subs[st][1].filter(Boolean).length);
                 h += `<div class="tcard ${t === selType ? 'on' : ''} ${why ? 'out' : ''}" data-type="${t}" title="${esc(why || '')}"><div class="tn"><span class="code">${t}</span>${esc(name)}</div>` +
-                     (mods.length ? `<div class="dr" data-lazy="${mods[0].id}"></div>` : `<div class="dr none">${why ? 'outside a hall' : 'no model yet'}</div>`) +
+                     (mods.length ? `<div class="dr" data-lazy="${mods[0].id}"></div>` : `<div class="dr none">${why ? 'reference only / not modeled' : 'no model yet'}</div>`) +
                      `<div class="cnt">${Object.keys(subs).length} subtypes · ${mods.length} of ${nv} variants drawn</div></div>`;
             }
             if (selType && selType[0] === String(f)) h += variantPanel(selType);
@@ -3651,7 +3798,7 @@
             vars.forEach((v, k) => {
                 if (!v) return;
                 const id = mm && mm[k + 1], r = id && byId(id);
-                if (r) h += `<div class="vi mod ${slots.includes(id) ? 'in' : ''}" data-add="${id}"><span class="n">${k + 1}</span><span><div class="vd" data-lazy="${id}"></div><span class="nm">${esc(v)}<small>${st}.${k + 1} · ${CHIP[r.st]}${slots.includes(id) ? ' · in comparison' : ' · click to compare'}</small></span></span></div>`;
+                if (r) h += `<div class="vi mod ${slots.includes(id) ? 'in' : ''}" data-add="${id}"><span class="n">${k + 1}</span><span><div class="vd" data-lazy="${id}"></div><span class="nm">${esc(v)}<small>${codeLabel(r.sys)} · ${CHIP[r.st]}${r.columnFree ? '' : ' · interior supports'}${slots.includes(id) ? ' · in comparison' : ' · click to compare'}</small></span></span></div>`;
                 else h += `<div class="vi nomod"><span class="n">${k + 1}</span><span class="nm">${esc(v)}<small>${st}.${k + 1} · no model yet</small></span></div>`;
             });
             h += '</div>';
@@ -3674,7 +3821,14 @@
         document.querySelectorAll('#presets button').forEach(b => { const p = PRESETS[+b.dataset.p]; b.classList.toggle('on', p.L === S.L && p.W === S.W && p.H === S.H); });
     }
 
-    const sortByMetric = list => { const M = critList().length > 1 ? MIX : MEASURE[metric]; return list.slice().sort((a, b) => M.v(a) - M.v(b) || RANKST[a.st] - RANKST[b.st]); };
+    const sortByMetric = list => { const M = critList().length > 1 ? MIX : MEASURE[metric]; return list.slice().sort((a, b) => Number(eligible(b)) - Number(eligible(a)) || M.v(a) - M.v(b) || a.sys.name.localeCompare(b.sys.name, 'en')); };
+    function rankingExplanation() {
+        const cl = critList();
+        return 'Author comparison method. Suggestions and combined scores use only matching options; other rows are reference only. ' + (cl.length > 1
+            ? `Score = 100 × (1 − weighted normalized rank), higher first. Weights: ${cl.map((c, i) => `${critName(c)} ${(critW()[i] * 100).toFixed(1)}%`).join(' / ')}. Ties share their average rank; scores change with the matching set.`
+            : metric === 'span' ? 'Reference span ranks usual, then within interval, then outside. Equal statuses remain tied; alphabetical display order. No depth tie-break.'
+            : 'Sorted by the displayed measure; equal values remain tied, with alphabetical display order.') + ' Visible line density describes geometry, not visual calmness.';
+    }
     function drawRank() {
         if (RES.length !== SYS.length || folded.rank) return;   // drawn once every system is built, and only when open
         if (needCeil() && !allCeil()) { wantCeil(SYS.map(s_ => s_.id)); $('rankNote').textContent = 'measuring the ceilings of all systems…'; return; }
@@ -3688,23 +3842,24 @@
             for (const t of [3, 5, 10, 20, 30, 50, 100, 200, 500]) s += `<line x1="${X(t)}" x2="${X(t)}" y1="${top - 6}" y2="${H}" stroke="#e6e6e6"/><text x="${X(t)}" y="${top - 10}" font-size="9" fill="#aaa" text-anchor="middle" ${F}>${t} m</text>`;
             rows.forEach((r, i) => {
                 const y = top + i * rowH + rowH / 2, sp = r.sys.spans[r.m];
-                s += row(r, y, W) + (r.spanUsed ? `<circle cx="${X(r.spanUsed)}" cy="${y}" r="3.2" fill="none" stroke="#c62828"/>` : '') + `<line x1="${X(sp.lim[0])}" x2="${X(sp.lim[1])}" y1="${y}" y2="${y}" stroke="${r.st === 'out' ? '#bbb' : '#111'}"/>` + sp.typ.map(([a, b]) => `<rect x="${X(a)}" y="${y - 1.5}" width="${Math.max(2, X(b) - X(a))}" height="3" fill="${r.st === 'out' ? '#bbb' : '#111'}"/>`).join('') + '</g>';
+                s += row(r, y, W) + (r.spanUsed ? `<circle cx="${X(r.spanUsed)}" cy="${y}" r="3.2" fill="none" stroke="#c62828"/>` : '') + rangesOf(sp).map(([a, b]) => `<line x1="${X(a)}" x2="${X(b)}" y1="${y}" y2="${y}" stroke="${eligible(r) ? '#111' : '#bbb'}"/>`).join('') + sp.typ.map(([a, b]) => `<rect x="${X(a)}" y="${y - 1.5}" width="${Math.max(2, X(b) - X(a))}" height="3" fill="${eligible(r) ? '#111' : '#bbb'}"/>`).join('') + '</g>';
             });
             s += `<line x1="${X(S.L)}" x2="${X(S.L)}" y1="${top - 4}" y2="${H}" stroke="#c62828"/>`;
-            $('rankNote').textContent = 'line = possible, bar = usual, red = your span, red circle = the larger span a system itself needs (arch feet, enclosing circle) · pp. 62, 138, 176, 216 · click a row to add or remove it';
+            $('rankNote').textContent = 'separate lines = reference intervals (gaps preserved), bar = usual, red = requested span, red circle = the larger span a system itself needs (arch feet, enclosing circle) · pp. 62, 138, 176, 216 · click a row to add or remove it';
         } else {
-            const M = multi ? MIX : MEASURE[metric], show = M.show || M.v, mx = multi ? 100 : Math.max(...rows.map(show)) * 1.08 || 1, X = v => lab + (W - lab - 60) * v / mx;
+            const M = multi ? MIX : MEASURE[metric], show = M.show || M.v, mx = multi ? 100 : Math.max(...rows.map(show).filter(v => v != null)) * 1.08 || 1, X = v => lab + (W - lab - 60) * v / mx;
             for (let t = 0; t <= 4; t++) { const v = mx * t / 4; s += `<line x1="${X(v)}" x2="${X(v)}" y1="${top - 4}" y2="${H}" stroke="#e6e6e6"/><text x="${X(v)}" y="${top - 8}" font-size="9" fill="#aaa" text-anchor="middle" ${F}>${M.fmt(v)}</text>`; }
             rows.forEach((r, i) => {
-                const y = top + i * rowH + rowH / 2, v = show(r), c = r.st === 'out' ? '#bbb' : '#111';
+                const y = top + i * rowH + rowH / 2, v = show(r), c = eligible(r) ? '#111' : '#bbb';
+                if (multi && !eligible(r)) { s += row(r, y, W) + `<text x="${lab}" y="${y + 3.5}" font-size="10" fill="#777">not scored</text></g>`; return; }
                 s += row(r, y, W) + `<line x1="${X(0)}" x2="${X(v)}" y1="${y}" y2="${y}" stroke="#ddd"/><circle cx="${X(v)}" cy="${y}" r="3.5" fill="${r.st === 'typ' ? c : '#fff'}" stroke="${c}"/><text x="${X(v) + 8}" y="${y + 3.5}" font-size="10" fill="#777" ${F}>${M.fmt(v)}</text></g>`;
             });
-            $('rankNote').textContent = (multi ? `combined score 0–100: ${critList().map((c, k) => `${critName(c)} ${Math.round(critW()[k] * 100)}%`).join(' + ')} — each ranks all systems, the ranks are weighted · ` : '') + 'filled = usual span · ring = possible · grey = outside Engel’s range · click a row to add or remove it';
+            $('rankNote').textContent = (multi ? `combined score 0–100: ${critList().map((c, k) => `${critName(c)} ${Number((critW()[k] * 100).toFixed(1))}%`).join(' + ')} — ranks among matching options, weighted · ` : '') + 'filled = usual reference span · ring = within reference interval · excluded options are reference only · click a row to add or remove it';
         }
         el.setAttribute('viewBox', `0 0 ${W} ${H}`); el.setAttribute('height', H); el.innerHTML = s;
         function row(r, y, W) {
             const on = slots.includes(r.sys.id);
-            return `<g data-id="${r.sys.id}" style="cursor:pointer"><rect x="0" y="${y - rowH / 2}" width="${W}" height="${rowH}" fill="${on ? '#e9e9e9' : 'transparent'}"/><text x="6" y="${y + 3.5}" font-size="11" font-weight="${on ? 'bold' : 'normal'}" fill="${r.st === 'out' || !matOk(r) ? '#aaa' : '#111'}" ${F}>${esc(r.sys.name)} <tspan font-size="9" fill="#aaa" font-weight="normal">${r.sys.code}${matOk(r) ? '' : ' · no ' + S.mat}</tspan></text>`;
+            return `<g data-id="${r.sys.id}" style="cursor:pointer"><title>${esc(r.sys.name + ' · ' + materialLabel(r.sys, r.m) + ' · ' + (eligible(r) ? 'matches screening checks' : exclusionReasons(r).join('; ')) + ' · ' + spanSource(r.sys))}</title><rect x="0" y="${y - rowH / 2}" width="${W}" height="${rowH}" fill="${on ? '#e9e9e9' : 'transparent'}"/><text x="6" y="${y + 3.5}" font-size="11" font-weight="${on ? 'bold' : 'normal'}" fill="${!eligible(r) ? '#aaa' : '#111'}" ${F}>${esc(r.sys.name)} <tspan font-size="9" fill="#aaa" font-weight="normal">${esc(codeLabel(r.sys))}${matOk(r) ? '' : ' · no ' + S.mat}</tspan></text>`;
         }
     }
 
@@ -3712,23 +3867,29 @@
     function suggest() {
         if (needCeil() && !allCeil()) { afterCeil = suggest; wantCeil(SYS.map(s_ => s_.id)); $('suggest').textContent = 'Measuring ceilings…'; return; }
         setFold('cmp', false);   // show what was suggested
-        // systems that exist in the chosen material first; only then the others
-        resAll(); const feas = [...sortByMetric(RES).filter(r => r.st !== 'out' && matOk(r)), ...sortByMetric(RES).filter(r => r.st !== 'out' && !matOk(r))];
-        slots = (feas.length ? feas : sortByMetric(RES)).slice(0, 5).map(r => r.sys.id);
-        basis = { crit: critList().join(), slots: slots.slice() };
+        resAll(); const feas = sortByMetric(RES.filter(eligible));
+        if (!feas.length) {
+            suggestionNotice = 'No modeled option matches all three screening checks. Current manual comparison retained; try another material or span.';
+            basis = null;
+        } else {
+            slots = feas.slice(0, 5).map(r => r.sys.id);
+            suggestionNotice = feas.length < 5 ? `Only ${feas.length} modeled options match; no excluded options were added.` : '';
+            basis = { key: resKey, crit: critList().join(), slots: slots.slice() };
+        }
         render();
     }
 
     function drawModal() {
         const r = byId(modalId);
         $('mName').textContent = r.sys.name;
-        $('mSub').textContent = `${r.sys.code} · ${FAM[r.sys.fam]} · ${MATNAME[r.m]}`;
+        $('mSub').textContent = `Engel reference: ${codeLabel(r.sys)} · parametric adaptation · ${FAM[r.sys.fam]} · ${materialLabel(r.sys, r.m)}`;
         drawBig(); drawEye();
-        $('mSec').innerHTML = sectionSVG(r, frameBox([r]), { big: true });
-        $('mStatus').innerHTML = `<span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
+        $('mSec').innerHTML = cutSVG(r, 'A');
+        $('mSecB').innerHTML = cutSVG(r, 'B');
+        $('mStatus').innerHTML = `<p class="eligibility ${eligible(r) ? '' : 'fail'}">${eligible(r) ? 'Matches support, material and reference-span screening checks' : esc(exclusionReasons(r).join('; '))}</p><span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'} · q ${qTxt(r)} kN/m²`;
         $('mPlan').innerHTML = planSVG(r);
         const tn = timberNote(r), cn = coverNote(r);
-        $('mNotes').innerHTML = (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + (cn ? `<li><b>Covering:</b> ${esc(cn.t)}<br><i>Sources: ${esc(cn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${(r.thrustSrc || THRUST_SRC[r.sys.id]) ? `<br><i>Source: ${esc((r.thrustSrc || THRUST_SRC[r.sys.id]))}</i>` : ''}</li>` : '');
+        $('mNotes').innerHTML = `<li><b>Support load path:</b> ${esc(supportScheme(r)[0])}</li><li><b>Horizontal reactions:</b> ${esc(supportScheme(r)[1])}</li><li><b>Stability:</b> ${esc(supportScheme(r)[2])}</li><li><b>Support dimensions:</b> schematic only; axial resistance, bending, slenderness, joints and foundations have not been designed. Red dashed members indicate ties or proposed bracing, not a completed design.</li><li><b>Model adaptation:</b> geometry and support scheme fitted to the requested hall; proportions and details are selected by this tool’s developer, not a reproduction of Engel’s illustration.</li><li><b>Span basis:</b> ${esc(spanSource(r.sys))}</li><li><b>Formula basis:</b> author sizing and geometry assumptions. ${['grid', 'space', 'st_tetra'].includes(r.sys.id) ? 'Depth multiplier √(2α) is an author extension of Engel p.200, not a general grid design formula.' : ''}</li>` + (tn ? `<li><b>Timber:</b> ${esc(tn.t)}<br><i>Sources: ${esc(tn.src)}</i></li>` : '') + (cn ? `<li><b>Covering:</b> ${esc(cn.t)}<br><i>Sources: ${esc(cn.src)}</i></li>` : '') + r.notes.map(n => `<li>${esc(n)}</li>`).join('') + (r.thrust != null ? `<li><b>${Math.round(r.thrust)} ${r.thrustPerArch || r.thrustIsRing ? 'kN' : 'kN/m'}</b> — ${esc(r.thrustNote)}${(r.thrustSrc || THRUST_SRC[r.sys.id]) ? `<br><i>Source: ${esc((r.thrustSrc || THRUST_SRC[r.sys.id]))}</i>` : ''}</li>` : '');
         $('mVar').innerHTML = MODES[r.sys.id] ? modeVariants(r.sys.id) : '';
     }
     // the same vault with its thrust taken three ways (Engel p.113); the first is the default
@@ -3803,7 +3964,7 @@
     $('grid').addEventListener('change', e => { const s = e.target.closest('select[data-i]'); if (s) { slots[+s.dataset.i] = s.value; render(); } });
     $('grid').addEventListener('click', e => {
         const rm = e.target.closest('[data-rm]'); if (rm) { slots.splice(+rm.dataset.rm, 1); render(); return; }
-        if (e.target.closest('#add')) { resAll(); const next = sortByMetric(RES).find(r => !slots.includes(r.sys.id) && r.st !== 'out') || RES.find(r => !slots.includes(r.sys.id)); if (next) { slots.push(next.sys.id); render(); } }
+        if (e.target.closest('#add')) { resAll(); const next = sortByMetric(RES).find(r => !slots.includes(r.sys.id) && eligible(r)); if (next) { slots.push(next.sys.id); render(); } }
     });
     let drag = null;
     document.addEventListener('pointerdown', e => { const d = e.target.closest('.wrap .draw'); if (!d) return; drag = { x: e.clientX, y: e.clientY, r: S.rot, e: S.elev, id: d.dataset.open, moved: false }; });
