@@ -206,6 +206,36 @@
     .s-ghost { fill: none; stroke: #555; stroke-dasharray: 4 3; }
     .s-dim { stroke: #999; fill: none; }
     .s-foot { fill: rgba(198,40,40,0.1); stroke: none; }
+
+    /* Workspace navigation: a single active panel, preserving model state. */
+    .wrap { max-width: 1320px; }
+    .workspace { display:grid; grid-template-columns:180px minmax(0,1fr); gap:28px; margin:28px 0 36px; border-top:1px solid var(--line); padding-top:24px; }
+    .workspace-nav { display:flex; flex-direction:column; gap:8px; align-self:start; }
+    .workspace-nav button { background:transparent; border:0; border-radius:5px; padding:16px 14px; text-align:left; cursor:pointer; color:#333; font-size:14px; }
+    .workspace-nav button small { display:block; margin-top:6px; font-size:11px; color:#666; line-height:1.5; }
+    .workspace-nav button[aria-selected="true"] { background:#171b20; color:#fff; }
+    .workspace-nav button[aria-selected="true"] small { color:#cbd2da; }
+    .workspace-nav button:focus-visible { outline:2px solid #1976d2; outline-offset:3px; }
+    .workspace-main { min-width:0; }
+    .workspace-main .fsec { margin:0; padding-top:0; border:0; }
+    .workspace-main .fsec[hidden] { display:none !important; }
+    .workspace-main .thead, .workspace-main .lead, .workspace-main .rank .hd { display:flex; align-items:baseline; flex-wrap:wrap; gap:10px 16px; margin:0 0 20px; padding:0; border:0; }
+    .workspace-main h2 { margin:0; font-size:22px; line-height:1.3; letter-spacing:0; font-weight:600; text-transform:none; }
+    .workspace-main .thead>span, .workspace-main .fopen { flex-basis:100%; font-size:12px; line-height:1.6; color:#666; }
+    .workspace-count { display:inline-block; padding:3px 9px; border:1px solid #d8dee4; border-radius:20px; font-size:12px; font-weight:400; }
+    .workspace-main .bar { padding:0 0 16px; }
+    .workspace-main .sgrp { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .workspace-main .sgrp select { max-width:100%; }
+    .workspace-main .grid { overflow-x:auto; }
+    .workspace-main .rank #rankNote { flex-basis:100%; font-size:12px; line-height:1.6; }
+    @media(max-width:860px) {
+        .workspace { grid-template-columns:1fr; gap:24px; }
+        .workspace-nav { flex-direction:row; flex-wrap:wrap; gap:6px; }
+        .workspace-nav button { flex:1 1 90px; padding:12px 10px; }
+        .workspace-main h2 { font-size:20px; }
+        .workspace-main .sgrp { width:100%; }
+    }
+
 </style>
 <link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
 </head>
@@ -227,14 +257,21 @@
     </div>
 
     <p class="scope-note"><b>About this study:</b> Classification and reference span ranges are drawn from Heino Engel’s <i>Structure Systems</i>. Geometry, supports, preliminary dimensions, loads and comparison scores are selected or adapted by this tool’s developer. These schematic models do not reproduce the book’s illustrations exactly and are not verified structural designs.</p>
-    <section class="tree fsec" data-sec="tree">
-        <div class="thead"><button class="fold" type="button">Engel’s genealogy of structures</button><span>pick a type (p.44), then a variant (pp.46–55) — drawn for your space; click a drawn variant to add it to the comparison</span></div>
+    <div class="workspace">
+    <nav class="workspace-nav" role="tablist" aria-label="Structure explorer sections">
+        <button type="button" role="tab" id="nav-tree" aria-controls="panel-tree" aria-selected="false" tabindex="-1" data-panel="tree">01 · Families<small>Engel’s classification · 5 families</small></button>
+        <button type="button" role="tab" id="nav-cmp" aria-controls="panel-cmp" aria-selected="true" data-panel="cmp">02 · Compare<small id="navSelection">Your selection</small></button>
+        <button type="button" role="tab" id="nav-rank" aria-controls="panel-rank" aria-selected="false" tabindex="-1" data-panel="rank">03 · All systems<small id="navTotal">Modeled options</small></button>
+    </nav>
+    <div class="workspace-main">
+    <section class="tree fsec" data-sec="tree" id="panel-tree" role="tabpanel" aria-labelledby="nav-tree" hidden>
+        <div class="thead"><h2>Explore structure families</h2><b class="workspace-count">5 families</b><span>Classification adapted from Engel · pick a type (p.44), then a variant (pp.46–55) — drawn for your space; click a drawn variant to add it to the comparison</span></div>
         <div id="types" class="fbody"></div>
     </section>
 
-    <section class="fsec" data-sec="cmp">
+    <section class="fsec" data-sec="cmp" id="panel-cmp" role="tabpanel" aria-labelledby="nav-cmp">
     <div class="bar">
-        <p class="lead"><button class="fold" type="button">Comparison</button> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value among matching options in each row is underlined · click a drawing to enlarge it and turn it</span></p>
+        <div class="lead"><h2>Compare your selection</h2><b class="workspace-count" id="selectionCount"></b> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value among matching options in each row is underlined · click a drawing to enlarge it and turn it</span></div>
         <span class="sgrp"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion — weight 100% alone, 62.5% with two criteria, 50% with three"></select><span class="then">then</span><select id="crit2" title="Second criterion — optional; weights renormalize to 100%"></select><span class="then">then</span><select id="crit3" title="Third criterion — optional; duplicate criteria count once"></select></span><span class="basis" id="cmpBasis"></span>
         <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div>
     </div>
@@ -243,12 +280,13 @@
     <div class="grid fbody" id="grid"></div>
     </section>
 
-    <div class="rank fsec" data-sec="rank">
-        <div class="hd"><button class="fold" type="button"><span id="nSys"></span> modeled options</button><select id="metric"><option value="span">Reference span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">overall footprint width (m)</option><option value="eff">clear-section ratio (%)</option><option value="cols">reported support count</option><option value="q">roof load (kN/m²)</option><option value="calm">visible line density (lower first)</option><option value="busy">visible line density (higher first)</option></select><span class="fbody" id="rankNote"></span></div>
+    <div class="rank fsec" data-sec="rank" id="panel-rank" role="tabpanel" aria-labelledby="nav-rank" hidden>
+        <div class="hd"><h2>Browse all systems</h2><span class="workspace-count"><span id="nSys"></span> models</span><select id="metric"><option value="span">Reference span range</option><option value="zone">structure zone (m)</option><option value="top">total height (m)</option><option value="footW">overall footprint width (m)</option><option value="eff">clear-section ratio (%)</option><option value="cols">reported support count</option><option value="q">roof load (kN/m²)</option><option value="calm">visible line density (lower first)</option><option value="busy">visible line density (higher first)</option></select><span class="fbody" id="rankNote"></span></div>
         <p id="rankingMethod" class="ranking-method"></p>
         <svg id="dots" class="fbody"></svg>
     </div>
 
+    </div></div>
     <p class="scope-note"><b>Reading the results:</b> Engel supplies the classification and reference span charts. The modeled geometry, preliminary sizing, weights and comparison scores are this tool’s assumptions or adaptations; ≈ marks estimates. Each result names its basis below.</p>
     <p class="scope-note"><b>Coverage:</b> the genealogy includes all five families (pp.44–55). The comparison models selected options in families 1–4 and one hybrid. Slabs (3.4) are not modeled yet, including short-span applications; height-active systems (5) are listed for reference, outside this single-storey comparison. “Modeled options” is not the number of systems in Engel’s book.</p>
     <details class="notes" id="sources">
@@ -3528,15 +3566,45 @@
     const needCeil = () => critList().some(c => CEILM.includes(c));
     const critName = c => { const o = [...$('metric').options].find(o_ => o_.value === c); return o ? o.text.replace(/ \((?:m|%|kN\/m²)\)/, '') : c; };
     const SORTROW = { span: 'Reference span', zone: 'zone', top: 'top', footW: 'footW', eff: 'eff', cols: 'cols', q: 'q', calm: 'calm', busy: 'calm' };
-    // the three sections fold away when not in use; each viewer's choice is kept in this browser, and a folded section is not drawn
-    const FOLD_KEY = 'space-first-folded'; let folded = {};
-    const FOLD0 = { tree: true, cmp: false, rank: true };   // show the comparison on first visit
-    try { folded = JSON.parse(localStorage.getItem(FOLD_KEY)) || { ...FOLD0 }; } catch (_) { folded = { ...FOLD0 }; }
+    // Retain the existing render gates; only one workspace panel is active.
+    const FOLD_KEY = 'space-first-workspace';
+    let activePanel = 'cmp';
+    try { const saved=localStorage.getItem(FOLD_KEY); if(['tree','cmp','rank'].includes(saved)) activePanel=saved; } catch (_) {}
+    let folded = { tree:activePanel!=='tree', cmp:activePanel!=='cmp', rank:activePanel!=='rank' };
     function applyFold() {
-        document.querySelectorAll('.fsec').forEach(sec => { const f = !!folded[sec.dataset.sec]; sec.classList.toggle('folded', f); const b = sec.querySelector('.fold'); if (b) { b.setAttribute('aria-expanded', String(!f)); b.title = f ? 'Show' : 'Hide'; } });
+        document.querySelectorAll('.fsec').forEach(sec => {
+            const inactive=sec.dataset.sec!==activePanel;
+            sec.hidden=inactive; sec.classList.toggle('folded',inactive);
+        });
+        document.querySelectorAll('[data-panel]').forEach(button => {
+            const selected=button.dataset.panel===activePanel;
+            button.setAttribute('aria-selected',String(selected)); button.tabIndex=selected?0:-1;
+        });
+        $('navSelection').textContent=slots.length+' systems selected';
+        $('selectionCount').textContent=slots.length+' selected';
+        $('navTotal').textContent=SYS.length+' modeled options';
     }
-    function setFold(k, f) { folded[k] = f; try { localStorage.setItem(FOLD_KEY, JSON.stringify(folded)); } catch (_) {} applyFold(); }
-    document.addEventListener('click', e => { const b = e.target.closest('.fold'); if (!b) return; const k = b.closest('.fsec').dataset.sec; setFold(k, !folded[k]); if (!folded[k]) render(); });
+    function setFold(k, f) {
+        if(f || !['tree','cmp','rank'].includes(k)) return;
+        activePanel=k;
+        folded={tree:k!=='tree',cmp:k!=='cmp',rank:k!=='rank'};
+        try { localStorage.setItem(FOLD_KEY,k); } catch (_) {}
+        applyFold();
+    }
+    const workspaceTabs=[...document.querySelectorAll('[data-panel]')];
+    workspaceTabs.forEach((button,i)=>{
+        button.addEventListener('click',()=>{setFold(button.dataset.panel,false);render();});
+        button.addEventListener('keydown',e=>{
+            let n;
+            if(e.key==='ArrowRight'||e.key==='ArrowDown') n=(i+1)%workspaceTabs.length;
+            else if(e.key==='ArrowLeft'||e.key==='ArrowUp') n=(i+workspaceTabs.length-1)%workspaceTabs.length;
+            else if(e.key==='Home') n=0;
+            else if(e.key==='End') n=workspaceTabs.length-1;
+            else return;
+            e.preventDefault();workspaceTabs[n].focus();workspaceTabs[n].click();
+        });
+    });
+
     const PRESETS = [
         { n: 'Pavilion', L: 12, W: 12, H: 4 },
         { n: 'Market hall', L: 24, W: 48, H: 6 },
