@@ -25,11 +25,12 @@
     .study-bar .titleline .sub { color: #666; }
 
     /* ---- the space ---- */
-    .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.25fr) 130px; gap: 6px 26px; margin-top: 18px; align-items: start; }
+    .fields { display: grid; grid-template-columns: repeat(3, minmax(0, .8fr)) minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px 14px; margin-top: 18px; align-items: start; }
     .fld { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .fld > .k { min-height: 16px; line-height: 16px; white-space: nowrap; }
     .fld .line { display: flex; align-items: flex-end; gap: 5px; height: 22px; }
     .fld .line select { flex: 1; min-width: 0; }
-    .fld .third { display: block; height: 14px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fld .third { display: block; min-height: 0; height: auto; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .fld input[type=number] { width: 64px; font-size: 14px; border: none; border-bottom: 1px solid #bbb; background: transparent; color: var(--ink); padding: 0 1px 1px; -moz-appearance: textfield; }
     .fld input[type=number]::-webkit-inner-spin-button { opacity: 0; }
     .fld input:focus, .fld select:focus { outline: none; border-bottom-color: var(--ink); }
@@ -37,11 +38,6 @@
     .fld .auto { font-size: 14px; }
     .fld input[type=range] { width: 100%; accent-color: var(--ink); margin: 2px 0 0; height: 14px; }
     .fld select { font-size: 14px; color: var(--ink); border: none; border-bottom: 1px solid #bbb; background: transparent; padding: 1px 0; border-radius: 0; }
-    .presets { margin-top: 12px; font-size: 11px; color: var(--mute); line-height: 1.8; }
-    .presets .k { margin-right: 8px; }
-    .presets button { border: none; background: none; padding: 0; font-size: 11px; color: #666; cursor: pointer; }
-    .presets button:hover, .presets button.on { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-    .presets .dot { color: #ccc; margin: 0 7px; }
     @media (max-width: 760px) { .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
     /* ---- toolbar ---- */
@@ -208,22 +204,38 @@
     .s-foot { fill: rgba(198,40,40,0.1); stroke: none; }
 
     /* Workspace navigation: a single active panel, preserving model state. */
-    .wrap { max-width: 1320px; }
-    .workspace { display:grid; grid-template-columns:180px minmax(0,1fr); gap:28px; margin:28px 0 36px; border-top:1px solid var(--line); padding-top:24px; }
+    .wrap { max-width: 960px; }
+    .workspace { display:grid; grid-template-columns:150px minmax(0,1fr); gap:24px; margin:12px 0 28px; border-top:0; padding-top:0; }
     .workspace-nav { display:flex; flex-direction:column; gap:8px; align-self:start; }
-    .workspace-nav button { background:transparent; border:0; border-radius:5px; padding:16px 14px; text-align:left; cursor:pointer; color:#333; font-size:14px; }
+    .workspace-nav button { background:transparent; border:0; border-radius:0; padding:12px 10px; text-align:left; cursor:pointer; color:var(--ink); font-size:11px; letter-spacing:.3px; }
     .workspace-nav button small { display:block; margin-top:6px; font-size:11px; color:#666; line-height:1.5; }
-    .workspace-nav button[aria-selected="true"] { background:#171b20; color:#fff; }
-    .workspace-nav button[aria-selected="true"] small { color:#cbd2da; }
+    .workspace-nav button[aria-selected="true"] { background:var(--ink); color:#fff; }
+    .workspace-nav button[aria-selected="true"] small { color:#ddd; }
     .workspace-nav button:focus-visible { outline:2px solid #1976d2; outline-offset:3px; }
     .workspace-main { min-width:0; }
     .workspace-main .fsec { margin:0; padding-top:0; border:0; }
     .workspace-main .fsec[hidden] { display:none !important; }
     .workspace-main .thead, .workspace-main .lead, .workspace-main .rank .hd { display:flex; align-items:baseline; flex-wrap:wrap; gap:10px 16px; margin:0 0 20px; padding:0; border:0; }
-    .workspace-main h2 { margin:0; font-size:22px; line-height:1.3; letter-spacing:0; font-weight:600; text-transform:none; }
+    .workspace-main h2 { margin:0; font-size:18px; line-height:1.3; letter-spacing:0; font-weight:600; text-transform:none; }
     .workspace-main .thead>span, .workspace-main .fopen { flex-basis:100%; font-size:12px; line-height:1.6; color:#666; }
-    .workspace-count { display:inline-block; padding:3px 9px; border:1px solid #d8dee4; border-radius:20px; font-size:12px; font-weight:400; }
-    .workspace-main .bar { padding:0 0 16px; }
+    .workspace-count { display:inline-block; padding:3px 7px; border:1px solid var(--line); border-radius:0; font-size:11px; font-weight:400; }
+    .workspace-main .bar { display:flex; flex-direction:column; align-items:stretch; gap:10px; margin:0; padding:0; }
+    .workspace-main .bar .lead { margin:0 0 2px; }
+    .comparison-actions { display:flex; align-items:center; justify-content:flex-start; flex-wrap:wrap; gap:8px 12px; }
+    .comparison-actions .basis { margin:0; flex:0 1 auto; max-width:100%; line-height:1.5; }
+    .comparison-actions .seg { flex:0 0 auto; }
+    /* Each control owns its border, so grouped buttons stay the same height. */
+    #panel-cmp .bar { gap:8px; }
+    #panel-cmp .sgrp .btn, #panel-cmp .sgrp select, #panel-cmp .seg button { min-height:28px; border:1px solid #b5b5b5; }
+    #panel-cmp .seg { border:0; }
+    #panel-cmp .seg button + button { border-left:0; }
+    @media(pointer:coarse) {
+        #panel-cmp .sgrp .btn, #panel-cmp .sgrp select, #panel-cmp .seg button { min-height:44px; }
+    }
+    #panel-cmp > .scope-note { margin:8px 0 10px; }
+    #suggestNotice:empty { display:none; }
+    #suggestNotice { margin:6px 0; }
+    .fld .third:empty { display:none; }
     .workspace-main .sgrp { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .workspace-main .sgrp select { max-width:100%; }
     .workspace-main .grid { overflow-x:auto; }
@@ -232,7 +244,7 @@
         .workspace { grid-template-columns:1fr; gap:24px; }
         .workspace-nav { flex-direction:row; flex-wrap:wrap; gap:6px; }
         .workspace-nav button { flex:1 1 90px; padding:12px 10px; }
-        .workspace-main h2 { font-size:20px; }
+        .workspace-main h2 { font-size:18px; }
         .workspace-main .sgrp { width:100%; }
     }
 
@@ -247,16 +259,16 @@
             <span class="titlegroup"><span class="idx">12</span><span class="titleline"><b>Space First — Structural System Explorer</b><span class="sep">&mdash;</span><span class="sub">an independent parametric study informed by Heino Engel</span></span></span>
         </div>
         <div class="fields">
-            <div class="fld"><span class="k">Span — column-free</span><span class="line"><input id="L" type="number" min="3" max="200" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
-            <div class="fld"><span class="k">Length · ≥ span</span><span class="line"><input id="W" type="number" min="3" max="200" step="1"><span class="u">m</span></span><input id="rW" type="range" min="3" max="200" step="1"></div>
-            <div class="fld"><span class="k">Clear height</span><span class="line"><input id="H" type="number" min="2.5" max="30" step="0.5"><span class="u">m</span></span><input id="rH" type="range" min="2.5" max="30" step="0.5"></div>
-            <div class="fld" title="Roof load is worked out per system: its own weight (estimated) + the roof covering + services 0.10 + live load from the Thai Ministerial Regulation No. 6 (B.E. 2527): 30 kg/m² on a roof, 100 kg/m² on a concrete roof"><span class="k">Roof covering · load auto</span><span class="line"><select id="finish"></select></span><span class="third u" id="qNote"></span></div>
-            <div class="fld"><span class="k">Material</span><span class="line"><select id="mat"><option value="steel">steel</option><option value="timber">timber · product per model</option><option value="concrete">reinforced concrete</option><option value="prestressed">prestressed concrete</option><option value="cable">steel cable</option><option value="membrane">membrane</option><option value="masonry">masonry</option></select></span><span class="third"></span></div>
+            <div class="fld"><label class="k" for="L" title="Span — column-free">Span</label><span class="line"><input id="L" type="number" min="3" max="200" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
+            <div class="fld"><label class="k" for="W" title="Length must be at least the span">Length</label><span class="line"><input id="W" type="number" min="3" max="200" step="1"><span class="u">m</span></span><input id="rW" type="range" min="3" max="200" step="1"></div>
+            <div class="fld"><label class="k" for="H">Clear height</label><span class="line"><input id="H" type="number" min="2.5" max="30" step="0.5"><span class="u">m</span></span><input id="rH" type="range" min="2.5" max="30" step="0.5"></div>
+            <div class="fld" title="Roof load is worked out per system: its own weight (estimated) + the roof covering + services 0.10 + live load from the Thai Ministerial Regulation No. 6 (B.E. 2527): 30 kg/m² on a roof, 100 kg/m² on a concrete roof"><label class="k" for="finish">Roof covering</label><span class="line"><select id="finish"></select></span><span class="third u" id="qNote"></span></div>
+            <div class="fld"><label class="k" for="mat">Material</label><span class="line"><select id="mat"><option value="steel">steel</option><option value="timber">timber · product per model</option><option value="concrete">reinforced concrete</option><option value="prestressed">prestressed concrete</option><option value="cable">steel cable</option><option value="membrane">membrane</option><option value="masonry">masonry</option></select></span></div>
+            <div class="fld"><label class="k" for="presets">Start from</label><span class="line"><select id="presets" aria-label="Start from a hall preset, span × length × height in metres"></select></span></div>
         </div>
-        <div class="presets" id="presets"><span class="k">Start from</span></div>
     </div>
 
-    <p class="scope-note"><b>About this study:</b> Classification and reference span ranges are drawn from Heino Engel’s <i>Structure Systems</i>. Geometry, supports, preliminary dimensions, loads and comparison scores are selected or adapted by this tool’s developer. These schematic models do not reproduce the book’s illustrations exactly and are not verified structural designs.</p>
+
     <div class="workspace">
     <nav class="workspace-nav" role="tablist" aria-label="Structure explorer sections">
         <button type="button" role="tab" id="nav-tree" aria-controls="panel-tree" aria-selected="false" tabindex="-1" data-panel="tree">01 · Families<small>Engel’s classification · 5 families</small></button>
@@ -272,8 +284,9 @@
     <section class="fsec" data-sec="cmp" id="panel-cmp" role="tabpanel" aria-labelledby="nav-cmp">
     <div class="bar">
         <div class="lead"><h2>Compare your selection</h2><b class="workspace-count" id="selectionCount"></b> <span class="fsum" id="cmpSum"></span><span class="fopen">Up to five systems at one scale · the best value among matching options in each row is underlined · click a drawing to enlarge it and turn it</span></div>
-        <span class="sgrp"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion — weight 100% alone, 62.5% with two criteria, 50% with three"></select><span class="then">then</span><select id="crit2" title="Second criterion — optional; weights renormalize to 100%"></select><span class="then">then</span><select id="crit3" title="Third criterion — optional; duplicate criteria count once"></select></span><span class="basis" id="cmpBasis"></span>
-        <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div>
+        <span class="sgrp"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion — weight 100% alone, 62.5% with two criteria, 50% with three"></select><span class="then">then</span><select id="crit2" title="Second criterion — optional; weights renormalize to 100%"></select><span class="then">then</span><select id="crit3" title="Third criterion — optional; duplicate criteria count once"></select></span>
+        <div class="comparison-actions"><span class="basis" id="cmpBasis"></span>
+        <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div></div>
     </div>
     <p class="scope-note">Suggestions require no interior columns or supports, a matching material and a span inside the reference intervals. These are screening checks, not a structural or full-height clearance verification. Other options remain available for manual comparison.</p>
     <p id="suggestNotice" role="status" aria-live="polite"></p>
@@ -297,6 +310,7 @@
         <p><b>Measurements:</b> clear-section ratio = L×H divided by the modeled enclosing section area, not usable floor area or volume. Overall footprint width is a transverse distance, not a site area. Interior support counts use modeled support locations inside 0&lt;x&lt;L and 0&lt;y&lt;W; boundary supports and continuous walls are described separately. Visible line density is projected visible structural line length per floor area, not a validated measure of visual calmness.</p>
         <p><b>Ranking:</b> only matching options enter suggestions and combined scores. Single criteria retain equal values; ties are ordered alphabetically, not by an undisclosed depth preference. Combined scores use average ranks for ties, normalized to 0–1 and weighted 50/30/20 (one criterion: 100%; two: 62.5/37.5%). Displayed score = 100×(1−weighted rank); higher is preferred. Scores are relative to the current matching set and are not engineering performance ratings.</p>
     </details>
+    <p class="scope-note"><b>About this study:</b> Classification and reference span ranges are drawn from Heino Engel’s <i>Structure Systems</i>. Geometry, supports, preliminary dimensions, loads and comparison scores are selected or adapted by this tool’s developer. These schematic models do not reproduce the book’s illustrations exactly and are not verified structural designs.</p>
 </div>
 
 <div class="modal" id="modal"><div class="in">
@@ -3886,7 +3900,8 @@
             $('r' + k).value = FIELDS[k].log ? fromL(S[k]) : S[k];
         }
         $('mat').value = S.mat;
-        document.querySelectorAll('#presets button').forEach(b => { const p = PRESETS[+b.dataset.p]; b.classList.toggle('on', p.L === S.L && p.W === S.W && p.H === S.H); });
+        const presetIndex = PRESETS.findIndex(p => p.L === S.L && p.W === S.W && p.H === S.H);
+        $('presets').value = presetIndex < 0 ? '' : String(presetIndex);
     }
 
     const sortByMetric = list => { const M = critList().length > 1 ? MIX : MEASURE[metric]; return list.slice().sort((a, b) => Number(eligible(b)) - Number(eligible(a)) || M.v(a) - M.v(b) || a.sys.name.localeCompare(b.sys.name, 'en')); };
@@ -4021,8 +4036,12 @@
     }
     $('finish').addEventListener('change', e => { S.finish = e.target.value; finishNote = ''; render(); });
     $('mat').addEventListener('change', e => { S.mat = e.target.value; render(); });
-    $('presets').insertAdjacentHTML('beforeend', PRESETS.map((p, i) => `${i ? '<span class="dot">·</span>' : ''}<button data-p="${i}">${p.n} ${p.L}×${p.W}×${p.H}</button>`).join(''));
-    $('presets').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; const p = PRESETS[+b.dataset.p]; Object.assign(S, { L: p.L, W: p.W, H: p.H }); render(); });
+    $('presets').innerHTML = '<option value="">Custom dimensions</option>' + PRESETS.map((p, i) => `<option value="${i}">${p.n} ${p.L}×${p.W}×${p.H}</option>`).join('');
+    $('presets').addEventListener('change', e => {
+        if (e.target.value === '') { syncInputs(); return; }
+        const p = PRESETS[Number(e.target.value)]; if (!p) return;
+        Object.assign(S, { L: p.L, W: p.W, H: p.H }); render();
+    });
     $('suggest').addEventListener('click', suggest);
     const resetAngle = () => { MV.rot = AXO.rot; MV.elev = AXO.elev; drawBig(true); };
     $('mReset').addEventListener('click', resetAngle);
