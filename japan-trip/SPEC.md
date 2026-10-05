@@ -6,10 +6,10 @@ Family: 2 elderly adults + 1 child (4 y). Nissan Serena from Haneda, 15–23 Oct
 ## Files
 - `trip.json` — single source of truth (9 days → slots → options). Edit this, not the HTML.
 - `engine.js` — pure conflict checker `Engine.analyze(trip, day, sel)` and structural checker `Engine.validate(trip)`.
-- `map.js` — illustrated day map: `MapView.stops()` (lettered pins) and `MapView.render()` (SVG). Pure functions, also run in Node.
+- `map.js` — day stops and map/link helpers (pure, also run in Node). `map-style.json` — ELEMNT map style. `vendor/` — MapLibre + PMTiles.
 - `template.html` — UI: card-stack deck (progress ring, NN / 09 counter, prev/next, day tabs), map + legend column, 07:00–22:00 strip with nap band, issue list, option cards, copy-plan, 2-tap reset, theme toggle.
 - `build.mjs` — `node build.mjs` validates trip.json, then inlines trip.json + engine.js + map.js into `index.html`. Works from any directory; writes next to itself.
-- `test.mjs` — `node test.mjs`: 37 assertions (one per rule + real-data checks + map). Exits non-zero on failure.
+- `test.mjs` — `node test.mjs`: 38 assertions (one per rule + real-data checks + map). Exits non-zero on failure.
 - `index.html` — build output (committed so it can be opened directly).
 
 ## Data model
@@ -29,15 +29,15 @@ Family: 2 elderly adults + 1 child (4 y). Nissan Serena from Haneda, 15–23 Oct
 - Map link: `https://www.google.com/maps/search/?api=1&query=<encoded q>`
 - UI state: `sel[slotId] = [optIds]` in localStorage `japan2569.sel.<version>` (try/catch). Stored ids that no longer exist fall back to `def`.
 
-## Map (map.js)
-- One SVG per day, auto-fitted to that day's pins (min window 12 km). Consecutive pins within ~275 m merge into one lettered pin; the legend lists the places and times.
-- Style: flat paper map, lettered navy circle pins (hotel = ring), double-line drives, dashed short hops, dotted forests, blue rivers/lakes, peaks, trees, N arrow, scale bar. Colours are CSS variables (light + dark).
-- **The base layer (coast, forests, rivers, peaks) is hand-drawn and approximate. Pin coordinates are from memory, accurate to roughly a few hundred metres to ~1 km.** It is an illustration; each legend row links to Google Maps for the real location.
-- Pins are focusable and jump to their slot; legend rows do the same.
+## Map
+- MapLibre GL 4.7.1 + PMTiles 3.2.1 (bundled from `vendor/` into index.html — no CDN) with the ELEMNT “Blueprint – Drafting (Light)” style (`map-style.json`). Tiles, glyphs and sprites load from s3-public.elemnt.earth (OpenStreetMap data; keep the attribution). No API key, no billing.
+- `map.js`: `stops()` lettered pins (merged within ~275 m), `lineCoords()` for the dashed connector, `dirUrl()` = free Google Maps directions link (opens the app; no embed).
+- The dashed line joins the pins in order — it is **not** a road route. **Pin coordinates are approximate (from memory, roughly a few hundred metres to ~1 km)**; correct `ll` in trip.json if a pin looks off.
+- Without WebGL the map shows a short fallback message; the Google link still works.
 
 ## Design
-- Layout: after the card-stack deck in the reference (outlined rounded cards stacked offset down-left, `02 / 09` counter with a progress ring, circular prev/next buttons, `> READY TO EXECUTE _` prompt, graph-paper background).
-- Fonts: Latin = Geist Mono (Google Fonts, stand-in chosen to match the reference — swap `--font` if it is another mono); Thai = Sukhumvit Set via `local()` (it must be installed on the device; IBM Plex Sans Thai is the web fallback). To guarantee Sukhumvit everywhere, supply the font files and add them as `@font-face` (check the licence).
+- Three minimal options (picker at the top, remembered per device): **1 Mint list** (phone-notes look: mint ground, mono type, small times left), **2 Outline** (white, dashed-circle nodes with icons, outlined time pills, dashed dividers), **3 Blueprint** (blue drafting style matching the map). No boxes: hierarchy comes from type size, colour and spacing. Each has a dark mode.
+- Fonts: Latin IBM Plex Mono / Inter / Geist Mono (Google Fonts); Thai Sukhumvit Set via `local()` (IBM Plex Sans Thai fallback).
 
 ## Conflict rules (engine.js)
 | level | rule |

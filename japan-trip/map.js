@@ -57,7 +57,10 @@
       (mid.length ? '&waypoints=' + mid.map(enc).join('%7C') : '') + '&travelmode=driving';
   }
 
-  const api = { stops, stopName, query, queries, searchUrl, placeEmbed, routeEmbed, dirUrl, MAX_WAYPOINTS };
+  // [lng, lat] pairs for a GeoJSON LineString (straight segments between stops — not a road route).
+  const lineCoords = sts => sts.map(s => [s.ll[1], s.ll[0]]);
+
+  const api = { lineCoords, stops, stopName, query, queries, searchUrl, placeEmbed, routeEmbed, dirUrl, MAX_WAYPOINTS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MapView = api;
 })(typeof window !== 'undefined' ? window : globalThis);

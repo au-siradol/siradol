@@ -211,6 +211,11 @@ test('Google Maps: consecutive identical places are not repeated', () => {
   const q = M.queries([{ items: [{ q: 'X' }] }, { items: [{ q: 'X' }] }, { items: [{ q: 'Y' }] }]);
   assert.deepEqual(q, ['X', 'Y']);
 });
+test('route line: one [lng, lat] per stop, in order', () => {
+  const st = M.stops(trip, trip.days[2], {}), c = M.lineCoords(st);
+  assert.equal(c.length, st.length);
+  c.forEach(([lng, lat]) => assert.ok(lng > 122 && lng < 146 && lat > 24 && lat < 46));
+});
 test('validate() rejects a coordinate outside Japan (lat/lng swapped)', () => {
   const t = JSON.parse(JSON.stringify(trip)); t.days[1].slots[2].ll = [139.4, 35.4];
   assert.ok(E.validate(t).some(p => /ll/.test(p)));

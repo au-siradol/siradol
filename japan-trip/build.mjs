@@ -17,11 +17,15 @@ if (problems.length) {
 }
 
 const tpl = read('template.html');
-for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}']) if (!tpl.includes(k)) throw new Error(`template.html ไม่มี ${k}`);
+for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}', '{{STYLE}}', '{{VENDOR_CSS}}', '{{VENDOR_JS}}']) if (!tpl.includes(k)) throw new Error(`template.html ไม่มี ${k}`);
 
 const trip = JSON.stringify(tripObj).replace(/<\//g, '<\\/');
 const engine = read('engine.js').replace(/<\//g, '<\\/');
 const map = read('map.js').replace(/<\//g, '<\\/');
-const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map);
+const js = f => read(f).replace(/<\/(script)/gi, '<\\/$1');
+const style = JSON.stringify(JSON.parse(read('map-style.json'))).replace(/<\//g, '<\\/');
+const vendorJs = js('vendor/maplibre-gl.js') + '\n;\n' + js('vendor/pmtiles.js');
+const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map)
+  .replace('{{STYLE}}', () => style).replace('{{VENDOR_CSS}}', () => read('vendor/maplibre-gl.css')).replace('{{VENDOR_JS}}', () => vendorJs);
 fs.writeFileSync(path.join(dir, 'index.html'), html);
 console.log('index.html', (html.length / 1024).toFixed(1) + ' KB');
