@@ -12,12 +12,13 @@
 <style>
 :root{
   --bg:#ececec;--ink:#1b1b1b;--mute:#666;--red:#c0392f;
-  --hl-food:#f7c7a0;--hl-cafe:#f5df9c;--hl-see:#cbe8ad;--hl-arch:#cfc5ea;--hl-stay:#bddcee;--hl-shop:#f4cdda;--hl-must:#f2b3ae;
+  /* autumn: persimmon, ginkgo, moss, plum, chestnut, rose-hip, maple */
+  --hl-food:#f4b27e;--hl-cafe:#f3d36b;--hl-see:#c9cc8a;--hl-arch:#d9a3a6;--hl-stay:#d8bc9c;--hl-shop:#eeb3a0;--hl-must:#e98c74;
   /* 'Trip Text' = Sukhumvit Set for Thai + Helvetica Neue for Latin (see #ff); IBM Plex Sans Thai is the web fallback */
   --font:'Trip Text','Helvetica Neue',Helvetica,Arial,'IBM Plex Sans Thai',sans-serif;
   --hand:'iannnnnBKK','Mali',cursive;
   /* typography knobs — set from TYPE in the script */
-  --lh:2;--gap:.6em;--red-size:20px;--tilt:-1deg;
+  --lh:1.7;--gap:.6em;--red-size:24px;--tilt:-1deg;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
@@ -53,6 +54,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .c-move{border-bottom:1.5px dotted var(--mute)}
 .ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
 /* a small red mark after a word; tapping it opens the sheet with choices and notes */
+.arr{width:.8em;height:.8em;vertical-align:-.05em;display:inline-block;flex:none}
 .mark{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;vertical-align:.55em;margin-left:1px;padding:6px 3px;margin-block:-6px}
 .sheet[hidden],.sheet-bg[hidden]{display:none}   /* .sheet sets display:flex, which would otherwise override [hidden] */
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30}
@@ -81,8 +83,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet .lit details{font-size:14px;color:var(--mute)}.sheet .lit summary{cursor:pointer;padding:4px 0}.sheet .lit details .ja{margin-top:4px;color:var(--ink)}
 .sheet .lit .kind{font-size:12px;color:var(--red)}
 .sheet .in{max-height:85dvh;overflow:auto}
-.sheet .lit{display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.65}
-.sheet .lit .ja{font-size:16px}.sheet .lit .nt{font-size:13.5px;color:var(--mute)}.sheet .lit .src{font-size:13px;color:var(--mute)}
+.sheet .lit{display:flex;flex-direction:column;gap:10px;font-size:18px;line-height:1.75}
+.sheet .lit .src{font-size:14px;color:var(--mute)}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .nav-link{font-size:13px;color:var(--mute)}
@@ -133,13 +135,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
   let sel={};try{sel=JSON.parse(ls.get(KEY)||'{}')||{}}catch(e){}
   const $=id=>document.getElementById(id);
+  // hand-drawn arrows as SVG: iOS turns ↙ ↘ into emoji
+  const ARR=d=>'<svg class="arr" viewBox="0 0 20 20" aria-hidden="true"><path d="'+(d==='se'?'M4 4.5Q10 10.5 15.5 15.8M8 16h7.8V8.3':'M16 4.5Q10 10.5 4.5 15.8M12 16H4.2V8.3')+'" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   /* ---------- typography ----------
      th  : Thai glyph size relative to Latin, in % (size-adjust on the Thai half of Sukhumvit Set)
      lh  : prose line height   red: size of the red marks and sheet text (px) */
-  const TYPE_DEFAULT={th:90,lh:2,gap:.6,red:20};   // chosen in the mock-up
-  let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type')||'{}'))}catch(e){}
+  const TYPE_DEFAULT={th:90,lh:1.7,gap:.6,red:24};
+  let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type2')||'{}'))}catch(e){}
   function applyType(t){
     Object.assign(TYPE,t||{});
     const TH={400:['Sukhumvit Set Text','SukhumvitSet-Text','Sukhumvit Set'],500:['Sukhumvit Set Medium','SukhumvitSet-Medium'],600:['Sukhumvit Set SemiBold','SukhumvitSet-SemiBold'],700:['Sukhumvit Set Bold','SukhumvitSet-Bold']};
@@ -148,7 +152,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('ff').textContent=[400,500,600,700].map(w=>face(w,TH[w],'U+0E00-0E7F',TYPE.th)+face(w,EN[w],'U+0000-0DFF,U+0E80-FFFF',100)).join('\n');
     const r=document.documentElement.style;r.setProperty('--lh',TYPE.lh);r.setProperty('--gap',TYPE.gap+'em');r.setProperty('--red-size',TYPE.red+'px');
   }
-  window.applyType=t=>{applyType(t);ls.set('japan2569.type',JSON.stringify(TYPE))};
+  window.applyType=t=>{applyType(t);ls.set('japan2569.type2',JSON.stringify(TYPE))};
   window.getType=()=>Object.assign({},TYPE);
 
   const MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -165,7 +169,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   let LIT=(new URLSearchParams(location.search).get('lit'))??(trip.meta.lit||'');
   window.setLit=m=>{LIT=m;render()};
   const LENS=[['short','สั้น'],['medium','กลาง'],['long','ยาว']];
-  let litLen=ls.get('japan2569.litlen')||'short';
+  let litLen=ls.get('japan2569.litlen2')||'long';
   const lev=(L,k)=>(L.levels&&(L.levels[k]||L.levels.short))||{ja:L.ja,th:L.th,kind:'แปลจากต้นฉบับ'};
   const para=s=>esc(s).replace(/\n/g,'<br>');
   const litBody=L=>{const v=lev(L,'short');return (v.ja?'<span class="ja" lang="ja">'+esc(v.ja)+'</span>':'')+'<span class="th">'+esc(v.th)+'</span>'};
@@ -183,7 +187,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function mark(s,notes){
     const n=s.opts.length-E.selected(s,sel).length;
     if(!n&&!notes.length)return '';
-    return '<button class="mark" data-pop="'+s.id+'" aria-label="'+(n?n+' ทางเลือก':'หมายเหตุ')+'">'+(n?'↙'+n:'!')+'</button>';
+    return '<button class="mark" data-pop="'+s.id+'" aria-label="'+(n?n+' ทางเลือก':'หมายเหตุ')+'">'+(n?ARR('sw')+n:'!')+'</button>';
   }
   function word(s,o,withMark){
     const L=link(o);
@@ -235,9 +239,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('route').textContent=d.label;$('pb').style.width=(d.n/N*100)+'%';$('cnt').textContent=d.n+' / '+N;
     $('prev').disabled=cur===0;$('next-d').disabled=cur===N-1;
     const warn=d.weather.find(w=>w.s==='warn'),daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
-    $('topnote').textContent=(daysTo>0?'↙ อีก '+daysTo+' วันออกเดินทาง / ':'↙ ')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ');
+    $('topnote').innerHTML=ARR('sw')+' '+esc((daysTo>0?'อีก '+daysTo+' วันออกเดินทาง / ':'')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ'));
     $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
-    $('endnote').textContent='↘ คืนนี้นอนที่ '+d.night;
+    $('endnote').innerHTML=ARR('se')+' '+esc('คืนนี้นอนที่ '+d.night);
     litCards(d);
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
     $('nav').href=MV.dirUrl(MV.stops(trip,d,sel));
@@ -255,7 +259,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   document.addEventListener('click',e=>{
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
     const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
-    const ln=e.target.closest('[data-len]');if(ln){litLen=ln.dataset.len;ls.set('japan2569.litlen',litLen);openLit(ln.dataset.for,null);return}
+    const ln=e.target.closest('[data-len]');if(ln){litLen=ln.dataset.len;ls.set('japan2569.litlen2',litLen);openLit(ln.dataset.for,null);return}
     if(e.target.closest('#sh-x')||e.target.id==='sheetbg'){closeSheet();return}
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
