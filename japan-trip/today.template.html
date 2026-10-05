@@ -52,16 +52,20 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .c-stay{--c:var(--hl-stay)}.c-shop{--c:var(--hl-shop)}.c-must{--c:var(--hl-must)}
 .c-move{border-bottom:1.5px dotted var(--mute)}
 .ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
-/* red notes hug their word: choices sit on its top edge, warnings on its bottom edge */
-.alt,.flag{position:absolute;left:0;font-family:var(--hand);color:var(--red);text-shadow:0 0 2px var(--bg),0 0 2px var(--bg),0 0 3px var(--bg);font-size:var(--red-size);line-height:1;white-space:nowrap;pointer-events:none}
-.alt{bottom:calc(100% - var(--gap));transform:rotate(var(--tilt));transform-origin:left bottom}
-.flag{top:calc(100% - var(--gap))}
-.alt button{pointer-events:auto;color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:1px;text-underline-offset:2px;padding:3px 0}
-.alt .sep{margin:0 3px}
+/* a small red mark after a word; tapping it opens the sheet with choices and notes */
+.mark{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;vertical-align:.55em;margin-left:1px;padding:6px 3px;margin-block:-6px}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;display:flex;justify-content:center;padding:0 12px calc(12px + env(safe-area-inset-bottom))}
+.sheet .in{width:100%;max-width:440px;background:var(--bg);border-radius:20px;padding:16px 20px 18px;box-shadow:0 -6px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:10px}
+.sheet h3{margin:0;font-size:15px;font-weight:600}.sheet h3 span{color:var(--mute);font-weight:500;margin-right:6px}
+.sheet .now{font-size:14px;color:var(--mute)}
+.sheet ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.sheet ol button{width:100%;text-align:left;font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 2px);padding:8px 0;border-bottom:1px dashed rgba(192,57,47,.3)}
+.sheet ol button[aria-pressed=true]::after{content:"  ✓";color:var(--ink)}
+.sheet .notes{font-family:var(--hand);color:var(--red);font-size:var(--red-size);display:flex;flex-direction:column;gap:2px}
+.sheet .close{align-self:flex-end;font-size:14px;color:var(--mute);padding:6px 2px}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
-.key{font-size:12px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 12px}
-.key i{display:inline-block;width:12px;height:9px;border-radius:2px;background:var(--c);margin-right:4px;vertical-align:-1px}
 .nav-link{font-size:13px;color:var(--mute)}
 
 .dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
@@ -86,12 +90,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <p class="prose" id="prose" aria-live="polite"></p>
   <div class="note end-note" id="endnote"></div>
   <div class="err" id="err"></div>
-  <div class="key" aria-label="ความหมายของสี">
-    <span><i class="c-food"></i>อาหาร</span><span><i class="c-cafe"></i>กาแฟ</span><span><i class="c-see"></i>เที่ยว</span><span><i class="c-arch"></i>สถาปัตย์</span><span><i class="c-stay"></i>ที่พัก</span><span><i class="c-must"></i>ต้องทำ</span>
-    <span style="font-family:var(--hand);color:var(--red)">ตัวแดงเหนือคำ = ทางเลือก แตะเพื่อสลับ</span><span>◎ = Instagram</span>
-  </div>
   <a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a>
 </main>
+<div class="sheet-bg" id="sheetbg" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><h3 id="sh-t"></h3><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
   <div class="mid"><div id="cnt"></div><a href="index.html">แผนเต็ม ↗</a></div>
@@ -112,7 +114,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 
   /* ---------- typography ----------
      th  : Thai glyph size relative to Latin, in % (size-adjust on the Thai half of Sukhumvit Set)
-     lh  : prose line height   gap: how far a red note overlaps its word (em)   red: red note size (px) */
+     lh  : prose line height   red: size of the red marks and sheet text (px) */
   const TYPE_DEFAULT={th:90,lh:2,gap:.6,red:20};   // chosen in the mock-up
   let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type')||'{}'))}catch(e){}
   function applyType(t){
@@ -122,7 +124,6 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const face=(w,names,range,adj)=>"@font-face{font-family:'Trip Text';font-weight:"+w+";src:"+names.map(n=>"local('"+n+"')").join(',')+";unicode-range:"+range+";size-adjust:"+adj+"%}";
     $('ff').textContent=[400,500,600,700].map(w=>face(w,TH[w],'U+0E00-0E7F',TYPE.th)+face(w,EN[w],'U+0000-0DFF,U+0E80-FFFF',100)).join('\n');
     const r=document.documentElement.style;r.setProperty('--lh',TYPE.lh);r.setProperty('--gap',TYPE.gap+'em');r.setProperty('--red-size',TYPE.red+'px');
-    requestAnimationFrame(fitNotes);
   }
   window.applyType=t=>{applyType(t);ls.set('japan2569.type',JSON.stringify(TYPE))};
   window.getType=()=>Object.assign({},TYPE);
@@ -146,34 +147,38 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const shortName=n=>n.replace(/\s*\(([^)]*)\)\s*$/,'').replace(/^คืนรถ\s+/,'');
   const label=(s,o)=>s.kind==='drive'||s.kind==='nap'?shortName(o.pin||o.n).replace(/^.*→\s*/,''):shortName(o.n);
 
-  function altLine(s,chosen){
-    const rest=s.opts.filter(o=>!chosen.includes(o));if(!rest.length)return '';
-    return '<span class="alt">↙ '+(s.pick==='one'?'หรือ ':'+ ')+rest.map((o,i)=>'<button data-s="'+s.id+'" data-o="'+o.id+'">'+(i+1)+') '+esc(o.skip?'ข้าม':shortName(o.n))+'</button>').join('<span class="sep">/</span>')+'</span>';
+  // the red mark after a word: "↙n" when there are n other choices, "!" when there are only notes
+  function mark(s,notes){
+    const n=s.opts.length-E.selected(s,sel).length;
+    if(!n&&!notes.length)return '';
+    return '<button class="mark" data-pop="'+s.id+'" aria-label="'+(n?n+' ทางเลือก':'หมายเหตุ')+'">'+(n?'↙'+n:'!')+'</button>';
   }
-  function word(s,o,alt){
-    const L=link(o),f=FLAG(o,s);
-    return '<span class="anc">'+alt+'<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+
-      (f.length?'<span class="flag">'+esc(f.join(' / '))+'</span>':'')+'</span>';
+  function word(s,o,withMark){
+    const L=link(o);
+    return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+
+      (withMark?mark(s,notesOf(s)):'');
   }
+  const notesOf=s=>[...new Set(E.selected(s,sel).filter(o=>!o.skip).flatMap(o=>FLAG(o,s)))];
   function sentence(s){
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
-    if(!real.length)return t+'<span class="anc">'+altLine(s,chosen)+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span></span> ';
-    const v=VERB(s),a=altLine(s,chosen);
-    return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===0?a:'')).join(' และ ')+(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว ');
+    if(!real.length)return t+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+mark(s,[])+' ';
+    const v=VERB(s);
+    return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว ');
   }
-  // keep every red note inside the column
-  function fitNotes(){
-    const box=$('prose').getBoundingClientRect();
-    document.querySelectorAll('.alt,.flag').forEach(n=>{
-      n.style.left='0';n.style.fontSize='';n.style.whiteSpace='nowrap';n.style.width='';
-      let r=n.getBoundingClientRect();
-      // too long for the column: shrink the note first (down to 12px), wrap only as a last resort
-      if(r.width>box.width){const fs=parseFloat(getComputedStyle(n).fontSize);n.style.fontSize=Math.max(12,fs*box.width/r.width*.96)+'px';r=n.getBoundingClientRect();
-        if(r.width>box.width){n.style.whiteSpace='normal';n.style.width=(box.width-8)+'px';r=n.getBoundingClientRect()}}
-      // then slide it sideways so it stays inside the column (measured on the note itself — words may wrap)
-      let s=0;if(r.right>box.right)s=box.right-r.right;if(r.left+s<box.left)s=box.left-r.left;
-      n.style.left=s+'px';});
+  /* sheet: tap a red mark → choose */
+  let popSlot=null,popFrom=null;
+  function openSheet(id,from){
+    const s=trip.days[cur].slots.find(x=>x.id===id);if(!s)return;popSlot=s;popFrom=from;
+    const chosen=E.selected(s,sel);
+    $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));
+    $('sh-now').textContent='ตอนนี้: '+(chosen.filter(o=>!o.skip).map(o=>shortName(o.n)).join(' + ')||'ข้าม');
+    const list=s.pick==='one'?s.opts.filter(o=>!chosen.includes(o)):s.opts;
+    $('sh-opts').innerHTML=list.map((o,i)=>'<li><button data-s="'+s.id+'" data-o="'+o.id+'"'+(s.pick==='any'?' aria-pressed="'+chosen.includes(o)+'"':'')+'>'+(i+1)+') '+esc(o.skip?'ข้าม':shortName(o.n))+'</button></li>').join('');
+    const nt=notesOf(s);$('sh-notes').innerHTML=nt.map(x=>'<div>! '+esc(x)+'</div>').join('');
+    $('sheet').hidden=false;$('sheetbg').hidden=false;
+    const f=$('sh-opts').querySelector('button')||$('sh-x');f.focus();
   }
+  function closeSheet(){$('sheet').hidden=true;$('sheetbg').hidden=true;popSlot=null;if(popFrom&&document.body.contains(popFrom))popFrom.focus()}
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
     $('date').textContent='วัน'+DOW[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1];
@@ -187,7 +192,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
     $('nav').href=MV.dirUrl(MV.stops(trip,d,sel));
     try{history.replaceState(null,'','#d'+(cur+1))}catch(e){}
-    requestAnimationFrame(fitNotes);tick();
+    tick();
   }
   function tick(){
     const now=jst(),d=trip.days[cur];$('clock').textContent=now.hm;
@@ -197,19 +202,24 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(today?'ต่อไป':'เริ่ม')+'</small></div>':'<div><b>✓</b><small>จบวัน</small></div>';
   }
   document.addEventListener('click',e=>{
+    const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
+    if(e.target.closest('#sh-x')||e.target.id==='sheetbg'){closeSheet();return}
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
-      if(s.pick==='one')sel[s.id]=[b.dataset.o];else sel[s.id]=E.selected(s,sel).map(o=>o.id).concat(b.dataset.o);
-      ls.set(KEY,JSON.stringify(sel));render();return}
+      if(s.pick==='one')sel[s.id]=[b.dataset.o];
+      else{const c=E.selected(s,sel).map(o=>o.id),k=c.indexOf(b.dataset.o);if(k>-1)c.splice(k,1);else c.push(b.dataset.o);sel[s.id]=c}
+      ls.set(KEY,JSON.stringify(sel));render();
+      if(s.pick==='any')openSheet(s.id,null);else closeSheet();
+      return}
     if(e.target.closest('#prev')&&cur>0){cur--;render();scrollTo(0,0)}
     if(e.target.closest('#next-d')&&cur<N-1){cur++;render();scrollTo(0,0)}
   });
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheet').hidden)closeSheet()});
+  addEventListener('hashchange',()=>{const i=initialDay();if(i!==cur){cur=i;closeSheet();render()}});
   let x0=null;   // swipe left/right to change day
-  addEventListener('touchstart',e=>{x0=e.target.closest('input,.mock')?null:e.touches[0].clientX},{passive:true});
+  addEventListener('touchstart',e=>{x0=e.target.closest('input,.mock,.sheet')?null:e.touches[0].clientX},{passive:true});
   addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>70){const n=cur+(dx<0?1:-1);if(n>=0&&n<N){cur=n;render();scrollTo(0,0)}}},{passive:true});
-  addEventListener('resize',()=>requestAnimationFrame(fitNotes));
-  if(document.fonts){document.fonts.ready.then(()=>requestAnimationFrame(fitNotes));document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',()=>requestAnimationFrame(fitNotes))}
-  setTimeout(fitNotes,400);
+  
   applyType();render();setInterval(tick,15000);
 })();
 </script>
