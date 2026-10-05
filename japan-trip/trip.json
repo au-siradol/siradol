@@ -234,9 +234,12 @@
       "slots": [
         { "id": "d4s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Sweet Bakery Nawate", "type": "เบเกอรี่", "note": "ซื้อไปทานบนรถได้", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" },
-            { "id": "b", "n": "Shiori Bakery", "type": "เบเกอรี่", "note": "ซื้อไปทานบนรถได้", "dur": 45, "q": "Shiori Bakery Matsumoto" },
-            { "id": "c", "n": "Matsumoto Hotel Kagetsu — Kissa Yatoro Onkan", "type": "ห้องกาแฟในโรงแรมเก่า เฟอร์นิเจอร์ไม้ Matsumoto · ชุดอาหารเช้า", "note": "มอร์นิ่ง 7:00–10:00", "dur": 45, "q": "Matsumoto Hotel Kagetsu cafe" }
+            { "id": "a", "n": "Sweet Bakery Nawate", "type": "เบเกอรี่เก่าแก่ตั้งแต่ 1924 บนถนน Nawate", "note": "ซื้อไปทานบนรถได้ · เดินจากโรงแรม ~5 นาที · ร้านเล็ก ไม่มีที่นั่งสำหรับ 8 คน", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" },
+            { "id": "b", "n": "Shiori-bi (栞日) book café", "type": "ร้านหนังสือ + คาเฟ่ ขนมปัง กาแฟ", "note": "ต.ค.เปิด 8:00 · ปิดวันพุธ (วันนี้อาทิตย์ เปิด) · เดินจากสถานี 10 นาที · ร้านเล็ก", "dur": 45, "q": "Shioribi Matsumoto" },
+            { "id": "c", "n": "Matsumoto Hotel Kagetsu — Kissa Yatoro Onkan", "type": "ห้องกาแฟในโรงแรมเก่า เฟอร์นิเจอร์ไม้ Matsumoto · ชุดอาหารเช้า", "note": "มอร์นิ่ง 7:00–10:00 · 8 คน: ห้องกาแฟโรงแรม โต๊ะกว้าง · เดินจากโรงแรมได้", "dur": 45, "q": "Matsumoto Hotel Kagetsu cafe" },
+            { "id": "d", "n": "อาหารเช้าที่โรงแรม The Celecton", "type": "บุฟเฟต์อาหารญี่ปุ่นแบบบ้าน (obanzai) วัตถุดิบชินชู + เบเกอรี่คาเฟ่", "note": "ไม่ต้องเดินหรือขับ ออกเดินทางได้ตรงเวลา · 8 คน: นั่งรวมได้ · เช็กว่าแพ็กเกจห้องรวมอาหารเช้าหรือต้องจ่ายเพิ่ม", "dur": 45, "q": "The Celecton Matsumoto", "kids": true },
+            { "id": "e", "n": "Coffee Bigaku Abe (珈琲美学アベ)", "type": "ร้านกาแฟเก่าตั้งแต่ 1957 · ชุดมอร์นิ่ง เลือกเครื่องเคียงได้ 17 อย่าง", "note": "วันอาทิตย์ 7:00–17:00 มอร์นิ่งถึง 10:50 · ปิดวันอังคาร · ร้านเล็ก 8 คนอาจแยกโต๊ะ", "dur": 45, "q": "Coffee Bigaku Abe Matsumoto" },
+            { "id": "f", "n": "Coffee Marumo (珈琲まるも)", "type": "ร้านกาแฟในอาคารปี 1888 เฟอร์นิเจอร์ Matsumoto Mingei ทั้งร้าน", "note": "เสาร์–อาทิตย์ มอร์นิ่ง 8:00–10:00 · ริมแม่น้ำ Metoba ใกล้ Nakamachi · ร้านเล็ก 8 คนอาจแยกโต๊ะ", "dur": 45, "q": "Coffee Marumo Matsumoto", "arch": true }
           ] },
         { "id": "d4s2", "time": "09:15", "kind": "drive", "title": "ขับ Matsumoto → Hakuba Iwatake", "pick": "one", "def": ["a"], "ll": [36.7016, 137.8619],
           "opts": [
@@ -250,9 +253,10 @@
         { "id": "d4s4", "time": "12:15", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
             { "id": "a", "n": "Restaurant Seppo (雪峰) @ Snow Peak Land Station", "type": "ห้องอาหารของ Snow Peak · ดูแลโดยเชฟร้านมิชลิน 3 ดาว Kangaku Ishikawa", "note": "ห้องอาหารเต็มรูปแบบเปิดเฉพาะกลาง ธ.ค.–ต้น มี.ค. · ช่วง ต.ค. มีแค่โรงอาหาร 雪峰食堂", "dur": 60, "q": "Snow Peak Land Station Hakuba", "avoid": "ไม่ต้องไป — เลือก The City Bakery แทน" },
-            { "id": "b", "n": "The City Bakery (Mountain Harbor)", "type": "เบเกอรี่ แซนด์วิช", "note": "อยู่บนยอดเขาที่ Mountain Harbor · กินแล้วลงกอนโดลา ~10 นาที", "dur": 50, "q": "The City Bakery Hakuba Mountain Harbor" },
-            { "id": "c", "n": "Hakuma Dining", "type": "เซตอาหารญี่ปุ่น (ตาม Sheet) — ค้นร้านชื่อนี้ไม่เจอ เช็กชื่ออีกครั้ง", "note": "", "dur": 60, "q": "Hakuma Dining Hakuba" },
-            { "id": "d", "n": "Zen (膳) Hakuba", "type": "โซบะทำมือ แป้งชินชู · ชุดกลางวันมีเทมปุระ", "note": "11:00–14:00 (โซบะหมดก่อนได้) · ปิดอังคาร–พุธ (18 ต.ค. วันอาทิตย์ เปิด) · ขับจาก Iwatake ราว 10 นาที", "dur": 60, "q": "Zen soba Hakuba Hokujo", "closedDow": [2, 3] }
+            { "id": "b", "n": "The City Bakery (Mountain Harbor)", "type": "เบเกอรี่ แซนด์วิช กาแฟ · ลานนั่งบนยอดเขา วิวเทือกเขาแอลป์เหนือ", "note": "อยู่บนยอดเขาที่ Mountain Harbor · 9:00–15:30 · บริการตัวเอง 8 คนนั่งรวมได้ · ไม่มีอาหารจานหลัก · กินแล้วลงกอนโดลา ~10 นาที", "dur": 50, "q": "The City Bakery Hakuba Mountain Harbor" },
+            { "id": "d", "n": "Zen (膳) Hakuba", "type": "โซบะทำมือ แป้งชินชู · ชุดกลางวันมีเทมปุระ", "note": "ปิดอังคาร–พุธ (วันนี้อาทิตย์ เปิด) · เวลาเปิดข้อมูลไม่ตรงกัน (บางแหล่งว่ากลางวัน 11:00–14:00 บางแหล่งว่าเปิดแค่เย็น) — โทรเช็ก 0261-72-3450 · ขับจาก Iwatake ราว 10 นาที", "dur": 60, "q": "Zen soba Hakuba Hokujo", "closedDow": [2, 3] },
+            { "id": "e", "n": "Michi-no-eki Hakuba (道の駅白馬) ร้านอาหาร", "type": "โซบะทำมือ + ข้าวเหนียวข้าวม่วงของ Hakuba · ชุดโซบะ", "note": "11:00–19:00 · อยู่ริมถนน 148 ทางใต้ของ Iwatake — ทางผ่านไป Azumino ไม่ต้องอ้อม · 8 คน: ร้านแบบโรงอาหาร นั่งรวมได้ · ที่จอดกว้าง ห้องน้ำ ร้านของฝาก", "dur": 45, "q": "Michi no Eki Hakuba", "kids": true },
+            { "id": "f", "n": "Starbucks @ Snow Peak Land Station", "type": "กาแฟ แซนด์วิช ขนม", "note": "เปิดทุกวัน · อยู่ในอาคาร Snow Peak (Kengo Kuma) · ของว่างเบาๆ มากกว่ามื้อกลางวัน", "dur": 30, "q": "Starbucks Snow Peak Land Station Hakuba" }
           ] },
         { "id": "d4s5", "time": "13:15", "kind": "nap", "title": "ขับ + เด็กนอน → Azumino", "pick": "one", "def": ["a"], "ll": [36.3494, 137.8283],
           "opts": [
@@ -270,7 +274,8 @@
         { "id": "d4s7", "time": "15:30", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Chihiro Cafe", "type": "คาเฟ่ในพิพิธภัณฑ์ · เครื่องดื่มออร์แกนิก ขนมเพื่อสุขภาพ", "note": "ย้ายมาก่อนขับกลับ", "dur": 30, "q": "Chihiro Art Museum Azumino cafe" },
-            { "id": "b", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
+            { "id": "b", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true },
+            { "id": "c", "n": "Daio Wasabi Farm (大王わさび農場)", "type": "ไอศกรีมวาซาบิ (¥390) · ฟาร์มวาซาบิ ทางเดินราบ กังหันน้ำ แม่น้ำใส", "note": "ต.ค. 9:00–17:20 · ทางผ่านขากลับ Matsumoto (ขับจาก Chihiro ~20 นาที) · ที่จอดกว้าง · ออกจาก Chihiro ตอน 15:30 แล้วไปเลย", "dur": 30, "q": "Daio Wasabi Farm", "kids": true }
           ] },
         { "id": "d4s8", "time": "16:00", "kind": "drive", "title": "ขับ Azumino → Matsumoto", "pick": "one", "def": ["a"], "ll": [36.236, 137.9715],
           "opts": [
@@ -283,10 +288,10 @@
           ] },
         { "id": "d4s10", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["e"],
           "opts": [
-            { "id": "a", "n": "Yakiniku House Koma", "type": "ยากินิกุ (ปิ้งย่างเนื้อ)", "note": "ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.) · ค้นร้านชื่อนี้ใน Matsumoto ไม่เจอ — เช็กชื่อ/ที่อยู่ก่อน", "dur": 75, "q": "Yakiniku House Koma Matsumoto" },
-            { "id": "c", "n": "Matsumoto Beef Club", "type": "เนื้อและสตูเนื้อ (ตาม Sheet) — ค้นร้านชื่อนี้ไม่เจอ เช็กชื่ออีกครั้ง", "note": "", "dur": 75, "q": "Matsumoto Beef Club" },
             { "id": "d", "n": "Meshiya Guri to Niru (召し屋 グリとニル)", "type": "โยโชกุ (อาหารฝรั่งแบบญี่ปุ่น) ย่างเตาถ่าน เนื้อชินชู + อาหารทะเล", "note": "ชั้นใต้ดิน ตึก Pyrene ใกล้สถานี · 17:00–24:00 · ปิดวันจันทร์ · จองได้ · 8 คน: ร้านเล็กชั้นใต้ดิน ต้องจองล่วงหน้า · ไม่มีที่จอด", "dur": 75, "q": "Meshiya Guri to Niru Matsumoto", "closedDow": [1] },
-            { "id": "e", "n": "Gyu-Kaku Matsumoto Chuo", "type": "ยากินิกุ บุฟเฟต์", "note": "เดินจากสถานี ~6 นาที · 17:00–23:00 ไม่มีวันหยุด · จองได้ · 8 คน: 82 ที่นั่ง จองได้ · ที่จอดข้างร้าน 4 คัน + ลานจอดร้านตรงข้าม", "dur": 90, "q": "Gyukaku Matsumoto Chuo", "kids": true }
+            { "id": "e", "n": "Gyu-Kaku Matsumoto Chuo", "type": "ยากินิกุ บุฟเฟต์", "note": "เดินจากสถานี ~6 นาที · 17:00–23:00 ไม่มีวันหยุด · จองได้ · 8 คน: 82 ที่นั่ง จองได้ · ที่จอดข้างร้าน 4 คัน + ลานจอดร้านตรงข้าม", "dur": 90, "q": "Gyukaku Matsumoto Chuo", "kids": true },
+            { "id": "f", "n": "Shabu-shabu Onyasai (Matsumoto-Hirata)", "type": "ชาบูชาบู บุฟเฟต์", "note": "เปิดวันอาทิตย์ · มีน้ำซุปสำหรับเด็ก · 8 คน: 80 ที่นั่ง รับกลุ่ม จองได้ · อยู่ทางใต้ของเมือง ขับจากโรงแรม ~20 นาที มีที่จอด", "dur": 75, "q": "Shabu-shabu Onyasai Matsumoto Hirata", "kids": true, "reserve": true },
+            { "id": "g", "n": "Sushiro (ซูชิสายพาน) Matsumoto Chikuma", "type": "ซูชิสายพาน", "note": "เปิดถึง 23:00 · อาทิตย์เย็นคิวยาว ใช้แอปจองคิว · 8 คน: บูธราว 6 คน ต้องแยก 2 บูธ · ขับ ~10 นาที มีที่จอด", "dur": 60, "q": "Sushiro Matsumoto Chikuma", "kids": true, "reserve": true }
           ] }
       ] },
     { "id": "d5", "n": 5, "dow": 1, "date": "2026-10-19", "label": "Kamikochi",
