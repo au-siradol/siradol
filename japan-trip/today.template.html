@@ -12,12 +12,12 @@
 <style>
 :root{
   --bg:#ececec;--ink:#1b1b1b;--mute:#666;--red:#c0392f;
-  --hl-food:#f5b98a;--hl-cafe:#f6dc8c;--hl-see:#bfe39a;--hl-arch:#bdb0e0;--hl-stay:#acd3e8;--hl-shop:#f3bfd0;--hl-must:#ee958f;
-  /* 'Trip Text' = Sukhumvit Set split by script (see #ff); IBM Plex Sans Thai is the web fallback */
-  --font:'Trip Text','IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;
+  --hl-food:#f7c7a0;--hl-cafe:#f5df9c;--hl-see:#cbe8ad;--hl-arch:#cfc5ea;--hl-stay:#bddcee;--hl-shop:#f4cdda;--hl-must:#f2b3ae;
+  /* 'Trip Text' = Sukhumvit Set for Thai + Helvetica Neue for Latin (see #ff); IBM Plex Sans Thai is the web fallback */
+  --font:'Trip Text','Helvetica Neue',Helvetica,Arial,'IBM Plex Sans Thai',sans-serif;
   --hand:'iannnnnBKK','Mali',cursive;
   /* typography knobs — set from TYPE in the script */
-  --lh:1.95;--gap:.32em;--red-size:15px;--tilt:-1deg;
+  --lh:2;--gap:.6em;--red-size:20px;--tilt:-1deg;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
@@ -45,15 +45,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .note.end-note{text-align:center;transform:rotate(-1deg)}
 /* prose: the line gap is just enough for one row of small red notes */
 .prose{position:relative;font-size:19px;line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
-.t{font-size:.66em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
+.t{font-size:1em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
 .anc{position:relative}
-.hl{text-decoration:none;padding:.04em .18em;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:2px}
-.c-food{background:var(--hl-food)}.c-cafe{background:var(--hl-cafe)}.c-see{background:var(--hl-see)}.c-arch{background:var(--hl-arch)}
-.c-stay{background:var(--hl-stay)}.c-shop{background:var(--hl-shop)}.c-must{background:var(--hl-must)}
+.hl{--c:transparent;text-decoration:none;padding:0 .12em;background:linear-gradient(transparent 54%,var(--c) 54%,var(--c) 94%,transparent 94%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.c-food{--c:var(--hl-food)}.c-cafe{--c:var(--hl-cafe)}.c-see{--c:var(--hl-see)}.c-arch{--c:var(--hl-arch)}
+.c-stay{--c:var(--hl-stay)}.c-shop{--c:var(--hl-shop)}.c-must{--c:var(--hl-must)}
 .c-move{border-bottom:1.5px dotted var(--mute)}
 .ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
 /* red notes hug their word: choices sit on its top edge, warnings on its bottom edge */
-.alt,.flag{position:absolute;left:0;font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;white-space:nowrap;pointer-events:none}
+.alt,.flag{position:absolute;left:0;font-family:var(--hand);color:var(--red);text-shadow:0 0 2px var(--bg),0 0 2px var(--bg),0 0 3px var(--bg);font-size:var(--red-size);line-height:1;white-space:nowrap;pointer-events:none}
 .alt{bottom:calc(100% - var(--gap));transform:rotate(var(--tilt));transform-origin:left bottom}
 .flag{top:calc(100% - var(--gap))}
 .alt button{pointer-events:auto;color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:1px;text-underline-offset:2px;padding:3px 0}
@@ -61,7 +61,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .key{font-size:12px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 12px}
-.key i{display:inline-block;width:12px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.key i{display:inline-block;width:12px;height:9px;border-radius:2px;background:var(--c);margin-right:4px;vertical-align:-1px}
 .nav-link{font-size:13px;color:var(--mute)}
 
 .dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
@@ -113,13 +113,14 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   /* ---------- typography ----------
      th  : Thai glyph size relative to Latin, in % (size-adjust on the Thai half of Sukhumvit Set)
      lh  : prose line height   gap: how far a red note overlaps its word (em)   red: red note size (px) */
-  const TYPE_DEFAULT={th:112,lh:1.95,gap:.32,red:15};
+  const TYPE_DEFAULT={th:90,lh:2,gap:.6,red:20};   // chosen in the mock-up
   let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type')||'{}'))}catch(e){}
   function applyType(t){
     Object.assign(TYPE,t||{});
-    const W=[[400,'Text'],[500,'Medium'],[600,'SemiBold'],[700,'Bold']],face=(w,n,range,adj)=>
-      "@font-face{font-family:'Trip Text';font-weight:"+w+";src:local('Sukhumvit Set "+n+"'),local('SukhumvitSet-"+n+"')"+(w===400?",local('Sukhumvit Set')":'')+";unicode-range:"+range+";size-adjust:"+adj+"%}";
-    $('ff').textContent=W.map(([w,n])=>face(w,n,'U+0E00-0E7F',TYPE.th)+face(w,n,'U+0000-0DFF,U+0E80-FFFF',100)).join('\n');
+    const TH={400:['Sukhumvit Set Text','SukhumvitSet-Text','Sukhumvit Set'],500:['Sukhumvit Set Medium','SukhumvitSet-Medium'],600:['Sukhumvit Set SemiBold','SukhumvitSet-SemiBold'],700:['Sukhumvit Set Bold','SukhumvitSet-Bold']};
+    const EN={400:['Helvetica Neue','HelveticaNeue'],500:['Helvetica Neue Medium','HelveticaNeue-Medium'],600:['Helvetica Neue Bold','HelveticaNeue-Bold'],700:['Helvetica Neue Bold','HelveticaNeue-Bold']};
+    const face=(w,names,range,adj)=>"@font-face{font-family:'Trip Text';font-weight:"+w+";src:"+names.map(n=>"local('"+n+"')").join(',')+";unicode-range:"+range+";size-adjust:"+adj+"%}";
+    $('ff').textContent=[400,500,600,700].map(w=>face(w,TH[w],'U+0E00-0E7F',TYPE.th)+face(w,EN[w],'U+0000-0DFF,U+0E80-FFFF',100)).join('\n');
     const r=document.documentElement.style;r.setProperty('--lh',TYPE.lh);r.setProperty('--gap',TYPE.gap+'em');r.setProperty('--red-size',TYPE.red+'px');
     requestAnimationFrame(fitNotes);
   }
@@ -147,7 +148,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 
   function altLine(s,chosen){
     const rest=s.opts.filter(o=>!chosen.includes(o));if(!rest.length)return '';
-    return '<span class="alt">↙ '+(s.pick==='one'?'หรือ ':'+ ')+rest.map(o=>'<button data-s="'+s.id+'" data-o="'+o.id+'">'+esc(o.skip?'ข้าม':shortName(o.n))+'</button>').join('<span class="sep">/</span>')+'</span>';
+    return '<span class="alt">↙ '+(s.pick==='one'?'หรือ ':'+ ')+rest.map((o,i)=>'<button data-s="'+s.id+'" data-o="'+o.id+'">'+(i+1)+') '+esc(o.skip?'ข้าม':shortName(o.n))+'</button>').join('<span class="sep">/</span>')+'</span>';
   }
   function word(s,o,alt){
     const L=link(o),f=FLAG(o,s);
@@ -164,10 +165,14 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function fitNotes(){
     const box=$('prose').getBoundingClientRect();
     document.querySelectorAll('.alt,.flag').forEach(n=>{
-      n.style.left='0';n.style.whiteSpace='nowrap';n.style.width='';
-      const a=n.parentElement.getBoundingClientRect();let w=n.getBoundingClientRect().width;
-      if(w>box.width){n.style.whiteSpace='normal';n.style.width=(box.width-8)+'px';w=box.width-8}
-      n.style.left=Math.max(box.left-a.left,Math.min(0,box.right-w-a.left))+'px';});
+      n.style.left='0';n.style.fontSize='';n.style.whiteSpace='nowrap';n.style.width='';
+      let r=n.getBoundingClientRect();
+      // too long for the column: shrink the note first (down to 12px), wrap only as a last resort
+      if(r.width>box.width){const fs=parseFloat(getComputedStyle(n).fontSize);n.style.fontSize=Math.max(12,fs*box.width/r.width*.96)+'px';r=n.getBoundingClientRect();
+        if(r.width>box.width){n.style.whiteSpace='normal';n.style.width=(box.width-8)+'px';r=n.getBoundingClientRect()}}
+      // then slide it sideways so it stays inside the column (measured on the note itself — words may wrap)
+      let s=0;if(r.right>box.right)s=box.right-r.right;if(r.left+s<box.left)s=box.left-r.left;
+      n.style.left=s+'px';});
   }
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
@@ -203,7 +208,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   addEventListener('touchstart',e=>{x0=e.target.closest('input,.mock')?null:e.touches[0].clientX},{passive:true});
   addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>70){const n=cur+(dx<0?1:-1);if(n>=0&&n<N){cur=n;render();scrollTo(0,0)}}},{passive:true});
   addEventListener('resize',()=>requestAnimationFrame(fitNotes));
-  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>requestAnimationFrame(fitNotes));
+  if(document.fonts){document.fonts.ready.then(()=>requestAnimationFrame(fitNotes));document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',()=>requestAnimationFrame(fitNotes))}
+  setTimeout(fitNotes,400);
   applyType();render();setInterval(tick,15000);
 })();
 </script>
