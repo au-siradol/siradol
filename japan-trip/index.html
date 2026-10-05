@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="th">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Japan 2569 Itinerary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef1ee; --paper:#f8faf7; --ink:#1d2340; --mute:#5b6478; --rule:#c9d0cb; --rule2:#dfe4df;
+  --accent:#0b6b66; --accent-ink:#ffffff; --accent-soft:#d6ebe8;
+  --err:#b3261e; --err-soft:#f9dfdc; --warn:#8a5a00; --warn-soft:#fbecc8; --info:#3a5a9b; --info-soft:#dde6f6;
+  --nap:#e9d9f0; --move:#8f98b8; --eat:#d98c4a; --see:#4a9a8f; --stay:#6d6a9c;
+  --font-d:'Anuphan','IBM Plex Sans Thai',system-ui,sans-serif;
+  --font-b:'IBM Plex Sans Thai',system-ui,sans-serif;
+  --font-m:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151c; --paper:#1a1e29; --ink:#e6e9f2; --mute:#97a0b5; --rule:#343b4c; --rule2:#272d3b;
+  --accent:#4fc3bb; --accent-ink:#0b1c1b; --accent-soft:#1d3a3a;
+  --err:#ff8a80; --err-soft:#3b1f1d; --warn:#f2c36b; --warn-soft:#362b14; --info:#8fb1f0; --info-soft:#1d2a45;
+  --nap:#35284a; --move:#69729a; --eat:#c27a3a; --see:#3f8c82; --stay:#8a86c2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151c; --paper:#1a1e29; --ink:#e6e9f2; --mute:#97a0b5; --rule:#343b4c; --rule2:#272d3b;
+  --accent:#4fc3bb; --accent-ink:#0b1c1b; --accent-soft:#1d3a3a;
+  --err:#ff8a80; --err-soft:#3b1f1d; --warn:#f2c36b; --warn-soft:#362b14; --info:#8fb1f0; --info-soft:#1d2a45;
+  --nap:#35284a; --move:#69729a; --eat:#c27a3a; --see:#3f8c82; --stay:#8a86c2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:20px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent)}
+.mono{font-family:var(--font-m);font-variant-numeric:tabular-nums}
+
+/* title block */
+.tb{background:var(--paper);border:1.5px solid var(--ink);display:grid;grid-template-columns:1fr auto;gap:0}
+.tb>div{padding:12px 16px;min-width:0}
+.tb .r{border-left:1px solid var(--ink);display:flex;flex-direction:column;gap:6px;justify-content:center;align-items:flex-end}
+.eyebrow{font:500 11px var(--font-m);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+h1{font:700 26px/1.15 var(--font-d);margin:2px 0 4px;text-wrap:balance}
+.sub{color:var(--mute);font-size:13.5px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.btn{border:1px solid var(--rule);background:var(--paper);padding:5px 10px;font-size:13px;border-radius:2px}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,.tab:focus-visible,.opt input:focus-visible+.card{outline:2px solid var(--accent);outline-offset:2px}
+
+.rules{font-size:13px;color:var(--mute);border-left:2px solid var(--accent);padding:2px 12px;display:flex;flex-direction:column;gap:2px}
+
+/* tabs */
+.tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1.5px solid var(--ink);scrollbar-width:thin}
+.tab{flex:0 0 auto;border:1px solid var(--rule);border-bottom:0;background:var(--bg);padding:6px 22px 7px 12px;text-align:left;min-width:74px;position:relative;margin-right:-1px}
+.tab .n{font:500 11px var(--font-m);color:var(--mute);letter-spacing:.08em}
+.tab .d{font:600 14px var(--font-d)}
+.tab[aria-selected=true]{background:var(--paper);border-color:var(--ink);border-bottom:1.5px solid var(--paper);margin-bottom:-1.5px;z-index:1}
+.dot{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:50%;font:700 9px/14px var(--font-m);text-align:center;color:var(--paper)}
+.dot.err{background:var(--err)}.dot.warn{background:var(--warn)}.dot.pass{background:var(--accent)}
+
+/* day header */
+.dh{display:flex;flex-direction:column;gap:8px}
+.dh h2{font:700 21px/1.2 var(--font-d);margin:0;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--mute)}
+.meta b{color:var(--ink);font-weight:500}
+.wx{display:flex;flex-direction:column;gap:4px}
+.note{font-size:13.5px;padding:6px 10px;border-left:3px solid var(--info);background:var(--info-soft)}
+.note.warn{border-color:var(--warn);background:var(--warn-soft)}
+
+/* strip */
+.strip{background:var(--paper);border:1px solid var(--rule);padding:10px 12px 8px}
+.strip h3{font:500 11px var(--font-m);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 6px}
+.bar{position:relative;height:30px;background:repeating-linear-gradient(90deg,transparent 0 calc(100%/15 - 1px),var(--rule2) calc(100%/15 - 1px) calc(100%/15));border:1px solid var(--rule);overflow:hidden}
+.nap{position:absolute;top:0;bottom:0;background:var(--nap);opacity:.9}
+.seg{position:absolute;top:5px;bottom:5px;min-width:2px;border-radius:1px;cursor:pointer;border:0;padding:0}
+.seg.move{background:var(--move)}.seg.eat{background:var(--eat)}.seg.see{background:var(--see)}.seg.stay{background:var(--stay)}
+.seg.err{outline:2px solid var(--err);outline-offset:1px}.seg.warn{outline:2px solid var(--warn);outline-offset:1px}
+.ticks{position:relative;height:16px;margin-top:2px;font:400 10.5px var(--font-m);color:var(--mute)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}.ticks span:last-child{transform:translateX(-100%)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:4px}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px}
+
+/* issues */
+.iss{border:1px solid var(--rule);background:var(--paper)}
+.iss h3{margin:0;padding:8px 12px;font:600 14px var(--font-d);border-bottom:1px solid var(--rule2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cnt{font:500 12px var(--font-m);padding:1px 7px;border-radius:9px}
+.cnt.err{background:var(--err-soft);color:var(--err)}.cnt.warn{background:var(--warn-soft);color:var(--warn)}.cnt.info{background:var(--info-soft);color:var(--info)}
+.iss ul{list-style:none;margin:0;padding:4px 0;max-height:240px;overflow:auto}
+.iss li button{display:flex;gap:8px;width:100%;text-align:left;border:0;background:none;padding:5px 12px;font-size:13.5px}
+.iss li button:hover{background:var(--bg)}
+.lv{flex:0 0 auto;font:600 10.5px var(--font-m);padding:1px 6px;border-radius:2px;margin-top:3px;letter-spacing:.05em}
+.lv.err{background:var(--err);color:var(--paper)}.lv.warn{background:var(--warn);color:var(--paper)}.lv.info{background:var(--info);color:var(--paper)}
+.ok{padding:10px 12px;color:var(--accent);font-size:14px}
+
+/* slots */
+.slots{display:flex;flex-direction:column}
+.slot{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--rule);scroll-margin-top:12px}
+.slot:target,.slot.flash{background:linear-gradient(90deg,var(--accent-soft),transparent 60%)}
+.time{font:500 15px var(--font-m);padding-top:2px}
+.time small{display:block;font-size:11px;color:var(--mute)}
+.body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.st{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.st h4{font:600 15.5px var(--font-d);margin:0}
+.chip{font:500 10.5px var(--font-m);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);border:1px solid var(--rule);padding:0 6px}
+.pk{font-size:12px;color:var(--mute)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.opt{display:block;min-width:0;position:relative}
+.opt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;width:100%;height:100%;z-index:2}
+.card{border:1px solid var(--rule);background:var(--paper);padding:8px 10px;height:100%;display:flex;flex-direction:column;gap:3px}
+.opt input:checked+.card{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent);background:var(--accent-soft)}
+.card .n{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.card .nt{font-size:12.5px;color:var(--mute)}
+.tags{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.tg{font-size:11px;padding:0 6px;border-radius:2px;background:var(--rule2);color:var(--ink)}
+.tg.warn{background:var(--warn-soft);color:var(--warn)}.tg.info{background:var(--info-soft);color:var(--info)}.tg.good{background:var(--accent-soft);color:var(--accent)}
+.map{position:relative;z-index:3;font-size:12px;margin-left:auto;white-space:nowrap}
+.slot-iss{display:flex;flex-direction:column;gap:3px}
+.si{font-size:13px;padding:3px 8px;border-left:3px solid var(--info);background:var(--info-soft)}
+.si.warn{border-color:var(--warn);background:var(--warn-soft)}.si.err{border-color:var(--err);background:var(--err-soft)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;font-size:13px;border-radius:2px;z-index:10}
+.fb{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.fb textarea{width:100%;height:160px;font:12px var(--font-m);background:var(--paper);color:var(--ink);border:1px solid var(--rule)}
+
+@media(max-width:560px){
+  .tb{grid-template-columns:1fr}.tb .r{border-left:0;border-top:1px solid var(--ink);align-items:flex-start}.tools{justify-content:flex-start}
+  .slot{grid-template-columns:1fr;gap:4px}.time{display:flex;gap:8px;align-items:baseline}.time small{display:inline}
+  h1{font-size:22px}
+}
+@media(prefers-reduced-motion:no-preference){.card{transition:background .12s,border-color .12s}}
+</style>
+
+<body>
+<div class="wrap">
+  <header class="tb">
+    <div>
+      <div class="eyebrow" id="eb"></div>
+      <h1 id="ttl"></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="r">
+      <div class="tools">
+        <button class="btn pri" id="cpDay">คัดลอกแผนวันนี้</button>
+        <button class="btn" id="cpAll">คัดลอกทั้งทริป</button>
+        <button class="btn" id="reset">รีเซ็ตตัวเลือก</button>
+        <button class="btn" id="theme" aria-label="สลับธีม">◐</button>
+      </div>
+    </div>
+  </header>
+  <div class="rules" id="rules"></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <main id="day" class="dh" role="tabpanel" tabindex="-1"></main>
+  <div id="sr" class="sr" aria-live="polite"></div>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script id="trip" type="application/json">{"meta":{"title":"Japan 2569","subtitle":"ครอบครัว 3 รุ่น · 15–23 ต.ค. 2569 (2026) · Nissan Serena จาก Haneda","party":"ผู้สูงอายุ 2 · เด็ก 4 ขวบ 1 · ผู้ใหญ่ขับรถ","nap":["13:00","14:30"],"napStartOk":["12:45","14:15"],"dayStart":"07:00","dayEnd":"22:00","rules":["ตารางที่มีหลายตัวเลือกในเวลาเดียวกัน = เลือกอย่างใดอย่างหนึ่ง (pick one) หรือเลือกได้หลายอย่างถ้าเวลาพอ (pick any)","ขับไกล ≥40 กม. ช่วงเช้ายอมรับได้ (info) แต่หลังช่วงนอนเด็กตื่นอยู่ (warn); ช่วงนอน 13:00–14:30 ควรเป็นช่วงขับรถ","ต้องเติมน้ำมันก่อนคืนรถวันที่ 22 ต.ค. ก่อน 18:00","พักที่ Hotel Cypress Karuizawa (แทน Hotel Indigo ทุกจุด)","ตะวันตกดินราว 17:00 ในเดือนนี้ — เลี่ยงขับถนนเขาหลังเวลานั้น (ค่าประมาณ ตรวจก่อนไป)"],"version":"2","sunset":"17:00","deadlineBuffer":15,"napBandOverlap":30},"days":[{"id":"d1","n":1,"dow":4,"date":"2026-10-15","label":"ถึง Haneda","route":"Haneda T3","night":"Hotel Villa Fontaine Grand Haneda Airport","weather":[{"t":"โตเกียว ตุลาคม ราว 15–22°C อากาศสบาย ความเสี่ยงไต้ฝุ่นปีนี้ใกล้เคียง/ต่ำกว่าปกติ","s":"info"},{"t":"ลงเครื่อง ~18:00 → ผ่าน ตม./รับกระเป๋า ~19:30 จึงเลื่อนเช็กอินเป็น 19:30 และมื้อเย็น 20:00 (ถ้าเที่ยวบินล่าช้า ให้เลื่อนต่อ)","s":"warn"}],"slots":[{"id":"d1s1","time":"18:00","kind":"arrival","title":"ถึง Haneda T3 / ตม. / รับกระเป๋า","pick":"one","def":["a"],"opts":[{"id":"a","n":"ถึง Haneda Terminal 3","note":"ตม. + รับกระเป๋า 60–90 นาที (ตั้งเผื่อ 90)","dur":90,"q":"Haneda Airport Terminal 3"}]},{"id":"d1s2","time":"19:30","kind":"hotel","title":"เช็กอินโรงแรม","pick":"one","def":["a"],"opts":[{"id":"a","n":"Hotel Villa Fontaine Grand Haneda Airport","note":"เชื่อมกับ T3 / ใช้เวลาเดินน้อย เหมาะกับผู้สูงอายุ","dur":30,"q":"Hotel Villa Fontaine Grand Haneda Airport"}]},{"id":"d1s3","time":"20:00","kind":"meal","title":"อาหารเย็น","pick":"one","def":["a"],"opts":[{"id":"a","n":"Grand Aile (บุฟเฟต์)","note":"ไม่ต้องรอคิว เหมาะกับเด็กและผู้สูงอายุ","dur":75,"q":"Grand Aile Villa Fontaine Haneda buffet","kids":true},{"id":"b","n":"Tsurutontan Haneda (อุด้ง)","note":"เมนูนุ่มทานง่าย แต่ช่วงเย็นมักมีคิว","dur":75,"q":"Tsurutontan Haneda Airport Garden","queue":true},{"id":"c","n":"Katsusen Edo Koji","note":"ทงคัตสึ นั่งสบาย","dur":75,"q":"Katsusen Haneda Airport Garden"},{"id":"d","n":"Haneda Sky Brewing","note":"คราฟต์เบียร์ + อาหารเรียบง่าย","dur":75,"q":"Haneda Sky Brewing"},{"id":"e","n":"Suginoko-Haneda Food Court","note":"ฟู้ดคอร์ทเลือกได้ตามคน","dur":60,"q":"Haneda Airport Garden food court"}]},{"id":"d1s4","time":"21:15","kind":"arch","title":"ชมสถาปัตยกรรม (ถ้ายังมีแรง — ปกติข้าม)","pick":"any","def":["c"],"opts":[{"id":"a","n":"สถาปัตยกรรม Terminal 3","note":"เดินสั้นๆ ในอาคาร พื้นเรียบ","dur":30,"q":"Haneda Airport Terminal 3 architecture","arch":true},{"id":"b","n":"Observation Deck T3","note":"ลมอาจแรงและเย็นตอนกลางคืน เด็กอาจง่วง","dur":30,"q":"Haneda Airport Terminal 3 Observation Deck","cold":true},{"id":"c","n":"ข้าม — พักผ่อน","note":"","dur":0,"q":"","skip":true}]}]},{"id":"d2","n":2,"dow":5,"date":"2026-10-16","label":"Haneda → Kawaguchiko","route":"Haneda → Ebina SA → Kawaguchiko","night":"Fuji Grand Villa TOKI (รวมอาหารเช้า)","weather":[{"t":"Kawaguchiko ตอนเช้าเย็น ~8–10°C กลางวัน ~17°C เตรียมเสื้อกันลม","s":"info"},{"t":"ใบไม้เปลี่ยนสีทางเลียบทะเลสาบ (Momiji Corridor) ช่วงต้น–กลาง พ.ย. ยังไม่ถึง; Oishi Park มีดอกโคเคีย (kochia) ช่วงกลาง–ปลาย ต.ค. (ไม่เป็นทางการ)","s":"warn"}],"slots":[{"id":"d2s1","time":"08:30","kind":"meal","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"Bakery Coffee Miyabi","note":"","dur":45,"q":"Bakery Coffee Miyabi Haneda"}]},{"id":"d2s2","time":"09:15","kind":"car","title":"รับรถ Nissan Serena","pick":"one","def":["a"],"opts":[{"id":"a","n":"รับรถเช่า + เช็กสภาพ","note":"คาร์ซีทบังคับสำหรับเด็กอายุต่ำกว่า 6 ปี — จองล่วงหน้า; เช็กพื้นที่สัมภาระกับกระเป๋า 5 คน","dur":40,"q":"Haneda Airport rental car Nissan Rent a Car","reserve":true}]},{"id":"d2s3","time":"10:00","kind":"drive","title":"ขับ Haneda → Ebina SA","pick":"one","def":["a"],"opts":[{"id":"a","n":"Haneda → Ebina SA","note":"ช่วงเช้ายอมรับได้ รถยังเบา","dur":45,"km":45,"q":"Ebina Service Area Tomei Expressway"}]},{"id":"d2s4","time":"10:45","kind":"rest","title":"พักที่ Ebina SA","pick":"one","def":["a"],"opts":[{"id":"a","n":"Ebina SA (ห้องน้ำ / ของว่าง)","note":"พักเด็กและผู้สูงอายุ","dur":30,"q":"Ebina SA Tomei Expressway"}]},{"id":"d2s5","time":"11:15","kind":"drive","title":"ขับ Ebina → Kawaguchiko","pick":"one","def":["a"],"opts":[{"id":"a","n":"Ebina → Kawaguchiko","note":"แก้จากตารางเดิม 45 → 65 นาที (รวม Haneda→Kawaguchiko ~113–123 กม./1 ชม. 39–53 นาที ไม่รวมพัก)","dur":65,"km":70,"q":"Kawaguchiko Station"}]},{"id":"d2s7","time":"12:30","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["b"],"opts":[{"id":"a","n":"Houtou Fudou (Takeshi Hosaka)","note":"อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:20 จึงควรจองคิวออนไลน์ล่วงหน้า","dur":45,"q":"Houtou Fudou Kawaguchiko","queue":true,"arch":true,"reserve":true},{"id":"b","n":"Lake Forest — Hana no Miyako","note":"นั่งสบาย","dur":45,"q":"Hana no Miyako Kawaguchiko restaurant"},{"id":"c","n":"Tempura Ninja","note":"","dur":45,"q":"Tempura Ninja Kawaguchiko"}]},{"id":"d2s8","time":"13:15","kind":"nap","title":"ขับเล่นริมทะเลสาบ / เด็กนอน","pick":"one","def":["a"],"opts":[{"id":"a","n":"ขับรอบทะเลสาบ Kawaguchiko","note":"ให้เด็กหลับในรถ ผู้สูงอายุชมวิว","dur":60,"km":25,"q":"Lake Kawaguchiko scenic drive"}]},{"id":"d2s6","time":"14:15","kind":"arch","title":"จุดชม (หลังเด็กตื่น)","pick":"any","def":["b"],"opts":[{"id":"a","n":"Oishi Park","note":"ทางเลียบทะเลสาบราบ มีดอกโคเคียช่วงปลาย ต.ค.","dur":30,"q":"Oishi Park Kawaguchiko","kids":true},{"id":"b","n":"Mt. Fuji World Heritage Centre (Shigeru Ban)","note":"สถาปัตยกรรมกรวยไม้ของ Shigeru Ban","dur":30,"q":"Mt. Fuji World Heritage Centre Yamanashi","arch":true},{"id":"c","n":"Saiko Nenba","note":"ชุมชนบ้านฟางเก่า","dur":45,"q":"Saiko Iyashi no Sato Nenba"}]},{"id":"d2s9","time":"14:45","kind":"cafe","title":"คาเฟ่","pick":"one","def":["a"],"opts":[{"id":"a","n":"Brand New Day","note":"","dur":45,"q":"Brand New Day cafe Kawaguchiko"},{"id":"b","n":"Cisco / Lake Bake","note":"","dur":45,"q":"Lake Bake Kawaguchiko"},{"id":"c","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d2s10","time":"16:00","kind":"hotel","title":"เช็กอินโรงแรม","pick":"one","def":["a"],"opts":[{"id":"a","n":"Fuji Grand Villa TOKI","note":"รวมอาหารเช้า","dur":30,"q":"Fuji Grand Villa TOKI Kawaguchiko"}]},{"id":"d2s11","time":"18:30","kind":"meal","title":"อาหารเย็น","pick":"one","def":["a"],"opts":[{"id":"a","n":"Restaurant Sylvans","note":"","dur":75,"q":"Restaurant Sylvans Kawaguchiko"},{"id":"b","n":"Sanrokuen","note":"","dur":75,"q":"Sanrokuen Kawaguchiko"},{"id":"c","n":"Kosaku","note":"โฮโตอ ทานง่าย","dur":75,"q":"Kosaku Kawaguchiko houtou"}]}]},{"id":"d3","n":3,"dow":6,"date":"2026-10-17","label":"Kawaguchiko → Matsumoto","route":"Kawaguchiko → Suwako SA → Matsumoto","night":"The Celecton Matsumoto","weather":[{"t":"Matsumoto ช่วงเช้า ~6°C กลางวัน ~19°C","s":"info"},{"t":"Kawaguchiko → Matsumoto ~135–142 กม. ขับจริง 1 ชม. 46 – 2 ชม. 06 (ตารางเดิมสั้นไป) จึงแบ่งขับ + พัก Suwako SA","s":"warn"}],"slots":[{"id":"d3s1","time":"08:30","kind":"meal","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"อาหารเช้าที่โรงแรม","note":"","dur":60,"q":"Fuji Grand Villa TOKI Kawaguchiko"}]},{"id":"d3s2","time":"09:30","kind":"cafe","title":"กาแฟ","pick":"one","def":["a"],"opts":[{"id":"a","n":"FabCafe Fuji","note":"","dur":40,"q":"FabCafe Fuji Kawaguchiko"},{"id":"b","n":"Cisco Cafe","note":"","dur":40,"q":"Cisco cafe Kawaguchiko"},{"id":"c","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d3s3","time":"10:30","kind":"see","title":"ชมวิว","pick":"one","def":["a"],"opts":[{"id":"a","n":"Yagizaki Park","note":"ทางราบริมทะเลสาบ ชมภูเขาไฟฟูจิ","dur":45,"q":"Yagizaki Park Kawaguchiko","kids":true}]},{"id":"d3s4","time":"11:30","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Kosaku","note":"","dur":60,"q":"Kosaku Kawaguchiko houtou"},{"id":"b","n":"ร้านริมทะเลสาบ","note":"","dur":60,"q":"restaurant Lake Kawaguchiko lakeside"}]},{"id":"d3s5","time":"12:45","kind":"nap","title":"ขับ + เด็กนอน → Suwako SA","pick":"one","def":["a"],"opts":[{"id":"a","n":"Kawaguchiko → Suwako SA","note":"เริ่มช่วงก่อนนอน ให้เด็กหลับระหว่างทาง","dur":60,"km":80,"q":"Suwako Service Area Chuo Expressway"}]},{"id":"d3s6","time":"13:45","kind":"rest","title":"พักที่ Suwako SA","pick":"one","def":["a"],"opts":[{"id":"a","n":"Suwako SA (ผู้ใหญ่สลับกันลง)","note":"อย่าปลุกเด็ก ผู้ใหญ่ผลัดกันเข้าห้องน้ำ/ซื้อกาแฟ","dur":20,"q":"Suwako SA","quiet":true}]},{"id":"d3s7","time":"14:05","kind":"drive","title":"ขับ Suwako → Matsumoto","pick":"one","def":["a"],"opts":[{"id":"a","n":"Suwako SA → Matsumoto","note":"","dur":50,"km":55,"q":"Matsumoto Performing Arts Centre"}]},{"id":"d3s8","time":"15:00","kind":"arch","title":"สถาปัตยกรรม Toyo Ito","pick":"one","def":["a"],"opts":[{"id":"a","n":"Matsumoto Performing Arts Centre (Toyo Ito)","note":"ชมภายนอก/ล็อบบี้","dur":30,"q":"Matsumoto Performing Arts Centre","arch":true}]},{"id":"d3s9","time":"15:40","kind":"see","title":"เลือก 1: ปราสาท หรือ Alps Park","pick":"one","def":["a"],"opts":[{"id":"a","n":"Matsumoto Castle — เดินรอบสวน/คูน้ำ","note":"ข้ามบันได 61° ด้านใน ผู้ที่อยากเข้าให้ผู้ใหญ่คนอื่นพา; เข้าสุดท้าย 16:30","dur":50,"q":"Matsumoto Castle","steep":true,"last":"16:30","close":"17:00"},{"id":"b","n":"Matsumoto Alps Park (สนามเด็กเล่น/สวนสัตว์)","note":"ปิด 17:00 เข้าสุดท้าย 16:30 · รวมเวลาเดินทาง 70 นาที ชนกับคาเฟ่ 16:30 ให้เลือกตัดคาเฟ่","dur":70,"q":"Matsumoto Alps Park","kids":true,"last":"16:30","close":"17:00"}]},{"id":"d3s10","time":"16:30","kind":"cafe","title":"คาเฟ่","pick":"one","def":["a"],"opts":[{"id":"a","n":"Nakamachi Cafe","note":"","dur":30,"q":"Nakamachi Matsumoto cafe"},{"id":"b","n":"Amijok","note":"","dur":30,"q":"Amijok Matsumoto"},{"id":"c","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d3s11","time":"17:30","kind":"hotel","title":"เช็กอิน","pick":"one","def":["a"],"opts":[{"id":"a","n":"The Celecton Matsumoto","note":"","dur":30,"q":"The Celecton Matsumoto"}]},{"id":"d3s12","time":"18:30","kind":"meal","title":"อาหารเย็น","pick":"one","def":["d"],"opts":[{"id":"a","n":"Matsumoto Brewery Tap Room","note":"","dur":75,"q":"Matsumoto Brewery Tap Room"},{"id":"b","n":"Izakaya Kura","note":"","dur":75,"q":"Izakaya Kura Matsumoto"},{"id":"c","n":"Shabu-shabu Onyasai","note":"มีน้ำซุปสำหรับเด็ก","dur":75,"q":"Onyasai Shabu-shabu Matsumoto","kids":true},{"id":"d","n":"Sushiro (ซูชิสายพาน)","note":"ใช้แอปจองคิวล่วงหน้า","dur":60,"q":"Sushiro Matsumoto","kids":true,"reserve":true}]}]},{"id":"d4","n":4,"dow":0,"date":"2026-10-18","label":"Hakuba & Azumino","route":"Matsumoto → Hakuba → Azumino → Matsumoto","night":"The Celecton Matsumoto","weather":[{"t":"Hakuba Iwatake ที่สูงเย็นกว่า Matsumoto ~5–10°C กระเช้าให้บริการถึง 15 พ.ย.","s":"warn"},{"t":"ขับเช้า Matsumoto → Hakuba ~65 กม. 75 นาที ยอมรับแล้ว","s":"info"},{"t":"ขับกลับ Azumino → Matsumoto ออก 16:00 เพื่อถึงก่อนตะวันตกดิน (~17:00) — ถนนเขาเริ่มมืด","s":"warn"}],"slots":[{"id":"d4s1","time":"08:30","kind":"meal","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"Sweet Bakery Nawate","note":"","dur":45,"q":"Sweet Bakery Nawate Matsumoto"},{"id":"b","n":"Shiori Bakery","note":"","dur":45,"q":"Shiori Bakery Matsumoto"}]},{"id":"d4s2","time":"09:15","kind":"drive","title":"ขับ Matsumoto → Hakuba Iwatake","pick":"one","def":["a"],"opts":[{"id":"a","n":"Matsumoto → Hakuba Iwatake","note":"ขับเช้า ผู้ใหญ่ยอมรับ ให้เด็กเก็บแรง","dur":75,"km":65,"q":"Hakuba Iwatake Snow Resort"}]},{"id":"d4s3","time":"10:30","kind":"see","title":"Hakuba — เลือกได้มากกว่า 1","pick":"any","def":["a","b"],"opts":[{"id":"a","n":"Hakuba Mountain Harbor","note":"อากาศเย็นมาก เตรียมเสื้อกันหนาว/ผ้าห่ม","dur":60,"q":"Hakuba Mountain Harbor","cold":true,"kids":true},{"id":"b","n":"Snow Peak Land Station Hakuba (Kengo Kuma)","note":"งานของ Kengo Kuma","dur":45,"q":"Snow Peak Land Station Hakuba","arch":true}]},{"id":"d4s4","time":"12:15","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["b"],"opts":[{"id":"a","n":"Restaurant Seppo","note":"ควรจองล่วงหน้า","dur":60,"q":"Restaurant Seppo Hakuba","reserve":true},{"id":"b","n":"The City Bakery (Mountain Harbor)","note":"","dur":60,"q":"The City Bakery Hakuba Mountain Harbor"},{"id":"c","n":"Hakuma Dining","note":"","dur":60,"q":"Hakuma Dining Hakuba"}]},{"id":"d4s5","time":"13:15","kind":"nap","title":"ขับ + เด็กนอน → Azumino","pick":"one","def":["a"],"opts":[{"id":"a","n":"Hakuba → Azumino","note":"ลงเขา เด็กหลับในรถ แล้วจอดต่อที่ Chihiro ให้นอนต่อ","dur":45,"km":35,"q":"Chihiro Art Museum Azumino"}]},{"id":"d4s5b","time":"14:00","kind":"rest","title":"จอดที่ลานจอด Chihiro ให้เด็กนอนต่อ","pick":"one","def":["a"],"opts":[{"id":"a","n":"จอดรถนิ่งๆ ที่ Chihiro Art Museum","note":"ผู้ใหญ่นั่งรอเงียบๆ / เดินเล่นรอบลานจอด","dur":15,"q":"Chihiro Art Museum Azumino parking","quiet":true}]},{"id":"d4s6","time":"14:15","kind":"arch","title":"Azumino — เลือก","pick":"any","def":["a"],"opts":[{"id":"a","n":"Chihiro Art Museum Azumino (Hiroshi Naito)","note":"10:00–17:00 เข้าสุดท้าย 16:30 · ปิดวันพุธที่ 2 และ 4 ของเดือน (18 ต.ค. เป็นวันอาทิตย์ เปิด)","dur":75,"q":"Chihiro Art Museum Azumino","arch":true,"kids":true,"last":"16:30","close":"17:00","closedNth":[[3,2],[3,4]]},{"id":"b","n":"Daio Wasabi Farm","note":"","dur":60,"q":"Daio Wasabi Farm Azumino","last":"16:30","close":"17:00"}]},{"id":"d4s7","time":"15:30","kind":"cafe","title":"คาเฟ่","pick":"one","def":["a"],"opts":[{"id":"a","n":"Chihiro Cafe","note":"ย้ายมาก่อนขับกลับ","dur":30,"q":"Chihiro Art Museum Azumino cafe"},{"id":"b","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d4s8","time":"16:00","kind":"drive","title":"ขับ Azumino → Matsumoto","pick":"one","def":["a"],"opts":[{"id":"a","n":"Azumino → Matsumoto","note":"ออก 16:00 ถึง ~16:50 ก่อนมืด · ตัวเลขประมาณ ตรวจใน Maps อีกที (~40 กม.)","dur":50,"km":40,"q":"The Celecton Matsumoto"}]},{"id":"d4s9","time":"17:30","kind":"hotel","title":"พักที่โรงแรม","pick":"one","def":["a"],"opts":[{"id":"a","n":"The Celecton Matsumoto","note":"","dur":45,"q":"The Celecton Matsumoto"}]},{"id":"d4s10","time":"18:30","kind":"meal","title":"อาหารเย็น","pick":"one","def":["a"],"opts":[{"id":"a","n":"Yakiniku House Koma","note":"ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.)","dur":75,"q":"Yakiniku House Koma Matsumoto"},{"id":"b","n":"Don Quijote Steak","note":"","dur":75,"q":"Don Quijote steak Matsumoto"},{"id":"c","n":"Matsumoto Beef Club","note":"","dur":75,"q":"Matsumoto Beef Club"}]}]},{"id":"d5","n":5,"dow":1,"date":"2026-10-19","label":"Kamikochi","route":"Matsumoto → Sawando → Kamikochi","night":"The Celecton Matsumoto","weather":[{"t":"Kamikochi กลางวัน ~10–13°C เช้าใกล้/ต่ำกว่า 0–5°C อาจมีหิมะหลังกลางเดือน — เย็นกว่า Matsumoto 5–10°C","s":"warn"},{"t":"ห้ามรถส่วนตัวเข้า Kamikochi: จอดที่ Sawando (¥700) แล้วนั่ง taxi/รถบัส; ใบไม้เปลี่ยนสีช่วงกลาง–ปลาย ต.ค. (peak)","s":"info"},{"t":"Kamikochi ในหุบเขา แดดหมดเร็วกว่าที่ราบ — เช็กเวลาแท็กซี่/รถบัสเที่ยวสุดท้ายก่อนไป และอย่าอยู่เกินบ่ายแก่ๆ","s":"warn"}],"slots":[{"id":"d5s1","time":"07:30","kind":"cafe","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"Marumo cafe (กาแฟ + เซตเช้า)","note":"เพิ่มเป็นมื้อเช้าจริง — ก่อนหน้านี้มีแค่กาแฟ แล้วไปกินกลางวัน 12:00+","dur":45,"q":"Marumo cafe Matsumoto"},{"id":"b","n":"Sweet Bakery Nawate","note":"เบเกอรี่ นั่งทานเร็ว","dur":45,"q":"Sweet Bakery Nawate Matsumoto"}]},{"id":"d5s2","time":"08:15","kind":"refuel","title":"เติมน้ำมัน (ก่อนขึ้นเขา)","pick":"one","def":["a"],"opts":[{"id":"a","n":"ปั๊ม ENEOS/Shell ใน Matsumoto","note":"ปั๊มแถว Sawando มีน้อย เติมก่อน","dur":15,"q":"ENEOS gas station Matsumoto","fuel":true},{"id":"b","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d5s3","time":"08:30","kind":"drive","title":"ขับ Matsumoto → Sawando","pick":"one","def":["a"],"opts":[{"id":"a","n":"Matsumoto → Sawando Parking","note":"ที่จอด ¥700 ช่อง 3 · ขับเช้า ผู้ใหญ่ยอมรับ","dur":50,"km":38,"q":"Sawando Parking Kamikochi"}]},{"id":"d5s4","time":"09:30","kind":"move","title":"Jumbo Taxi → Kamikochi","pick":"one","def":["a"],"opts":[{"id":"a","n":"Jumbo taxi Sawando → Kamikochi","note":"จองล่วงหน้า/เช็กคิวช่วงใบไม้เปลี่ยนสี","dur":25,"q":"Sawando Kamikochi taxi","reserve":true}]},{"id":"d5s5","time":"10:00","kind":"see","title":"เดินเล่น Kamikochi","pick":"any","def":["a"],"opts":[{"id":"a","n":"Kappabashi & Azusa River walk","note":"ทางไม้ราบ เดินได้ทั้งผู้สูงอายุและเด็ก","dur":90,"q":"Kappabashi Bridge Kamikochi","cold":true,"kids":true},{"id":"b","n":"Kamikochi Imperial Hotel","note":"ล็อบบี้/ร้านกาแฟ อุ่น","dur":30,"q":"Kamikochi Imperial Hotel"}]},{"id":"d5s6","time":"12:00","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Imperial Hotel Dining","note":"","dur":60,"q":"Kamikochi Imperial Hotel dining"},{"id":"b","n":"Kamikochi Shokudo","note":"","dur":60,"q":"Kamikochi Shokudo"},{"id":"c","n":"Gosenjaku Kitchen","note":"","dur":60,"q":"Gosenjaku Kitchen Kamikochi"}]},{"id":"d5s7","time":"13:00","kind":"nap","title":"เลือก: กลับรถ (แนะนำ) หรือเดินต่อ","pick":"one","def":["a"],"opts":[{"id":"a","n":"A (แนะนำ) taxi กลับ + ขับกลับ Matsumoto","note":"เด็กนอนในรถ อุ่นกว่านอนกลางแจ้งที่ Kamikochi · แล้วว่างบ่าย: พักโรงแรม หรือ Alps Park (เปิดถึง 17:00)","dur":75,"km":38,"q":"The Celecton Matsumoto"},{"id":"b","n":"B (ตามต้นฉบับ) กาแฟ Gosenjaku แล้วกลับ 16:00","note":"ออก 16:00 ถึง Matsumoto ~17:15 เลยตะวันตกดิน และเด็กไม่ได้นอนกลางวัน → เสี่ยงงอแง","dur":255,"km":38,"q":"Gosenjaku Kamikochi","cold":true}]},{"id":"d5s8","time":"18:30","kind":"meal","title":"อาหารเย็น","pick":"one","def":["b"],"opts":[{"id":"a","n":"Miyoshi Soba","note":"","dur":75,"q":"Miyoshi Soba Matsumoto"},{"id":"b","n":"Kamameshi Oki","note":"ข้าวอบหม้อดิน ทานง่าย","dur":75,"q":"Kamameshi Oki Matsumoto","kids":true},{"id":"c","n":"Tomato & Onion","note":"","dur":75,"q":"Tomato and Onion Matsumoto"}]}]},{"id":"d6","n":6,"dow":2,"date":"2026-10-20","label":"Matsumoto → Karuizawa","route":"Matsumoto → Shiraito Falls → Karuizawa","night":"Hotel Cypress Karuizawa","weather":[{"t":"Karuizawa ใบไม้เปลี่ยนสี peak ปลาย ต.ค. – ต้น พ.ย. · ปี 2026 พยากรณ์ว่าช้ากว่าปกติ จึงอาจเห็นแค่บางส่วน","s":"warn"},{"t":"Matsumoto → Karuizawa ~78–90 กม. 1 ชม. 19–31 นาที (ตารางเดิม OK)","s":"info"}],"slots":[{"id":"d6s1","time":"08:30","kind":"meal","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"Coffee Abe","note":"","dur":45,"q":"Coffee Abe Matsumoto"},{"id":"b","n":"The Source Diner","note":"","dur":45,"q":"The Source Diner Matsumoto"},{"id":"c","n":"Bakery Sweet","note":"","dur":45,"q":"Bakery Sweet Matsumoto"}]},{"id":"d6s2","time":"09:30","kind":"arch","title":"พิพิธภัณฑ์","pick":"one","def":["a"],"opts":[{"id":"a","n":"Matsumoto City Museum of Art (Kusama)","note":"เปิดวันอังคาร (ปิดวันจันทร์)","dur":75,"q":"Matsumoto City Museum of Art","arch":true,"closedDow":[1]}]},{"id":"d6s3","time":"11:30","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Karaage Center","note":"","dur":60,"q":"Karaage Center Matsumoto"},{"id":"b","n":"ร้านอาหารญี่ปุ่น","note":"","dur":60,"q":"Japanese restaurant Matsumoto station"}]},{"id":"d6s4","time":"12:45","kind":"nap","title":"ขับ + เด็กนอน → Karuizawa","pick":"one","def":["a"],"opts":[{"id":"a","n":"Matsumoto → Karuizawa (Shiraito Falls)","note":"","dur":85,"km":80,"q":"Shiraito Falls Karuizawa"}]},{"id":"d6s5","time":"14:15","kind":"see","title":"ชมน้ำตก","pick":"one","def":["a"],"opts":[{"id":"a","n":"Shiraito Falls","note":"ทางเดินสั้นราบ เย็นกว่าปกติ","dur":45,"q":"Shiraito Falls Karuizawa","cold":true,"kids":true}]},{"id":"d6s6","time":"15:15","kind":"arch","title":"สถาปัตยกรรม — เลือก","pick":"any","def":["b"],"opts":[{"id":"a","n":"Harunire Terrace","note":"","dur":40,"q":"Harunire Terrace Karuizawa"},{"id":"b","n":"Stone Church (Kendrick Kellogg)","note":"","dur":30,"q":"Karuizawa Stone Church Uchimura Kanzo","arch":true}]},{"id":"d6s7","time":"16:00","kind":"cafe","title":"คาเฟ่","pick":"one","def":["c"],"opts":[{"id":"a","n":"Maruyama Coffee","note":"","dur":30,"q":"Maruyama Coffee Karuizawa"},{"id":"b","n":"Nagai Farm Gelato","note":"","dur":30,"q":"Nagai Farm Karuizawa gelato"},{"id":"c","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d6s8","time":"16:45","kind":"hotel","title":"เช็กอิน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Hotel Cypress Karuizawa","note":"เช็กอิน 15:00–23:00 · จอดรถฟรี · ห่างบ่อ Kumoba / Prince Outlet ~0.8–0.9 กม.","dur":30,"q":"Hotel Cypress Karuizawa"}]},{"id":"d6s9","time":"17:30","kind":"shop","title":"ช้อปปิ้งสั้นๆ (ถ้าไม่เหนื่อย)","pick":"one","def":["b"],"opts":[{"id":"a","n":"Prince Outlet (เดิน 0.9 กม.)","note":"","dur":45,"q":"Karuizawa Prince Shopping Plaza"},{"id":"b","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d6s10","time":"18:30","kind":"meal","title":"อาหารเย็น","pick":"one","def":["a"],"opts":[{"id":"a","n":"ร้านอาหารใน Cypress (เช็กเมนู/เวลา)","note":"ฝรั่งเศส/เทปปันยากิ ตรวจเวลาล่าสุด","dur":75,"q":"Hotel Cypress Karuizawa restaurant","reserve":true},{"id":"b","n":"Sonmin-Shokudo","note":"","dur":75,"q":"Sonmin Shokudo Karuizawa"},{"id":"c","n":"Aji no Machidori","note":"","dur":75,"q":"Aji no Machidori Karuizawa"},{"id":"d","n":"ฟู้ดคอร์ท Prince Outlet","note":"เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)","dur":60,"q":"Karuizawa Prince Shopping Plaza food court","close":"19:00"}]}]},{"id":"d7","n":7,"dow":3,"date":"2026-10-21","label":"Karuizawa","route":"Karuizawa (ในเมือง)","night":"Hotel Cypress Karuizawa","weather":[{"t":"Karuizawa เช้า ~3–5°C กลางวัน ~15°C ใบไม้อาจยังไม่ถึง peak","s":"warn"},{"t":"Hiroshi Senju Museum ปิดวันอังคาร (วันนี้พุธ เปิด) 9:30–17:00","s":"info"}],"slots":[{"id":"d7s1","time":"08:30","kind":"meal","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"บุฟเฟต์เช้า Cypress (เสียเงิน 7:30–9:00)","note":"","dur":60,"q":"Hotel Cypress Karuizawa"},{"id":"b","n":"Sawamura","note":"มักมีคิว","dur":60,"q":"Sawamura Karuizawa","queue":true},{"id":"c","n":"Eloise's Cafe (Kunio Maekawa)","note":"ควรจอง","dur":60,"q":"Eloise's Cafe Karuizawa","reserve":true,"arch":true}]},{"id":"d7s2","time":"09:40","kind":"arch","title":"ชมสถาปัตยกรรม — เลือก","pick":"any","def":["a"],"opts":[{"id":"a","n":"Kumoba Pond","note":"ใบไม้อาจยังไม่ถึง peak (ต้นๆ ถึงบางส่วน)","dur":35,"q":"Kumoba Pond Karuizawa","kids":true},{"id":"b","n":"Hiroshi Senju Museum (Ryue Nishizawa)","note":"ปิดวันอังคาร ล่าสุดเข้า 16:30","dur":60,"q":"Hiroshi Senju Museum Karuizawa","arch":true,"closedDow":[2],"last":"16:30","close":"17:00"},{"id":"c","n":"St. Paul's / Karuizawa Taliesin","note":"","dur":40,"q":"Karuizawa Taliesin","arch":true}]},{"id":"d7s3","time":"11:20","kind":"see","title":"เดินเล่น","pick":"one","def":["a"],"opts":[{"id":"a","n":"Kyu-Karuizawa Ginza","note":"ทางราบ แต่คนเยอะช่วงสุดสัปดาห์","dur":45,"q":"Kyu-Karuizawa Ginza"}]},{"id":"d7s4","time":"12:15","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["b"],"opts":[{"id":"a","n":"Kawakamian","note":"คิวยาว","dur":60,"q":"Kawakamian Karuizawa","queue":true},{"id":"b","n":"Atelier de Fromage","note":"","dur":60,"q":"Atelier de Fromage Karuizawa"},{"id":"c","n":"Karuizawa Kitchen","note":"","dur":60,"q":"Karuizawa Kitchen"}]},{"id":"d7s5","time":"13:15","kind":"nap","title":"เด็กนอน (ในรถ/ล็อบบี้)","pick":"one","def":["a"],"opts":[{"id":"a","n":"พักที่ Prince Garden Mall","note":"ขับสั้นๆ แล้วจอด ให้เด็กหลับ","dur":75,"q":"Prince Garden Mall Karuizawa"}]},{"id":"d7s6","time":"14:30","kind":"shop","title":"ช้อปปิ้ง","pick":"one","def":["a"],"opts":[{"id":"a","n":"Prince Outlet","note":"","dur":60,"q":"Karuizawa Prince Shopping Plaza"}]},{"id":"d7s7","time":"15:30","kind":"cafe","title":"คาเฟ่","pick":"one","def":["a"],"opts":[{"id":"a","n":"Lindt Cafe","note":"","dur":30,"q":"Lindt Cafe Karuizawa"},{"id":"b","n":"Cafe Comme Ca","note":"","dur":30,"q":"Cafe Comme Ca Karuizawa"}]},{"id":"d7s8","time":"16:30","kind":"hotel","title":"พักที่โรงแรม","pick":"one","def":["a"],"opts":[{"id":"a","n":"Hotel Cypress Karuizawa","note":"","dur":90,"q":"Hotel Cypress Karuizawa"}]},{"id":"d7s9","time":"18:00","kind":"meal","title":"อาหารเย็น","pick":"one","def":["d"],"opts":[{"id":"a","n":"Pyrenees","note":"ควรจอง","dur":75,"q":"Pyrenees Karuizawa","reserve":true},{"id":"b","n":"Ningyocho Imahan","note":"ควรจอง","dur":75,"q":"Ningyocho Imahan Karuizawa","reserve":true},{"id":"c","n":"Trattoria Primo","note":"มักมีคิว","dur":75,"q":"Trattoria Primo Karuizawa","queue":true},{"id":"d","n":"ฟู้ดคอร์ท Prince Outlet","note":"เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)","dur":60,"q":"Karuizawa Prince Shopping Plaza food court","close":"19:00"}]},{"id":"d7s10","time":"19:15","kind":"drive","title":"กลับโรงแรม","pick":"one","def":["a"],"opts":[{"id":"a","n":"Outlet → Hotel Cypress","note":"","dur":5,"km":1,"q":"Hotel Cypress Karuizawa"}]},{"id":"d7s11","time":"19:25","kind":"refuel","title":"เติมน้ำมัน (เผื่อวันพรุ่งนี้)","pick":"one","def":["a"],"opts":[{"id":"a","n":"ปั๊มใกล้ Karuizawa","note":"ลดความเสี่ยงวันคืนรถ","dur":15,"q":"ENEOS gas station Karuizawa","fuel":true},{"id":"b","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]}]},{"id":"d8","n":8,"dow":4,"date":"2026-10-22","label":"Karuizawa → Haneda","route":"Karuizawa → Takasaki → Tokorozawa → Haneda","night":"Hotel Villa Fontaine Grand Haneda Airport","weather":[{"t":"ชั่วโมงเร่งด่วนเย็นแถว Tokorozawa → Haneda 48 กม. ปกติ ~51 นาที แต่ช่วง 16:00–17:30 ช้าลงเป็น ~75 นาที","s":"warn"},{"t":"คืนรถภายใน 18:00 — ตอนนี้ตั้งคืน 17:10 เผื่อ ~40 นาที (ออก Tokorozawa 15:30 ตัดคาเฟ่)","s":"warn"}],"slots":[{"id":"d8s1","time":"08:30","kind":"meal","title":"อาหารเช้า + เช็กเอาต์","pick":"one","def":["a"],"opts":[{"id":"a","n":"บุฟเฟต์เช้า Cypress","note":"","dur":45,"q":"Hotel Cypress Karuizawa"}]},{"id":"d8s2","time":"09:15","kind":"drive","title":"ขับ Karuizawa → Takasaki","pick":"one","def":["a"],"opts":[{"id":"a","n":"Karuizawa → Takasaki","note":"ขับเช้า ยอมรับแล้ว","dur":45,"km":55,"q":"Gunma Museum of Modern Art"}]},{"id":"d8s3","time":"10:00","kind":"arch","title":"Takasaki — เลือก","pick":"any","def":["a"],"opts":[{"id":"a","n":"Gunma Museum of Modern Art (Arata Isozaki)","note":"ปิดวันจันทร์","dur":60,"q":"Museum of Modern Art, Gunma","arch":true,"closedDow":[1]},{"id":"b","n":"Gunma no Mori","note":"สวนสาธารณะ ทางราบ","dur":60,"q":"Gunma no Mori Takasaki","kids":true}]},{"id":"d8s4","time":"12:00","kind":"meal","title":"อาหารกลางวัน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Himo Takasaki (พาสต้า)","note":"","dur":60,"q":"Himo Takasaki pasta"},{"id":"b","n":"Himokawa Udon","note":"","dur":60,"q":"Himokawa Udon Takasaki"}]},{"id":"d8s5","time":"13:15","kind":"nap","title":"ขับ + เด็กนอน → Tokorozawa","pick":"one","def":["a"],"opts":[{"id":"a","n":"Takasaki → Tokorozawa","note":"75 กม. ~60 นาที","dur":60,"km":75,"q":"Kadokawa Culture Museum Tokorozawa"}]},{"id":"d8s6","time":"14:30","kind":"arch","title":"Tokorozawa — เลือก","pick":"any","def":["a"],"opts":[{"id":"a","n":"Kadokawa Culture Museum (Kengo Kuma)","note":"10:00–18:00 ปิดวันอังคาร (วันนี้พฤหัส เปิด) — ออกก่อน 15:30 เพื่อหนีรถติด","dur":45,"q":"Kadokawa Culture Museum Tokorozawa","arch":true,"closedDow":[2],"close":"18:00"},{"id":"b","n":"Sakura Town / Musashino Reiwa Shrine","note":"","dur":30,"q":"Tokorozawa Sakura Town","kids":true}]},{"id":"d8s7","time":"15:15","kind":"cafe","title":"คาเฟ่ (ปกติข้าม — ต้องรีบออก 15:30)","pick":"one","def":["c"],"opts":[{"id":"a","n":"KadoCafe","note":"","dur":20,"q":"Kadokawa Culture Museum cafe"},{"id":"b","n":"Kadokawa Shokudo","note":"","dur":20,"q":"Kadokawa Shokudo Tokorozawa"},{"id":"c","n":"ข้าม","note":"","dur":0,"q":"","skip":true}]},{"id":"d8s8","time":"15:30","kind":"drive","title":"ขับ Tokorozawa → Haneda","pick":"one","def":["a"],"opts":[{"id":"a","n":"Tokorozawa → Haneda (ชั่วโมงเร่งด่วน)","note":"ออก 15:30 ก่อนชั่วโมงเร่งด่วน (~51 นาทีถ้าไม่ติด) ตั้งเผื่อ 75 นาที","dur":75,"km":48,"q":"Nissan Rent a Car Haneda Airport"}]},{"id":"d8s9","time":"16:45","kind":"refuel","title":"เติมน้ำมัน (บังคับก่อนคืนรถ)","pick":"one","def":["a"],"opts":[{"id":"a","n":"ปั๊มใกล้ Haneda ก่อนคืนรถ","note":"ถ่ายรูปมาตรน้ำมัน/ใบเสร็จ","dur":20,"q":"gas station near Haneda Airport rental car","fuel":true},{"id":"b","n":"ข้าม (ไม่แนะนำ)","note":"ค่าน้ำมันที่ร้านเช่าคิดแพงกว่า","dur":0,"q":"","skip":true}]},{"id":"d8s10","time":"17:10","kind":"carreturn","title":"คืนรถ Serena","deadline":"18:00","pick":"one","def":["a"],"opts":[{"id":"a","n":"คืนรถ Haneda","note":"ต้องคืนก่อน 18:00 · เก็บของให้ครบ","dur":10,"q":"Nissan Rent a Car Haneda Airport"}]},{"id":"d8s11","time":"17:30","kind":"hotel","title":"เช็กอิน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Hotel Villa Fontaine Grand Haneda Airport","note":"","dur":30,"q":"Hotel Villa Fontaine Grand Haneda Airport"}]},{"id":"d8s12","time":"18:15","kind":"spa","title":"ออนเซ็น","pick":"one","def":["a"],"opts":[{"id":"a","n":"Izumi Tenku no Yu (onsen)","note":"ผ่อนคลาย ผู้สูงอายุอาบได้ง่าย","dur":45,"q":"Haneda Airport Garden Izumi Tenku no Yu"}]},{"id":"d8s13","time":"19:15","kind":"meal","title":"อาหารเย็น","pick":"one","def":["a"],"opts":[{"id":"a","n":"Grand Aile (บุฟเฟต์)","note":"","dur":75,"q":"Grand Aile Villa Fontaine Haneda buffet","kids":true},{"id":"b","n":"Tsurutontan","note":"","dur":75,"q":"Tsurutontan Haneda Airport Garden","queue":true},{"id":"c","n":"Katsusen","note":"","dur":75,"q":"Katsusen Haneda Airport Garden"},{"id":"d","n":"Haneda Sky Brewing","note":"","dur":75,"q":"Haneda Sky Brewing"}]}]},{"id":"d9","n":9,"dow":5,"date":"2026-10-23","label":"บินกลับ","route":"Haneda T3 → ไทย","night":"—","weather":[{"t":"ตรวจสอบเที่ยวบิน/ไต้ฝุ่น และเผื่อเวลาเช็กอิน 90 นาที","s":"info"}],"slots":[{"id":"d9s1","time":"07:30","kind":"meal","title":"อาหารเช้า","pick":"one","def":["a"],"opts":[{"id":"a","n":"Saryo Itoen / ร้านใน T3","note":"","dur":30,"q":"Haneda Airport Terminal 3 cafe"}]},{"id":"d9s2","time":"08:00","kind":"transit","title":"เช็กอิน","pick":"one","def":["a"],"opts":[{"id":"a","n":"Haneda T3 เช็กอิน + ตม.","note":"","dur":90,"q":"Haneda Airport Terminal 3"}]},{"id":"d9s3","time":"10:50","kind":"flight","title":"เที่ยวบินกลับ","pick":"one","def":["a"],"opts":[{"id":"a","n":"ออกเดินทาง 10:50","note":"","dur":0,"q":"Haneda Airport Terminal 3"}]}]}]}</script>
+<script>/* Conflict engine — pure functions, shared by the page and the Node test. */
+(function (root) {
+  const mins = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const hhmm = n => String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0');
+  const DOW = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+  const NAP_KINDS = ['meal', 'see', 'arch', 'cafe', 'shop', 'spa'];
+
+  // Weekday always comes from the date, so a mistyped `dow` cannot silently disable closed-day checks.
+  const dowOf = day => (day.date ? new Date(day.date + 'T00:00:00Z').getUTCDay() : day.dow);
+  // 1st..5th occurrence of the weekday within the month (1–7 → 1, 8–14 → 2, …).
+  const nthOf = day => Math.ceil(Number(day.date.slice(8, 10)) / 7);
+
+  // Stored ids that no longer exist (trip.json edited after the user picked) fall back to the slot default.
+  function selected(slot, sel) {
+    const stored = sel && sel[slot.id];
+    if (Array.isArray(stored)) {
+      const ok = slot.opts.filter(o => stored.includes(o.id));
+      if (ok.length || (slot.pick === 'any' && stored.length === 0)) return ok;
+    }
+    return slot.opts.filter(o => slot.def.includes(o.id));
+  }
+  function slotDur(slot, sel) {
+    const s = selected(slot, sel);
+    return slot.pick === 'one' ? (s[0] ? s[0].dur : 0) : s.reduce((a, o) => a + o.dur, 0);
+  }
+
+  function analyze(trip, day, sel) {
+    const meta = trip.meta, issues = [];
+    const add = (level, slot, msg) => issues.push({ level, slotId: slot ? slot.id : null, msg });
+    const [napA, napB] = meta.nap.map(mins), [okA, okB] = meta.napStartOk.map(mins);
+    const sunset = mins(day.sunset || meta.sunset || '17:00');
+    const bufMin = meta.deadlineBuffer == null ? 15 : meta.deadlineBuffer;
+    const napOverlapMin = meta.napBandOverlap == null ? 30 : meta.napBandOverlap;
+    const dow = dowOf(day);
+    const hasReturn = day.slots.some(s => s.kind === 'carreturn');
+    const active = day.slots
+      .map(s => ({ s, start: mins(s.time), dur: slotDur(s, sel), sel: selected(s, sel) }))
+      .sort((a, b) => a.start - b.start);
+
+    active.forEach((a, i) => {
+      const { s, start, dur } = a;
+      const end = start + dur;
+      let off = 0;
+      a.sel.forEach(o => {
+        const label = o.n;
+        const oStart = s.pick === 'any' ? start + off : start;
+        const oEnd = oStart + o.dur;
+        if (s.pick === 'any') off += o.dur;
+        if (o.skip) {
+          if (s.kind === 'refuel' && hasReturn) add('err', s, 'ข้ามการเติมน้ำมันไม่ได้ — ต้องเติมก่อนคืนรถ');
+          return;
+        }
+        if (o.closedDow && o.closedDow.includes(dow))
+          add('err', s, `${label}: ปิดวัน${DOW[dow]}`);
+        if (o.closedNth && o.closedNth.some(([d, n]) => d === dow && n === nthOf(day)))
+          add('err', s, `${label}: ปิดวัน${DOW[dow]}ที่ ${nthOf(day)} ของเดือน`);
+        if (o.closedDates && o.closedDates.includes(day.date))
+          add('err', s, `${label}: ปิดวันที่ ${day.date}`);
+        if (o.last && oStart > mins(o.last))
+          add('err', s, `${label}: เกินเวลาเข้าสุดท้าย ${o.last}`);
+        if (o.close && oEnd > mins(o.close))
+          add('warn', s, `${label}: จบ ${hhmm(oEnd)} เลยเวลาปิด ${o.close}`);
+        if (o.queue) add('warn', s, `${label}: มักมีคิวยาว — ไปก่อนเวลาหรือจองคิว`);
+        if (o.reserve) add('info', s, `${label}: ควรจอง/ยืนยันล่วงหน้า`);
+        if (o.steep) add('warn', s, `${label}: มีบันไดชัน — ข้ามด้านใน เดินเฉพาะบริเวณราบ`);
+        if (o.cold) add('info', s, `${label}: อากาศเย็น เตรียมเสื้อกันหนาว`);
+        // Long drives: morning is accepted by the user; after the nap window the child is awake.
+        if (s.kind === 'drive' && (o.km || 0) >= 40) {
+          if (oStart < okA) add('info', s, `${label}: ขับไกล ${o.km} กม. ช่วงเช้า (ยอมรับแล้ว)`);
+          else if (oStart > okB) add('warn', s, `${label}: ขับไกล ${o.km} กม. หลังช่วงนอน (เริ่ม ${hhmm(oStart)}) — เด็กตื่นอยู่ระหว่างทาง`);
+        }
+        if ((s.kind === 'drive' || s.kind === 'nap') && (o.km || 0) >= 10 && oEnd > sunset)
+          add('warn', s, `${label}: ขับเลยตะวันตกดิน (~${hhmm(sunset)}) จบ ${hhmm(oEnd)}`);
+        if (s.kind === 'rest' && !o.quiet && oStart >= napA && oStart < napB)
+          add('warn', s, `${label}: แวะพักในช่วงเด็กนอน อาจปลุกเด็ก`);
+        if (s.kind === 'nap' && (oStart < okA || oStart > okB))
+          add('warn', s, `${label}: เริ่ม ${hhmm(oStart)} อยู่นอกช่วงนอน ${hhmm(okA)}–${hhmm(okB)}`);
+        if (NAP_KINDS.includes(s.kind) && o.dur > 0) {
+          const ov = Math.min(oEnd, napB) - Math.max(oStart, napA);
+          if (ov >= napOverlapMin) add('warn', s, `${label}: ซ้อนช่วงเด็กนอน ${ov} นาที (${hhmm(oStart)}–${hhmm(oEnd)})`);
+        }
+      });
+
+      if (s.deadline) {
+        const dl = mins(s.deadline);
+        if (end > dl) add('err', s, `จบ ${hhmm(end)} เลยเส้นตาย ${s.deadline}`);
+        else if (dl - end < bufMin) add('warn', s, `จบ ${hhmm(end)} เหลือเวลาเผื่อแค่ ${dl - end} นาทีก่อนเส้นตาย ${s.deadline}`);
+      }
+
+      const next = active.slice(i + 1).find(n => n.dur > 0 || n.s.kind === 'flight');
+      if (next && dur > 0) {
+        const over = end - next.start;
+        if (over > 10) add('err', s, `ชนกับ "${next.s.title}" (${next.s.time}) เกิน ${over} นาที — จบ ${hhmm(end)}`);
+        else if (over > 0) add('warn', s, `ซ้อนกับ "${next.s.title}" ${over} นาที`);
+      }
+    });
+
+    const order = { err: 0, warn: 1, info: 2 };
+    issues.sort((a, b) => order[a.level] - order[b.level]);
+    return issues;
+  }
+
+  // Structural check of trip.json — returns a list of problems (empty = OK).
+  function validate(trip) {
+    const p = [], ids = new Set();
+    const m = trip.meta || {};
+    ['nap', 'napStartOk'].forEach(k => { if (!Array.isArray(m[k]) || m[k].length !== 2 || !m[k].every(t => TIME.test(t))) p.push(`meta.${k} ต้องเป็น ["HH:MM","HH:MM"]`); });
+    ['dayStart', 'dayEnd'].forEach(k => { if (!TIME.test(m[k] || '')) p.push(`meta.${k} ต้องเป็น HH:MM`); });
+    (trip.days || []).forEach(d => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date || '')) { p.push(`${d.id}: date ไม่ถูกรูปแบบ`); return; }
+      if (d.dow != null && d.dow !== dowOf(d)) p.push(`${d.id}: dow=${d.dow} ไม่ตรงกับ date ${d.date} (ควรเป็น ${dowOf(d)})`);
+      let prev = -1;
+      d.slots.forEach(s => {
+        if (ids.has(s.id)) p.push(`${s.id}: id ซ้ำ`); ids.add(s.id);
+        if (!TIME.test(s.time || '')) { p.push(`${s.id}: time ไม่ถูกรูปแบบ`); return; }
+        if (mins(s.time) < prev) p.push(`${s.id}: เวลา ${s.time} ย้อนกลับเมื่อเทียบกับช่องก่อนหน้า`);
+        prev = mins(s.time);
+        if (!s.opts || !s.opts.length) p.push(`${s.id}: ไม่มี opts`);
+        const oids = new Set();
+        (s.opts || []).forEach(o => {
+          if (oids.has(o.id)) p.push(`${s.id}/${o.id}: option id ซ้ำ`); oids.add(o.id);
+          if (typeof o.dur !== 'number' || o.dur < 0) p.push(`${s.id}/${o.id}: dur ไม่ถูกต้อง`);
+          if (o.skip && o.dur !== 0) p.push(`${s.id}/${o.id}: skip ต้องมี dur 0`);
+          ['last', 'close'].forEach(k => { if (o[k] && !TIME.test(o[k])) p.push(`${s.id}/${o.id}: ${k} ต้องเป็น HH:MM`); });
+          if (o.closedNth && !o.closedNth.every(x => Array.isArray(x) && x.length === 2)) p.push(`${s.id}/${o.id}: closedNth ต้องเป็น [[dow,nth],…]`);
+        });
+        (s.def || []).forEach(x => { if (!oids.has(x)) p.push(`${s.id}: def "${x}" ไม่มีใน opts`); });
+        if (s.pick === 'one' && (s.def || []).length !== 1) p.push(`${s.id}: pick=one ต้องมี def 1 ตัว`);
+        if (s.deadline && !TIME.test(s.deadline)) p.push(`${s.id}: deadline ต้องเป็น HH:MM`);
+      });
+    });
+    return p;
+  }
+
+  const api = { mins, hhmm, selected, slotDur, analyze, validate, dowOf, nthOf, DOW };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.Engine = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function(){
+  var E=window.Engine, trip=JSON.parse(document.getElementById('trip').textContent);
+  var resetT,KEY='japan2569.sel.'+(trip.meta.version||'v1'), sel={}, cur=0;
+  try{sel=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){sel={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(sel))}catch(e){}}
+  var $=function(s){return document.querySelector(s)};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+  var GROUP={arrival:'move',drive:'move',nap:'move',rest:'move',refuel:'move',car:'move',carreturn:'move',flight:'move',transit:'move',move:'move',meal:'eat',cafe:'eat',see:'see',arch:'see',shop:'see',spa:'see',hotel:'stay'};
+  var KIND={arrival:'ถึง',hotel:'โรงแรม',meal:'มื้ออาหาร',drive:'ขับรถ',nap:'ขับ·นอน',rest:'พัก',sight:'เที่ยว',see:'เที่ยว',arch:'สถาปัตย์',cafe:'คาเฟ่',shop:'ช้อป',refuel:'เติมน้ำมัน',car:'รถเช่า',carreturn:'คืนรถ',flight:'เที่ยวบิน',spa:'ออนเซ็น',transit:'เดินทาง',move:'เดินทาง'};
+  var MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var DOWF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  function dstr(d){var p=d.date.split('-');return DOWF[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1]}
+  function mapUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
+  function worst(is){return is.some(function(i){return i.level==='err'})?'err':is.some(function(i){return i.level==='warn'})?'warn':'ok'}
+
+  function head(){
+    $('#eb').textContent='แผนการเดินทาง · '+trip.days.length+' วัน';
+    $('#ttl').textContent=trip.meta.title;
+    $('#sub').textContent=trip.meta.subtitle+' · '+trip.meta.party;
+    $('#rules').innerHTML=trip.meta.rules.map(function(r){return '<div>• '+esc(r)+'</div>'}).join('');
+  }
+  function tabs(){
+    var box=$('#tabs'),sx=box.scrollLeft;
+    box.innerHTML=trip.days.map(function(d,i){
+      var w=worst(E.analyze(trip,d,sel)),p=d.date.split('-');
+      return '<button class="tab" role="tab" id="tab'+i+'" aria-controls="day" tabindex="'+(i===cur?0:-1)+'" aria-selected="'+(i===cur)+'" aria-label="วันที่ '+d.n+' · '+(w==='err'?'มีข้อขัดแย้ง':w==='warn'?'มีข้อควรระวัง':'ผ่าน')+'" data-i="'+i+'"><span class="dot '+(w==='ok'?'pass':w)+'" aria-hidden="true">'+(w==='err'?'✕':w==='warn'?'!':'✓')+'</span><div class="n">D'+d.n+' · '+E.DOW[E.dowOf(d)]+'</div><div class="d">'+(+p[2])+' ต.ค.</div></button>';
+    }).join('');
+    box.scrollLeft=sx;
+    var on=box.querySelector('[aria-selected=true]');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+  function strip(d,is){
+    var A=E.mins(trip.meta.dayStart),B=E.mins(trip.meta.dayEnd),W=B-A,pcn=function(m){return Math.min(100,Math.max(0,(m-A)/W*100))},pc=function(m){return pcn(m).toFixed(2)};
+    var bad={};is.forEach(function(i){if(i.slotId&&(i.level==='err'||bad[i.slotId]!=='err'&&i.level==='warn'))bad[i.slotId]=i.level});
+    var segs=d.slots.map(function(s){var dur=E.slotDur(s,sel);if(!dur)return '';var st=E.mins(s.time);
+      var cls='seg '+(GROUP[s.kind]||'see')+(bad[s.id]?' '+bad[s.id]:'');
+      return '<button class="'+cls+'" style="left:'+pc(st)+'%;width:'+Math.max(0.3,pcn(st+dur)-pcn(st)).toFixed(2)+'%" data-go="'+s.id+'" title="'+esc(s.time+' · '+s.title+' ('+dur+' นาที)')+'" aria-label="'+esc(s.time+' '+s.title)+'"></button>'}).join('');
+    var n1=E.mins(trip.meta.nap[0]),n2=E.mins(trip.meta.nap[1]);
+    var ticks='';for(var m=A;m<=B;m+=180)ticks+='<span style="left:'+pc(m)+'%">'+E.hhmm(m)+'</span>';
+    return '<section class="strip"><h3>ไทม์ไลน์ '+trip.meta.dayStart+'–'+trip.meta.dayEnd+' · แถบม่วง = ช่วงเด็กนอน '+trip.meta.nap.join('–')+'</h3><div class="bar"><div class="nap" style="left:'+pc(n1)+'%;width:'+((n2-n1)/W*100).toFixed(2)+'%"></div>'+segs+'</div><div class="ticks">'+ticks+'</div><div class="legend"><span><i style="background:var(--move)"></i>เดินทาง</span><span><i style="background:var(--eat)"></i>อาหาร</span><span><i style="background:var(--see)"></i>เที่ยว</span><span><i style="background:var(--stay)"></i>พัก</span></div></section>';
+  }
+  function issBox(is){
+    var c={err:0,warn:0,info:0};is.forEach(function(i){c[i.level]++});
+    var h='<section class="iss"><h3>ตรวจความขัดแย้งอัตโนมัติ <span class="cnt err">ผิดพลาด '+c.err+'</span><span class="cnt warn">เตือน '+c.warn+'</span><span class="cnt info">แจ้ง '+c.info+'</span></h3>';
+    if(!is.length)return h+'<div class="ok">✓ ไม่พบข้อขัดแย้งในตัวเลือกปัจจุบัน</div></section>';
+    return h+'<ul>'+is.map(function(i){return '<li><button data-go="'+i.slotId+'"><span class="lv '+i.level+'">'+({err:'ERR',warn:'WARN',info:'INFO'})[i.level]+'</span><span>'+esc(i.msg)+'</span></button></li>'}).join('')+'</ul></section>';
+  }
+  function opt(s,o,on){
+    var tags=[];
+    if(o.dur)tags.push('<span class="tg mono">'+o.dur+' นาที</span>');
+    if(o.km)tags.push('<span class="tg mono">'+o.km+' กม.</span>');
+    if(o.arch)tags.push('<span class="tg good">สถาปัตย์</span>');
+    if(o.kids)tags.push('<span class="tg good">เหมาะเด็ก</span>');
+    if(o.queue)tags.push('<span class="tg warn">มีคิว</span>');
+    if(o.steep)tags.push('<span class="tg warn">บันไดชัน</span>');
+    if(o.cold)tags.push('<span class="tg info">เย็น</span>');
+    if(o.reserve)tags.push('<span class="tg info">ควรจอง</span>');
+    if(o.last)tags.push('<span class="tg mono">เข้าถึง '+o.last+'</span>');
+    var link=o.q?'<a class="map" href="'+mapUrl(o.q)+'" target="_blank" rel="noopener">แผนที่ ↗</a>':'';
+    var type=s.pick==='one'?'radio':'checkbox';
+    return '<label class="opt"><input type="'+type+'" name="'+s.id+'" value="'+o.id+'" data-slot="'+s.id+'"'+(on?' checked':'')+'><div class="card"><div class="n">'+esc(o.n)+'</div>'+(o.note?'<div class="nt">'+esc(o.note)+'</div>':'')+'<div class="tags">'+tags.join('')+link+'</div></div></label>';
+  }
+  function slots(d,is){
+    return '<section class="slots">'+d.slots.map(function(s){
+      var on=E.selected(s,sel).map(function(o){return o.id}),dur=E.slotDur(s,sel),st=E.mins(s.time);
+      var mine=is.filter(function(i){return i.slotId===s.id});
+      return '<div class="slot" id="'+s.id+'"><div class="time">'+s.time+(dur?'<small>→ '+E.hhmm(st+dur)+'</small>':'')+'</div><div class="body"><div class="st"><h4>'+esc(s.title)+'</h4><span class="chip">'+(KIND[s.kind]||s.kind)+'</span>'+(s.opts.length>1?'<span class="pk">'+(s.pick==='one'?'เลือก 1':'เลือกได้หลายอย่าง')+'</span>':'')+'</div><div class="opts">'+s.opts.map(function(o){return opt(s,o,on.indexOf(o.id)>-1)}).join('')+'</div>'+(mine.length?'<div class="slot-iss">'+mine.map(function(i){return '<div class="si '+i.level+'">'+esc(i.msg)+'</div>'}).join('')+'</div>':'')+'</div></div>';
+    }).join('')+'</section>';
+  }
+  function day(){
+    var d=trip.days[cur],is=E.analyze(trip,d,sel);
+    $('#day').innerHTML='<div class="eyebrow">DAY '+d.n+' / '+trip.days.length+'</div><h2>'+esc(d.label)+' · '+dstr(d)+'</h2><div class="meta"><span>เส้นทาง: <b>'+esc(d.route)+'</b></span><span>พัก: <b>'+esc(d.night)+'</b></span></div><div class="wx">'+d.weather.map(function(w){return '<div class="note '+(w.s==='warn'?'warn':'')+'">'+esc(w.t)+'</div>'}).join('')+'</div>'+strip(d,is)+issBox(is)+slots(d,is);
+    var c={err:0,warn:0,info:0};is.forEach(function(i){c[i.level]++});
+    $('#sr').textContent='DAY '+d.n+': ผิดพลาด '+c.err+' เตือน '+c.warn+' แจ้ง '+c.info;
+  }
+  function render(focusKey){
+    head();tabs();day();
+    if(focusKey){var el=document.querySelector('input[name="'+focusKey[0]+'"][value="'+focusKey[1]+'"]');if(el)el.focus({preventScroll:true})}
+  }
+  function go(i,slot){cur=i;try{history.replaceState(null,'','#d'+(i+1))}catch(e){location.hash='d'+(i+1)}render();
+    if(slot){var el=document.getElementById(slot);if(el){el.scrollIntoView({block:'center'});el.classList.add('flash');setTimeout(function(){el.classList.remove('flash')},1400)}}}
+  function toast(t){var el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){el.hidden=true},1800)}
+  function planText(ds){
+    return ds.map(function(d){
+      var lines=['DAY '+d.n+' · '+dstr(d)+' · '+d.label,'พัก: '+d.night];
+      d.slots.forEach(function(s){var o=E.selected(s,sel).filter(function(x){return !x.skip});if(!o.length)return;
+        lines.push(s.time+'  '+s.title+': '+o.map(function(x){return x.n}).join(' + '))});
+      var is=E.analyze(trip,d,sel).filter(function(i){return i.level!=='info'});
+      if(is.length){lines.push('— ข้อควรตรวจ —');is.forEach(function(i){lines.push('• '+i.msg)})}
+      return lines.join('\n')}).join('\n\n');
+  }
+  function copy(text){
+    function fb(){var w=document.createElement('div');w.className='fb';w.innerHTML='<div class="sub">คัดลอกอัตโนมัติไม่ได้ — เลือกข้อความด้านล่างแล้วกดคัดลอก</div><textarea readonly></textarea>';w.querySelector('textarea').value=text;$('#day').prepend(w);var t=w.querySelector('textarea');t.focus();t.select()}
+    try{navigator.clipboard.writeText(text).then(function(){toast('คัดลอกแล้ว')},fb)}catch(e){fb()}
+  }
+
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('.tab');if(t){go(+t.dataset.i);return}
+    var g=e.target.closest('[data-go]');if(g){var id=g.dataset.go,di=-1;trip.days.forEach(function(d,i){if(d.slots.some(function(s){return s.id===id}))di=i});if(di>-1)go(di,id);return}
+    if(e.target.id==='cpDay')copy(planText([trip.days[cur]]));
+    if(e.target.id==='cpAll')copy(planText(trip.days));
+    if(e.target.id==='reset'){var b=e.target;
+      if(b.dataset.arm){clearTimeout(resetT);delete b.dataset.arm;b.textContent='รีเซ็ตตัวเลือก';sel={};save();render();toast('รีเซ็ตแล้ว')}
+      else{b.dataset.arm='1';b.textContent='แตะอีกครั้งเพื่อรีเซ็ต';resetT=setTimeout(function(){delete b.dataset.arm;b.textContent='รีเซ็ตตัวเลือก'},3000)}}
+    if(e.target.id==='theme'){var r=document.documentElement,dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=dark?'light':'dark'}
+  });
+  document.addEventListener('change',function(e){
+    var i=e.target;if(!i.dataset||!i.dataset.slot)return;
+    var s=null;trip.days.forEach(function(d){d.slots.forEach(function(x){if(x.id===i.dataset.slot)s=x})});
+    if(s.pick==='one')sel[s.id]=[i.value];
+    else{var cur2=E.selected(s,sel).map(function(o){return o.id}),k=cur2.indexOf(i.value);if(k>-1)cur2.splice(k,1);else cur2.push(i.value);sel[s.id]=cur2}
+    save();var y=window.scrollY;render([s.id,i.value]);window.scrollTo(0,y);
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target.closest&&e.target.closest('.tab');if(!t)return;
+    var n=trip.days.length,i=+t.dataset.i,j=e.key==='ArrowRight'?(i+1)%n:e.key==='ArrowLeft'?(i+n-1)%n:e.key==='Home'?0:e.key==='End'?n-1:-1;
+    if(j<0)return;e.preventDefault();go(j);var el=document.getElementById('tab'+j);if(el)el.focus();
+  });
+  function fromHash(){var m=/^#d(\d)$/.exec(location.hash);if(m&&trip.days[+m[1]-1])cur=+m[1]-1}
+  window.addEventListener('hashchange',function(){fromHash();render()});
+  fromHash();render();
+})();
+</script>
+</body>
+</html>

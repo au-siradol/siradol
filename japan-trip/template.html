@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="th">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Japan 2569 Itinerary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef1ee; --paper:#f8faf7; --ink:#1d2340; --mute:#5b6478; --rule:#c9d0cb; --rule2:#dfe4df;
+  --accent:#0b6b66; --accent-ink:#ffffff; --accent-soft:#d6ebe8;
+  --err:#b3261e; --err-soft:#f9dfdc; --warn:#8a5a00; --warn-soft:#fbecc8; --info:#3a5a9b; --info-soft:#dde6f6;
+  --nap:#e9d9f0; --move:#8f98b8; --eat:#d98c4a; --see:#4a9a8f; --stay:#6d6a9c;
+  --font-d:'Anuphan','IBM Plex Sans Thai',system-ui,sans-serif;
+  --font-b:'IBM Plex Sans Thai',system-ui,sans-serif;
+  --font-m:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151c; --paper:#1a1e29; --ink:#e6e9f2; --mute:#97a0b5; --rule:#343b4c; --rule2:#272d3b;
+  --accent:#4fc3bb; --accent-ink:#0b1c1b; --accent-soft:#1d3a3a;
+  --err:#ff8a80; --err-soft:#3b1f1d; --warn:#f2c36b; --warn-soft:#362b14; --info:#8fb1f0; --info-soft:#1d2a45;
+  --nap:#35284a; --move:#69729a; --eat:#c27a3a; --see:#3f8c82; --stay:#8a86c2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151c; --paper:#1a1e29; --ink:#e6e9f2; --mute:#97a0b5; --rule:#343b4c; --rule2:#272d3b;
+  --accent:#4fc3bb; --accent-ink:#0b1c1b; --accent-soft:#1d3a3a;
+  --err:#ff8a80; --err-soft:#3b1f1d; --warn:#f2c36b; --warn-soft:#362b14; --info:#8fb1f0; --info-soft:#1d2a45;
+  --nap:#35284a; --move:#69729a; --eat:#c27a3a; --see:#3f8c82; --stay:#8a86c2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:20px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent)}
+.mono{font-family:var(--font-m);font-variant-numeric:tabular-nums}
+
+/* title block */
+.tb{background:var(--paper);border:1.5px solid var(--ink);display:grid;grid-template-columns:1fr auto;gap:0}
+.tb>div{padding:12px 16px;min-width:0}
+.tb .r{border-left:1px solid var(--ink);display:flex;flex-direction:column;gap:6px;justify-content:center;align-items:flex-end}
+.eyebrow{font:500 11px var(--font-m);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+h1{font:700 26px/1.15 var(--font-d);margin:2px 0 4px;text-wrap:balance}
+.sub{color:var(--mute);font-size:13.5px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.btn{border:1px solid var(--rule);background:var(--paper);padding:5px 10px;font-size:13px;border-radius:2px}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,.tab:focus-visible,.opt input:focus-visible+.card{outline:2px solid var(--accent);outline-offset:2px}
+
+.rules{font-size:13px;color:var(--mute);border-left:2px solid var(--accent);padding:2px 12px;display:flex;flex-direction:column;gap:2px}
+
+/* tabs */
+.tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1.5px solid var(--ink);scrollbar-width:thin}
+.tab{flex:0 0 auto;border:1px solid var(--rule);border-bottom:0;background:var(--bg);padding:6px 22px 7px 12px;text-align:left;min-width:74px;position:relative;margin-right:-1px}
+.tab .n{font:500 11px var(--font-m);color:var(--mute);letter-spacing:.08em}
+.tab .d{font:600 14px var(--font-d)}
+.tab[aria-selected=true]{background:var(--paper);border-color:var(--ink);border-bottom:1.5px solid var(--paper);margin-bottom:-1.5px;z-index:1}
+.dot{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:50%;font:700 9px/14px var(--font-m);text-align:center;color:var(--paper)}
+.dot.err{background:var(--err)}.dot.warn{background:var(--warn)}.dot.pass{background:var(--accent)}
+
+/* day header */
+.dh{display:flex;flex-direction:column;gap:8px}
+.dh h2{font:700 21px/1.2 var(--font-d);margin:0;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--mute)}
+.meta b{color:var(--ink);font-weight:500}
+.wx{display:flex;flex-direction:column;gap:4px}
+.note{font-size:13.5px;padding:6px 10px;border-left:3px solid var(--info);background:var(--info-soft)}
+.note.warn{border-color:var(--warn);background:var(--warn-soft)}
+
+/* strip */
+.strip{background:var(--paper);border:1px solid var(--rule);padding:10px 12px 8px}
+.strip h3{font:500 11px var(--font-m);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 6px}
+.bar{position:relative;height:30px;background:repeating-linear-gradient(90deg,transparent 0 calc(100%/15 - 1px),var(--rule2) calc(100%/15 - 1px) calc(100%/15));border:1px solid var(--rule);overflow:hidden}
+.nap{position:absolute;top:0;bottom:0;background:var(--nap);opacity:.9}
+.seg{position:absolute;top:5px;bottom:5px;min-width:2px;border-radius:1px;cursor:pointer;border:0;padding:0}
+.seg.move{background:var(--move)}.seg.eat{background:var(--eat)}.seg.see{background:var(--see)}.seg.stay{background:var(--stay)}
+.seg.err{outline:2px solid var(--err);outline-offset:1px}.seg.warn{outline:2px solid var(--warn);outline-offset:1px}
+.ticks{position:relative;height:16px;margin-top:2px;font:400 10.5px var(--font-m);color:var(--mute)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}.ticks span:last-child{transform:translateX(-100%)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:4px}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px}
+
+/* issues */
+.iss{border:1px solid var(--rule);background:var(--paper)}
+.iss h3{margin:0;padding:8px 12px;font:600 14px var(--font-d);border-bottom:1px solid var(--rule2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cnt{font:500 12px var(--font-m);padding:1px 7px;border-radius:9px}
+.cnt.err{background:var(--err-soft);color:var(--err)}.cnt.warn{background:var(--warn-soft);color:var(--warn)}.cnt.info{background:var(--info-soft);color:var(--info)}
+.iss ul{list-style:none;margin:0;padding:4px 0;max-height:240px;overflow:auto}
+.iss li button{display:flex;gap:8px;width:100%;text-align:left;border:0;background:none;padding:5px 12px;font-size:13.5px}
+.iss li button:hover{background:var(--bg)}
+.lv{flex:0 0 auto;font:600 10.5px var(--font-m);padding:1px 6px;border-radius:2px;margin-top:3px;letter-spacing:.05em}
+.lv.err{background:var(--err);color:var(--paper)}.lv.warn{background:var(--warn);color:var(--paper)}.lv.info{background:var(--info);color:var(--paper)}
+.ok{padding:10px 12px;color:var(--accent);font-size:14px}
+
+/* slots */
+.slots{display:flex;flex-direction:column}
+.slot{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--rule);scroll-margin-top:12px}
+.slot:target,.slot.flash{background:linear-gradient(90deg,var(--accent-soft),transparent 60%)}
+.time{font:500 15px var(--font-m);padding-top:2px}
+.time small{display:block;font-size:11px;color:var(--mute)}
+.body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.st{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.st h4{font:600 15.5px var(--font-d);margin:0}
+.chip{font:500 10.5px var(--font-m);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);border:1px solid var(--rule);padding:0 6px}
+.pk{font-size:12px;color:var(--mute)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.opt{display:block;min-width:0;position:relative}
+.opt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;width:100%;height:100%;z-index:2}
+.card{border:1px solid var(--rule);background:var(--paper);padding:8px 10px;height:100%;display:flex;flex-direction:column;gap:3px}
+.opt input:checked+.card{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent);background:var(--accent-soft)}
+.card .n{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.card .nt{font-size:12.5px;color:var(--mute)}
+.tags{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.tg{font-size:11px;padding:0 6px;border-radius:2px;background:var(--rule2);color:var(--ink)}
+.tg.warn{background:var(--warn-soft);color:var(--warn)}.tg.info{background:var(--info-soft);color:var(--info)}.tg.good{background:var(--accent-soft);color:var(--accent)}
+.map{position:relative;z-index:3;font-size:12px;margin-left:auto;white-space:nowrap}
+.slot-iss{display:flex;flex-direction:column;gap:3px}
+.si{font-size:13px;padding:3px 8px;border-left:3px solid var(--info);background:var(--info-soft)}
+.si.warn{border-color:var(--warn);background:var(--warn-soft)}.si.err{border-color:var(--err);background:var(--err-soft)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;font-size:13px;border-radius:2px;z-index:10}
+.fb{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.fb textarea{width:100%;height:160px;font:12px var(--font-m);background:var(--paper);color:var(--ink);border:1px solid var(--rule)}
+
+@media(max-width:560px){
+  .tb{grid-template-columns:1fr}.tb .r{border-left:0;border-top:1px solid var(--ink);align-items:flex-start}.tools{justify-content:flex-start}
+  .slot{grid-template-columns:1fr;gap:4px}.time{display:flex;gap:8px;align-items:baseline}.time small{display:inline}
+  h1{font-size:22px}
+}
+@media(prefers-reduced-motion:no-preference){.card{transition:background .12s,border-color .12s}}
+</style>
+
+<body>
+<div class="wrap">
+  <header class="tb">
+    <div>
+      <div class="eyebrow" id="eb"></div>
+      <h1 id="ttl"></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="r">
+      <div class="tools">
+        <button class="btn pri" id="cpDay">คัดลอกแผนวันนี้</button>
+        <button class="btn" id="cpAll">คัดลอกทั้งทริป</button>
+        <button class="btn" id="reset">รีเซ็ตตัวเลือก</button>
+        <button class="btn" id="theme" aria-label="สลับธีม">◐</button>
+      </div>
+    </div>
+  </header>
+  <div class="rules" id="rules"></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <main id="day" class="dh" role="tabpanel" tabindex="-1"></main>
+  <div id="sr" class="sr" aria-live="polite"></div>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script id="trip" type="application/json">{{TRIP}}</script>
+<script>{{ENGINE}}</script>
+<script>
+(function(){
+  var E=window.Engine, trip=JSON.parse(document.getElementById('trip').textContent);
+  var resetT,KEY='japan2569.sel.'+(trip.meta.version||'v1'), sel={}, cur=0;
+  try{sel=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){sel={}}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(sel))}catch(e){}}
+  var $=function(s){return document.querySelector(s)};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+  var GROUP={arrival:'move',drive:'move',nap:'move',rest:'move',refuel:'move',car:'move',carreturn:'move',flight:'move',transit:'move',move:'move',meal:'eat',cafe:'eat',see:'see',arch:'see',shop:'see',spa:'see',hotel:'stay'};
+  var KIND={arrival:'ถึง',hotel:'โรงแรม',meal:'มื้ออาหาร',drive:'ขับรถ',nap:'ขับ·นอน',rest:'พัก',sight:'เที่ยว',see:'เที่ยว',arch:'สถาปัตย์',cafe:'คาเฟ่',shop:'ช้อป',refuel:'เติมน้ำมัน',car:'รถเช่า',carreturn:'คืนรถ',flight:'เที่ยวบิน',spa:'ออนเซ็น',transit:'เดินทาง',move:'เดินทาง'};
+  var MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var DOWF=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  function dstr(d){var p=d.date.split('-');return DOWF[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1]}
+  function mapUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
+  function worst(is){return is.some(function(i){return i.level==='err'})?'err':is.some(function(i){return i.level==='warn'})?'warn':'ok'}
+
+  function head(){
+    $('#eb').textContent='แผนการเดินทาง · '+trip.days.length+' วัน';
+    $('#ttl').textContent=trip.meta.title;
+    $('#sub').textContent=trip.meta.subtitle+' · '+trip.meta.party;
+    $('#rules').innerHTML=trip.meta.rules.map(function(r){return '<div>• '+esc(r)+'</div>'}).join('');
+  }
+  function tabs(){
+    var box=$('#tabs'),sx=box.scrollLeft;
+    box.innerHTML=trip.days.map(function(d,i){
+      var w=worst(E.analyze(trip,d,sel)),p=d.date.split('-');
+      return '<button class="tab" role="tab" id="tab'+i+'" aria-controls="day" tabindex="'+(i===cur?0:-1)+'" aria-selected="'+(i===cur)+'" aria-label="วันที่ '+d.n+' · '+(w==='err'?'มีข้อขัดแย้ง':w==='warn'?'มีข้อควรระวัง':'ผ่าน')+'" data-i="'+i+'"><span class="dot '+(w==='ok'?'pass':w)+'" aria-hidden="true">'+(w==='err'?'✕':w==='warn'?'!':'✓')+'</span><div class="n">D'+d.n+' · '+E.DOW[E.dowOf(d)]+'</div><div class="d">'+(+p[2])+' ต.ค.</div></button>';
+    }).join('');
+    box.scrollLeft=sx;
+    var on=box.querySelector('[aria-selected=true]');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+  function strip(d,is){
+    var A=E.mins(trip.meta.dayStart),B=E.mins(trip.meta.dayEnd),W=B-A,pcn=function(m){return Math.min(100,Math.max(0,(m-A)/W*100))},pc=function(m){return pcn(m).toFixed(2)};
+    var bad={};is.forEach(function(i){if(i.slotId&&(i.level==='err'||bad[i.slotId]!=='err'&&i.level==='warn'))bad[i.slotId]=i.level});
+    var segs=d.slots.map(function(s){var dur=E.slotDur(s,sel);if(!dur)return '';var st=E.mins(s.time);
+      var cls='seg '+(GROUP[s.kind]||'see')+(bad[s.id]?' '+bad[s.id]:'');
+      return '<button class="'+cls+'" style="left:'+pc(st)+'%;width:'+Math.max(0.3,pcn(st+dur)-pcn(st)).toFixed(2)+'%" data-go="'+s.id+'" title="'+esc(s.time+' · '+s.title+' ('+dur+' นาที)')+'" aria-label="'+esc(s.time+' '+s.title)+'"></button>'}).join('');
+    var n1=E.mins(trip.meta.nap[0]),n2=E.mins(trip.meta.nap[1]);
+    var ticks='';for(var m=A;m<=B;m+=180)ticks+='<span style="left:'+pc(m)+'%">'+E.hhmm(m)+'</span>';
+    return '<section class="strip"><h3>ไทม์ไลน์ '+trip.meta.dayStart+'–'+trip.meta.dayEnd+' · แถบม่วง = ช่วงเด็กนอน '+trip.meta.nap.join('–')+'</h3><div class="bar"><div class="nap" style="left:'+pc(n1)+'%;width:'+((n2-n1)/W*100).toFixed(2)+'%"></div>'+segs+'</div><div class="ticks">'+ticks+'</div><div class="legend"><span><i style="background:var(--move)"></i>เดินทาง</span><span><i style="background:var(--eat)"></i>อาหาร</span><span><i style="background:var(--see)"></i>เที่ยว</span><span><i style="background:var(--stay)"></i>พัก</span></div></section>';
+  }
+  function issBox(is){
+    var c={err:0,warn:0,info:0};is.forEach(function(i){c[i.level]++});
+    var h='<section class="iss"><h3>ตรวจความขัดแย้งอัตโนมัติ <span class="cnt err">ผิดพลาด '+c.err+'</span><span class="cnt warn">เตือน '+c.warn+'</span><span class="cnt info">แจ้ง '+c.info+'</span></h3>';
+    if(!is.length)return h+'<div class="ok">✓ ไม่พบข้อขัดแย้งในตัวเลือกปัจจุบัน</div></section>';
+    return h+'<ul>'+is.map(function(i){return '<li><button data-go="'+i.slotId+'"><span class="lv '+i.level+'">'+({err:'ERR',warn:'WARN',info:'INFO'})[i.level]+'</span><span>'+esc(i.msg)+'</span></button></li>'}).join('')+'</ul></section>';
+  }
+  function opt(s,o,on){
+    var tags=[];
+    if(o.dur)tags.push('<span class="tg mono">'+o.dur+' นาที</span>');
+    if(o.km)tags.push('<span class="tg mono">'+o.km+' กม.</span>');
+    if(o.arch)tags.push('<span class="tg good">สถาปัตย์</span>');
+    if(o.kids)tags.push('<span class="tg good">เหมาะเด็ก</span>');
+    if(o.queue)tags.push('<span class="tg warn">มีคิว</span>');
+    if(o.steep)tags.push('<span class="tg warn">บันไดชัน</span>');
+    if(o.cold)tags.push('<span class="tg info">เย็น</span>');
+    if(o.reserve)tags.push('<span class="tg info">ควรจอง</span>');
+    if(o.last)tags.push('<span class="tg mono">เข้าถึง '+o.last+'</span>');
+    var link=o.q?'<a class="map" href="'+mapUrl(o.q)+'" target="_blank" rel="noopener">แผนที่ ↗</a>':'';
+    var type=s.pick==='one'?'radio':'checkbox';
+    return '<label class="opt"><input type="'+type+'" name="'+s.id+'" value="'+o.id+'" data-slot="'+s.id+'"'+(on?' checked':'')+'><div class="card"><div class="n">'+esc(o.n)+'</div>'+(o.note?'<div class="nt">'+esc(o.note)+'</div>':'')+'<div class="tags">'+tags.join('')+link+'</div></div></label>';
+  }
+  function slots(d,is){
+    return '<section class="slots">'+d.slots.map(function(s){
+      var on=E.selected(s,sel).map(function(o){return o.id}),dur=E.slotDur(s,sel),st=E.mins(s.time);
+      var mine=is.filter(function(i){return i.slotId===s.id});
+      return '<div class="slot" id="'+s.id+'"><div class="time">'+s.time+(dur?'<small>→ '+E.hhmm(st+dur)+'</small>':'')+'</div><div class="body"><div class="st"><h4>'+esc(s.title)+'</h4><span class="chip">'+(KIND[s.kind]||s.kind)+'</span>'+(s.opts.length>1?'<span class="pk">'+(s.pick==='one'?'เลือก 1':'เลือกได้หลายอย่าง')+'</span>':'')+'</div><div class="opts">'+s.opts.map(function(o){return opt(s,o,on.indexOf(o.id)>-1)}).join('')+'</div>'+(mine.length?'<div class="slot-iss">'+mine.map(function(i){return '<div class="si '+i.level+'">'+esc(i.msg)+'</div>'}).join('')+'</div>':'')+'</div></div>';
+    }).join('')+'</section>';
+  }
+  function day(){
+    var d=trip.days[cur],is=E.analyze(trip,d,sel);
+    $('#day').innerHTML='<div class="eyebrow">DAY '+d.n+' / '+trip.days.length+'</div><h2>'+esc(d.label)+' · '+dstr(d)+'</h2><div class="meta"><span>เส้นทาง: <b>'+esc(d.route)+'</b></span><span>พัก: <b>'+esc(d.night)+'</b></span></div><div class="wx">'+d.weather.map(function(w){return '<div class="note '+(w.s==='warn'?'warn':'')+'">'+esc(w.t)+'</div>'}).join('')+'</div>'+strip(d,is)+issBox(is)+slots(d,is);
+    var c={err:0,warn:0,info:0};is.forEach(function(i){c[i.level]++});
+    $('#sr').textContent='DAY '+d.n+': ผิดพลาด '+c.err+' เตือน '+c.warn+' แจ้ง '+c.info;
+  }
+  function render(focusKey){
+    head();tabs();day();
+    if(focusKey){var el=document.querySelector('input[name="'+focusKey[0]+'"][value="'+focusKey[1]+'"]');if(el)el.focus({preventScroll:true})}
+  }
+  function go(i,slot){cur=i;try{history.replaceState(null,'','#d'+(i+1))}catch(e){location.hash='d'+(i+1)}render();
+    if(slot){var el=document.getElementById(slot);if(el){el.scrollIntoView({block:'center'});el.classList.add('flash');setTimeout(function(){el.classList.remove('flash')},1400)}}}
+  function toast(t){var el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){el.hidden=true},1800)}
+  function planText(ds){
+    return ds.map(function(d){
+      var lines=['DAY '+d.n+' · '+dstr(d)+' · '+d.label,'พัก: '+d.night];
+      d.slots.forEach(function(s){var o=E.selected(s,sel).filter(function(x){return !x.skip});if(!o.length)return;
+        lines.push(s.time+'  '+s.title+': '+o.map(function(x){return x.n}).join(' + '))});
+      var is=E.analyze(trip,d,sel).filter(function(i){return i.level!=='info'});
+      if(is.length){lines.push('— ข้อควรตรวจ —');is.forEach(function(i){lines.push('• '+i.msg)})}
+      return lines.join('\n')}).join('\n\n');
+  }
+  function copy(text){
+    function fb(){var w=document.createElement('div');w.className='fb';w.innerHTML='<div class="sub">คัดลอกอัตโนมัติไม่ได้ — เลือกข้อความด้านล่างแล้วกดคัดลอก</div><textarea readonly></textarea>';w.querySelector('textarea').value=text;$('#day').prepend(w);var t=w.querySelector('textarea');t.focus();t.select()}
+    try{navigator.clipboard.writeText(text).then(function(){toast('คัดลอกแล้ว')},fb)}catch(e){fb()}
+  }
+
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('.tab');if(t){go(+t.dataset.i);return}
+    var g=e.target.closest('[data-go]');if(g){var id=g.dataset.go,di=-1;trip.days.forEach(function(d,i){if(d.slots.some(function(s){return s.id===id}))di=i});if(di>-1)go(di,id);return}
+    if(e.target.id==='cpDay')copy(planText([trip.days[cur]]));
+    if(e.target.id==='cpAll')copy(planText(trip.days));
+    if(e.target.id==='reset'){var b=e.target;
+      if(b.dataset.arm){clearTimeout(resetT);delete b.dataset.arm;b.textContent='รีเซ็ตตัวเลือก';sel={};save();render();toast('รีเซ็ตแล้ว')}
+      else{b.dataset.arm='1';b.textContent='แตะอีกครั้งเพื่อรีเซ็ต';resetT=setTimeout(function(){delete b.dataset.arm;b.textContent='รีเซ็ตตัวเลือก'},3000)}}
+    if(e.target.id==='theme'){var r=document.documentElement,dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=dark?'light':'dark'}
+  });
+  document.addEventListener('change',function(e){
+    var i=e.target;if(!i.dataset||!i.dataset.slot)return;
+    var s=null;trip.days.forEach(function(d){d.slots.forEach(function(x){if(x.id===i.dataset.slot)s=x})});
+    if(s.pick==='one')sel[s.id]=[i.value];
+    else{var cur2=E.selected(s,sel).map(function(o){return o.id}),k=cur2.indexOf(i.value);if(k>-1)cur2.splice(k,1);else cur2.push(i.value);sel[s.id]=cur2}
+    save();var y=window.scrollY;render([s.id,i.value]);window.scrollTo(0,y);
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target.closest&&e.target.closest('.tab');if(!t)return;
+    var n=trip.days.length,i=+t.dataset.i,j=e.key==='ArrowRight'?(i+1)%n:e.key==='ArrowLeft'?(i+n-1)%n:e.key==='Home'?0:e.key==='End'?n-1:-1;
+    if(j<0)return;e.preventDefault();go(j);var el=document.getElementById('tab'+j);if(el)el.focus();
+  });
+  function fromHash(){var m=/^#d(\d)$/.exec(location.hash);if(m&&trip.days[+m[1]-1])cur=+m[1]-1}
+  window.addEventListener('hashchange',function(){fromHash();render()});
+  fromHash();render();
+})();
+</script>
+</body>
+</html>
