@@ -141,7 +141,7 @@ test('plan B starts each day 30–45 min later than plan A', () => {
 });
 test('default warnings are exactly the known, accepted ones', () => {
   const got = trip.days.flatMap(d => E.analyze(trip, d, {}).filter(i => i.level === 'warn').map(i => `D${d.n}:${i.slotId}`));
-  assert.deepEqual(got, ['D3:d3s4', 'D3:d3s7', 'D3:d3s9', 'D4:d4s8', 'D8:d8s8']); // castle stairs; three afternoon drives with the child awake
+  assert.deepEqual(got, ['D3:d3s4', 'D3:d3s7', 'D3:d3s9', 'D4:d4s8', 'D7:d7s4', 'D8:d8s8']); // lunch queues; castle stairs; three afternoon drives with the child awake
 });
 test('D8: ≥30 min buffer before the 18:00 car return', () => {
   const d = trip.days[7], s = d.slots.find(x => x.kind === 'carreturn');
