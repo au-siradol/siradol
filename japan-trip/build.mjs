@@ -1,4 +1,4 @@
-// node build.mjs  → index.html (self-contained: trip.json + engine.js inlined into template.html)
+// node build.mjs  → index.html (self-contained: trip.json + engine.js + map.js inlined into today.template.html)
 // Runs from any directory; refuses to build if trip.json fails Engine.validate().
 import fs from 'fs';
 import path from 'path';
@@ -16,19 +16,9 @@ if (problems.length) {
   process.exit(1);
 }
 
-const tpl = read('template.html');
-for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}', '{{STYLE}}', '{{VENDOR_CSS}}', '{{VENDOR_JS}}']) if (!tpl.includes(k)) throw new Error(`template.html ไม่มี ${k}`);
-
 const trip = JSON.stringify(tripObj).replace(/<\//g, '<\\/');
 const engine = read('engine.js').replace(/<\//g, '<\\/');
 const map = read('map.js').replace(/<\//g, '<\\/');
-const js = f => read(f).replace(/<\/(script)/gi, '<\\/$1');
-const style = JSON.stringify(JSON.parse(read('map-style.json'))).replace(/<\//g, '<\\/');
-const vendorJs = js('vendor/maplibre-gl.js') + '\n;\n' + js('vendor/pmtiles.js');
-const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map)
-  .replace('{{STYLE}}', () => style).replace('{{VENDOR_CSS}}', () => read('vendor/maplibre-gl.css')).replace('{{VENDOR_JS}}', () => vendorJs);
-fs.writeFileSync(path.join(dir, 'plan.html'), html);
-console.log('plan.html', (html.length / 1024).toFixed(1) + ' KB');
 
 // index.html — the one-day "lock screen" view and entry page (same data and engine; no map)
 const ttpl = read('today.template.html');
@@ -36,11 +26,11 @@ for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}', '{{HANDFONT}}', '{{HANDCRE
 const today = ttpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map);
 // Red handwriting font: 2006_iannnnnBKK by iannnnn (f0nt.com), licence "For educations used only".
 // Embedded in the page for display only — the .ttf itself stays out of the repo (fonts/ is gitignored),
-// it is not modified or subset, and the page credits the designer with links back.
+// it is not modified or subset, and the last line of the page credits the designer.
 const hf = path.join(dir, 'fonts', '2006_iannnnnBKK.ttf');
 const hasHand = fs.existsSync(hf);
 const face = hasHand ? "@font-face{font-family:'iannnnnBKK';src:url(data:font/ttf;base64," + fs.readFileSync(hf).toString('base64') + ") format('truetype');font-display:swap}" : '';
-const credit = hasHand ? '<p class="credit">ตัวอักษรลายมือ: 2006_iannnnnBKK โดย iannnnn (Prachya Singhto) — <a href="https://www.f0nt.com/" target="_blank" rel="noopener">f0nt.com</a> · <a href="http://iannnnn.com/" target="_blank" rel="noopener">iannnnn.com</a> · ใช้เพื่อการศึกษา</p>' : '';
+const credit = hasHand ? '<p class="credit">ตัวอักษรลายมือ: 2006_iannnnnBKK โดย iannnnn (Prachya Singhto) — ใช้เพื่อการศึกษา</p>' : '';
 if (!hasHand) console.warn('fonts/2006_iannnnnBKK.ttf not found — index.html falls back to Mali for the red notes');
 const todayOut = today.replace('{{HANDFONT}}', () => face).replace('{{HANDCREDIT}}', () => credit);
 fs.writeFileSync(path.join(dir, 'index.html'), todayOut);

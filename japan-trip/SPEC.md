@@ -4,14 +4,13 @@ Goal: self-contained itinerary page built from `trip.json`.
 Family: 2 elderly adults + 1 child (4 y). Nissan Serena from Haneda, 15–23 Oct 2026.
 
 ## Files
-Site entry: `japan-trip/` → `index.html` = the one-day "today" view; `plan.html` = full planner; `today.html` forwards to `index.html` (old links).
+Site entry: `japan-trip/` → `index.html` = the one-day "today" view (the only page); `today.html` forwards old links to it.
 - `trip.json` — single source of truth (9 days → slots → options). Edit this, not the HTML.
-- `engine.js` — pure conflict checker `Engine.analyze(trip, day, sel)` and structural checker `Engine.validate(trip)`.
-- `map.js` — day stops and map/link helpers (pure, also run in Node). `map-style.json` — ELEMNT map style. `vendor/` — MapLibre + PMTiles.
-- `template.html` — UI: card-stack deck (progress ring, NN / 09 counter, prev/next, day tabs), map + legend column, 07:00–22:00 strip with nap band, issue list, option cards, copy-plan, 2-tap reset, theme toggle.
-- `build.mjs` — `node build.mjs` validates trip.json, then inlines trip.json + engine.js + map.js into `index.html`. Works from any directory; writes next to itself.
-- `test.mjs` — `node test.mjs`: 38 assertions (one per rule + real-data checks + map). Exits non-zero on failure.
-- `index.html` — build output (committed so it can be opened directly).
+- `engine.js` — conflict checker `Engine.analyze(trip, day, sel)` and structural checker `Engine.validate(trip)`.
+- `map.js` — day stops and free Google Maps links (`stops`, `stopName`, `dirUrl`, `searchUrl`); pure, also run in Node.
+- `today.template.html` — the page: date + Japan-time clock, the plan as prose, red marks that open a choice sheet.
+- `build.mjs` — `node build.mjs` validates trip.json and writes `index.html` (+ `today.html`). Embeds `fonts/2006_iannnnnBKK.ttf` if present (gitignored).
+- `test.mjs` — `node test.mjs`: 37 assertions. Exits non-zero on failure.
 
 ## Data model
 - Meta: `links{sheet, places}` (source Google Sheet and the Google My Maps of places — shown as links on both pages), `title, subtitle, party, nap ["13:00","14:30"], napStartOk ["12:45","14:15"], dayStart, dayEnd, sunset "17:00", deadlineBuffer 15, napBandOverlap 30, version, rules[]`.
@@ -30,15 +29,10 @@ Site entry: `japan-trip/` → `index.html` = the one-day "today" view; `plan.htm
 - Map link: `https://www.google.com/maps/search/?api=1&query=<encoded q>`
 - UI state: `sel[slotId] = [optIds]` in localStorage `japan2569.sel.<version>` (try/catch). Stored ids that no longer exist fall back to `def`.
 
-## Map
-- MapLibre GL 4.7.1 + PMTiles 3.2.1 (bundled from `vendor/` into index.html — no CDN) with the ELEMNT “Blueprint – Drafting (Light)” style (`map-style.json`). Tiles, glyphs and sprites load from s3-public.elemnt.earth (OpenStreetMap data; keep the attribution). No API key, no billing.
-- `map.js`: `stops()` lettered pins (merged within ~275 m), `lineCoords()` for the dashed connector, `dirUrl()` = free Google Maps directions link (opens the app; no embed).
-- The dashed line joins the pins in order — it is **not** a road route. **Pin coordinates are approximate (from memory, roughly a few hundred metres to ~1 km)**; correct `ll` in trip.json if a pin looks off.
-- Without WebGL the map shows a short fallback message; the Google link still works.
-
 ## Design
-- Three minimal options (picker at the top, remembered per device): **1 Mint list** (phone-notes look: mint ground, mono type, small times left), **2 Outline** (white, dashed-circle nodes with icons, outlined time pills, dashed dividers), **3 Blueprint** (blue drafting style matching the map). No boxes: hierarchy comes from type size, colour and spacing. Each has a dark mode.
-- Fonts: Latin IBM Plex Mono / Inter / Geist Mono (Google Fonts); Thai Sukhumvit Set via `local()` (IBM Plex Sans Thai fallback).
+- Grey ground (#ececec); Thai in Sukhumvit Set and Latin in Helvetica Neue, split by unicode-range so the Thai half can be sized to match (defaults: Thai 90%, line height 2.0, red 20px).
+- Highlights mark the lower half of a word; times are body size. Red handwriting (2006_iannnnnBKK by iannnnn, "for educational use", embedded for display only and credited on the last line) marks choices "↙n" / notes "!" — tapping opens a bottom sheet.
+- No map on the page; links go to Google Maps (directions), the trip Google Sheet and the My Maps of places (`meta.links`). Pin coordinates (`ll`) are approximate until replaced from the My Maps KML.
 
 ## Conflict rules (engine.js)
 | level | rule |
