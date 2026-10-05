@@ -107,12 +107,15 @@
             { "id": "b", "n": "เลียบรอบทะเลสาบ Yamanaka", "pin": "จุดชมวิวริมทะเลสาบ Yamanaka", "type": "ขับเลียบทะเลสาบ จอดตามจุดชมวิวริมน้ำ: Nagaike Shinsui Park (ฝั่งเหนือ) · ริมหาด Hirano (ฝั่งตะวันออก)", "note": "ทางราบริมน้ำ จอดใกล้ เดินสั้นๆ · ช่วงบ่ายฟูจิอยู่ฝั่งตะวันตก ย้อนแสงเล็กน้อย ได้เงาภูเขาสวยตอนแดดอ่อน", "dur": 45, "km": 15, "q": "Nagaike Shinsui Park Yamanakako", "via": ["Hirano Yamanakako"] },
             { "id": "c", "n": "Yamanakako Hana no Miyako Park", "type": "สวนดอกไม้กว้าง ทางเดินราบ วิวฟูจิด้านหลังทุ่งดอกไม้", "note": "ทางเลือกรอง · อยู่ริมถนน 138 ไม่ต้องอ้อม · ตั้งแต่ 16 ต.ค. เปิด 9:00–16:30 ค่าเข้าผู้ใหญ่ 360 เยน (เด็กเล็กฟรี) · ที่จอด 220 คัน · มีร้าน Hanaan", "dur": 60, "q": "Yamanakako Hana no Miyako Park", "kids": true, "close": "16:30", "ll": [35.4167, 138.8673] }
           ] },
-        {"id": "d2s9", "time": "15:30", "kind": "cafe", "title": "คาเฟ่ (ปกติข้าม — เช็กอิน 16:00)", "pick": "one", "def": ["c"],
+        {"id": "d2s9", "time": "15:30", "kind": "cafe", "title": "คาเฟ่ระหว่างทาง", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Brand New Day", "type": "คาเฟ่กระจกวิวฟูจิ · กาแฟดริป + พิซซ่าเตาฟืน", "note": "", "dur": 45, "q": "Brand New Day cafe Kawaguchiko" },
-            { "id": "b", "n": "Cisco / Lake Bake", "type": "Cisco Coffee (สไตล์ซานฟรานซิสโก) / Lake Bake เบเกอรี่เตาฟืนริมน้ำ", "note": "", "dur": 45, "q": "Lake Bake Kawaguchiko" },
+            { "id": "a", "n": "Amanoya Yamanakako 3 (天野屋 三号店)", "type": "ร้านริมทะเลสาบหน้า Nagaike Shinsui Park · นั่งมองฟูจิได้ทั้งในร้านและเทอเรซ", "note": "อยู่ตรงจุดเลียบทะเลสาบพอดี ไม่ต้องอ้อม · จากที่นี่ไปโรงแรมราว 20 นาที", "dur": 25, "q": "Amanoya Yamanakako 3 Nagaike" },
+            { "id": "b", "n": "Cafe Noa (カフェノア)", "type": "คาเฟ่ฝั่งเหนือทะเลสาบ Yamanaka ใกล้ Nagaike Shinsui Park · เห็นฟูจิจากในร้าน", "note": "อยู่บนทาง ไม่ต้องอ้อม", "dur": 25, "q": "Cafe Noa Yamanakako" },
+            { "id": "c", "n": "THE PARK (ザ パーク)", "type": "คาเฟ่ + ร้านขนมปัง เทอเรซติดทะเลสาบ Yamanaka", "note": "ที่จอดฟรี ~10 คัน เดิน 1 นาที", "dur": 25, "q": "THE PARK Yamanakako cafe" },
+            { "id": "e", "n": "Kakasaryo Fujiyoshida (菓々茶寮)", "type": "ร้านขนมและคาเฟ่ใกล้ Fuji-Q · ใกล้โรงแรม", "note": "มีที่จอด · พาเด็กได้ · ขับจากทะเลสาบ ~20 นาที แล้วถึงโรงแรมในไม่กี่นาที", "dur": 30, "q": "Kakasaryo Fujiyoshida", "kids": true },
+            { "id": "f", "n": "FabCafe Fuji", "type": "คาเฟ่ดีไซน์ใน Fujiyoshida (ย่าน Shimoyoshida) · อันดับ 1 คาเฟ่ Fujiyoshida ใน Tabelog", "note": "ใกล้โรงแรม · ใกล้ถนน Honcho-dori", "dur": 30, "q": "FabCafe Fuji Fujiyoshida" },
             { "id": "d", "n": "Tenka-chaya (天下茶屋) ช่องเขา Misaka — ตัวเลือกรอง", "type": "ร้านน้ำชาบนช่องเขาที่ Dazai พักเขียน \"ร้อยทัศน์ฟูจิ\" · วิวฟูจิเหนือทะเลสาบ Kawaguchi · มีโฮโตและชา", "note": "10:00–17:00 เปิดทุกวัน · จากทะเลสาบ Yamanaka ขับราว 35 นาที แล้วไปโรงแรมอีกราว 30 นาที เช็กอินช้าลงราว 45 นาที", "dur": 75, "q": "Tenkachaya Misaka Pass", "close": "17:00", "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "มันสมบูรณ์เกินไป ฟูจิอยู่ตรงหน้า และที่เชิงเขาคือทะเลสาบ Kawaguchi แผ่ขาวเยือกเย็น มีภูเขาหมอบนิ่งเงียบโอบอยู่สองข้าง มองแวบเดียวฉันก็หน้าแดงด้วยความอาย มันคือภาพวาดบนผนังโรงอาบน้ำ คือฉากบนเวทีละคร สั่งทำมาเป๊ะจนน่าอับอายที่จะมอง"}}}, "avoid": "ทางขึ้นเขาลำบากมาก: ถนนเก่าแคบ คดเคี้ยว ชัน — ตัวเลือกรอง" },
-            { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
+            { "id": "z", "n": "ข้าม", "note": "ตรงไปโรงแรม", "dur": 0, "q": "", "skip": true }
           ] },
         {"id": "d2s10", "time": "16:00", "kind": "hotel", "title": "เช็กอินโรงแรม", "pick": "one", "def": ["a"], "ll": [35.475, 138.795],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "กลางเดือนตุลาคมผ่านไป … ยามอาทิตย์ตก เมฆขอบสีแดงฉานลอยมา ใต้ท้องเมฆเหมือนท้องห่าน ฉันยืนสูบบุหรี่คนเดียวที่ระเบียงชั้นสอง ตั้งใจไม่มองฟูจิ แต่จ้องใบไม้เปลี่ยนสีของป่าบนภูเขา แดงฉานราวเลือดที่หยด"}}},
@@ -151,7 +154,7 @@
           ] },
         {"id": "d3s2", "time": "09:30", "kind": "cafe", "title": "กาแฟ", "pick": "one", "def": ["c"],
           "opts": [
-            { "id": "a", "n": "FabCafe Fuji", "type": "คาเฟ่ดีไซน์ไม้ · กาแฟ specialty", "note": "", "dur": 40, "q": "FabCafe Fuji Kawaguchiko" },
+            { "id": "a", "n": "FabCafe Fuji", "type": "คาเฟ่ดีไซน์ไม้ · กาแฟ specialty", "note": "", "dur": 40, "q": "FabCafe Fuji Fujiyoshida" },
             { "id": "b", "n": "Cisco Cafe", "type": "คาเฟ่", "note": "", "dur": 40, "q": "Cisco cafe Kawaguchiko" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
