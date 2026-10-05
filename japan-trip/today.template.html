@@ -201,7 +201,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   let LIT=(new URLSearchParams(location.search).get('lit'))??(trip.meta.lit||'');
   window.setLit=m=>{LIT=m;render()};
   const litLen='long';   // the book sheet shows the long passage only
-  const lev=(L,k)=>(L.levels&&(L.levels[k]||L.levels.short))||{ja:L.ja,th:L.th,kind:'แปลจากต้นฉบับ'};
+  // passages for a slot: the slot's own, then one per chosen option (o.lit shows only when that option is picked)
+  const litsOf=s=>[s.lit,...E.selected(s,sel).filter(o=>!o.skip).map(o=>o.lit)].filter(Boolean);
+  const lev=(L,k)=>(L.levels&&(L.levels[k]||L.levels.long||L.levels.short))||{ja:L.ja,th:L.th,kind:'แปลจากต้นฉบับ'};
   const para=s=>esc(s).replace(/\n/g,'<br>');
   const litBody=L=>{const v=lev(L,'short');return (v.ja?'<span class="ja" lang="ja">'+esc(v.ja)+'</span>':'')+'<span class="th">'+esc(v.th)+'</span>'};
   const BOOK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.2 5 7.6 4.5 4 4.8v13c3.6-.3 6.2.2 8 1.7 1.8-1.5 4.4-2 8-1.7v-13c-3.6-.3-6.2.2-8 1.7z"/><path d="M12 6.5v13"/></svg>';
@@ -231,7 +233,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
     if(!real.length)return t+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+mark(s,[])+' ';
     const v=VERB(s);
-    const L=s.lit,litMark=L&&LIT==='b'?'<button class="book" data-lit="'+s.id+'" aria-label="อ่านจากหนังสือ: '+esc(L.work)+'" title="อ่านจากหนังสือ">'+BOOK+'</button>':'';
+    const L=litsOf(s)[0],litMark=L&&LIT==='b'?'<button class="book" data-lit="'+s.id+'" aria-label="อ่านจากหนังสือ: '+esc(L.work)+'" title="อ่านจากหนังสือ">'+BOOK+'</button>':'';
     const litBlock=L&&LIT==='a'?'<span class="lit-a">'+litBody(L)+'<span class="by">— '+esc(L.who)+', '+esc(L.work)+'</span></span>':'';
     return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+litMark+litBlock+(litBlock?'':(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว '));
   }
@@ -260,15 +262,14 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     return '<span class="det">'+info.map(esc).join(' · ')+(warn.length?'<span class="wr">! '+warn.map(esc).join(' · ')+'</span>':'')+'</span>';
   }
   function openLit(id,from){
-    const s=view().slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;if(from)popFrom=from;
-    const v=lev(L,litLen);
+    const s=view().slots.find(x=>x.id===id),Ls=s?litsOf(s):[];if(!Ls.length)return;if(from)popFrom=from;
     $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));$('sh-now').textContent='ทิวทัศน์จากหนังสือ';
-    $('sh-opts').innerHTML='<li class="lit"><div class="th">'+para(v.th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>';
+    $('sh-opts').innerHTML=Ls.map(L=>'<li class="lit"><div class="th">'+para(lev(L,litLen).th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>').join('');
     $('sh-notes').innerHTML='';showSheet();
     if(kb)($('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x')).focus({preventScroll:true});
   }
   function litCards(d){
-    const box=$('litc'),ls=d.slots.filter(s=>s.lit);
+    const box=$('litc'),ls=d.slots.filter(s=>s.lit);   // mode c (cards) shows slot passages only
     if(LIT!=='c'||!ls.length){box.hidden=true;box.innerHTML='';return}
     box.hidden=false;
     box.innerHTML='<h3>อ่านระหว่างทาง</h3>'+ls.map(s=>'<article><span class="at">'+s.time+' · '+esc(s.title)+'</span>'+litBody(s.lit).replace(/<span class="(ja|th)"/g,'<div class="$1"').replace(/<\/span>/g,'</div>')+'<div class="by">— '+esc(s.lit.who)+', '+esc(s.lit.work)+'</div><div class="nt">'+esc(s.lit.note)+'</div></article>').join('');
