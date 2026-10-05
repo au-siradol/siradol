@@ -13,12 +13,12 @@
 :root{
   --bg:#ececec;--ink:#1b1b1b;--mute:#666;--red:#c0392f;
   /* place colours — set from PALETTES in the script */
-  --hl-food:#c8612b;--hl-cafe:#d29a17;--hl-see:#7d8b35;--hl-arch:#9c4566;--hl-stay:#83563a;--hl-shop:#d0764f;--hl-must:#b3261e;
+  --hl-food:#e07a5f;--hl-cafe:#e0b14a;--hl-see:#2a9d8f;--hl-arch:#5f6caf;--hl-stay:#8d6e63;--hl-shop:#d48c6a;--hl-must:#c0392f;
   /* 'Trip Text' = Sukhumvit Set for Thai + Helvetica Neue for Latin (see #ff); IBM Plex Sans Thai is the web fallback */
   --font:'Trip Text','Helvetica Neue',Helvetica,Arial,'IBM Plex Sans Thai',sans-serif;
   --hand:'iannnnnBKK','Mali',cursive;
   /* typography knobs — set from TYPE in the script */
-  --body:19px;--lh:1.7;--gap:.6em;--red-size:24px;
+  --body:19px;--lh:1.3;--gap:.6em;--red-size:21px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
@@ -51,7 +51,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .prose{position:relative;font-size:var(--body);line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
 .t{font-size:1em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
 .anc{position:relative}
-.hl{--c:transparent;text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:3px;text-underline-offset:.24em;text-decoration-skip-ink:auto}
+.hl{--c:transparent;text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:1.5px;text-underline-offset:.24em;text-decoration-skip-ink:auto}
 .band .hl{text-decoration:none;padding:0 .12em;--b:color-mix(in srgb,var(--c) 45%,transparent);background:linear-gradient(transparent 54%,var(--b) 54%,var(--b) 94%,transparent 94%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .c-food{--c:var(--hl-food)}.c-cafe{--c:var(--hl-cafe)}.c-see{--c:var(--hl-see)}.c-arch{--c:var(--hl-arch)}
 .c-stay{--c:var(--hl-stay)}.c-shop{--c:var(--hl-shop)}.c-must{--c:var(--hl-must)}
@@ -59,7 +59,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
 /* a small red mark after a word; tapping it opens the sheet with choices and notes */
 .arr{width:.8em;height:.8em;vertical-align:-.05em;display:inline-block;flex:none}
-.mark{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;vertical-align:.55em;margin-left:1px;padding:6px 3px;margin-block:-6px}
+.mark{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;vertical-align:.15em;margin-left:1px;padding:6px 3px;margin-block:-6px}
 .sheet[hidden],.sheet-bg[hidden]{display:none}   /* .sheet sets display:flex, which would otherwise override [hidden] */
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;display:flex;justify-content:center;padding:0 12px calc(12px + env(safe-area-inset-bottom))}
@@ -80,7 +80,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .litc article{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.035)}
 .litc .ja{font-size:16px;line-height:1.7}.litc .th{font-size:15px}.litc .by{font-size:12.5px;color:var(--mute)}.litc .nt{font-size:13.5px;color:var(--mute);line-height:1.6}
 .litc .at{font-size:12px;color:var(--mute)}
-.book{display:inline-grid;place-items:center;vertical-align:.35em;margin-left:3px;padding:6px 4px;margin-block:-6px;color:var(--red)}
+.book{display:inline-grid;place-items:center;vertical-align:.05em;margin-left:3px;padding:6px 4px;margin-block:-6px;color:var(--red)}
 .book svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .lens{display:flex;gap:6px}.sheet ol .lens button{flex:1;width:auto;text-align:center;font-family:var(--font);color:var(--ink);font-size:14px;border:1px solid rgba(0,0,0,.18);border-radius:999px;padding:7px 0;text-decoration:none}
 .sheet ol .lens button[aria-pressed=true]::after{content:none}.sheet ol .lens button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -158,8 +158,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
      th  : Thai glyph size relative to Latin, in % (size-adjust on the Thai half of Sukhumvit Set)
      lh  : prose line height   red: size of the red marks and sheet text (px) */
   /* body: prose size (px)   slant: red handwriting leans   pal: place colours   ul: 'line' underline / 'band' highlighter */
-  const TYPE_DEFAULT={th:90,body:19,lh:1.7,gap:.6,red:24,slant:true,pal:'momiji',ul:'line'};
-  // food, cafe, see, arch, stay, shop, must — strong enough to read as a 3px underline
+  const TYPE_DEFAULT={th:90,body:19,lh:1.3,gap:.6,red:21,slant:true,pal:'fuji',ul:'line'};
+  // food, cafe, see, arch, stay, shop, must — strong enough to read as a thin underline
   const PALETTES={
     momiji:['ใบไม้เปลี่ยนสี',['#c8612b','#d29a17','#7d8b35','#9c4566','#83563a','#d0764f','#b3261e']],
     dento:['สีญี่ปุ่นโบราณ',['#eb6101','#e6a700','#3e9a6a','#8f77b5','#7b4b3a','#e16b8c','#d7003a']],
@@ -168,7 +168,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     sakura:['พาสเทลนุ่ม',['#f2a98a','#f0cf6b','#a9c98f','#c6a6d8','#c9ad94','#f3b2c0','#e8836f']]
   };
   const HL=['food','cafe','see','arch','stay','shop','must'];
-  let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type2')||'{}'))}catch(e){}
+  let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type3')||'{}'))}catch(e){}
   function applyType(t){
     Object.assign(TYPE,t||{});
     const TH={400:['Sukhumvit Set Text','SukhumvitSet-Text','Sukhumvit Set'],500:['Sukhumvit Set Medium','SukhumvitSet-Medium'],600:['Sukhumvit Set SemiBold','SukhumvitSet-SemiBold'],700:['Sukhumvit Set Bold','SukhumvitSet-Bold']};
@@ -179,7 +179,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     (PALETTES[TYPE.pal]||PALETTES.momiji)[1].forEach((c,i)=>r.setProperty('--hl-'+HL[i],c));
     document.body.classList.toggle('slant',!!TYPE.slant);document.body.classList.toggle('band',TYPE.ul==='band');
   }
-  window.applyType=t=>{applyType(t);ls.set('japan2569.type2',JSON.stringify(TYPE))};
+  window.applyType=t=>{applyType(t);ls.set('japan2569.type3',JSON.stringify(TYPE))};
   window.getType=()=>Object.assign({},TYPE);
 
   const MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
