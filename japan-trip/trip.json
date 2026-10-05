@@ -214,7 +214,7 @@
           ] },
         { "id": "d4s4", "time": "12:15", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Seppo Shokudo (雪峰食堂) @ Snow Peak Land Station", "type": "โรงอาหารใน Snow Peak Land Station · วัตถุดิบท้องถิ่น วิวเทือกเขาแอลป์", "note": "ห้องอาหาร 雪峰 เต็มรูปแบบเปิดเฉพาะหน้าหนาว (กลาง ธ.ค.–ต้น มี.ค.) ช่วง ต.ค. เปิดเป็นโรงอาหารแทน — เช็กเวลาก่อนไป", "dur": 60, "q": "Snow Peak Land Station Hakuba" },
+            { "id": "a", "n": "Restaurant Seppo (雪峰) @ Snow Peak Land Station", "type": "ห้องอาหารของ Snow Peak · ดูแลโดยเชฟร้านมิชลิน 3 ดาว Kangaku Ishikawa", "note": "ห้องอาหารเต็มรูปแบบเปิดเฉพาะกลาง ธ.ค.–ต้น มี.ค. · ช่วง ต.ค. มีแค่โรงอาหาร 雪峰食堂", "dur": 60, "q": "Snow Peak Land Station Hakuba", "avoid": "ไม่ต้องไป — เลือก The City Bakery แทน" },
             { "id": "b", "n": "The City Bakery (Mountain Harbor)", "type": "เบเกอรี่ แซนด์วิช", "note": "", "dur": 60, "q": "The City Bakery Hakuba Mountain Harbor" },
             { "id": "c", "n": "Hakuma Dining", "type": "เซตอาหารญี่ปุ่น (ตาม Sheet) — ค้นร้านชื่อนี้ไม่เจอ เช็กชื่ออีกครั้ง", "note": "", "dur": 60, "q": "Hakuma Dining Hakuba" }
           ] },
