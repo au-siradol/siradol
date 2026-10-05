@@ -2,70 +2,99 @@
 <html lang="th">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f6efe4">
+<meta name="theme-color" content="#ececec">
 <title>Today · Japan 2569</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&family=Noto+Serif+Thai:wght@400;600&family=Mali:wght@400;500&family=Inter:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Mali:wght@400;500&display=swap">
+<style>{{VENDOR_CSS}}</style>
+<style>{{HANDFONT}}</style>
 <style>
+/* One family for Thai and Latin so both scripts are the same size.
+   Sukhumvit Set (installed on the device) carries its own Latin; IBM Plex Sans Thai is the web fallback and also carries Latin. */
+@font-face{font-family:'Sukhumvit Set';font-weight:400;src:local('Sukhumvit Set'),local('SukhumvitSet-Text'),local('Sukhumvit Set Text')}
+@font-face{font-family:'Sukhumvit Set';font-weight:500;src:local('Sukhumvit Set Medium'),local('SukhumvitSet-Medium')}
+@font-face{font-family:'Sukhumvit Set';font-weight:600;src:local('Sukhumvit Set SemiBold'),local('SukhumvitSet-SemiBold')}
+@font-face{font-family:'Sukhumvit Set';font-weight:700;src:local('Sukhumvit Set Bold'),local('SukhumvitSet-Bold')}
 :root{
-  --bg:#f6efe4;--ink:#1b1a18;--mute:#6f685d;--red:#c0392f;
-  --hl-food:#f5b98a;--hl-cafe:#f6dc8c;--hl-see:#bfe39a;--hl-arch:#bdb0e0;--hl-stay:#acd3e8;--hl-shop:#f3bfd0;--hl-move:#e6ddcf;--hl-must:#ee958f;
-  --serif:'Noto Serif','Noto Serif Thai',Georgia,'Times New Roman',serif;
-  --hand:'Mali','Comic Sans MS',cursive;
-  --ui:'Inter',system-ui,-apple-system,sans-serif;
+  --bg:#ececec;--ink:#1b1b1b;--mute:#666;--red:#c0392f;
+  --hl-food:#f5b98a;--hl-cafe:#f6dc8c;--hl-see:#bfe39a;--hl-arch:#bdb0e0;--hl-stay:#acd3e8;--hl-shop:#f3bfd0;--hl-must:#ee958f;
+  --font:'Sukhumvit Set','IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;
+  --hand:'iannnnnBKK','Mali','Sukhumvit Set',cursive;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{min-height:100dvh;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 22px calc(110px + env(safe-area-inset-bottom))}
+body{font-family:var(--font);min-height:100dvh;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 22px calc(110px + env(safe-area-inset-bottom))}
 .screen{width:100%;max-width:440px;display:flex;flex-direction:column;gap:22px}
 a{color:inherit}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:4px}
 
-/* top: date + clock (lock-screen) */
-.top{text-align:center;font-family:var(--ui)}
-.date{font-size:19px;font-weight:500;letter-spacing:.01em}
-.clock{font-size:clamp(72px,24vw,104px);font-weight:700;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:2px 0 0}
-.tz{font-size:12px;color:var(--mute);letter-spacing:.08em}
-.widgets{display:flex;align-items:center;gap:18px;margin-top:18px;font-family:var(--ui)}
+/* top: date + clock */
+.top{text-align:center}
+.date{font-size:19px;font-weight:500}
+.clock{font-size:clamp(72px,24vw,104px);font-weight:700;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:4px}
+.tz{font-size:12px;color:var(--mute);letter-spacing:.06em}
+.widgets{display:flex;align-items:center;gap:18px;margin-top:18px}
 .wtrip{flex:1;min-width:0;text-align:left}
 .wtrip b{font-size:14px}.wtrip span{display:block;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pbar{height:6px;border-radius:3px;background:rgba(27,26,24,.12);margin-top:6px;overflow:hidden}.pbar i{display:block;height:100%;background:var(--ink);border-radius:3px}
+.pbar{height:6px;border-radius:3px;background:rgba(0,0,0,.1);margin-top:6px;overflow:hidden}.pbar i{display:block;height:100%;background:var(--ink);border-radius:3px}
 .ring{position:relative;width:62px;height:62px;flex:0 0 auto}
-.ring svg{width:100%;height:100%;transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:4}.ring .t{stroke:rgba(27,26,24,.12)}.ring .a{stroke:var(--ink);stroke-linecap:round}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:4}.ring .t{stroke:rgba(0,0,0,.1)}.ring .a{stroke:var(--ink);stroke-linecap:round}
 .ring .v{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.05}
 .ring .v b{font-size:15px}.ring .v small{display:block;font-size:9.5px;color:var(--mute)}
 
-/* the plan as prose */
+/* the plan as prose — tall lines leave room for the red notes between them */
 .note{font-family:var(--hand);color:var(--red);font-size:15px;line-height:1.35}
-.note.top-note{transform:rotate(-1.5deg);margin:6px 0 -10px -6px}
+.note.top-note{transform:rotate(-1.5deg);margin:4px 0 -6px -6px}
 .note.end-note{text-align:center;transform:rotate(-1deg)}
-.prose{font-family:var(--serif);font-size:19px;line-height:2.15;margin:0;overflow-wrap:anywhere}
-.t{font-family:var(--ui);font-size:11.5px;font-weight:500;color:var(--mute);letter-spacing:.02em;margin-right:4px;vertical-align:.15em}
-.hl{text-decoration:none;padding:.08em .18em;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:2px}
+.prose{position:relative;font-size:19px;line-height:2.75;margin:0;overflow-wrap:anywhere}
+.t{font-size:12px;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
+.anc{position:relative}
+.hl{text-decoration:none;padding:.06em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:2px}
 .hl:hover{filter:saturate(1.35)}
 .c-food{background:var(--hl-food)}.c-cafe{background:var(--hl-cafe)}.c-see{background:var(--hl-see)}.c-arch{background:var(--hl-arch)}
-.c-stay{background:var(--hl-stay)}.c-shop{background:var(--hl-shop)}.c-move{background:none;padding:0;border-bottom:1.5px dotted var(--mute);border-radius:0}.c-must{background:var(--hl-must)}
-.ig::after{content:" ◎";font-size:.6em;vertical-align:.4em}
-.alt{font-family:var(--hand);color:var(--red);font-size:13.5px;line-height:1.2;vertical-align:.9em;margin-left:3px;white-space:normal}
-.alt button{color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:1px;text-underline-offset:3px}
-.flag{font-family:var(--hand);color:var(--red);font-size:13px;vertical-align:-.6em;margin-left:2px}
+.c-stay{background:var(--hl-stay)}.c-shop{background:var(--hl-shop)}.c-must{background:var(--hl-must)}
+.c-move{border-bottom:1.5px dotted var(--mute)}
+.pin-s{font-size:10px;font-weight:700;vertical-align:.55em;margin-left:2px;color:var(--mute)}
+.ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
+/* red notes live in the gap between lines: choices above the word, warnings below it */
+.alt,.flag{position:absolute;left:0;font-family:var(--hand);color:var(--red);font-size:var(--hand-size,12.5px);line-height:1.15;white-space:nowrap;pointer-events:none}
+.alt{bottom:calc(100% - .55em);transform:rotate(-2deg);transform-origin:left bottom}
+.flag{top:calc(100% - .5em)}
+.alt button{pointer-events:auto;color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:1px;text-underline-offset:2px;padding:2px 0}
+.alt .sep{margin:0 2px}
+.skip{font-family:var(--hand);color:var(--red);font-size:14px}
 .err{font-family:var(--hand);color:var(--red);font-size:14.5px;line-height:1.5;display:flex;flex-direction:column;gap:4px}
-.key{font-family:var(--ui);font-size:11.5px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 12px}
+.key{font-size:12px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 12px}
 .key i{display:inline-block;width:12px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 
-/* bottom: lock-screen round buttons */
-.dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none}
+/* map — scroll down to it */
+.mapsec{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.mapsec h3{margin:0;font-size:14px;font-weight:600}
+.mapbox{position:relative;width:100%;aspect-ratio:1/1;border-radius:22px;overflow:hidden;background:#f4f8fc}
+.ml{position:absolute;inset:0}
+.mapbox .fallback{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;font-size:13.5px;color:#4a6f96}
+.mk{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font:700 12px/24px var(--font);text-align:center;cursor:pointer;box-shadow:0 0 0 2px #fff}
+.mk.hotel{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink),0 0 0 2px #fff}
+.mk.on{transform:scale(1.3)}
+.stops{list-style:none;margin:0;padding:0;font-size:14.5px}
+.stops li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:3px 0}
+.stops .k{font-weight:700;font-size:12px}.stops button{text-align:left}.stops .tm{font-size:12px;color:var(--mute)}
+.stops a{font-size:12px;color:var(--mute)}
+.mapnote{font-size:12px;color:var(--mute);margin:0}
+.maplibregl-ctrl-attrib{font-size:10px}
+
+/* bottom: round buttons */
+.dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
 .dock .in{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between;pointer-events:auto}
-.round{width:52px;height:52px;border-radius:50%;background:rgba(27,26,24,.1);display:grid;place-items:center;font:500 22px/1 var(--ui);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.round{width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.08);display:grid;place-items:center;font:500 22px/1 var(--font);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .round:disabled{opacity:.3;cursor:default}
-.mid{font:500 13px var(--ui);color:var(--mute);text-align:center}
+.mid{font-size:13px;color:var(--mute);text-align:center;background:rgba(236,236,236,.85);border-radius:12px;padding:2px 10px}
 .mid a{color:var(--ink)}
-@media(prefers-reduced-motion:no-preference){.prose{transition:opacity .15s}}
 </style>
 <body>
-<main class="screen" aria-live="polite">
+<main class="screen">
   <header class="top">
     <div class="date" id="date"></div>
     <div class="clock" id="clock">--:--</div>
@@ -76,13 +105,19 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     </div>
   </header>
   <div class="note top-note" id="topnote"></div>
-  <p class="prose" id="prose"></p>
+  <p class="prose" id="prose" aria-live="polite"></p>
   <div class="note end-note" id="endnote"></div>
   <div class="err" id="err"></div>
   <div class="key" aria-label="ความหมายของสี">
     <span><i class="c-food"></i>อาหาร</span><span><i class="c-cafe"></i>กาแฟ</span><span><i class="c-see"></i>เที่ยว</span><span><i class="c-arch"></i>สถาปัตย์</span><span><i class="c-stay"></i>ที่พัก</span><span><i class="c-must"></i>ต้องทำ</span>
-    <span style="font-family:var(--hand);color:var(--red)">ตัวแดง = ทางเลือก แตะเพื่อสลับ</span><span>◎ = Instagram</span>
+    <span style="font-family:var(--hand);color:var(--red)">ตัวแดงเหนือคำ = ทางเลือก แตะเพื่อสลับ</span><span>◎ = Instagram</span>
   </div>
+  <section class="mapsec" aria-label="แผนที่">
+    <h3>แผนที่ของวันนี้ ↓</h3>
+    <div class="mapbox" id="mapbox"></div>
+    <ol class="stops" id="stops"></ol>
+    <p class="mapnote">แผนที่ ELEMNT · © OpenStreetMap (ฟรี ไม่ใช้ API แบบเสียเงิน) · เส้นประเชื่อมจุด ไม่ใช่ถนน · ตำแหน่งหมุดโดยประมาณ — <a id="nav" target="_blank" rel="noopener">นำทางในแอป Google Maps ↗</a></p>
+  </section>
 </main>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
@@ -91,6 +126,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 </div></nav>
 
 <script id="trip" type="application/json">{{TRIP}}</script>
+<script id="mapstyle" type="application/json">{{STYLE}}</script>
+<script>{{VENDOR_JS}}</script>
 <script>{{ENGINE}}</script>
 <script>{{MAP}}</script>
 <script>
@@ -105,75 +142,117 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const DOW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   const jst=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
     const g=t=>p.find(x=>x.type===t).value;return{date:g('year')+'-'+g('month')+'-'+g('day'),hm:(g('hour')==='24'?'00':g('hour'))+':'+g('minute')}};
-
-  // which day to show: #dN, else today's date in Japan, else the nearest end of the trip
   function initialDay(){
     const m=/^#d(\d)$/.exec(location.hash);if(m&&trip.days[+m[1]-1])return +m[1]-1;
     const t=jst().date,i=trip.days.findIndex(d=>d.date===t);
     return i>-1?i:(t<trip.days[0].date?0:N-1);
   }
-  let cur=initialDay();
+  let cur=initialDay(), stops=[], pinOf={};
 
-  // colour + verb per kind (plain, everyday Thai)
   const COLOR={meal:'food',cafe:'cafe',see:'see',arch:'arch',hotel:'stay',rest:'stay',shop:'shop',spa:'shop',refuel:'must',carreturn:'must',car:'must',drive:'move',nap:'move',transit:'move',move:'move',arrival:'move',flight:'must'};
   const VERB=s=>({meal:'กิน'+s.title.replace(/\s*\+.*$/,'')+'ที่',cafe:'แวะกินกาแฟที่',drive:'ขับรถไป',nap:'ขับรถไป',rest:'แวะพักที่',see:'ไปเที่ยว',arch:'ไปดูงานสถาปัตย์',
     hotel:/เช็กอิน/.test(s.title)?'เช็กอินที่':'กลับไปพักที่',shop:'ช้อปที่',refuel:'เติมน้ำมันที่',car:'',carreturn:'คืนรถที่',spa:'แช่ออนเซ็นที่',transit:'',move:'นั่ง',arrival:'',flight:''}[s.kind]||'');
-  const FLAG=(o,s)=>[s&&s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น'].filter(Boolean);
+  const FLAG=(o,s)=>[s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น'].filter(Boolean);
   const link=o=>o.ig?{href:'https://www.instagram.com/'+encodeURIComponent(o.ig.replace(/^@/,''))+'/',ig:true}:{href:MV.searchUrl(o.q||o.n),ig:false};
-  const shortName=n=>n.replace(/\s*\(([^)]*)\)\s*$/,'').replace(/^คืนรถ\s+/,'');   // "Ebina SA (ห้องน้ำ / ของว่าง)" → "Ebina SA"
+  const shortName=n=>n.replace(/\s*\(([^)]*)\)\s*$/,'').replace(/^คืนรถ\s+/,'');
+  const label=(s,o)=>s.kind==='drive'||s.kind==='nap'?shortName(o.pin||o.n).replace(/^.*→\s*/,''):shortName(o.n);
 
-  function hl(s,o){const L=link(o);
-    return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(s.kind==='drive'||s.kind==='nap'?shortName(o.pin||o.n).replace(/^.*→\s*/,''):shortName(o.n))+'</a>'+
-      FLAG(o,s).map(f=>'<span class="flag">'+esc(f)+'</span>').join('');}
-  function alts(s,chosen){
+  function altLine(s,chosen){
     const rest=s.opts.filter(o=>!chosen.includes(o));if(!rest.length)return '';
-    const sign=s.pick==='one'?'หรือ ':'+ ';
-    return '<span class="alt">↙ '+rest.map(o=>'<button data-s="'+s.id+'" data-o="'+o.id+'">'+esc(sign+(o.skip?'ข้าม':shortName(o.n)))+'</button>').join(' ')+'</span>';
+    return '<span class="alt">↙ '+(s.pick==='one'?'หรือ ':'+ ')+rest.map(o=>'<button data-s="'+s.id+'" data-o="'+o.id+'">'+esc(o.skip?'ข้าม':shortName(o.n))+'</button>').join('<span class="sep">/</span>')+'</span>';
+  }
+  function word(s,o,alt){
+    const L=link(o),p=pinOf[s.id+'|'+(o.pin||o.n)],f=FLAG(o,s);
+    return '<span class="anc">'+alt+'<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+
+      (p?'<span class="pin-s" aria-label="หมุด '+p+'">'+p+'</span>':'')+(f.length?'<span class="flag">'+esc(f.join(' / '))+'</span>':'')+'</span>';
   }
   function sentence(s){
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
-    if(!real.length)return t+'<span class="alt" style="vertical-align:0">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+alts(s,chosen)+' ';
-    const v=VERB(s);
-    return t+(v?esc(v)+' ':'')+real.map(o=>hl(s,o)).join(' และ ')+alts(s,chosen)+(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว ');
+    if(!real.length)return t+'<span class="anc">'+altLine(s,chosen)+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span></span> ';
+    const v=VERB(s),a=altLine(s,chosen);
+    return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===0?a:'')).join(' และ ')+(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว ');
   }
+  // keep each red note inside the column (shift it left when it would run off the right edge)
+  function fitNotes(){
+    const box=$('prose').getBoundingClientRect();
+    document.querySelectorAll('.alt,.flag').forEach(n=>{
+      n.style.left='0';n.style.whiteSpace='nowrap';n.style.width='';
+      const a=n.parentElement.getBoundingClientRect();let w=n.getBoundingClientRect().width;
+      if(w>box.width){n.style.whiteSpace='normal';n.style.width=(box.width-8)+'px';w=box.width-8}
+      // the note's left edge, relative to its word, clamped so the whole note stays inside the column
+      const left=Math.max(box.left-a.left,Math.min(0,box.right-w-a.left));
+      n.style.left=left+'px';});
+  }
+
+  /* map: MapLibre + ELEMNT Blueprint (OpenStreetMap, free, no key) */
+  let map=null,mapEl=null,mapReady=false,markers=[],gm=-1;
+  const mapOK=!!(window.maplibregl&&window.pmtiles)&&(()=>{try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'))}catch(e){return false}})();
+  function camera(){
+    if(!map||!stops.length)return;
+    if(gm>=0){map.flyTo({center:[stops[gm].ll[1],stops[gm].ll[0]],zoom:14,duration:600});return}
+    const b=new maplibregl.LngLatBounds();stops.forEach(s=>b.extend([s.ll[1],s.ll[0]]));map.fitBounds(b,{padding:48,maxZoom:13,duration:0});
+  }
+  function drawMap(){
+    const box=$('mapbox');
+    if(!mapOK){box.innerHTML='<div class="fallback">เครื่องนี้แสดงแผนที่ไม่ได้ (ต้องใช้ WebGL) — ใช้ลิงก์นำทางด้านล่าง</div>';return}
+    if(!map){
+      try{
+        const pm=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',pm.tile);
+        mapEl=document.createElement('div');mapEl.className='ml';box.appendChild(mapEl);
+        map=new maplibregl.Map({container:mapEl,style:JSON.parse(document.getElementById('mapstyle').textContent),center:[138.3,36],zoom:7,attributionControl:{compact:true},cooperativeGestures:true,dragRotate:false});
+        map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+        map.on('style.load',()=>{map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
+          map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#c0392f','line-width':2.4,'line-dasharray':[2,1.6]}});
+          mapReady=true;drawMap()});
+      }catch(e){map=null;box.innerHTML='<div class="fallback">โหลดแผนที่ไม่ได้ — ใช้ลิงก์นำทางด้านล่าง</div>';return}
+    }
+    markers.forEach(m=>m.remove());markers=[];
+    stops.forEach((s,i)=>{const el=document.createElement('button');el.className='mk'+(s.hotel?' hotel':'')+(gm===i?' on':'');el.textContent=s.letter;el.dataset.gm=i;el.setAttribute('aria-label',s.letter+' '+MV.stopName(s));
+      markers.push(new maplibregl.Marker({element:el}).setLngLat([s.ll[1],s.ll[0]]).addTo(map))});
+    if(mapReady)map.getSource('route').setData({type:'Feature',geometry:{type:'LineString',coordinates:MV.lineCoords(stops)}});
+    camera();
+  }
+  function setGm(i){gm=gm===i?-1:i;markers.forEach((m,k)=>m.getElement().classList.toggle('on',k===gm));
+    document.querySelectorAll('#stops li').forEach((li,k)=>li.style.fontWeight=k===gm?'600':'');camera()}
+
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
+    stops=MV.stops(trip,d,sel);pinOf={};stops.forEach(s=>s.items.forEach(it=>{if(it.slotId)pinOf[it.slotId+'|'+it.name]=s.letter}));
     $('date').textContent='วัน'+DOW[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1];
     $('dayn').textContent='วันที่ '+d.n+' / '+N+(isToday?' · วันนี้':'');
-    $('route').textContent=d.label;
-    $('pb').style.width=(d.n/N*100)+'%';
-    $('cnt').textContent=d.n+' / '+N;
+    $('route').textContent=d.label;$('pb').style.width=(d.n/N*100)+'%';$('cnt').textContent=d.n+' / '+N;
     $('prev').disabled=cur===0;$('next-d').disabled=cur===N-1;
-    const warn=d.weather.find(w=>w.s==='warn');
-    const daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
+    const warn=d.weather.find(w=>w.s==='warn'),daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
     $('topnote').textContent=(daysTo>0?'↙ อีก '+daysTo+' วันออกเดินทาง · ':'↙ ')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ');
     $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
     $('endnote').textContent='↘ คืนนี้นอนที่ '+d.night;
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
+    $('stops').innerHTML=stops.map((s,i)=>'<li><span class="k">'+s.letter+'</span><button data-gm="'+i+'">'+esc(MV.stopName(s))+' <span class="tm">'+esc([...new Set(s.items.map(x=>x.time||'ออก'))].join(' · '))+'</span></button><a href="'+MV.searchUrl(MV.query(s))+'" target="_blank" rel="noopener">เปิด ↗</a></li>').join('');
+    $('nav').href=MV.dirUrl(stops);
     try{history.replaceState(null,'','#d'+(cur+1))}catch(e){}
-    tick();
+    requestAnimationFrame(fitNotes);gm=-1;drawMap();tick();
   }
-  // clock + "next" ring
   function tick(){
     const now=jst(),d=trip.days[cur];$('clock').textContent=now.hm;
-    const slots=d.slots.filter(s=>E.slotDur(s,sel)>0||s.kind==='flight'),m=E.mins(now.hm);
-    let nx=now.date===d.date?slots.find(s=>E.mins(s.time)>m):slots[0];
-    const a=E.mins(slots[0].time),b=E.mins(slots[slots.length-1].time),frac=now.date===d.date?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0;
-    $('arc').setAttribute('stroke-dashoffset',(169.6*(1-frac)).toFixed(1));
-    $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(now.date===d.date?'ต่อไป':'เริ่ม')+'</small></div>':'<div><b>✓</b><small>จบวัน</small></div>';
+    const sl=d.slots.filter(s=>E.slotDur(s,sel)>0||s.kind==='flight'),m=E.mins(now.hm),today=now.date===d.date;
+    const nx=today?sl.find(s=>E.mins(s.time)>m):sl[0],a=E.mins(sl[0].time),b=E.mins(sl[sl.length-1].time);
+    $('arc').setAttribute('stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
+    $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(today?'ต่อไป':'เริ่ม')+'</small></div>':'<div><b>✓</b><small>จบวัน</small></div>';
   }
   document.addEventListener('click',e=>{
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
       if(s.pick==='one')sel[s.id]=[b.dataset.o];else sel[s.id]=E.selected(s,sel).map(o=>o.id).concat(b.dataset.o);
       ls.set(KEY,JSON.stringify(sel));render();return}
-    if(e.target.closest('#prev')&&cur>0){cur--;render()}
-    if(e.target.closest('#next-d')&&cur<N-1){cur++;render()}
+    const g=e.target.closest('[data-gm]');if(g){setGm(+g.dataset.gm);return}
+    if(e.target.closest('#prev')&&cur>0){cur--;render();scrollTo(0,0)}
+    if(e.target.closest('#next-d')&&cur<N-1){cur++;render();scrollTo(0,0)}
   });
-  let x0=null;   // swipe left/right to change day
-  addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
-  addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>70){const n=cur+(dx<0?1:-1);if(n>=0&&n<N){cur=n;render()}}},{passive:true});
-  addEventListener('hashchange',()=>{const i=initialDay();if(i!==cur){cur=i;render()}});
+  let x0=null;   // swipe left/right on the text to change day (not on the map)
+  addEventListener('touchstart',e=>{x0=e.target.closest('.mapbox')?null:e.touches[0].clientX},{passive:true});
+  addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>70){const n=cur+(dx<0?1:-1);if(n>=0&&n<N){cur=n;render();scrollTo(0,0)}}},{passive:true});
+  addEventListener('resize',()=>requestAnimationFrame(fitNotes));
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>requestAnimationFrame(fitNotes));
   render();setInterval(tick,15000);
 })();
 </script>
