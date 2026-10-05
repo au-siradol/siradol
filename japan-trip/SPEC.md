@@ -32,7 +32,7 @@ Site entry: `japan-trip/` → `index.html` = the one-day "today" view (the only 
 ## Design
 - Grey ground (#ececec); Thai in Sukhumvit Set and Latin in Helvetica Neue, split by unicode-range so the Thai half can be sized to match (defaults: Thai 90%, line height 2.0, red 20px).
 - Highlights mark the lower half of a word; times are body size. Red handwriting (2006_iannnnnBKK by iannnnn, "for educational use", embedded for display only and credited on the last line) marks choices "↙n" / notes "!" — tapping opens a bottom sheet.
-- No map on the page; links go to Google Maps (directions), the trip Google Sheet and the My Maps of places (`meta.links`). Pin coordinates (`ll`) are approximate until replaced from the My Maps KML.
+- No map on the page; links go to Google Maps (directions), the trip Google Sheet and the My Maps of places (`meta.links`). Pin coordinates (`ll`) come from the My Maps KML (exported 2026-10-05). Still estimated: The Celecton Matsumoto and Hotel Cypress Karuizawa (not in the KML — it still lists Hotel Indigo) and the Kawaguchiko Station drive end.
 
 ## Conflict rules (engine.js)
 | level | rule |

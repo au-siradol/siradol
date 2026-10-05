@@ -193,7 +193,7 @@ test('Google Maps: directions link uses the official Maps URLs API with waypoint
 test('Google Maps: waypoints are capped; single-stop days fall back to a search link', () => {
   const many = Array.from({ length: 14 }, (_, i) => ({ items: [{ q: 'P' + i }] }));
   assert.ok(new URL(M.dirUrl(many)).searchParams.get('waypoints').split('|').length <= M.MAX_WAYPOINTS);
-  assert.ok(M.dirUrl(M.stops(trip, trip.days[0], {})).includes('/maps/search/'));
+  assert.ok(M.dirUrl([{ items: [{ q: 'Haneda Airport Terminal 3' }] }]).includes('/maps/search/'));
 });
 test('Google Maps: consecutive identical places are not repeated', () => {
   const q = M.queries([{ items: [{ q: 'X' }] }, { items: [{ q: 'X' }] }, { items: [{ q: 'Y' }] }]);
