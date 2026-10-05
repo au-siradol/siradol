@@ -17,10 +17,11 @@ if (problems.length) {
 }
 
 const tpl = read('template.html');
-for (const k of ['{{TRIP}}', '{{ENGINE}}']) if (!tpl.includes(k)) throw new Error(`template.html ไม่มี ${k}`);
+for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}']) if (!tpl.includes(k)) throw new Error(`template.html ไม่มี ${k}`);
 
 const trip = JSON.stringify(tripObj).replace(/<\//g, '<\\/');
 const engine = read('engine.js').replace(/<\//g, '<\\/');
-const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine);
+const map = read('map.js').replace(/<\//g, '<\\/');
+const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map);
 fs.writeFileSync(path.join(dir, 'index.html'), html);
 console.log('index.html', (html.length / 1024).toFixed(1) + ' KB');

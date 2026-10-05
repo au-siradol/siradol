@@ -3,7 +3,9 @@ import fs from 'fs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'module';
 
-const E = createRequire(import.meta.url)('./engine.js');
+const req = createRequire(import.meta.url);
+const E = req('./engine.js');
+const M = req('./map.js');
 const trip = JSON.parse(fs.readFileSync(new URL('./trip.json', import.meta.url), 'utf8'));
 
 let pass = 0, fail = 0;
@@ -155,6 +157,61 @@ test('child-nap band 13:00–14:30 has a car/quiet slot on every driving day (D2
     }, 0);
     assert.ok(cover >= 45, `D${d.n}: only ${cover} min of nap cover`);
   }
+});
+
+console.log('map');
+test('stops: consecutive pins at the same place merge; letters run A, B, C…', () => {
+  const day = { id: 'x', n: 1, date: '2026-10-19', from: { n: 'H', ll: [35.0, 139.0] }, slots: [
+    slot('a', '09:00', 'drive', [opt('d', { n: 'X → Y', dur: 30 })], { ll: [35.5, 139.5] }),
+    slot('b', '09:30', 'see', [opt('s', { n: 'Sight', ll: [35.5005, 139.5005] })]),
+    slot('c', '12:00', 'meal', [opt('m')]),                                   // no ll → no pin
+    slot('d', '15:00', 'hotel', [opt('h', { n: 'Hotel' })], { ll: [35.9, 139.9] })] };
+  const st = M.stops({ meta }, day, {});
+  assert.deepEqual(st.map(s => s.letter), ['A', 'B', 'C']);
+  assert.equal(st[1].items.length, 2);
+  assert.equal(M.stopName(st[1]), 'Sight');         // the place beats the "X → Y" drive text
+  assert.ok(st[0].hotel && st[2].hotel);
+});
+test('stops: unselected "any" options produce no pin', () => {
+  const d = trip.days[3]; // D4
+  assert.equal(M.stops(trip, d, { d4s3: ['a'] }).length, M.stops(trip, d, {}).length - 1);
+});
+test('stops: pin display-name override', () => {
+  const o = trip.days[4].slots.find(s => s.id === 'd5s7').opts[0];
+  assert.equal(o.pin, 'The Celecton Matsumoto');
+  assert.equal(M.stopName(M.stops(trip, trip.days[4], {}).pop()), 'The Celecton Matsumoto');
+});
+test('every day renders a finite SVG with one pin per stop and a Maps query per stop', () => {
+  for (const d of trip.days) {
+    const r = M.render(trip, d, {});
+    assert.ok(r.svg.startsWith('<svg') && !/NaN|undefined|Infinity/.test(r.svg), 'D' + d.n);
+    assert.equal((r.svg.match(/class="m-pin( m-hotel)?"/g) || []).length, r.stops.length, 'D' + d.n);
+    r.stops.forEach(s => assert.ok(s.items[0].q, 'D' + d.n + ' ' + s.letter));
+  }
+});
+test('every stop falls inside the canvas margins', () => {
+  for (const d of trip.days) {
+    const st = M.stops(trip, d, {}), v = M.makeView(st);
+    st.forEach(s => {
+      const [x, y] = v.proj(s.ll);
+      assert.ok(x >= 55 && x <= M.W - 55 && y >= 55 && y <= M.H - 55, `D${d.n} ${s.letter} at ${x | 0},${y | 0}`);
+    });
+  }
+});
+test('selecting every option on every day still renders', () => {
+  for (const d of trip.days) {
+    const all = Object.fromEntries(d.slots.map(s => [s.id, s.opts.map(o => o.id)]));
+    assert.ok(M.render(trip, d, all).svg.length > 1000);
+  }
+});
+test('validate() rejects a coordinate outside Japan (lat/lng swapped)', () => {
+  const t = JSON.parse(JSON.stringify(trip)); t.days[1].slots[2].ll = [139.4, 35.4];
+  assert.ok(E.validate(t).some(p => /ll/.test(p)));
+});
+test('sea polygon: Tokyo Bay is water; Matsumoto and Ebina are land', () => {
+  assert.equal(M.inPoly([35.45, 139.85], M.SEA_POLY), true);
+  assert.equal(M.inPoly([36.24, 137.97], M.SEA_POLY), false);
+  assert.equal(M.inPoly([35.44, 139.39], M.SEA_POLY), false);
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);

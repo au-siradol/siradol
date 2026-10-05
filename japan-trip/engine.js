@@ -101,6 +101,8 @@
     return issues;
   }
 
+  const okLL = p => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) && p[0] > 24 && p[0] < 46 && p[1] > 122 && p[1] < 146;
+
   // Structural check of trip.json — returns a list of problems (empty = OK).
   function validate(trip) {
     const p = [], ids = new Set();
@@ -110,6 +112,7 @@
     (trip.days || []).forEach(d => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date || '')) { p.push(`${d.id}: date ไม่ถูกรูปแบบ`); return; }
       if (d.dow != null && d.dow !== dowOf(d)) p.push(`${d.id}: dow=${d.dow} ไม่ตรงกับ date ${d.date} (ควรเป็น ${dowOf(d)})`);
+      if (d.from && (!d.from.n || !okLL(d.from.ll))) p.push(`${d.id}: from ต้องมี n และ ll [lat,lng] ในญี่ปุ่น`);
       let prev = -1;
       d.slots.forEach(s => {
         if (ids.has(s.id)) p.push(`${s.id}: id ซ้ำ`); ids.add(s.id);
@@ -117,10 +120,13 @@
         if (mins(s.time) < prev) p.push(`${s.id}: เวลา ${s.time} ย้อนกลับเมื่อเทียบกับช่องก่อนหน้า`);
         prev = mins(s.time);
         if (!s.opts || !s.opts.length) p.push(`${s.id}: ไม่มี opts`);
+        if (s.ll && !okLL(s.ll)) p.push(`${s.id}: ll ต้องเป็น [lat,lng] ในญี่ปุ่น`);
         const oids = new Set();
         (s.opts || []).forEach(o => {
           if (oids.has(o.id)) p.push(`${s.id}/${o.id}: option id ซ้ำ`); oids.add(o.id);
           if (typeof o.dur !== 'number' || o.dur < 0) p.push(`${s.id}/${o.id}: dur ไม่ถูกต้อง`);
+          if (o.ll && !okLL(o.ll)) p.push(`${s.id}/${o.id}: ll ต้องเป็น [lat,lng] ในญี่ปุ่น`);
+          if (o.pin != null && typeof o.pin !== 'string') p.push(`${s.id}/${o.id}: pin ต้องเป็นข้อความ`);
           if (o.skip && o.dur !== 0) p.push(`${s.id}/${o.id}: skip ต้องมี dur 0`);
           ['last', 'close'].forEach(k => { if (o[k] && !TIME.test(o[k])) p.push(`${s.id}/${o.id}: ${k} ต้องเป็น HH:MM`); });
           if (o.closedNth && !o.closedNth.every(x => Array.isArray(x) && x.length === 2)) p.push(`${s.id}/${o.id}: closedNth ต้องเป็น [[dow,nth],…]`);

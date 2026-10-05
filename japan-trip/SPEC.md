@@ -6,24 +6,38 @@ Family: 2 elderly adults + 1 child (4 y). Nissan Serena from Haneda, 15–23 Oct
 ## Files
 - `trip.json` — single source of truth (9 days → slots → options). Edit this, not the HTML.
 - `engine.js` — pure conflict checker `Engine.analyze(trip, day, sel)` and structural checker `Engine.validate(trip)`.
-- `template.html` — UI (day tabs, option cards, 07:00–22:00 strip with nap band, issue list, copy-plan, 2-tap reset, theme toggle).
-- `build.mjs` — `node build.mjs` validates trip.json, then inlines trip.json + engine.js into `index.html`. Works from any directory; writes next to itself.
-- `test.mjs` — `node test.mjs`: 29 assertions (one per rule + real-data checks). Exits non-zero on failure.
+- `map.js` — illustrated day map: `MapView.stops()` (lettered pins) and `MapView.render()` (SVG). Pure functions, also run in Node.
+- `template.html` — UI: card-stack deck (progress ring, NN / 09 counter, prev/next, day tabs), map + legend column, 07:00–22:00 strip with nap band, issue list, option cards, copy-plan, 2-tap reset, theme toggle.
+- `build.mjs` — `node build.mjs` validates trip.json, then inlines trip.json + engine.js + map.js into `index.html`. Works from any directory; writes next to itself.
+- `test.mjs` — `node test.mjs`: 37 assertions (one per rule + real-data checks + map). Exits non-zero on failure.
 - `index.html` — build output (committed so it can be opened directly).
 
 ## Data model
 - Meta: `title, subtitle, party, nap ["13:00","14:30"], napStartOk ["12:45","14:15"], dayStart, dayEnd, sunset "17:00", deadlineBuffer 15, napBandOverlap 30, version, rules[]`.
   `version` is part of the localStorage key — bump it when option ids change.
-- Day: `id, n, dow, date, label, route, night, weather[{t, s:"info"|"warn"}], slots[], sunset?`
+- Day: `id, n, dow, date, label, route, night, from?{n, ll}, weather[{t, s:"info"|"warn"}], slots[], sunset?`
+  `from` = where the day starts (first pin, drawn as a hotel ring).
   The weekday is **derived from `date`**; `dow` is only a cross-check (`validate()` flags a mismatch).
-- Slot: `id, time "HH:MM", kind, title, pick "one"|"any", def[optIds], opts[], deadline?`
+- Slot: `id, time "HH:MM", kind, title, pick "one"|"any", def[optIds], opts[], deadline?, ll?`
+  `ll [lat,lng]` on a slot = default pin for all its options (a drive slot = its destination).
   - Same-time rows in the original sheet are **options of one slot** (user's intent), not conflicts.
   - Slots must be in chronological order within a day (`validate()` checks).
-- Option: `id, n, note, dur(min), q (Google Maps search text), km, queue, reserve, steep, cold, arch, kids, closedDow[], closedNth[[dow,nth],…], closedDates[], last, close, skip, quiet, fuel`
+- Option: `id, n, note, dur(min), q (Google Maps search text), km, queue, reserve, steep, cold, arch, kids, closedDow[], closedNth[[dow,nth],…], closedDates[], last, close, skip, quiet, fuel, ll, pin`
+  `ll` overrides the slot pin; `pin` overrides the name shown in the map legend. Options/slots without `ll` (most meals/cafés) get no pin.
   - `closedNth`: `[[3,2],[3,4]]` = 2nd and 4th Wednesday (dow 0=Sun).
 - Kinds: arrival, hotel, meal, drive, nap, rest, see, arch, cafe, shop, refuel, car, carreturn, flight, spa, transit.
 - Map link: `https://www.google.com/maps/search/?api=1&query=<encoded q>`
 - UI state: `sel[slotId] = [optIds]` in localStorage `japan2569.sel.<version>` (try/catch). Stored ids that no longer exist fall back to `def`.
+
+## Map (map.js)
+- One SVG per day, auto-fitted to that day's pins (min window 12 km). Consecutive pins within ~275 m merge into one lettered pin; the legend lists the places and times.
+- Style: flat paper map, lettered navy circle pins (hotel = ring), double-line drives, dashed short hops, dotted forests, blue rivers/lakes, peaks, trees, N arrow, scale bar. Colours are CSS variables (light + dark).
+- **The base layer (coast, forests, rivers, peaks) is hand-drawn and approximate. Pin coordinates are from memory, accurate to roughly a few hundred metres to ~1 km.** It is an illustration; each legend row links to Google Maps for the real location.
+- Pins are focusable and jump to their slot; legend rows do the same.
+
+## Design
+- Layout: after the card-stack deck in the reference (outlined rounded cards stacked offset down-left, `02 / 09` counter with a progress ring, circular prev/next buttons, `> READY TO EXECUTE _` prompt, graph-paper background).
+- Fonts: Latin = Geist Mono (Google Fonts, stand-in chosen to match the reference — swap `--font` if it is another mono); Thai = Sukhumvit Set via `local()` (it must be installed on the device; IBM Plex Sans Thai is the web fallback). To guarantee Sukhumvit everywhere, supply the font files and add them as `@font-face` (check the licence).
 
 ## Conflict rules (engine.js)
 | level | rule |
@@ -52,10 +66,11 @@ Chihiro Art Museum 10–17 (last 16:30), closed 2nd/4th Wed (14 and 28 Oct; 18 O
 ## Not yet verified (marked in the data)
 - Prince Outlet food-court closing time (`close: "19:00"` on D6/D7 dinner options is an estimate).
 - Sunset ≈ 17:00 is approximate; Kamikochi valley loses sun earlier. Last Kamikochi bus/taxi times.
+- Map pin coordinates (see Map) and the Pinterest layout reference (pin could not be opened — only the attached screenshot was used).
 - Houtou Fudou / Sushiro queue and reservation rules; child-seat availability with the rental company.
 
 ## Ideas for next steps
-- Per-option `lat/lng` and a Leaflet/OSM map per day (needs tile access).
+- Replace the illustrated base layer with real tiles (Leaflet/OSM) or a Google Maps embed (needs network access).
 - Export selected plan to `.ics` / Google Calendar.
 - Drive-time lookup from a routing API instead of hand-entered `dur`.
 - Per-day packing/weather checklist; Thai/English toggle.
