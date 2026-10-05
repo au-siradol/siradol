@@ -24,7 +24,6 @@
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* iOS: no text inflation on rotate */
 a,button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}   /* no double-tap zoom on taps */
-html{touch-action:pan-x pan-y}   /* no pinch-zoom: on iPhone it made the page jump — A− / A+ in the dock instead */
 .zoomed .dock{opacity:0;pointer-events:none}   /* if zoomed anyway (accessibility), the fixed dock would cover the text */
 body{font-family:var(--font);min-height:100dvh;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 22px calc(110px + env(safe-area-inset-bottom))}
 .screen{width:100%;max-width:440px;display:flex;flex-direction:column;gap:20px}
@@ -395,7 +394,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const HL=['food','cafe','see','arch','stay','shop','must'];
   const TYPE=Object.assign({},TYPE_DEFAULT);
   // A− / A+ : prose size in 2px steps, red notes scale with it; remembered on this phone
-  const FZ=[15,17,19,21,23,25,27];
+  const FZ=[15,17,19,21,23,25,27,29,31];
   const setBody=b=>{TYPE.body=b;TYPE.red=Math.round(b*TYPE_DEFAULT.red/TYPE_DEFAULT.body)};
   {const b=+ls.get('japan2569.body');if(FZ.includes(b))setBody(b)}
   function applyType(t){
@@ -522,13 +521,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     try{history.replaceState(null,'','#d'+(cur+1))}catch(e){}
     tick();
   }
+  // the 15-second tick only touches the DOM when something changed: rewriting nodes while the page is pinch-zoomed made iOS Safari jump
+  const setText=(el,v)=>{if(el.textContent!==v)el.textContent=v};
+  const setHTML=(el,v)=>{if(el.dataset.h!==v){el.dataset.h=v;el.innerHTML=v}};
+  const setAttr=(el,k,v)=>{if(el.getAttribute(k)!==v)el.setAttribute(k,v)};
   function tick(){
-    const now=jst(),d=view();$('clock').textContent=now.hm;
+    const now=jst(),d=view();setText($('clock'),now.hm);
     const sl=d.slots.filter(s=>E.slotDur(s,sel)>0||s.kind==='flight'),m=E.mins(now.hm),today=now.date===d.date;
     const nx=today?sl.find(s=>E.mins(s.time)>m):sl[0],a=E.mins(sl[0].time),b=E.mins(sl[sl.length-1].time);
-    $('arc').setAttribute('stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
+    setAttr($('arc'),'stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
     const pl=trip.days[cur].late?'<i>Plan '+(lateOn[trip.days[cur].id]?'B':'A')+'</i>':'';   // tap the ring to switch Plan A / Plan B
-    $('next').innerHTML=nx?'<div><small>'+(today?'Next':'Start')+'</small><b>'+nx.time+'</b>'+pl+'</div>':'<div><small>Done</small><b>✓</b>'+pl+'</div>';
+    setHTML($('next'),nx?'<div><small>'+(today?'Next':'Start')+'</small><b>'+nx.time+'</b>'+pl+'</div>':'<div><small>Done</small><b>✓</b>'+pl+'</div>');
   }
   /* move focus only for keyboard users: on iPhone, focusing an element scrolls the zoomed page to it */
   let kb=false;
