@@ -92,7 +92,7 @@
         { "id": "d2s7", "time": "12:30", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
             { "id": "a", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) อาหารท้องถิ่นยามานาชิ", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:20 จึงควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Kawaguchiko", "queue": true, "arch": true, "reserve": true },
-            { "id": "b", "n": "Lake Forest — Hana no Miyako", "note": "นั่งสบาย", "dur": 45, "q": "Hana no Miyako Kawaguchiko restaurant" },
+            { "id": "b", "n": "Lake Forest — Hana no Miyako", "type": "โรงอาหาร Hanaan ในสวนดอกไม้ Hana no Miyako · หมูผัดขิง ดงหมูไข่ โฮโตฟักทอง", "note": "อยู่ริมทะเลสาบ Yamanaka ไม่ใช่ Kawaguchiko — ขับเพิ่มราว 25–30 นาที", "dur": 45, "q": "Hanaan Hana no Miyako Koen Yamanakako" },
             { "id": "c", "n": "Tempura Ninja", "type": "เทมปุระ", "note": "", "dur": 45, "q": "Tempura Ninja Kawaguchiko" }
           ] },
         { "id": "d2s8", "time": "13:15", "kind": "nap", "title": "ขับเล่นริมทะเลสาบ / เด็กนอน", "pick": "one", "def": ["a"],
@@ -213,9 +213,9 @@
           ] },
         { "id": "d4s4", "time": "12:15", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Restaurant Seppo", "note": "ควรจองล่วงหน้า", "dur": 60, "q": "Restaurant Seppo Hakuba", "reserve": true },
+            { "id": "a", "n": "Restaurant Seppo", "type": "ยังหาร้านชื่อนี้ใน Hakuba ไม่เจอ — เช็กชื่อใน Sheet อีกครั้ง", "note": "ควรจองล่วงหน้า", "dur": 60, "q": "Restaurant Seppo Hakuba", "reserve": true },
             { "id": "b", "n": "The City Bakery (Mountain Harbor)", "type": "เบเกอรี่ แซนด์วิช", "note": "", "dur": 60, "q": "The City Bakery Hakuba Mountain Harbor" },
-            { "id": "c", "n": "Hakuma Dining", "note": "", "dur": 60, "q": "Hakuma Dining Hakuba" }
+            { "id": "c", "n": "Hakuma Dining", "type": "ยังหาร้านชื่อนี้ใน Hakuba ไม่เจอ — เช็กชื่อใน Sheet อีกครั้ง", "note": "", "dur": 60, "q": "Hakuma Dining Hakuba" }
           ] },
         { "id": "d4s5", "time": "13:15", "kind": "nap", "title": "ขับ + เด็กนอน → Azumino", "pick": "one", "def": ["a"], "ll": [36.3494, 137.8283],
           "opts": [
@@ -246,8 +246,8 @@
         { "id": "d4s10", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Yakiniku House Koma", "type": "ยากินิกุ (ปิ้งย่างเนื้อ)", "note": "ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.)", "dur": 75, "q": "Yakiniku House Koma Matsumoto" },
-            { "id": "b", "n": "Don Quijote Steak", "type": "สเต๊ก", "note": "", "dur": 75, "q": "Don Quijote steak Matsumoto" },
-            { "id": "c", "n": "Matsumoto Beef Club", "note": "", "dur": 75, "q": "Matsumoto Beef Club" }
+            { "id": "b", "n": "Don Quijote Steak", "type": "ร้านแฮมเบิร์กสเต๊ก Don Quijote อยู่เมือง Nagano (Uematsu) ไม่ใช่ Matsumoto — ห่างราว 1 ชม.", "note": "ใน Matsumoto มี Don Quijote ที่เป็นร้านขายของ (เปิด 30 มิ.ย. 2026 ในตึก Matsumoto Shena) ไม่ใช่ร้านอาหาร", "dur": 75, "q": "Don Quijote steak Matsumoto" },
+            { "id": "c", "n": "Matsumoto Beef Club", "type": "ยังหาร้านชื่อนี้ใน Matsumoto ไม่เจอ — เช็กชื่อใน Sheet อีกครั้ง", "note": "", "dur": 75, "q": "Matsumoto Beef Club" }
           ] }
       ] },
     { "id": "d5", "n": 5, "dow": 1, "date": "2026-10-19", "label": "Kamikochi",
@@ -286,7 +286,7 @@
           "opts": [
             { "id": "a", "n": "Imperial Hotel Dining", "type": "ห้องอาหารโรงแรม อาหารตะวันตก", "note": "", "dur": 60, "q": "Kamikochi Imperial Hotel dining" },
             { "id": "b", "n": "Kamikochi Shokudo", "type": "อาหารญี่ปุ่นง่ายๆ", "note": "", "dur": 60, "q": "Kamikochi Shokudo" },
-            { "id": "c", "n": "Gosenjaku Kitchen", "note": "", "dur": 60, "q": "Gosenjaku Kitchen Kamikochi" }
+            { "id": "c", "n": "Gosenjaku Kitchen", "type": "ร้านอาหารครอบครัว ชั้น 2 เหนือร้านของฝาก วิวสะพาน Kappa · ซันโซกุยากิ (ไก่ทอดซอสกระเทียม) แกงกะหรี่หมู", "note": "เปิด 11:00 – ราว 15:00", "dur": 60, "q": "Gosenjaku Kitchen Kamikochi" }
           ] },
         { "id": "d5s7", "time": "13:00", "kind": "nap", "title": "เลือก: กลับรถ (แนะนำ) หรือเดินต่อ", "pick": "one", "def": ["a"],
           "opts": [
@@ -354,8 +354,8 @@
         { "id": "d6s10", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "ร้านอาหารใน Cypress (เช็กเมนู/เวลา)", "type": "ห้องอาหารโรงแรม", "note": "ฝรั่งเศส/เทปปันยากิ ตรวจเวลาล่าสุด", "dur": 75, "q": "Hotel Cypress Karuizawa restaurant", "reserve": true },
-            { "id": "b", "n": "Sonmin-Shokudo", "note": "", "dur": 75, "q": "Sonmin Shokudo Karuizawa" },
-            { "id": "c", "n": "Aji no Machidori", "note": "", "dur": 75, "q": "Aji no Machidori Karuizawa" },
+            { "id": "b", "n": "Sonmin-Shokudo", "type": "ร้านอาหารของ Hoshino Resorts · ชุดอาหารญี่ปุ่นวัตถุดิบชินชู (เย็นเป็นจานเดี่ยว + สาเกท้องถิ่น)", "note": "ไม่รับจอง · 11:30–21:30 (สั่งสุดท้าย 20:30) · อยู่ย่าน Hoshino ขับราว 15 นาที", "dur": 75, "q": "Sonmin Shokudo Karuizawa" },
+            { "id": "c", "n": "Aji no Machi (ย่านร้านอาหาร Prince Outlet)", "type": "ย่านร้านอาหาร 7 ร้านใน Prince Outlet: ญี่ปุ่น จีน อิตาเลียน ยากินิกุ ซูชิ ตะวันตก", "note": "ตรงข้ามสถานี Karuizawa · เดินจากโรงแรมได้ (~0.9 กม.)", "dur": 75, "q": "Aji no Machi Karuizawa Prince Shopping Plaza" },
             { "id": "d", "n": "ฟู้ดคอร์ท Prince Outlet", "type": "ฟู้ดคอร์ท", "note": "เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)", "dur": 60, "q": "Karuizawa Prince Shopping Plaza food court", "close": "19:00" }
           ] }
       ] },
@@ -387,7 +387,7 @@
           "opts": [
             { "id": "a", "n": "Kawakamian", "type": "โซบะ", "note": "คิวยาว", "dur": 60, "q": "Kawakamian Karuizawa", "queue": true },
             { "id": "b", "n": "Atelier de Fromage", "type": "ชีส พิซซ่า", "note": "", "dur": 60, "q": "Atelier de Fromage Karuizawa" },
-            { "id": "c", "n": "Karuizawa Kitchen", "note": "", "dur": 60, "q": "Karuizawa Kitchen" }
+            { "id": "c", "n": "Karuizawa Kitchen", "type": "ร้านขนมปังกะหรี่ หน้าสถานี Karuizawa", "note": "เหมาะเป็นของว่าง มากกว่ามื้อกลางวันนั่งกิน", "dur": 60, "q": "Karuizawa Kitchen" }
           ] },
         { "id": "d7s5", "time": "13:15", "kind": "nap", "title": "เด็กนอน (ในรถ/ล็อบบี้)", "pick": "one", "def": ["a"], "ll": [36.3389, 138.6297],
           "opts": [
@@ -408,7 +408,7 @@
           ] },
         { "id": "d7s9", "time": "18:00", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["d"],
           "opts": [
-            { "id": "a", "n": "Pyrenees", "note": "ควรจอง", "dur": 75, "q": "Pyrenees Karuizawa", "reserve": true },
+            { "id": "a", "n": "Pyrenees", "type": "ย่างเนื้อบนเตาฟืน + บุฟเฟต์ผักจากฟาร์มของร้าน · ห้องไม้ มีเตาผิง", "note": "ควรจอง · เปิด 17:00–21:30 · ปิดวันพฤหัส", "dur": 75, "q": "Pyrenees Karuizawa", "reserve": true, "closedDow": [4] },
             { "id": "b", "n": "Ningyocho Imahan", "type": "สุกี้ยากี้ / เนื้อวากิว", "note": "ควรจอง", "dur": 75, "q": "Ningyocho Imahan Karuizawa", "reserve": true },
             { "id": "c", "n": "Trattoria Primo", "type": "อาหารอิตาเลียน", "note": "มักมีคิว", "dur": 75, "q": "Trattoria Primo Karuizawa", "queue": true },
             { "id": "d", "n": "ฟู้ดคอร์ท Prince Outlet", "type": "ฟู้ดคอร์ท", "note": "เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)", "dur": 60, "q": "Karuizawa Prince Shopping Plaza food court", "close": "19:00" }
@@ -461,7 +461,7 @@
         { "id": "d8s7", "time": "15:15", "kind": "cafe", "title": "คาเฟ่ (ปกติข้าม — ต้องรีบออก 15:30)", "pick": "one", "def": ["c"],
           "opts": [
             { "id": "a", "n": "KadoCafe", "type": "คาเฟ่ในพิพิธภัณฑ์", "note": "", "dur": 20, "q": "Kadokawa Culture Museum cafe" },
-            { "id": "b", "n": "Kadokawa Shokudo", "note": "", "dur": 20, "q": "Kadokawa Shokudo Tokorozawa" },
+            { "id": "b", "n": "Kadokawa Shokudo", "type": "บุฟเฟต์สุขภาพผักท้องถิ่น 90 นาที (~¥2,480) + แกงกะหรี่เบลนด์ ชั้น 3 Sakura Town", "note": "หนักไปสำหรับแวะกาแฟ — ถ้าแค่พัก เลือก KadoCafe", "dur": 20, "q": "Kadokawa Shokudo Tokorozawa" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d8s8", "time": "15:30", "kind": "drive", "title": "ขับ Tokorozawa → Haneda", "pick": "one", "def": ["a"], "ll": [35.548, 139.785],
