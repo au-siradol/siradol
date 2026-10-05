@@ -73,7 +73,7 @@
       "slots": [
         { "id": "d2s1", "time": "09:00", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Bakery Coffee Miyabi", "type": "ขนมปังเดนิชชื่อดัง + กาแฟดริป", "note": "", "dur": 45, "q": "Bakery Coffee Miyabi Haneda" },
+            { "id": "a", "n": "อาหารเช้าที่โรงแรม (Grand Aile)", "type": "ห้องอาหารออลเดย์ในโรงแรม Villa Fontaine Grand", "note": "Bakery Coffee Miyabi ปิดกิจการแล้ว · เช็กเวลาอาหารเช้ากับโรงแรม (อาจต้องซื้อเพิ่มถ้าไม่รวมในห้อง)", "dur": 45, "q": "All Day Dining Grand Aile Villa Fontaine Grand Haneda", "kids": true },
             { "id": "b", "n": "Onigiri Konga (おにぎりこんが) T3", "type": "โอนิกิริปั้นสด (ร้านพี่น้องของ Bongo)", "note": "T3 ชั้น 4 · 7:30–20:30 · ซื้อกลับได้", "dur": 30, "q": "Onigiri Konga Haneda Airport Terminal 3", "kids": true }
           ] },
         { "id": "d2s2", "time": "09:45", "kind": "car", "title": "รับรถ Nissan Serena", "pick": "one", "def": ["a"], "ll": [35.5485, 139.784],
@@ -102,7 +102,7 @@
         { "id": "d2s8", "time": "13:25", "kind": "nap", "title": "ขับเล่นริมทะเลสาบ / เด็กนอน", "pick": "one", "def": ["a"],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "รถบัสแล่นผ่านไปอย่างรวดเร็ว แต่กลีบดอกอีฟนิงพริมโรสสีทองดอกเดียวที่ฉันเห็นแวบหนึ่ง ยังสดชัดอยู่ในใจ ยืนเผชิญหน้าฟูจิสูง 3,778 เมตรได้อย่างน่าชื่นชม ไม่หวั่นไหวแม้แต่น้อย ตั้งตรงอย่างกล้าหาญ — แทบอยากเรียกว่าทรงพลังดั่งเฮอร์คิวลิส — ดอกอีฟนิงพริมโรสดอกนั้นงามนัก ฟูจินั้นเข้ากันดีนักกับดอกอีฟนิงพริมโรส"}}},
           "opts": [
-            { "id": "a", "n": "ขับรอบทะเลสาบ Kawaguchiko", "note": "ให้เด็กหลับในรถ ผู้สูงอายุชมวิว", "dur": 60, "km": 25, "q": "Lake Kawaguchiko scenic drive" }
+            { "id": "a", "n": "ขับรอบทะเลสาบ Kawaguchiko", "note": "ให้เด็กหลับในรถ ผู้สูงอายุชมวิว · เส้นทาง: สะพาน Kawaguchiko Ohashi → ฝั่งเหนือ (Oishi) → Nagasaki Park → วนกลับฝั่งใต้", "dur": 60, "km": 25, "q": "Mt. Fuji World Heritage Centre Yamanashi", "via": ["Kawaguchiko Ohashi Bridge", "Kawaguchiko Natural Living Center", "Nagasaki Park Kawaguchiko"] }
           ] },
         { "id": "d2s6", "time": "14:25", "kind": "arch", "title": "จุดชม (หลังเด็กตื่น)", "pick": "any", "def": ["b"],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "มันสมบูรณ์เกินไป ฟูจิอยู่ตรงหน้า และที่เชิงเขาคือทะเลสาบ Kawaguchi แผ่ขาวเยือกเย็น มีภูเขาหมอบนิ่งเงียบโอบอยู่สองข้าง มองแวบเดียวฉันก็หน้าแดงด้วยความอาย มันคือภาพวาดบนผนังโรงอาบน้ำ คือฉากบนเวทีละคร สั่งทำมาเป๊ะจนน่าอับอายที่จะมอง"}}},
