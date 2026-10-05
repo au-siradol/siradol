@@ -214,7 +214,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const FLAG=(o,s)=>[s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น',o.thai&&'🇹🇭 ไทยนิยม คนเยอะ ไปเช้าหรือเลี่ยงช่วงคนแน่น',o.avoid].filter(Boolean);   // avoid: a plain 'don't go' reason
   // drives open turn-by-turn directions from wherever the phone is (no origin = current location), via o.via if given
   const drive=o=>'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(o.q||o.n)+(o.via&&o.via.length?'&waypoints='+o.via.map(encodeURIComponent).join('%7C'):'')+'&travelmode=driving';
-  const link=(o,s)=>o.ig?{href:'https://www.instagram.com/'+encodeURIComponent(o.ig.replace(/^@/,''))+'/',ig:true}:{href:s&&(s.kind==='drive'||s.kind==='nap')&&o.km?drive(o):MV.searchUrl(o.q||o.n),ig:false};
+  const link=(o,s)=>o.ig?{href:'https://www.instagram.com/'+encodeURIComponent(o.ig.replace(/^@/,''))+'/',ig:true}:{href:(s&&(s.kind==='drive'||s.kind==='nap')&&o.km)||(o.via&&o.via.length)?drive(o):MV.searchUrl(o.q||o.n),ig:false};
   const shortName=n=>n.replace(/\s*\(([^)]*)\)\s*$/,'').replace(/^คืนรถ\s+/,'');
   const label=(s,o)=>s.kind==='drive'||s.kind==='nap'?shortName(o.pin||o.n).replace(/^.*→\s*/,''):shortName(o.n);
 
