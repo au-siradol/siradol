@@ -65,6 +65,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet ol button[aria-pressed=true]::after{content:"  ✓";color:var(--ink)}
 .sheet .notes{font-family:var(--hand);color:var(--red);font-size:var(--red-size);display:flex;flex-direction:column;gap:2px}
 .sheet .close{align-self:flex-end;font-size:14px;color:var(--mute);padding:6px 2px}
+/* literature (three ways to show it — see LIT) */
+.ja{font-family:'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP','Noto Serif CJK JP',serif;letter-spacing:.02em}
+.lit-a{display:block;margin:6px 0 14px;padding:4px 0 4px 14px;border-left:2px solid var(--red);line-height:1.6;font-size:15px}
+.lit-a .ja{display:block;font-size:15px}.lit-a .th{display:block;margin-top:2px}.lit-a .by{display:block;font-size:12.5px;color:var(--mute);margin-top:2px}
+.litc{display:flex;flex-direction:column;gap:14px;padding-top:6px}
+.litc h3{margin:0;font-size:14px;font-weight:600;color:var(--mute);letter-spacing:.04em}
+.litc article{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.035)}
+.litc .ja{font-size:16px;line-height:1.7}.litc .th{font-size:15px}.litc .by{font-size:12.5px;color:var(--mute)}.litc .nt{font-size:13.5px;color:var(--mute);line-height:1.6}
+.litc .at{font-size:12px;color:var(--mute)}
+.sheet .lit{display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.65}
+.sheet .lit .ja{font-size:16px}.sheet .lit .nt{font-size:13.5px;color:var(--mute)}.sheet .lit .src{font-size:12px;color:var(--mute)}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .nav-link{font-size:13px;color:var(--mute)}
@@ -92,6 +103,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <div class="note top-note" id="topnote"></div>
   <p class="prose" id="prose" aria-live="polite"></p>
   <div class="note end-note" id="endnote"></div>
+  <section class="litc" id="litc" hidden></section>
   <div class="err" id="err"></div>
   <div class="links"><a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a><a class="nav-link" id="l-places" target="_blank" rel="noopener">แผนที่สถานที่ (My Maps) ↗</a><a class="nav-link" id="l-sheet" target="_blank" rel="noopener">ข้อมูลทริป (Google Sheet) ↗</a></div>
   {{HANDCREDIT}}
@@ -142,6 +154,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     return i>-1?i:(t<trip.days[0].date?0:N-1);
   }
   let cur=initialDay();
+  // literature display: 'a' inline under the sentence · 'b' a red 本 mark that opens the sheet · 'c' a card after the day · '' off
+  let LIT=(new URLSearchParams(location.search).get('lit'))??(trip.meta.lit||'');
+  window.setLit=m=>{LIT=m;render()};
+  const litBody=L=>'<span class="ja" lang="ja">'+esc(L.ja)+'</span><span class="th">'+esc(L.th)+'</span>';
 
   const COLOR={meal:'food',cafe:'cafe',see:'see',arch:'arch',hotel:'stay',rest:'stay',shop:'shop',spa:'shop',refuel:'must',carreturn:'must',car:'must',drive:'move',nap:'move',transit:'move',move:'move',arrival:'move',flight:'must'};
   const VERB=s=>({meal:'กิน'+s.title.replace(/\s*\+.*$/,'')+'ที่',cafe:'แวะกินกาแฟที่',drive:'ขับรถไป',nap:'ขับรถไป',rest:'แวะพักที่',see:'ไปเที่ยว',arch:'ไปดูงานสถาปัตย์',
@@ -167,7 +183,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
     if(!real.length)return t+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+mark(s,[])+' ';
     const v=VERB(s);
-    return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว ');
+    const L=s.lit,litMark=L&&LIT==='b'?'<button class="mark" data-lit="'+s.id+'" aria-label="อ่านระหว่างทาง: '+esc(L.work)+'">本</button>':'';
+    const litBlock=L&&LIT==='a'?'<span class="lit-a">'+litBody(L)+'<span class="by">— '+esc(L.who)+', '+esc(L.work)+'</span></span>':'';
+    return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+litMark+litBlock+(litBlock?'':(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว '));
   }
   /* sheet: tap a red mark → choose */
   let popSlot=null,popFrom=null;
@@ -182,6 +200,18 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('sheet').hidden=false;$('sheetbg').hidden=false;
     const f=$('sh-opts').querySelector('button')||$('sh-x');f.focus();
   }
+  function openLit(id,from){
+    const s=trip.days[cur].slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;popFrom=from;
+    $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(L.work);$('sh-now').textContent=L.who;
+    $('sh-opts').innerHTML='<li class="lit">'+litBody(L).replace(/<span class="(ja|th)"/g,'<div class="$1"').replace(/<\/span>/g,'</div>')+'<div class="nt">'+esc(L.note)+'</div><div class="src">ที่มา: '+esc(L.src)+'</div></li>';
+    $('sh-notes').innerHTML='';$('sheet').hidden=false;$('sheetbg').hidden=false;$('sh-x').focus();
+  }
+  function litCards(d){
+    const box=$('litc'),ls=d.slots.filter(s=>s.lit);
+    if(LIT!=='c'||!ls.length){box.hidden=true;box.innerHTML='';return}
+    box.hidden=false;
+    box.innerHTML='<h3>อ่านระหว่างทาง</h3>'+ls.map(s=>'<article><span class="at">'+s.time+' · '+esc(s.title)+'</span>'+litBody(s.lit).replace(/<span class="(ja|th)"/g,'<div class="$1"').replace(/<\/span>/g,'</div>')+'<div class="by">— '+esc(s.lit.who)+', '+esc(s.lit.work)+'</div><div class="nt">'+esc(s.lit.note)+'</div></article>').join('');
+  }
   function closeSheet(){$('sheet').hidden=true;$('sheetbg').hidden=true;popSlot=null;if(popFrom&&document.body.contains(popFrom))popFrom.focus()}
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
@@ -193,6 +223,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('topnote').textContent=(daysTo>0?'↙ อีก '+daysTo+' วันออกเดินทาง / ':'↙ ')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ');
     $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
     $('endnote').textContent='↘ คืนนี้นอนที่ '+d.night;
+    litCards(d);
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
     $('nav').href=MV.dirUrl(MV.stops(trip,d,sel));
     const L=trip.meta.links||{};[['l-places',L.places],['l-sheet',L.sheet]].forEach(([id,u])=>{$(id).hidden=!u;if(u)$(id).href=u});
@@ -208,6 +239,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   }
   document.addEventListener('click',e=>{
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
+    const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
     if(e.target.closest('#sh-x')||e.target.id==='sheetbg'){closeSheet();return}
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
