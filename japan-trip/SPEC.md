@@ -71,3 +71,9 @@ Chihiro Art Museum 10–17 (last 16:30), closed 2nd/4th Wed (14 and 28 Oct; 18 O
 - Export selected plan to `.ics` / Google Calendar.
 - Drive-time lookup from a routing API instead of hand-entered `dur`.
 - Per-day packing/weather checklist; Thai/English toggle.
+
+## แผนสอง (ออกช้า 30–45 นาที)
+- `days[].late` ใน trip.json: `times` (เวลาใหม่), `def` (ตัวเลือกหลักใหม่), `dur` (ระยะเวลาใหม่), `drop` (ตัดช่วงออก), `notes` (ข้อความสรุปที่ขึ้นด้านบน)
+- `Engine.lateDay(day)` สร้างวันฉบับแผนสอง แล้วตรวจด้วย `analyze` เหมือนแผนปกติ
+- ปุ่ม "แผนสอง · ออกช้า" ข้างชื่อวัน เปิด/ปิดแยกแต่ละวัน จำไว้ใน `japan2569.late`
+- test: แผนสองทุกวันต้องไม่มี error, เริ่มช้ากว่าแผนปกติ 30–45 นาที, D8 ต้องออกจาก Tokorozawa 15:30 เท่าเดิม

@@ -122,6 +122,23 @@ test('9 days, 15–23 Oct 2026', () => {
 test('default plan has no errors on any day', () => {
   for (const d of trip.days) assert.deepEqual(E.analyze(trip, d, {}).filter(i => i.level === 'err').map(i => i.msg), [], 'D' + d.n);
 });
+test('plan B (late start) has no errors and keeps the D8 car-return buffer', () => {
+  for (const d of trip.days) {
+    const L = E.lateDay(d);
+    if (!L) continue;
+    assert.deepEqual(E.analyze(trip, L, {}).filter(i => i.level === 'err').map(i => i.msg), [], 'late D' + d.n);
+  }
+  const d8 = E.lateDay(trip.days[7]);
+  assert.equal(d8.slots.find(s => s.id === 'd8s8').time, '15:30');
+});
+test('plan B starts each day 30–45 min later than plan A', () => {
+  for (const d of trip.days) {
+    const L = E.lateDay(d);
+    if (!L) continue;
+    const gap = E.mins(L.slots[0].time) - E.mins(d.slots[0].time);
+    assert.ok(gap >= 30 && gap <= 45, 'D' + d.n + ' gap ' + gap);
+  }
+});
 test('default warnings are exactly the known, accepted ones', () => {
   const got = trip.days.flatMap(d => E.analyze(trip, d, {}).filter(i => i.level === 'warn').map(i => `D${d.n}:${i.slotId}`));
   assert.deepEqual(got, ['D3:d3s9', 'D4:d4s8', 'D8:d8s8']); // castle stairs; two afternoon drives with the child awake

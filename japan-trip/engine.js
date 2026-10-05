@@ -139,7 +139,24 @@
     return p;
   }
 
-  const api = { mins, hhmm, selected, slotDur, analyze, validate, dowOf, nthOf, DOW };
+  // Plan B for a day that starts 30–45 min late: day.late moves times, changes defaults,
+  // shortens or drops slots so the nap, sunset and closing times still hold.
+  function lateDay(day) {
+    const L = day.late;
+    if (!L || !(L.times || L.def || L.dur || L.drop)) return null;
+    const d = JSON.parse(JSON.stringify(day));
+    d.isLate = true;
+    d.slots = d.slots.filter(s => !(L.drop || []).includes(s.id));
+    d.slots.forEach(s => {
+      if (L.times && L.times[s.id]) s.time = L.times[s.id];
+      if (L.def && L.def[s.id]) s.def = L.def[s.id];
+      if (L.dur && L.dur[s.id] != null) s.opts.forEach(o => { if (!o.skip) o.dur = L.dur[s.id]; });
+    });
+    d.slots.sort((a, b) => mins(a.time) - mins(b.time));
+    return d;
+  }
+
+  const api = { mins, hhmm, selected, slotDur, analyze, validate, lateDay, dowOf, nthOf, DOW };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Engine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
