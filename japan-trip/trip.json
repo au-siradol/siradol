@@ -63,67 +63,68 @@
           ] }
       ] },
     { "id": "d2", "n": 2, "dow": 5, "date": "2026-10-16", "label": "Haneda → Kawaguchiko",
-      "route": "Haneda → Ebina SA → Kawaguchiko", "night": "Fuji Grand Villa TOKI (รวมอาหารเช้า)",
+      "route": "Haneda → Ebina SA → Gotemba → Asagiri → Motosu/Shoji/Saiko → Kawaguchiko", "night": "Fuji Grand Villa TOKI (รวมอาหารเช้า)",
       "from": { "n": "Hotel Villa Fontaine Grand Haneda Airport", "ll": [35.5452, 139.7798] },
       "weather": [
         { "t": "Kawaguchiko ตอนเช้าเย็น ~8–10°C กลางวัน ~17°C เตรียมเสื้อกันลม", "s": "info" },
         { "t": "ใบไม้เปลี่ยนสีทางเลียบทะเลสาบ (Momiji Corridor) ช่วงต้น–กลาง พ.ย. ยังไม่ถึง; Oishi Park มีดอกโคเคีย (kochia) ช่วงกลาง–ปลาย ต.ค. (ไม่เป็นทางการ)", "s": "warn" }
       ],
-      "late": {"times": {"d2s1": "09:40", "d2s2": "10:00", "d2s3": "10:40", "d2s4": "11:25", "d2s5": "11:40", "d2s7": "12:50", "d2s8": "13:30", "d2s6": "15:15", "d2s9": "15:20", "d2s10": "16:30"}, "def": {"d2s1": ["b"], "d2s7": ["c"]}, "dur": {"d2s1": 20, "d2s4": 15, "d2s7": 40}, "notes": ["ซื้อโอนิกิริ Konga ไปกินในรถ", "พัก Ebina แค่ 15 นาที", "กลางวันร้านใกล้ (Tempura Ninja) ไม่อ้อมไป Yamanaka"]},
+      "late": {"times": {"d2s1": "09:40", "d2s2": "10:00", "d2s3": "10:40", "d2s4": "11:25", "d2s5": "12:10", "d2s8": "12:50", "d2s12": "13:55", "d2s13": "14:10", "d2s6": "15:05", "d2s9": "15:40", "d2s10": "16:00"}, "def": {"d2s1": ["b"]}, "dur": {"d2s1": 20, "d2s4": 45, "d2s12": 15}, "notes": ["ซื้อโอนิกิริ Konga ไปกินในรถ", "กลางวันที่ Ebina เร็วขึ้น 10 นาที", "ถ่ายรูปที่ Asagiri สั้นลง", "ช่วงบ่ายเวลาเดิม"]},
       "slots": [
-        { "id": "d2s1", "time": "09:00", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
+        {"id": "d2s1", "time": "09:00", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "อาหารเช้าที่โรงแรม (Grand Aile)", "type": "ห้องอาหารออลเดย์ในโรงแรม Villa Fontaine Grand", "note": "Bakery Coffee Miyabi ปิดกิจการแล้ว · เช็กเวลาอาหารเช้ากับโรงแรม (อาจต้องซื้อเพิ่มถ้าไม่รวมในห้อง)", "dur": 45, "q": "All Day Dining Grand Aile Villa Fontaine Grand Haneda", "kids": true },
             { "id": "b", "n": "Onigiri Konga (おにぎりこんが) T3", "type": "โอนิกิริปั้นสด (ร้านพี่น้องของ Bongo)", "note": "T3 ชั้น 4 · 7:30–20:30 · ซื้อกลับได้", "dur": 30, "q": "Onigiri Konga Haneda Airport Terminal 3", "kids": true }
           ] },
-        { "id": "d2s2", "time": "09:45", "kind": "car", "title": "รับรถ Nissan Serena", "pick": "one", "def": ["a"], "ll": [35.5485, 139.784],
+        {"id": "d2s2", "time": "09:45", "kind": "car", "title": "รับรถ Nissan Serena", "pick": "one", "def": ["a"], "ll": [35.5485, 139.784],
           "opts": [
             { "id": "a", "n": "รับรถเช่า + เช็กสภาพ", "note": "คาร์ซีทบังคับสำหรับเด็กอายุต่ำกว่า 6 ปี — จองล่วงหน้า; เช็กพื้นที่สัมภาระกับกระเป๋า 5 คน", "dur": 40, "q": "Haneda Airport rental car Nissan Rent a Car", "reserve": true }
           ] },
-        { "id": "d2s3", "time": "10:25", "kind": "drive", "title": "ขับ Haneda → Ebina SA", "pick": "one", "def": ["a"], "ll": [35.4358, 139.3899],
+        {"id": "d2s3", "time": "10:25", "kind": "drive", "title": "ขับ Haneda → Ebina SA (ขาออก)", "pick": "one", "def": ["a"], "ll": [35.4358, 139.3899],
           "opts": [
-            { "id": "a", "n": "Haneda → Ebina SA", "note": "ช่วงเช้ายอมรับได้ รถยังเบา", "dur": 45, "km": 45, "q": "Ebina Service Area Tomei Expressway" }
+            { "id": "a", "n": "Haneda → Ebina SA (ขาออก / Westbound)", "note": "ช่วงเช้ารถยังเบา · เข้า SA ฝั่ง Westbound (下り) — ฝั่ง Upbound (上り) อยู่ขาเข้าโตเกียว เข้าไม่ได้", "dur": 45, "km": 45, "q": "EXPASA Ebina Westbound" }
           ] },
-        { "id": "d2s4", "time": "11:10", "kind": "rest", "title": "พักที่ Ebina SA", "pick": "one", "def": ["a"], "ll": [35.4358, 139.3899],
+        {"id": "d2s4", "time": "11:10", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"], "ll": [35.4358, 139.3899],
           "opts": [
-            { "id": "a", "n": "Ebina SA (ห้องน้ำ / ของว่าง)", "note": "พักเด็กและผู้สูงอายุ", "dur": 20, "q": "Ebina SA Tomei Expressway" }
+            { "id": "a", "n": "ฟู้ดคอร์ท EXPASA Ebina (ขาออก)", "type": "ศูนย์อาหารใหญ่ หลายร้านให้เลือก · ขนมปังเมลอนปังขึ้นชื่อ", "note": "ห้องน้ำกว้าง ที่นั่งเยอะ · กินเร็วแล้วออกก่อนน้องง่วง", "dur": 55, "q": "EXPASA Ebina Westbound", "kids": true }
           ] },
-        { "id": "d2s5", "time": "11:30", "kind": "drive", "title": "ขับ Ebina → Kawaguchiko", "pick": "one", "def": ["a"], "ll": [35.4976, 138.7683],
+        {"id": "d2s5", "time": "12:05", "kind": "drive", "title": "ขับ Ebina → Gotemba", "pick": "one", "def": ["a"], "ll": [35.3, 138.94],
           "opts": [
-            { "id": "a", "n": "Ebina → Kawaguchiko", "note": "แก้จากตารางเดิม 45 → 65 นาที (รวม Haneda→Kawaguchiko ~113–123 กม./1 ชม. 39–53 นาที ไม่รวมพัก)", "dur": 65, "km": 70, "q": "Kawaguchiko Station" }
+            { "id": "a", "n": "Ebina → Gotemba (ทางด่วน Tomei)", "note": "ราว 40 กม. 40 นาที", "dur": 40, "km": 40, "q": "Gotemba IC" }
           ] },
-        { "id": "d2s7", "time": "12:40", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["c"],
-          "opts": [
-            { "id": "a", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) · สาขา Higashikoiji อาคารทรงก้อนเมฆสีขาว", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:30 จึงควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Higashikoiji", "queue": true, "arch": true, "reserve": true },
-            { "id": "c", "n": "Tempura Ninja", "type": "เทมปุระ ธีมนินจา จัดจานสนุก", "note": "เด็กชอบ", "dur": 45, "q": "Tempura Ninja Kawaguchiko", "kids": true },
-            { "id": "d", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส · 11:00–21:00 ไม่มีวันหยุด · ไม่รับจอง (รีวิว Tabelog: คิวยาวแทบตลอด)", "dur": 45, "q": "Houtou Kura Funari Kawaguchiko", "kids": true, "queue": true }
-          ] },
-        { "id": "d2s8", "time": "13:25", "kind": "nap", "title": "ขับให้น้องหลับ — เลือกเส้นทาง", "pick": "one", "def": ["b"],
+        {"id": "d2s8", "time": "12:45", "kind": "nap", "title": "ขับรอบภูเขา (น้องหลับ) → Asagiri Kogen", "pick": "one", "def": ["a"],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "รถบัสแล่นผ่านไปอย่างรวดเร็ว แต่กลีบดอกอีฟนิงพริมโรสสีทองดอกเดียวที่ฉันเห็นแวบหนึ่ง ยังสดชัดอยู่ในใจ ยืนเผชิญหน้าฟูจิสูง 3,778 เมตรได้อย่างน่าชื่นชม ไม่หวั่นไหวแม้แต่น้อย ตั้งตรงอย่างกล้าหาญ — แทบอยากเรียกว่าทรงพลังดั่งเฮอร์คิวลิส — ดอกอีฟนิงพริมโรสดอกนั้นงามนัก ฟูจินั้นเข้ากันดีนักกับดอกอีฟนิงพริมโรส"}}},
           "opts": [
-            { "id": "a", "n": "ขับรอบทะเลสาบ Kawaguchiko", "note": "ให้เด็กหลับในรถ ผู้สูงอายุชมวิว · เส้นทาง: สะพาน Kawaguchiko Ohashi → ฝั่งเหนือ (Oishi) → Nagasaki Park → วนกลับฝั่งใต้", "dur": 60, "km": 25, "q": "Mt. Fuji World Heritage Centre Yamanashi", "via": ["Kawaguchiko Ohashi Bridge", "Kawaguchiko Natural Living Center", "Nagasaki Park Kawaguchiko"] },
-            { "id": "b", "n": "ฝั่งตะวันตกของฟูจิ: Saiko → Shoji → Motosu → Asagiri Kogen", "type": "ครึ่งวงรอบฟูจิฝั่งตะวันตก · ช่วงบ่ายแดดส่องตรงหน้า ถ่ายรูปไม่ย้อนแสง", "note": "ผ่าน Saiko แต่ไม่แวะหมู่บ้าน Saiko Iyashi no Sato Nenba · Motosu: ชมวิวภาพธนบัตร 1,000 เยนจากริมทะเลสาบ (จุดชมบนช่องเขา Nakanokura ต้องเดินขึ้นเขา ~20 นาที — ข้าม) · จอดถ่ายรูปที่ Asagiri Kogen / Fumotoppara ~15 นาที (แสงตรงหน้า ทุ่งโล่ง ทางราบ) · น้องหลับช่วงแรก ตื่นตอนถึงจุดถ่ายรูป · ครึ่งวงฝั่งตะวันออกไปต่อเช้าวันที่ 3", "dur": 105, "km": 85, "q": "Kawaguchiko Station", "via": ["Lake Saiko", "Lake Shoji", "Motosuko", "Asagiri Kogen"], "pin": "ครึ่งวงฝั่งตะวันตกของฟูจิ" }
+            { "id": "a", "n": "ฝั่งใต้ของฟูจิ: Gotemba → Fujinomiya → Asagiri Kogen", "pin": "รอบภูเขาฝั่งใต้ ถึง Asagiri Kogen", "note": "ถนนเลียบเชิงเขาฝั่งใต้ (ถนน 469 แล้วขึ้นเหนือทางถนน 139) · ราว 60 กม. 65 นาที · น้องหลับระหว่างทาง", "dur": 65, "km": 60, "q": "Asagiri Kogen", "via": ["Fujinomiya"] }
           ] },
-        { "id": "d2s6", "time": "15:10", "kind": "arch", "title": "จุดชม (หลังเด็กตื่น)", "pick": "any", "def": [],
+        {"id": "d2s12", "time": "13:50", "kind": "see", "title": "จุดถ่ายรูปฟูจิฝั่งตะวันตก", "pick": "one", "def": ["a"], "ll": [35.42, 138.58],
+          "opts": [
+            { "id": "a", "n": "Asagiri Kogen / Fumotoppara", "type": "ทุ่งหญ้าเปิดโล่งเชิงฟูจิฝั่งตะวันตก", "note": "ช่วงบ่ายแดดส่องตรงหน้า ถ่ายรูปไม่ย้อนแสง · ทางราบ จอดใกล้ · น้องตื่นพอดี", "dur": 20, "q": "Asagiri Kogen Fumotoppara", "kids": true }
+          ] },
+        {"id": "d2s13", "time": "14:10", "kind": "drive", "title": "ขับเลียบทะเลสาบ → Kawaguchiko", "pick": "one", "def": ["a"], "ll": [35.4976, 138.7683],
+          "opts": [
+            { "id": "a", "n": "Motosu → Shoji → Saiko → Kawaguchiko", "pin": "เลียบทะเลสาบ Motosu · Shoji · Saiko ถึง Kawaguchiko", "note": "ราว 45 กม. 55 นาที · ชมวิวภาพธนบัตร 1,000 เยนจากริมทะเลสาบ Motosu (แสงข้าง) · ผ่าน Saiko แต่ไม่แวะหมู่บ้าน Saiko Iyashi no Sato Nenba", "dur": 55, "km": 45, "q": "Mt. Fuji World Heritage Centre Yamanashi", "via": ["Motosuko", "Lake Shoji", "Lake Saiko"] }
+          ] },
+        {"id": "d2s6", "time": "15:05", "kind": "arch", "title": "ชมสถาปัตยกรรม", "pick": "any", "def": ["b"],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "มันสมบูรณ์เกินไป ฟูจิอยู่ตรงหน้า และที่เชิงเขาคือทะเลสาบ Kawaguchi แผ่ขาวเยือกเย็น มีภูเขาหมอบนิ่งเงียบโอบอยู่สองข้าง มองแวบเดียวฉันก็หน้าแดงด้วยความอาย มันคือภาพวาดบนผนังโรงอาบน้ำ คือฉากบนเวทีละคร สั่งทำมาเป๊ะจนน่าอับอายที่จะมอง"}}},
           "opts": [
             { "id": "a", "n": "Oishi Park", "type": "สวนริมทะเลสาบ", "note": "ทางเลียบทะเลสาบราบ มีดอกโคเคียช่วงปลาย ต.ค.", "dur": 30, "q": "Oishi Park Kawaguchiko", "kids": true, "ll": [35.5228, 138.7594], "thai": true },
             { "id": "b", "n": "Mt. Fuji World Heritage Centre (Shigeru Ban)", "type": "ศูนย์ข้อมูล / พิพิธภัณฑ์", "note": "สถาปัตยกรรมกรวยไม้ของ Shigeru Ban", "dur": 30, "q": "Mt. Fuji World Heritage Centre Yamanashi", "arch": true, "ll": [35.4844, 138.7639] },
             { "id": "c", "n": "Saiko Nenba", "type": "หมู่บ้านบ้านหลังคาฟางเก่า", "note": "ชุมชนบ้านฟางเก่า", "dur": 45, "q": "Saiko Iyashi no Sato Nenba", "ll": [35.5012, 138.6857] }
           ] },
-        { "id": "d2s9", "time": "15:15", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
+        {"id": "d2s9", "time": "15:40", "kind": "cafe", "title": "คาเฟ่ (ปกติข้าม — เช็กอิน 16:00)", "pick": "one", "def": ["c"],
           "opts": [
             { "id": "a", "n": "Brand New Day", "type": "คาเฟ่กระจกวิวฟูจิ · กาแฟดริป + พิซซ่าเตาฟืน", "note": "", "dur": 45, "q": "Brand New Day cafe Kawaguchiko" },
             { "id": "b", "n": "Cisco / Lake Bake", "type": "Cisco Coffee (สไตล์ซานฟรานซิสโก) / Lake Bake เบเกอรี่เตาฟืนริมน้ำ", "note": "", "dur": 45, "q": "Lake Bake Kawaguchiko" },
             { "id": "d", "n": "Tenka-chaya (天下茶屋) ช่องเขา Misaka", "type": "ร้านน้ำชาบนช่องเขาที่ Dazai พักเขียน \"ร้อยทัศน์ฟูจิ\" · วิวฟูจิเหนือทะเลสาบ Kawaguchi · มีโฮโตและชา", "note": "10:00–17:00 เปิดทุกวัน · ขับจาก Kawaguchiko ราว 25 นาที ถนนเขาคดเคี้ยว · จากที่นี่ขับไปโรงแรมราว 30 นาที เช็กอินช้าลง ~15 นาที", "dur": 75, "q": "Tenkachaya Misaka Pass", "close": "17:00", "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "มันสมบูรณ์เกินไป ฟูจิอยู่ตรงหน้า และที่เชิงเขาคือทะเลสาบ Kawaguchi แผ่ขาวเยือกเย็น มีภูเขาหมอบนิ่งเงียบโอบอยู่สองข้าง มองแวบเดียวฉันก็หน้าแดงด้วยความอาย มันคือภาพวาดบนผนังโรงอาบน้ำ คือฉากบนเวทีละคร สั่งทำมาเป๊ะจนน่าอับอายที่จะมอง"}}} },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
-        { "id": "d2s10", "time": "16:00", "kind": "hotel", "title": "เช็กอินโรงแรม", "pick": "one", "def": ["a"], "ll": [35.475, 138.795],
+        {"id": "d2s10", "time": "16:00", "kind": "hotel", "title": "เช็กอินโรงแรม", "pick": "one", "def": ["a"], "ll": [35.475, 138.795],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "กลางเดือนตุลาคมผ่านไป … ยามอาทิตย์ตก เมฆขอบสีแดงฉานลอยมา ใต้ท้องเมฆเหมือนท้องห่าน ฉันยืนสูบบุหรี่คนเดียวที่ระเบียงชั้นสอง ตั้งใจไม่มองฟูจิ แต่จ้องใบไม้เปลี่ยนสีของป่าบนภูเขา แดงฉานราวเลือดที่หยด"}}},
           "opts": [
             { "id": "a", "n": "Fuji Grand Villa TOKI", "note": "รวมอาหารเช้า", "dur": 30, "q": "Fuji Grand Villa TOKI Kawaguchiko" }
           ] },
-        { "id": "d2s11", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
+        {"id": "d2s11", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "พระจันทร์สว่างจ้าจนน่าตกใจ ฟูจิงามนัก อาบแสงจันทร์จนเป็นสีน้ำเงินเกือบโปร่งใส ฉันรู้สึกเหมือนต้องมนต์จิ้งจอก สีน้ำเงินสดใสวาววับ เหมือนฟอสฟอรัสลุกไหม้ ไฟผี ไฟจิ้งจอก หิ่งห้อย … ฉันหันกลับไปมองอย่างเงียบๆ ฟูจิอยู่ตรงนั้น ลุกเป็นไฟสีน้ำเงิน ลอยอยู่กลางอากาศ"}}},
           "opts": [
             { "id": "a", "n": "Restaurant Sylvans", "type": "ร้านของโรงเบียร์ Fujizakura Heights (เบียร์รางวัลระดับโลก) · อาหารบาวาเรียน-ญี่ปุ่น", "note": "กว้างขวาง เหมาะกับครอบครัว", "dur": 75, "q": "Restaurant Sylvans Kawaguchiko" },
@@ -142,64 +143,67 @@
       ],
       "late": {"times": {"d3s1": "09:10", "d3s3": "10:15"}, "dur": {"d3s3": 80}, "notes": ["ครึ่งวงตะวันออกสั้นลง: Chureito + Oshino Hakkai ข้ามทะเลสาบ Yamanaka", "กินกลางวันและช่วงบ่ายเวลาเดิม"]},
       "slots": [
-        { "id": "d3s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
+        {"id": "d3s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "อาหารเช้าที่โรงแรม", "type": "อาหารเช้าโรงแรม", "note": "", "dur": 60, "q": "Fuji Grand Villa TOKI Kawaguchiko" }
           ] },
-        { "id": "d3s2", "time": "09:30", "kind": "cafe", "title": "กาแฟ", "pick": "one", "def": ["c"],
+        {"id": "d3s2", "time": "09:30", "kind": "cafe", "title": "กาแฟ", "pick": "one", "def": ["c"],
           "opts": [
             { "id": "a", "n": "FabCafe Fuji", "type": "คาเฟ่ดีไซน์ไม้ · กาแฟ specialty", "note": "", "dur": 40, "q": "FabCafe Fuji Kawaguchiko" },
             { "id": "b", "n": "Cisco Cafe", "type": "คาเฟ่", "note": "", "dur": 40, "q": "Cisco cafe Kawaguchiko" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
-        { "id": "d3s3", "time": "09:30", "kind": "see", "title": "ชมวิว — เลือก", "pick": "one", "def": ["b"], "ll": [35.5057, 138.762],
+        {"id": "d3s3", "time": "09:30", "kind": "see", "title": "ชมวิว — เลือก", "pick": "one", "def": ["b"], "ll": [35.5057, 138.762],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "ฉันมองขึ้นไป แล้ว — อ้า! — หิมะ หิมะตกบนฟูจิแล้ว ยอดเขาขาวบริสุทธิ์เปล่งประกาย แม้แต่ฟูจิจากช่องเขา Misaka ก็ดูถูกไม่ได้ ฉันคิด … \"ฟูจิถ้าไม่มีหิมะก็ไม่ได้เรื่องเลย\""}}},
           "opts": [
             { "id": "a", "n": "Yagizaki Park", "type": "สวนริมทะเลสาบ", "note": "ทางราบริมทะเลสาบ ชมภูเขาไฟฟูจิ", "dur": 45, "q": "Yagizaki Park Kawaguchiko", "kids": true },
             { "id": "b", "n": "ฝั่งตะวันออกของฟูจิ: เจดีย์ Chureito → Oshino Hakkai", "type": "ครึ่งวงรอบฟูจิฝั่งตะวันออก (ต่อจากวันที่ 2) · ช่วงเช้าแดดมาด้านข้าง ไม่ย้อนแสง", "note": "Chureito มีบันไดราว 400 ขั้น ผู้สูงอายุรอที่ศาลเจ้าด้านล่าง · Oshino Hakkai บ่อน้ำใส ทางราบ คนเยอะ · ถ้าอยากเลียบทะเลสาบ Yamanaka ด้วย (+25 นาที) เลือกกินกลางวันที่ Hana no Miyako แทน · กลับมากินกลางวันที่ Kawaguchiko", "dur": 130, "km": 40, "q": "Kosaku Kawaguchiko houtou", "via": ["Arakura Fuji Sengen Shrine", "Oshino Hakkai"], "thai": true, "pin": "ครึ่งวงฝั่งตะวันออกของฟูจิ" }
           ] },
-        { "id": "d3s4", "time": "11:40", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
+        {"id": "d3s4", "time": "11:40", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Kosaku", "type": "โฮโต", "note": "", "dur": 60, "q": "Kosaku Kawaguchiko houtou" },
             { "id": "b", "n": "ร้านริมทะเลสาบ", "type": "เลือกร้านริมทะเลสาบหน้างาน", "note": "", "dur": 60, "q": "restaurant Lake Kawaguchiko lakeside" },
             { "id": "c", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส · 11:00–21:00 ไม่มีวันหยุด · ไม่รับจอง (รีวิว Tabelog: คิวยาวแทบตลอด)", "dur": 60, "q": "Houtou Kura Funari Kawaguchiko", "kids": true, "queue": true },
             { "id": "d", "n": "Shoya no Ie (庄屋乃家)", "type": "หม้อโฮโตเป็ดต้มบนโต๊ะ · ห้องเสื่อและโต๊ะกว้าง", "note": "ส–อา 11:00–21:30 · ปิดวันพุธ · จองได้", "dur": 60, "q": "Shoya no Ie Kawaguchiko houtou", "closedDow": [3] },
-            { "id": "e", "n": "Lake Forest — Hana no Miyako", "type": "โรงอาหาร Hanaan ในสวนดอกไม้ Hana no Miyako · หมูผัดขิง ดงหมูไข่ โฮโตฟักทอง", "note": "อยู่ริมทะเลสาบ Yamanaka — เหมาะกับวันนี้ถ้าขับเลียบ Yamanaka ต่อจาก Oshino (กินแล้วขึ้นทางด่วนที่ Fujiyoshida ได้เลย)", "dur": 45, "q": "Hanaan Hana no Miyako Koen Yamanakako" }
+            { "id": "e", "n": "Lake Forest — Hana no Miyako", "type": "โรงอาหาร Hanaan ในสวนดอกไม้ Hana no Miyako · หมูผัดขิง ดงหมูไข่ โฮโตฟักทอง", "note": "อยู่ริมทะเลสาบ Yamanaka — เหมาะกับวันนี้ถ้าขับเลียบ Yamanaka ต่อจาก Oshino (กินแล้วขึ้นทางด่วนที่ Fujiyoshida ได้เลย)", "dur": 45, "q": "Hanaan Hana no Miyako Koen Yamanakako" },
+            { "id": "f", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) · สาขา Higashikoiji อาคารทรงก้อนเมฆสีขาว", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:30 จึงควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Higashikoiji", "queue": true, "arch": true, "reserve": true },
+            { "id": "g", "n": "Tempura Ninja", "type": "เทมปุระ ธีมนินจา จัดจานสนุก", "note": "เด็กชอบ", "dur": 45, "q": "Tempura Ninja Kawaguchiko", "kids": true }
           ] },
-        { "id": "d3s5", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09], "lit": {"who": "โฮริ ทัตสึโอะ", "work": "ลมพัดมาแล้ว (風立ちぬ)", "levels": {"short": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา"}, "medium": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน"}, "long": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน\nไร่นาสีดินแดงลาดลงไปสุดตา ในวันที่ฟ้าโปร่ง เหนือดงสนที่ยืนเรียงรายไม่สิ้นสุด เทือกแอลป์ใต้กับแนวเขาแยกอีกสองสามแนวผลุบๆ โผล่ๆ อยู่ในเมฆที่ภูเขาก่อขึ้นเอง ตั้งแต่ทิศใต้ไปจนทิศตะวันตก"}}},
+        {"id": "d3s5", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09],
+          "lit": {"who": "โฮริ ทัตสึโอะ", "work": "ลมพัดมาแล้ว (風立ちぬ)", "levels": {"short": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา"}, "medium": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน"}, "long": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน\nไร่นาสีดินแดงลาดลงไปสุดตา ในวันที่ฟ้าโปร่ง เหนือดงสนที่ยืนเรียงรายไม่สิ้นสุด เทือกแอลป์ใต้กับแนวเขาแยกอีกสองสามแนวผลุบๆ โผล่ๆ อยู่ในเมฆที่ภูเขาก่อขึ้นเอง ตั้งแต่ทิศใต้ไปจนทิศตะวันตก"}}},
           "opts": [
             { "id": "a", "n": "Kawaguchiko → Suwako SA", "note": "ผ่านอุโมงค์ Misaka → Kofu → ทางด่วน Chuo · ราว 100 กม. 75 นาที · เริ่มช่วงก่อนนอน ให้เด็กหลับระหว่างทาง", "dur": 75, "km": 100, "q": "Suwako Service Area Chuo Expressway" }
           ] },
-        { "id": "d3s6", "time": "14:00", "kind": "rest", "title": "พักที่ Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09],
+        {"id": "d3s6", "time": "14:00", "kind": "rest", "title": "พักที่ Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09],
           "opts": [
             { "id": "a", "n": "Suwako SA (ผู้ใหญ่สลับกันลง)", "note": "อย่าปลุกเด็ก ผู้ใหญ่ผลัดกันเข้าห้องน้ำ/ซื้อกาแฟ", "dur": 20, "q": "Suwako SA", "quiet": true },
             { "id": "b", "n": "Jinchokan Moriya Museum + Takasugi-an (Terunobu Fujimori)", "type": "พิพิธภัณฑ์งานแรกของ Fujimori + เรือนชาบนเสาไม้ Takasugi-an, Low Tea House, Flying Mud Boat", "note": "ออก Suwa-minami IC ราว 10 นาที (แทนการจอด Suwako SA) · เรือนชาอยู่ในที่ดินส่วนตัว ดูจากทางเดินด้านนอกเท่านั้น · ทางไปเรือนชาเป็นเนินดินสั้นๆ ผู้สูงอายุรอที่พิพิธภัณฑ์ได้ · น้องหลับในรถ ผู้ใหญ่ผลัดกันลง · ปิดวันจันทร์และวันหลังวันหยุด · ช่วงบ่ายจะช้าลงราว 20 นาที", "dur": 30, "q": "Jinchokan Moriya Historical Museum Chino", "arch": true, "quiet": true, "closedDow": [1] }
           ] },
-        { "id": "d3s7", "time": "14:20", "kind": "drive", "title": "ขับ Suwako → Matsumoto", "pick": "one", "def": ["a"], "ll": [36.2288, 137.9707],
+        {"id": "d3s7", "time": "14:20", "kind": "drive", "title": "ขับ Suwako → Matsumoto", "pick": "one", "def": ["a"], "ll": [36.2288, 137.9707],
           "opts": [
             { "id": "a", "n": "Suwako SA → Matsumoto", "note": "", "dur": 50, "km": 55, "q": "Matsumoto Performing Arts Centre" }
           ] },
-        { "id": "d3s8", "time": "15:15", "kind": "arch", "title": "สถาปัตยกรรมใน Matsumoto", "pick": "one", "def": ["a"], "ll": [36.2288, 137.9707],
+        {"id": "d3s8", "time": "15:15", "kind": "arch", "title": "สถาปัตยกรรมใน Matsumoto", "pick": "one", "def": ["a"], "ll": [36.2288, 137.9707],
           "opts": [
             { "id": "a", "n": "Matsumoto Performing Arts Centre (Toyo Ito)", "type": "โรงละคร", "note": "ชมภายนอก/ล็อบบี้", "dur": 30, "q": "Matsumoto Performing Arts Centre", "arch": true },
             { "id": "b", "n": "Former Kaichi School (旧開智学校)", "type": "โรงเรียนสมัยเมจิ (1876) สมบัติชาติ", "note": "9:00–17:00 เข้าสุดท้าย 16:30 · ปิดซ่อมตั้งแต่ 2021 มีกำหนดเปิดอีกครั้งปลายปี 2024 — เช็กว่าเปิดแล้วก่อนไป", "dur": 40, "q": "Former Kaichi School Matsumoto", "arch": true, "last": "16:30", "close": "17:00", "closedNth": [[2, 3]] }
           ] },
-        { "id": "d3s9", "time": "15:50", "kind": "see", "title": "เลือก 1: ปราสาท หรือ Alps Park", "pick": "one", "def": ["a"],
+        {"id": "d3s9", "time": "15:50", "kind": "see", "title": "เลือก 1: ปราสาท หรือ Alps Park", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Matsumoto Castle — เดินรอบสวน/คูน้ำ", "type": "ปราสาท (สมบัติชาติ)", "note": "ข้ามบันได 61° ด้านใน ผู้ที่อยากเข้าให้ผู้ใหญ่คนอื่นพา; เข้าสุดท้าย 16:30", "dur": 50, "q": "Matsumoto Castle", "steep": true, "last": "16:30", "close": "17:00", "ll": [36.2385, 137.969], "thai": true },
             { "id": "b", "n": "Matsumoto Alps Park (สนามเด็กเล่น/สวนสัตว์)", "type": "สวนสาธารณะ สนามเด็กเล่น สวนสัตว์เล็ก", "note": "ปิด 17:00 เข้าสุดท้าย 16:30 · รวมเวลาเดินทาง 70 นาที ชนกับคาเฟ่ 16:30 ให้เลือกตัดคาเฟ่", "dur": 70, "q": "Matsumoto Alps Park", "kids": true, "last": "16:30", "close": "17:00", "ll": [36.256, 137.933] }
           ] },
-        { "id": "d3s10", "time": "16:45", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
+        {"id": "d3s10", "time": "16:45", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Nakamachi Cafe", "type": "ซูเฟล่แพนเค้ก ในโกดังเก่าย่าน Nakamachi", "note": "", "dur": 30, "q": "Nakamachi Matsumoto cafe" },
             { "id": "b", "n": "Amijok", "type": "มัฟฟินโฮมเมด", "note": "", "dur": 30, "q": "Amijok Matsumoto" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
-        { "id": "d3s11", "time": "17:30", "kind": "hotel", "title": "เช็กอิน", "pick": "one", "def": ["a"], "ll": [36.236, 137.9715],
+        {"id": "d3s11", "time": "17:30", "kind": "hotel", "title": "เช็กอิน", "pick": "one", "def": ["a"], "ll": [36.236, 137.9715],
           "opts": [
             { "id": "a", "n": "The Celecton Matsumoto", "note": "", "dur": 30, "q": "The Celecton Matsumoto" }
           ] },
-        { "id": "d3s12", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["d"],
+        {"id": "d3s12", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["d"],
           "opts": [
             { "id": "a", "n": "Matsumoto Brewery Tap Room", "type": "คราฟต์เบียร์ท้องถิ่นในโกดังเก่า Nakamachi + กับแกล้ม", "note": "", "dur": 75, "q": "Matsumoto Brewery Tap Room" },
             { "id": "b", "n": "Izakaya Kura", "type": "อาหารพื้นเมืองชินชู ในโกดังโบราณ (kura)", "note": "แนะนำจอง", "dur": 75, "q": "Izakaya Kura Matsumoto", "reserve": true },
