@@ -256,6 +256,11 @@ body { padding: 24px; }
 @media (min-width: 821px) and (max-width: 1000px) {
 #list-view { grid-template-columns: repeat(2, 1fr); }
 }
+/* separate personal link, kept apart from the archive entries */
+.site-nav .nav-sep { color: var(--muted); margin: 0 4px; }
+.site-nav .side-link { color: var(--muted); white-space: nowrap; }
+@media (max-width: 480px) { .site-nav .nav-sep { display: none; } }
+.site-nav .side-link:hover { color: var(--ink); }
 </style>
 <link rel="stylesheet" href="assets/site-typography.css?v=20260928-3">
 </head>
@@ -265,6 +270,8 @@ body { padding: 24px; }
 <nav class="site-nav">
 <a href="index.html" class="active">Index</a>
 <a href="#info" id="info-link">Info</a>
+<span class="nav-sep" aria-hidden="true">|</span>
+<a href="japan-trip/index.html" class="side-link" title="Personal travel plan — separate from the archive">Japan Trip &rarr;</a>
 </nav>
 </header>
 <div class="intro">
