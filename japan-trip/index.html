@@ -127,7 +127,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <div class="tz">เวลาญี่ปุ่น (JST)</div>
     <div class="widgets">
       <div class="wtrip"><b id="dayn"></b><span id="route"></span><div class="pbar"><i id="pb"></i></div></div>
-      <button class="ring" id="late" aria-pressed="false" aria-label="สลับแผน 1 (ปกติ) / แผน 2 (ออกช้า 30–45 นาที)"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></button>
+      <button class="ring" id="late" aria-pressed="false" aria-label="สลับ Plan A (ปกติ) / Plan B (ออกช้า 30–45 นาที)"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></button>
     </div>
   </header>
   <div class="note top-note" id="topnote"></div>
@@ -510,7 +510,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('route').textContent=d.label;$('pb').style.width=(d.n/N*100)+'%';$('cnt').textContent=d.n+' / '+N;
     $('prev').disabled=cur===0;$('next-d').disabled=cur===N-1;
     const warn=d.weather.find(w=>w.s==='warn'),daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
-    if(late)$('topnote').innerHTML=ARR('sw')+' '+esc('แผนสอง (ออกช้า 30–45 นาที): '+base.late.notes.join(' / '));
+    if(late)$('topnote').innerHTML=ARR('sw')+' '+esc('Plan B (ออกช้า 30–45 นาที): '+base.late.notes.join(' / '));
     else $('topnote').innerHTML=ARR('sw')+' '+esc((daysTo>0?'อีก '+daysTo+' วันออกเดินทาง / ':'')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ'));
     $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
     $('endnote').innerHTML=ARR('se')+' '+esc('คืนนี้นอนที่ '+d.night);
@@ -526,8 +526,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const sl=d.slots.filter(s=>E.slotDur(s,sel)>0||s.kind==='flight'),m=E.mins(now.hm),today=now.date===d.date;
     const nx=today?sl.find(s=>E.mins(s.time)>m):sl[0],a=E.mins(sl[0].time),b=E.mins(sl[sl.length-1].time);
     $('arc').setAttribute('stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
-    const pl=trip.days[cur].late?'<i>แผน '+(lateOn[trip.days[cur].id]?2:1)+'</i>':'';   // tap the ring to switch plan 1 / 2
-    $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(today?'ต่อไป':'เริ่ม')+'</small>'+pl+'</div>':'<div><b>✓</b><small>จบวัน</small>'+pl+'</div>';
+    const pl=trip.days[cur].late?'<i>Plan '+(lateOn[trip.days[cur].id]?'B':'A')+'</i>':'';   // tap the ring to switch Plan A / Plan B
+    $('next').innerHTML=nx?'<div><small>'+(today?'Next':'Start')+'</small><b>'+nx.time+'</b>'+pl+'</div>':'<div><small>Done</small><b>✓</b>'+pl+'</div>';
   }
   /* move focus only for keyboard users: on iPhone, focusing an element scrolls the zoomed page to it */
   let kb=false;
