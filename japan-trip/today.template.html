@@ -105,6 +105,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .nav-link{font-size:13px;line-height:1.3;color:var(--mute)}
 .err:empty{display:none}   /* an empty block would still take a 20px gap */
 .links{display:flex;flex-direction:column;gap:2px}
+.emo{font-size:.78em;margin-left:2px;letter-spacing:1px}
+.key{font-size:13px;color:var(--mute);margin:-10px 0 0}
 .credit{font-size:11.5px;line-height:1.3;color:var(--mute);margin:-16px 0 0}
 
 .dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:28px 22px calc(14px + env(safe-area-inset-bottom));pointer-events:none;z-index:5;background:linear-gradient(rgba(236,236,236,0),var(--bg) 45%)}   /* text fades out under the controls instead of showing through */
@@ -130,6 +132,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <div class="note end-note" id="endnote"></div>
   <section class="litc" id="litc" hidden></section>
   <div class="err" id="err"></div>
+  <div class="key">🇹🇭 คนไทยไปเยอะ · 🧒 เหมาะกับเด็ก</div>
   <div class="links"><a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a><a class="nav-link" id="l-places" target="_blank" rel="noopener">แผนที่สถานที่ (My Maps) ↗</a><a class="nav-link" id="l-sheet" target="_blank" rel="noopener">ข้อมูลทริป (Google Sheet) ↗</a></div>
   {{HANDCREDIT}}
 </main>
@@ -203,7 +206,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const COLOR={meal:'food',cafe:'cafe',see:'see',arch:'arch',hotel:'stay',rest:'stay',shop:'shop',spa:'shop',refuel:'must',carreturn:'must',car:'must',drive:'move',nap:'move',transit:'move',move:'move',arrival:'move',flight:'must'};
   const VERB=s=>({meal:'กิน'+s.title.replace(/\s*\+.*$/,'')+'ที่',cafe:'แวะกินกาแฟที่',drive:'ขับรถไป',nap:'ขับรถไป',rest:'แวะพักที่',see:'ไปเที่ยว',arch:'ไปดูงานสถาปัตย์',
     hotel:/เช็กอิน/.test(s.title)?'เช็กอินที่':'กลับไปพักที่',shop:'ช้อปที่',refuel:'เติมน้ำมันที่',car:'',carreturn:'คืนรถที่',spa:'แช่ออนเซ็นที่',transit:'',move:'นั่ง',arrival:'',flight:''}[s.kind]||'');
-  const FLAG=(o,s)=>[s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น',o.avoid].filter(Boolean);   // avoid: a plain 'don't go' reason
+  const FLAG=(o,s)=>[s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น',o.thai&&'🇹🇭 คนไทยไปเยอะ ไปเช้าหรือเลี่ยงช่วงคนแน่น',o.avoid].filter(Boolean);   // avoid: a plain 'don't go' reason
   const link=o=>o.ig?{href:'https://www.instagram.com/'+encodeURIComponent(o.ig.replace(/^@/,''))+'/',ig:true}:{href:MV.searchUrl(o.q||o.n),ig:false};
   const shortName=n=>n.replace(/\s*\(([^)]*)\)\s*$/,'').replace(/^คืนรถ\s+/,'');
   const label=(s,o)=>s.kind==='drive'||s.kind==='nap'?shortName(o.pin||o.n).replace(/^.*→\s*/,''):shortName(o.n);
@@ -216,7 +219,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   }
   function word(s,o,withMark){
     const L=link(o);
-    return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+
+    const emo=(o.thai?'🇹🇭':'')+(o.kids?'🧒':'');   // Thai crowds · good for the 4-year-old
+    return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+(emo?'<span class="emo" aria-label="'+[o.thai&&'คนไทยไปเยอะ',o.kids&&'เหมาะกับเด็ก'].filter(Boolean).join(', ')+'">'+emo+'</span>':'')+
       (withMark?mark(s,notesOf(s)):'');
   }
   const notesOf=s=>[...new Set(E.selected(s,sel).filter(o=>!o.skip).flatMap(o=>FLAG(o,s)))];
@@ -248,7 +252,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const WD=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
   function detail(o,s){
     const nt=o.note||'',has=x=>nt.includes(x);   // skip facts the note already says
-    const info=[o.type,nt,o.last&&!has(o.last)&&'เข้าสุดท้าย '+o.last,o.close&&!o.last&&!has(o.close)&&'ปิด '+o.close,o.closedDow&&!has('ปิดวัน')&&'ปิดวัน'+o.closedDow.map(d=>WD[d]).join('/'),o.km&&'ราว '+o.km+' กม.',o.kids&&'เหมาะกับเด็ก',o.arch&&s.kind!=='arch'&&'งานสถาปัตย์'].filter(Boolean);
+    const info=[o.type,nt,o.last&&!has(o.last)&&'เข้าสุดท้าย '+o.last,o.close&&!o.last&&!has(o.close)&&'ปิด '+o.close,o.closedDow&&!has('ปิดวัน')&&'ปิดวัน'+o.closedDow.map(d=>WD[d]).join('/'),o.km&&'ราว '+o.km+' กม.',o.kids&&'🧒 เหมาะกับเด็ก',o.arch&&s.kind!=='arch'&&'งานสถาปัตย์'].filter(Boolean);
     const warn=FLAG(o,s).filter(w=>!has(w.replace('ก่อน','')));
     return '<span class="det">'+info.map(esc).join(' · ')+(warn.length?'<span class="wr">! '+warn.map(esc).join(' · ')+'</span>':'')+'</span>';
   }
