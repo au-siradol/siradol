@@ -181,37 +181,39 @@ test('stops: pin display-name override', () => {
   assert.equal(o.pin, 'The Celecton Matsumoto');
   assert.equal(M.stopName(M.stops(trip, trip.days[4], {}).pop()), 'The Celecton Matsumoto');
 });
-test('every day renders a finite SVG with one pin per stop and a Maps query per stop', () => {
+test('Google Maps: route embed goes A → … → last by place name, driving', () => {
   for (const d of trip.days) {
-    const r = M.render(trip, d, {});
-    assert.ok(r.svg.startsWith('<svg') && !/NaN|undefined|Infinity/.test(r.svg), 'D' + d.n);
-    assert.equal((r.svg.match(/class="m-pin( m-hotel)?"/g) || []).length, r.stops.length, 'D' + d.n);
-    r.stops.forEach(s => assert.ok(s.items[0].q, 'D' + d.n + ' ' + s.letter));
+    const st = M.stops(trip, d, {}), u = new URL(M.routeEmbed(st));
+    assert.equal(u.hostname, 'maps.google.com');
+    assert.equal(u.searchParams.get('output'), 'embed', 'D' + d.n);
+    if (M.queries(st).length > 1) {
+      assert.equal(u.searchParams.get('saddr'), M.query(st[0]));
+      assert.equal(u.searchParams.get('dirflg'), 'd');
+      assert.equal(u.searchParams.get('daddr').split(' to:').pop(), M.queries(st).pop());
+    } else assert.equal(u.searchParams.get('q'), M.query(st[0]));
   }
 });
-test('every stop falls inside the canvas margins', () => {
-  for (const d of trip.days) {
-    const st = M.stops(trip, d, {}), v = M.makeView(st);
-    st.forEach(s => {
-      const [x, y] = v.proj(s.ll);
-      assert.ok(x >= 55 && x <= M.W - 55 && y >= 55 && y <= M.H - 55, `D${d.n} ${s.letter} at ${x | 0},${y | 0}`);
-    });
-  }
+test('Google Maps: directions link uses the official Maps URLs API with waypoints', () => {
+  const st = M.stops(trip, trip.days[7], {}), q = M.queries(st), u = new URL(M.dirUrl(st));
+  assert.equal(u.origin + u.pathname, 'https://www.google.com/maps/dir/');
+  assert.equal(u.searchParams.get('api'), '1');
+  assert.equal(u.searchParams.get('origin'), q[0]);
+  assert.equal(u.searchParams.get('destination'), q[q.length - 1]);
+  assert.deepEqual(u.searchParams.get('waypoints').split('|'), q.slice(1, -1));
+  assert.equal(u.searchParams.get('travelmode'), 'driving');
 });
-test('selecting every option on every day still renders', () => {
-  for (const d of trip.days) {
-    const all = Object.fromEntries(d.slots.map(s => [s.id, s.opts.map(o => o.id)]));
-    assert.ok(M.render(trip, d, all).svg.length > 1000);
-  }
+test('Google Maps: waypoints are capped; single-stop days fall back to a search link', () => {
+  const many = Array.from({ length: 14 }, (_, i) => ({ items: [{ q: 'P' + i }] }));
+  assert.ok(new URL(M.dirUrl(many)).searchParams.get('waypoints').split('|').length <= M.MAX_WAYPOINTS);
+  assert.ok(M.dirUrl(M.stops(trip, trip.days[0], {})).includes('/maps/search/'));
+});
+test('Google Maps: consecutive identical places are not repeated', () => {
+  const q = M.queries([{ items: [{ q: 'X' }] }, { items: [{ q: 'X' }] }, { items: [{ q: 'Y' }] }]);
+  assert.deepEqual(q, ['X', 'Y']);
 });
 test('validate() rejects a coordinate outside Japan (lat/lng swapped)', () => {
   const t = JSON.parse(JSON.stringify(trip)); t.days[1].slots[2].ll = [139.4, 35.4];
   assert.ok(E.validate(t).some(p => /ll/.test(p)));
-});
-test('sea polygon: Tokyo Bay is water; Matsumoto and Ebina are land', () => {
-  assert.equal(M.inPoly([35.45, 139.85], M.SEA_POLY), true);
-  assert.equal(M.inPoly([36.24, 137.97], M.SEA_POLY), false);
-  assert.equal(M.inPoly([35.44, 139.39], M.SEA_POLY), false);
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);
