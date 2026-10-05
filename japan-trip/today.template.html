@@ -39,8 +39,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .widgets{display:flex;align-items:center;gap:18px;margin-top:18px}
 .wtrip{flex:1;min-width:0;text-align:left}
 .wtrip b{font-size:14px}
-.late{margin-left:8px;font-size:12px;color:var(--red);border:1px solid rgba(192,57,47,.45);border-radius:999px;padding:2px 9px;vertical-align:1px}
-.late[aria-pressed=true]{background:var(--red);color:#fff;border-color:var(--red)}.wtrip span{display:block;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ring:disabled{cursor:default}
+.ring .v i{display:block;font-style:normal;font-size:9.5px;color:var(--mute)}
+.ring[aria-pressed=true] .a{stroke:var(--red)}.ring[aria-pressed=true] .v i,.ring[aria-pressed=true] .v b{color:var(--red)}.wtrip span{display:block;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pbar{height:6px;border-radius:3px;background:rgba(0,0,0,.1);margin-top:6px;overflow:hidden}.pbar i{display:block;height:100%;background:var(--ink);border-radius:3px}
 .ring{position:relative;width:62px;height:62px;flex:0 0 auto}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:4}.ring .t{stroke:rgba(0,0,0,.1)}.ring .a{stroke:var(--ink);stroke-linecap:round}
@@ -125,8 +126,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <div class="clock" id="clock">--:--</div>
     <div class="tz">เวลาญี่ปุ่น (JST)</div>
     <div class="widgets">
-      <div class="wtrip"><b id="dayn"></b><button class="late" id="late" aria-pressed="false" hidden>แผนสอง · ออกช้า</button><span id="route"></span><div class="pbar"><i id="pb"></i></div></div>
-      <div class="ring" aria-hidden="true"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></div>
+      <div class="wtrip"><b id="dayn"></b><span id="route"></span><div class="pbar"><i id="pb"></i></div></div>
+      <button class="ring" id="late" aria-pressed="false" aria-label="สลับแผน 1 (ปกติ) / แผน 2 (ออกช้า 30–45 นาที)"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></button>
     </div>
   </header>
   <div class="note top-note" id="topnote"></div>
@@ -281,7 +282,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const view=()=>{const d=trip.days[cur];return (lateOn[d.id]&&E.lateDay(d))||d};
   function render(){
     const base=trip.days[cur],d=view(),late=!!lateOn[base.id]&&!!base.late,p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
-    $('late').hidden=!base.late;$('late').setAttribute('aria-pressed',late);
+    $('late').disabled=!base.late;$('late').setAttribute('aria-pressed',late);
     $('date').textContent='วัน'+DOW[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1];
     $('dayn').textContent='วันที่ '+d.n+' / '+N+(isToday?' · วันนี้':'');
     $('route').textContent=d.label;$('pb').style.width=(d.n/N*100)+'%';$('cnt').textContent=d.n+' / '+N;
@@ -303,7 +304,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const sl=d.slots.filter(s=>E.slotDur(s,sel)>0||s.kind==='flight'),m=E.mins(now.hm),today=now.date===d.date;
     const nx=today?sl.find(s=>E.mins(s.time)>m):sl[0],a=E.mins(sl[0].time),b=E.mins(sl[sl.length-1].time);
     $('arc').setAttribute('stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
-    $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(today?'ต่อไป':'เริ่ม')+'</small></div>':'<div><b>✓</b><small>จบวัน</small></div>';
+    const pl=trip.days[cur].late?'<i>แผน '+(lateOn[trip.days[cur].id]?2:1)+'</i>':'';   // tap the ring to switch plan 1 / 2
+    $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(today?'ต่อไป':'เริ่ม')+'</small>'+pl+'</div>':'<div><b>✓</b><small>จบวัน</small>'+pl+'</div>';
   }
   /* move focus only for keyboard users: on iPhone, focusing an element scrolls the zoomed page to it */
   let kb=false;
