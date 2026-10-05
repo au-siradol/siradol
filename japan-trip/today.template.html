@@ -70,6 +70,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet .in{width:100%;max-width:440px;background:var(--bg);border-radius:20px;padding:16px 20px 18px;box-shadow:0 -6px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:10px}
 .sheet h3{margin:0;font-size:15px;font-weight:600}.sheet h3 span{color:var(--mute);font-weight:500;margin-right:6px}
 .sheet .now{font-size:14px;color:var(--mute)}
+.sheet .lbl{font-size:12px;letter-spacing:.04em;color:var(--mute)}
+.sheet .cur b{font-size:16px;font-weight:600;color:var(--ink)}
+.sheet .det{display:block;font:400 14px/1.45 var(--font);font-style:normal;color:var(--mute);margin-top:3px}
+.sheet .wr{display:block;color:var(--red);margin-top:2px}
+.sheet .notes div{font-size:calc(var(--red-size) - 2px);line-height:1.2}
 .sheet ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
 .sheet ol button{width:100%;text-align:left;font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 2px);padding:8px 0;border-bottom:1px dashed rgba(192,57,47,.3)}
 .sheet ol button[aria-pressed=true]::after{content:"  ✓";color:var(--ink)}
@@ -189,8 +194,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   // literature display: 'a' inline under the sentence · 'b' a red 本 mark that opens the sheet · 'c' a card after the day · '' off
   let LIT=(new URLSearchParams(location.search).get('lit'))??(trip.meta.lit||'');
   window.setLit=m=>{LIT=m;render()};
-  const LENS=[['short','สั้น'],['medium','กลาง'],['long','ยาว']];
-  let litLen=ls.get('japan2569.litlen2')||'long';
+  const litLen='long';   // the book sheet shows the long passage only
   const lev=(L,k)=>(L.levels&&(L.levels[k]||L.levels.short))||{ja:L.ja,th:L.th,kind:'แปลจากต้นฉบับ'};
   const para=s=>esc(s).replace(/\n/g,'<br>');
   const litBody=L=>{const v=lev(L,'short');return (v.ja?'<span class="ja" lang="ja">'+esc(v.ja)+'</span>':'')+'<span class="th">'+esc(v.th)+'</span>'};
@@ -230,19 +234,29 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const s=trip.days[cur].slots.find(x=>x.id===id);if(!s)return;popSlot=s;popFrom=from;
     const chosen=E.selected(s,sel);
     $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));
-    $('sh-now').textContent='ตอนนี้: '+(chosen.filter(o=>!o.skip).map(o=>shortName(o.n)).join(' + ')||'ข้าม');
+    const real=chosen.filter(o=>!o.skip);
+    $('sh-now').innerHTML=s.pick==='one'?'<div class="cur"><span class="lbl">ตอนนี้</span> <b>'+(real.length?esc(shortName(real[0].n)):'ข้าม')+'</b>'+(real.length?detail(real[0],s):'')+'</div>':'<span class="lbl">เลือกได้หลายอย่าง</span>';
     const list=s.pick==='one'?s.opts.filter(o=>!chosen.includes(o)):s.opts;
-    $('sh-opts').innerHTML=list.map((o,i)=>'<li><button data-s="'+s.id+'" data-o="'+o.id+'"'+(s.pick==='any'?' aria-pressed="'+chosen.includes(o)+'"':'')+'>'+(i+1)+') '+esc(o.skip?'ข้าม':shortName(o.n))+'</button></li>').join('');
-    const nt=notesOf(s);$('sh-notes').innerHTML=nt.map(x=>'<div>! '+esc(x)+'</div>').join('');
+    $('sh-opts').innerHTML=list.map((o,i)=>'<li><button data-s="'+s.id+'" data-o="'+o.id+'"'+(s.pick==='any'?' aria-pressed="'+chosen.includes(o)+'"':'')+'>'+(i+1)+') '+esc(o.skip?'ข้าม':shortName(o.n))+(o.skip?'':detail(o,s))+'</button></li>').join('');
+    // warnings from the planner for this stop (time, closing days, sunset …)
+    const iss=E.analyze(trip,trip.days[cur],sel).filter(x=>x.slotId===s.id&&x.level!=='ok'&&x.level!=='info');
+    $('sh-notes').innerHTML=iss.map(x=>'<div>! '+esc(x.msg)+'</div>').join('');
     showSheet();
     if(kb)($('sh-opts').querySelector('button')||$('sh-x')).focus({preventScroll:true});
   }
+  /* what a choice is, in plain words: type · note · hours · distance, then cautions in red */
+  const WD=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+  function detail(o,s){
+    const nt=o.note||'',has=x=>nt.includes(x);   // skip facts the note already says
+    const info=[o.type,nt,o.last&&!has(o.last)&&'เข้าสุดท้าย '+o.last,o.close&&!o.last&&!has(o.close)&&'ปิด '+o.close,o.closedDow&&!has('ปิดวัน')&&'ปิดวัน'+o.closedDow.map(d=>WD[d]).join('/'),o.km&&'ราว '+o.km+' กม.',o.kids&&'เหมาะกับเด็ก',o.arch&&s.kind!=='arch'&&'งานสถาปัตย์'].filter(Boolean);
+    const warn=FLAG(o,s).filter(w=>!has(w.replace('ก่อน','')));
+    return '<span class="det">'+info.map(esc).join(' · ')+(warn.length?'<span class="wr">! '+warn.map(esc).join(' · ')+'</span>':'')+'</span>';
+  }
   function openLit(id,from){
     const s=trip.days[cur].slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;if(from)popFrom=from;
-    const v=lev(L,litLen),hasLv=!!L.levels;
+    const v=lev(L,litLen);
     $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));$('sh-now').textContent='ทิวทัศน์จากหนังสือ';
-    $('sh-opts').innerHTML=(hasLv?'<li><div class="lens" role="group" aria-label="ความยาวข้อความ">'+LENS.map(([k,n])=>'<button data-len="'+k+'" data-for="'+s.id+'" aria-pressed="'+(k===litLen)+'">'+n+'</button>').join('')+'</div></li>':'')+
-      '<li class="lit"><div class="th">'+para(v.th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>';
+    $('sh-opts').innerHTML='<li class="lit"><div class="th">'+para(v.th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>';
     $('sh-notes').innerHTML='';showSheet();
     if(kb)($('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x')).focus({preventScroll:true});
   }
@@ -294,7 +308,6 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     if(e.target.closest('#fzup')){fontStep(1);return}
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
     const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
-    const ln=e.target.closest('[data-len]');if(ln){litLen=ln.dataset.len;ls.set('japan2569.litlen2',litLen);openLit(ln.dataset.for,null);return}
     if(e.target.closest('#sh-x')||e.target.id==='sheetbg'){closeSheet();return}
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);

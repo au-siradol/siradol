@@ -48,16 +48,16 @@
           ] },
         { "id": "d1s3", "time": "20:00", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Grand Aile (บุฟเฟต์)", "note": "ไม่ต้องรอคิว เหมาะกับเด็กและผู้สูงอายุ", "dur": 75, "q": "Grand Aile Villa Fontaine Haneda buffet", "kids": true },
-            { "id": "b", "n": "Tsurutontan Haneda (อุด้ง)", "note": "เมนูนุ่มทานง่าย แต่ช่วงเย็นมักมีคิว", "dur": 75, "q": "Tsurutontan Haneda Airport Garden", "queue": true },
-            { "id": "c", "n": "Katsusen Edo Koji", "note": "ทงคัตสึ นั่งสบาย", "dur": 75, "q": "Katsusen Haneda Airport Garden" },
-            { "id": "d", "n": "Haneda Sky Brewing", "note": "คราฟต์เบียร์ + อาหารเรียบง่าย", "dur": 75, "q": "Haneda Sky Brewing" },
-            { "id": "e", "n": "Suginoko-Haneda Food Court", "note": "ฟู้ดคอร์ทเลือกได้ตามคน", "dur": 60, "q": "Haneda Airport Garden food court" }
+            { "id": "a", "n": "Grand Aile (บุฟเฟต์)", "type": "บุฟเฟต์นานาชาติในโรงแรม", "note": "ไม่ต้องรอคิว เหมาะกับเด็กและผู้สูงอายุ", "dur": 75, "q": "Grand Aile Villa Fontaine Haneda buffet", "kids": true },
+            { "id": "b", "n": "Tsurutontan Haneda (อุด้ง)", "type": "อุด้ง", "note": "เมนูนุ่มทานง่าย แต่ช่วงเย็นมักมีคิว", "dur": 75, "q": "Tsurutontan Haneda Airport Garden", "queue": true },
+            { "id": "c", "n": "Katsusen Edo Koji", "type": "ทงคัตสึ (หมูชุบเกล็ดขนมปังทอด)", "note": "ทงคัตสึ นั่งสบาย", "dur": 75, "q": "Katsusen Haneda Airport Garden" },
+            { "id": "d", "n": "Haneda Sky Brewing", "type": "คราฟต์เบียร์ + อาหารจานง่าย", "note": "คราฟต์เบียร์ + อาหารเรียบง่าย", "dur": 75, "q": "Haneda Sky Brewing" },
+            { "id": "e", "n": "Suginoko-Haneda Food Court", "type": "ฟู้ดคอร์ท หลายร้านให้เลือก", "note": "ฟู้ดคอร์ทเลือกได้ตามคน", "dur": 60, "q": "Haneda Airport Garden food court" }
           ] },
         { "id": "d1s4", "time": "21:15", "kind": "arch", "title": "ชมสถาปัตยกรรม (ถ้ายังมีแรง — ปกติข้าม)", "pick": "any", "def": ["c"],
           "opts": [
-            { "id": "a", "n": "สถาปัตยกรรม Terminal 3", "note": "เดินสั้นๆ ในอาคาร พื้นเรียบ", "dur": 30, "q": "Haneda Airport Terminal 3 architecture", "arch": true, "ll": [35.5494, 139.7845] },
-            { "id": "b", "n": "Observation Deck T3", "note": "ลมอาจแรงและเย็นตอนกลางคืน เด็กอาจง่วง", "dur": 30, "q": "Haneda Airport Terminal 3 Observation Deck", "cold": true, "ll": [35.5498, 139.7867] },
+            { "id": "a", "n": "สถาปัตยกรรม Terminal 3", "type": "อาคารผู้โดยสาร", "note": "เดินสั้นๆ ในอาคาร พื้นเรียบ", "dur": 30, "q": "Haneda Airport Terminal 3 architecture", "arch": true, "ll": [35.5494, 139.7845] },
+            { "id": "b", "n": "Observation Deck T3", "type": "จุดชมวิวเครื่องบิน", "note": "ลมอาจแรงและเย็นตอนกลางคืน เด็กอาจง่วง", "dur": 30, "q": "Haneda Airport Terminal 3 Observation Deck", "cold": true, "ll": [35.5498, 139.7867] },
             { "id": "c", "n": "ข้าม — พักผ่อน", "note": "", "dur": 0, "q": "", "skip": true }
           ] }
       ] },
@@ -71,7 +71,7 @@
       "slots": [
         { "id": "d2s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Bakery Coffee Miyabi", "note": "", "dur": 45, "q": "Bakery Coffee Miyabi Haneda" }
+            { "id": "a", "n": "Bakery Coffee Miyabi", "type": "เบเกอรี่ + กาแฟ", "note": "", "dur": 45, "q": "Bakery Coffee Miyabi Haneda" }
           ] },
         { "id": "d2s2", "time": "09:15", "kind": "car", "title": "รับรถ Nissan Serena", "pick": "one", "def": ["a"], "ll": [35.5485, 139.784],
           "opts": [
@@ -91,9 +91,9 @@
           ] },
         { "id": "d2s7", "time": "12:30", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Houtou Fudou (Takeshi Hosaka)", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:20 จึงควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Kawaguchiko", "queue": true, "arch": true, "reserve": true },
+            { "id": "a", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) อาหารท้องถิ่นยามานาชิ", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:20 จึงควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Kawaguchiko", "queue": true, "arch": true, "reserve": true },
             { "id": "b", "n": "Lake Forest — Hana no Miyako", "note": "นั่งสบาย", "dur": 45, "q": "Hana no Miyako Kawaguchiko restaurant" },
-            { "id": "c", "n": "Tempura Ninja", "note": "", "dur": 45, "q": "Tempura Ninja Kawaguchiko" }
+            { "id": "c", "n": "Tempura Ninja", "type": "เทมปุระ", "note": "", "dur": 45, "q": "Tempura Ninja Kawaguchiko" }
           ] },
         { "id": "d2s8", "time": "13:15", "kind": "nap", "title": "ขับเล่นริมทะเลสาบ / เด็กนอน", "pick": "one", "def": ["a"],
           "opts": [
@@ -101,14 +101,14 @@
           ] },
         { "id": "d2s6", "time": "14:15", "kind": "arch", "title": "จุดชม (หลังเด็กตื่น)", "pick": "any", "def": ["b"], "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"short": {"th": "ฟูจิตั้งอยู่กลางภาพ เบื้องล่างคือทะเลสาบคาวากุจิโกะ แผ่ขาวและเยือกเย็น"}, "medium": {"th": "ฟูจิตั้งอยู่กลางภาพ เบื้องล่างคือทะเลสาบคาวากุจิโกะ แผ่ขาวและเยือกเย็น ขุนเขาใกล้ๆ หมอบนิ่งอยู่สองข้างราวกับแขนเสื้อที่โอบทะเลสาบไว้ ภาพลงตัวจนเหมือนฉากวาดบนเวที"}, "long": {"th": "ฟูจิตั้งอยู่กลางภาพ เบื้องล่างคือทะเลสาบคาวากุจิโกะ แผ่ขาวและเยือกเย็น ขุนเขาใกล้ๆ หมอบนิ่งอยู่สองข้างราวกับแขนเสื้อที่โอบทะเลสาบไว้ ภาพลงตัวจนเหมือนฉากวาดบนเวที\nแต่ยิ่งอยู่นาน ฟูจิยิ่งเปลี่ยนไปตามแสงและฤดู บางเช้าหิมะบนยอดขาวจัดตัดฟ้าใส บางคืนภูเขาสีน้ำเงินจางๆ ใต้แสงจันทร์ และริมทางข้ามช่องเขา ดอกอีฟนิงพริมโรสสีเหลืองดอกเล็กๆ ยืนตรงอยู่หน้าภูเขาสูง 3,778 เมตรอย่างไม่หวั่นไหว — ฟูจินั้น เข้ากันดีนักกับดอกอีฟนิงพริมโรส"}}},
           "opts": [
-            { "id": "a", "n": "Oishi Park", "note": "ทางเลียบทะเลสาบราบ มีดอกโคเคียช่วงปลาย ต.ค.", "dur": 30, "q": "Oishi Park Kawaguchiko", "kids": true, "ll": [35.5228, 138.7594] },
-            { "id": "b", "n": "Mt. Fuji World Heritage Centre (Shigeru Ban)", "note": "สถาปัตยกรรมกรวยไม้ของ Shigeru Ban", "dur": 30, "q": "Mt. Fuji World Heritage Centre Yamanashi", "arch": true, "ll": [35.4844, 138.7639] },
-            { "id": "c", "n": "Saiko Nenba", "note": "ชุมชนบ้านฟางเก่า", "dur": 45, "q": "Saiko Iyashi no Sato Nenba", "ll": [35.5012, 138.6857] }
+            { "id": "a", "n": "Oishi Park", "type": "สวนริมทะเลสาบ", "note": "ทางเลียบทะเลสาบราบ มีดอกโคเคียช่วงปลาย ต.ค.", "dur": 30, "q": "Oishi Park Kawaguchiko", "kids": true, "ll": [35.5228, 138.7594] },
+            { "id": "b", "n": "Mt. Fuji World Heritage Centre (Shigeru Ban)", "type": "ศูนย์ข้อมูล / พิพิธภัณฑ์", "note": "สถาปัตยกรรมกรวยไม้ของ Shigeru Ban", "dur": 30, "q": "Mt. Fuji World Heritage Centre Yamanashi", "arch": true, "ll": [35.4844, 138.7639] },
+            { "id": "c", "n": "Saiko Nenba", "type": "หมู่บ้านบ้านหลังคาฟางเก่า", "note": "ชุมชนบ้านฟางเก่า", "dur": 45, "q": "Saiko Iyashi no Sato Nenba", "ll": [35.5012, 138.6857] }
           ] },
         { "id": "d2s9", "time": "14:45", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Brand New Day", "note": "", "dur": 45, "q": "Brand New Day cafe Kawaguchiko" },
-            { "id": "b", "n": "Cisco / Lake Bake", "note": "", "dur": 45, "q": "Lake Bake Kawaguchiko" },
+            { "id": "a", "n": "Brand New Day", "type": "คาเฟ่", "note": "", "dur": 45, "q": "Brand New Day cafe Kawaguchiko" },
+            { "id": "b", "n": "Cisco / Lake Bake", "type": "เบเกอรี่ / คาเฟ่ริมทะเลสาบ", "note": "", "dur": 45, "q": "Lake Bake Kawaguchiko" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d2s10", "time": "16:00", "kind": "hotel", "title": "เช็กอินโรงแรม", "pick": "one", "def": ["a"], "ll": [35.475, 138.795],
@@ -117,9 +117,9 @@
           ] },
         { "id": "d2s11", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Restaurant Sylvans", "note": "", "dur": 75, "q": "Restaurant Sylvans Kawaguchiko" },
-            { "id": "b", "n": "Sanrokuen", "note": "", "dur": 75, "q": "Sanrokuen Kawaguchiko" },
-            { "id": "c", "n": "Kosaku", "note": "โฮโตอ ทานง่าย", "dur": 75, "q": "Kosaku Kawaguchiko houtou" }
+            { "id": "a", "n": "Restaurant Sylvans", "type": "ร้านของโรงเบียร์ Fujizakura Heights · อาหารตะวันตก", "note": "", "dur": 75, "q": "Restaurant Sylvans Kawaguchiko" },
+            { "id": "b", "n": "Sanrokuen", "type": "ปิ้งย่างบนเตาถ่านแบบอิโรริ", "note": "", "dur": 75, "q": "Sanrokuen Kawaguchiko" },
+            { "id": "c", "n": "Kosaku", "type": "โฮโต", "note": "โฮโตอ ทานง่าย", "dur": 75, "q": "Kosaku Kawaguchiko houtou" }
           ] }
       ] },
     { "id": "d3", "n": 3, "dow": 6, "date": "2026-10-17", "label": "Kawaguchiko → Matsumoto",
@@ -132,22 +132,22 @@
       "slots": [
         { "id": "d3s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "อาหารเช้าที่โรงแรม", "note": "", "dur": 60, "q": "Fuji Grand Villa TOKI Kawaguchiko" }
+            { "id": "a", "n": "อาหารเช้าที่โรงแรม", "type": "อาหารเช้าโรงแรม", "note": "", "dur": 60, "q": "Fuji Grand Villa TOKI Kawaguchiko" }
           ] },
         { "id": "d3s2", "time": "09:30", "kind": "cafe", "title": "กาแฟ", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "FabCafe Fuji", "note": "", "dur": 40, "q": "FabCafe Fuji Kawaguchiko" },
-            { "id": "b", "n": "Cisco Cafe", "note": "", "dur": 40, "q": "Cisco cafe Kawaguchiko" },
+            { "id": "a", "n": "FabCafe Fuji", "type": "คาเฟ่", "note": "", "dur": 40, "q": "FabCafe Fuji Kawaguchiko" },
+            { "id": "b", "n": "Cisco Cafe", "type": "คาเฟ่", "note": "", "dur": 40, "q": "Cisco cafe Kawaguchiko" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d3s3", "time": "10:30", "kind": "see", "title": "ชมวิว", "pick": "one", "def": ["a"], "ll": [35.5057, 138.762],
           "opts": [
-            { "id": "a", "n": "Yagizaki Park", "note": "ทางราบริมทะเลสาบ ชมภูเขาไฟฟูจิ", "dur": 45, "q": "Yagizaki Park Kawaguchiko", "kids": true }
+            { "id": "a", "n": "Yagizaki Park", "type": "สวนริมทะเลสาบ", "note": "ทางราบริมทะเลสาบ ชมภูเขาไฟฟูจิ", "dur": 45, "q": "Yagizaki Park Kawaguchiko", "kids": true }
           ] },
         { "id": "d3s4", "time": "11:30", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Kosaku", "note": "", "dur": 60, "q": "Kosaku Kawaguchiko houtou" },
-            { "id": "b", "n": "ร้านริมทะเลสาบ", "note": "", "dur": 60, "q": "restaurant Lake Kawaguchiko lakeside" }
+            { "id": "a", "n": "Kosaku", "type": "โฮโต", "note": "", "dur": 60, "q": "Kosaku Kawaguchiko houtou" },
+            { "id": "b", "n": "ร้านริมทะเลสาบ", "type": "เลือกร้านริมทะเลสาบหน้างาน", "note": "", "dur": 60, "q": "restaurant Lake Kawaguchiko lakeside" }
           ] },
         { "id": "d3s5", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09], "lit": {"who": "โฮริ ทัตสึโอะ", "work": "ลมพัดมาแล้ว (風立ちぬ)", "levels": {"short": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา"}, "medium": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน"}, "long": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน\nไร่นาสีดินแดงลาดลงไปสุดตา ในวันที่ฟ้าโปร่ง เหนือดงสนที่ยืนเรียงรายไม่สิ้นสุด เทือกแอลป์ใต้กับแนวเขาแยกอีกสองสามแนวผลุบๆ โผล่ๆ อยู่ในเมฆที่ภูเขาก่อขึ้นเอง ตั้งแต่ทิศใต้ไปจนทิศตะวันตก"}}},
           "opts": [
@@ -163,17 +163,17 @@
           ] },
         { "id": "d3s8", "time": "15:00", "kind": "arch", "title": "สถาปัตยกรรม Toyo Ito", "pick": "one", "def": ["a"], "ll": [36.2288, 137.9707],
           "opts": [
-            { "id": "a", "n": "Matsumoto Performing Arts Centre (Toyo Ito)", "note": "ชมภายนอก/ล็อบบี้", "dur": 30, "q": "Matsumoto Performing Arts Centre", "arch": true }
+            { "id": "a", "n": "Matsumoto Performing Arts Centre (Toyo Ito)", "type": "โรงละคร", "note": "ชมภายนอก/ล็อบบี้", "dur": 30, "q": "Matsumoto Performing Arts Centre", "arch": true }
           ] },
         { "id": "d3s9", "time": "15:40", "kind": "see", "title": "เลือก 1: ปราสาท หรือ Alps Park", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Matsumoto Castle — เดินรอบสวน/คูน้ำ", "note": "ข้ามบันได 61° ด้านใน ผู้ที่อยากเข้าให้ผู้ใหญ่คนอื่นพา; เข้าสุดท้าย 16:30", "dur": 50, "q": "Matsumoto Castle", "steep": true, "last": "16:30", "close": "17:00", "ll": [36.2385, 137.969] },
-            { "id": "b", "n": "Matsumoto Alps Park (สนามเด็กเล่น/สวนสัตว์)", "note": "ปิด 17:00 เข้าสุดท้าย 16:30 · รวมเวลาเดินทาง 70 นาที ชนกับคาเฟ่ 16:30 ให้เลือกตัดคาเฟ่", "dur": 70, "q": "Matsumoto Alps Park", "kids": true, "last": "16:30", "close": "17:00", "ll": [36.256, 137.933] }
+            { "id": "a", "n": "Matsumoto Castle — เดินรอบสวน/คูน้ำ", "type": "ปราสาท (สมบัติชาติ)", "note": "ข้ามบันได 61° ด้านใน ผู้ที่อยากเข้าให้ผู้ใหญ่คนอื่นพา; เข้าสุดท้าย 16:30", "dur": 50, "q": "Matsumoto Castle", "steep": true, "last": "16:30", "close": "17:00", "ll": [36.2385, 137.969] },
+            { "id": "b", "n": "Matsumoto Alps Park (สนามเด็กเล่น/สวนสัตว์)", "type": "สวนสาธารณะ สนามเด็กเล่น สวนสัตว์เล็ก", "note": "ปิด 17:00 เข้าสุดท้าย 16:30 · รวมเวลาเดินทาง 70 นาที ชนกับคาเฟ่ 16:30 ให้เลือกตัดคาเฟ่", "dur": 70, "q": "Matsumoto Alps Park", "kids": true, "last": "16:30", "close": "17:00", "ll": [36.256, 137.933] }
           ] },
         { "id": "d3s10", "time": "16:30", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Nakamachi Cafe", "note": "", "dur": 30, "q": "Nakamachi Matsumoto cafe" },
-            { "id": "b", "n": "Amijok", "note": "", "dur": 30, "q": "Amijok Matsumoto" },
+            { "id": "a", "n": "Nakamachi Cafe", "type": "คาเฟ่ในย่านโกดังเก่า Nakamachi", "note": "", "dur": 30, "q": "Nakamachi Matsumoto cafe" },
+            { "id": "b", "n": "Amijok", "type": "คาเฟ่", "note": "", "dur": 30, "q": "Amijok Matsumoto" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d3s11", "time": "17:30", "kind": "hotel", "title": "เช็กอิน", "pick": "one", "def": ["a"], "ll": [36.236, 137.9715],
@@ -182,10 +182,10 @@
           ] },
         { "id": "d3s12", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["d"],
           "opts": [
-            { "id": "a", "n": "Matsumoto Brewery Tap Room", "note": "", "dur": 75, "q": "Matsumoto Brewery Tap Room" },
-            { "id": "b", "n": "Izakaya Kura", "note": "", "dur": 75, "q": "Izakaya Kura Matsumoto" },
-            { "id": "c", "n": "Shabu-shabu Onyasai", "note": "มีน้ำซุปสำหรับเด็ก", "dur": 75, "q": "Onyasai Shabu-shabu Matsumoto", "kids": true },
-            { "id": "d", "n": "Sushiro (ซูชิสายพาน)", "note": "ใช้แอปจองคิวล่วงหน้า", "dur": 60, "q": "Sushiro Matsumoto", "kids": true, "reserve": true }
+            { "id": "a", "n": "Matsumoto Brewery Tap Room", "type": "คราฟต์เบียร์ + อาหาร", "note": "", "dur": 75, "q": "Matsumoto Brewery Tap Room" },
+            { "id": "b", "n": "Izakaya Kura", "type": "อิซากายะ", "note": "", "dur": 75, "q": "Izakaya Kura Matsumoto" },
+            { "id": "c", "n": "Shabu-shabu Onyasai", "type": "ชาบูชาบู", "note": "มีน้ำซุปสำหรับเด็ก", "dur": 75, "q": "Onyasai Shabu-shabu Matsumoto", "kids": true },
+            { "id": "d", "n": "Sushiro (ซูชิสายพาน)", "type": "ซูชิสายพาน", "note": "ใช้แอปจองคิวล่วงหน้า", "dur": 60, "q": "Sushiro Matsumoto", "kids": true, "reserve": true }
           ] }
       ] },
     { "id": "d4", "n": 4, "dow": 0, "date": "2026-10-18", "label": "Hakuba & Azumino",
@@ -199,8 +199,8 @@
       "slots": [
         { "id": "d4s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Sweet Bakery Nawate", "note": "", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" },
-            { "id": "b", "n": "Shiori Bakery", "note": "", "dur": 45, "q": "Shiori Bakery Matsumoto" }
+            { "id": "a", "n": "Sweet Bakery Nawate", "type": "เบเกอรี่", "note": "", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" },
+            { "id": "b", "n": "Shiori Bakery", "type": "เบเกอรี่", "note": "", "dur": 45, "q": "Shiori Bakery Matsumoto" }
           ] },
         { "id": "d4s2", "time": "09:15", "kind": "drive", "title": "ขับ Matsumoto → Hakuba Iwatake", "pick": "one", "def": ["a"], "ll": [36.7016, 137.8619],
           "opts": [
@@ -208,13 +208,13 @@
           ] },
         { "id": "d4s3", "time": "10:30", "kind": "see", "title": "Hakuba — เลือกได้มากกว่า 1", "pick": "any", "def": ["a", "b"],
           "opts": [
-            { "id": "a", "n": "Hakuba Mountain Harbor", "note": "อากาศเย็นมาก เตรียมเสื้อกันหนาว/ผ้าห่ม", "dur": 60, "q": "Hakuba Mountain Harbor", "cold": true, "kids": true, "ll": [36.7016, 137.8619] },
-            { "id": "b", "n": "Snow Peak Land Station Hakuba (Kengo Kuma)", "note": "งานของ Kengo Kuma", "dur": 45, "q": "Snow Peak Land Station Hakuba", "arch": true, "ll": [36.696, 137.859] }
+            { "id": "a", "n": "Hakuba Mountain Harbor", "type": "ลานชมวิวบนภูเขา (ขึ้นกอนโดลา)", "note": "อากาศเย็นมาก เตรียมเสื้อกันหนาว/ผ้าห่ม", "dur": 60, "q": "Hakuba Mountain Harbor", "cold": true, "kids": true, "ll": [36.7016, 137.8619] },
+            { "id": "b", "n": "Snow Peak Land Station Hakuba (Kengo Kuma)", "type": "ร้าน Snow Peak + คาเฟ่ + ร้านอาหาร", "note": "งานของ Kengo Kuma", "dur": 45, "q": "Snow Peak Land Station Hakuba", "arch": true, "ll": [36.696, 137.859] }
           ] },
         { "id": "d4s4", "time": "12:15", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
             { "id": "a", "n": "Restaurant Seppo", "note": "ควรจองล่วงหน้า", "dur": 60, "q": "Restaurant Seppo Hakuba", "reserve": true },
-            { "id": "b", "n": "The City Bakery (Mountain Harbor)", "note": "", "dur": 60, "q": "The City Bakery Hakuba Mountain Harbor" },
+            { "id": "b", "n": "The City Bakery (Mountain Harbor)", "type": "เบเกอรี่ แซนด์วิช", "note": "", "dur": 60, "q": "The City Bakery Hakuba Mountain Harbor" },
             { "id": "c", "n": "Hakuma Dining", "note": "", "dur": 60, "q": "Hakuma Dining Hakuba" }
           ] },
         { "id": "d4s5", "time": "13:15", "kind": "nap", "title": "ขับ + เด็กนอน → Azumino", "pick": "one", "def": ["a"], "ll": [36.3494, 137.8283],
@@ -227,12 +227,12 @@
           ] },
         { "id": "d4s6", "time": "14:15", "kind": "arch", "title": "Azumino — เลือก", "pick": "any", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Chihiro Art Museum Azumino (Hiroshi Naito)", "note": "10:00–17:00 เข้าสุดท้าย 16:30 · ปิดวันพุธที่ 2 และ 4 ของเดือน (18 ต.ค. เป็นวันอาทิตย์ เปิด)", "dur": 75, "q": "Chihiro Art Museum Azumino", "arch": true, "kids": true, "last": "16:30", "close": "17:00", "closedNth": [[3, 2], [3, 4]], "ll": [36.3494, 137.8283] },
-            { "id": "b", "n": "Daio Wasabi Farm", "note": "", "dur": 60, "q": "Daio Wasabi Farm Azumino", "last": "16:30", "close": "17:00", "ll": [36.28, 137.8899] }
+            { "id": "a", "n": "Chihiro Art Museum Azumino (Hiroshi Naito)", "type": "พิพิธภัณฑ์ภาพประกอบหนังสือเด็ก + สวนกว้าง", "note": "10:00–17:00 เข้าสุดท้าย 16:30 · ปิดวันพุธที่ 2 และ 4 ของเดือน (18 ต.ค. เป็นวันอาทิตย์ เปิด)", "dur": 75, "q": "Chihiro Art Museum Azumino", "arch": true, "kids": true, "last": "16:30", "close": "17:00", "closedNth": [[3, 2], [3, 4]], "ll": [36.3494, 137.8283] },
+            { "id": "b", "n": "Daio Wasabi Farm", "type": "ฟาร์มวาซาบิ ทางเดินริมน้ำ", "note": "", "dur": 60, "q": "Daio Wasabi Farm Azumino", "last": "16:30", "close": "17:00", "ll": [36.28, 137.8899] }
           ] },
         { "id": "d4s7", "time": "15:30", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Chihiro Cafe", "note": "ย้ายมาก่อนขับกลับ", "dur": 30, "q": "Chihiro Art Museum Azumino cafe" },
+            { "id": "a", "n": "Chihiro Cafe", "type": "คาเฟ่ในพิพิธภัณฑ์", "note": "ย้ายมาก่อนขับกลับ", "dur": 30, "q": "Chihiro Art Museum Azumino cafe" },
             { "id": "b", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d4s8", "time": "16:00", "kind": "drive", "title": "ขับ Azumino → Matsumoto", "pick": "one", "def": ["a"], "ll": [36.236, 137.9715],
@@ -245,8 +245,8 @@
           ] },
         { "id": "d4s10", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Yakiniku House Koma", "note": "ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.)", "dur": 75, "q": "Yakiniku House Koma Matsumoto" },
-            { "id": "b", "n": "Don Quijote Steak", "note": "", "dur": 75, "q": "Don Quijote steak Matsumoto" },
+            { "id": "a", "n": "Yakiniku House Koma", "type": "ยากินิกุ (ปิ้งย่างเนื้อ)", "note": "ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.)", "dur": 75, "q": "Yakiniku House Koma Matsumoto" },
+            { "id": "b", "n": "Don Quijote Steak", "type": "สเต๊ก", "note": "", "dur": 75, "q": "Don Quijote steak Matsumoto" },
             { "id": "c", "n": "Matsumoto Beef Club", "note": "", "dur": 75, "q": "Matsumoto Beef Club" }
           ] }
       ] },
@@ -261,8 +261,8 @@
       "slots": [
         { "id": "d5s1", "time": "07:30", "kind": "cafe", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Marumo cafe (กาแฟ + เซตเช้า)", "note": "เพิ่มเป็นมื้อเช้าจริง — ก่อนหน้านี้มีแค่กาแฟ แล้วไปกินกลางวัน 12:00+", "dur": 45, "q": "Marumo cafe Matsumoto" },
-            { "id": "b", "n": "Sweet Bakery Nawate", "note": "เบเกอรี่ นั่งทานเร็ว", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" }
+            { "id": "a", "n": "Marumo cafe (กาแฟ + เซตเช้า)", "type": "คาเฟ่ในอาคารเก่า + เซตอาหารเช้า", "note": "เพิ่มเป็นมื้อเช้าจริง — ก่อนหน้านี้มีแค่กาแฟ แล้วไปกินกลางวัน 12:00+", "dur": 45, "q": "Marumo cafe Matsumoto" },
+            { "id": "b", "n": "Sweet Bakery Nawate", "type": "เบเกอรี่", "note": "เบเกอรี่ นั่งทานเร็ว", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" }
           ] },
         { "id": "d5s2", "time": "08:15", "kind": "refuel", "title": "เติมน้ำมัน (ก่อนขึ้นเขา)", "pick": "one", "def": ["a"],
           "opts": [
@@ -279,13 +279,13 @@
           ] },
         { "id": "d5s5", "time": "10:00", "kind": "see", "title": "เดินเล่น Kamikochi", "pick": "any", "def": ["a"], "lit": {"who": "อะคุตะงะวะ ริวโนะสุเกะ", "work": "กัปปะ (河童)", "levels": {"short": {"th": "หุบแม่น้ำอาซุสะในหมอกหนา ได้ยินแต่เสียงน้ำไหลกระทบโขดหิน"}, "medium": {"th": "หุบแม่น้ำอาซุสะในหมอกหนา ได้ยินแต่เสียงน้ำไหลกระทบโขดหิน พงไผ่สูงท่วมตัว ใบบีชและเฟอร์สีเขียวสดโผล่จากม่านหมอกเป็นระยะ ม้าและวัวที่เล็มหญ้าปรากฏขึ้นตรงหน้าแล้วเลือนหายไปในทันที"}, "long": {"th": "หุบแม่น้ำอาซุสะในหมอกหนา ได้ยินแต่เสียงน้ำไหลกระทบโขดหิน พงไผ่สูงท่วมตัว ใบบีชและเฟอร์สีเขียวสดโผล่จากม่านหมอกเป็นระยะ ม้าและวัวที่เล็มหญ้าปรากฏขึ้นตรงหน้าแล้วเลือนหายไปในทันที\nพอหมอกจางลง ลำธารใสไหลผ่านก้อนหิน ต้นเบิร์ชขาวยืนอยู่ริมน้ำ และไม่ไกลจากโรงแรมออนเซ็นที่คามิโคจิ คือสะพานกัปปะที่ทอดข้ามแม่น้ำสายนี้"}}},
           "opts": [
-            { "id": "a", "n": "Kappabashi & Azusa River walk", "note": "ทางไม้ราบ เดินได้ทั้งผู้สูงอายุและเด็ก", "dur": 90, "q": "Kappabashi Bridge Kamikochi", "cold": true, "kids": true, "ll": [36.2516, 137.6387] },
-            { "id": "b", "n": "Kamikochi Imperial Hotel", "note": "ล็อบบี้/ร้านกาแฟ อุ่น", "dur": 30, "q": "Kamikochi Imperial Hotel", "ll": [36.2447, 137.6416] }
+            { "id": "a", "n": "Kappabashi & Azusa River walk", "type": "ทางเดินไม้ริมแม่น้ำ วิวเทือกเขาโฮตากะ", "note": "ทางไม้ราบ เดินได้ทั้งผู้สูงอายุและเด็ก", "dur": 90, "q": "Kappabashi Bridge Kamikochi", "cold": true, "kids": true, "ll": [36.2516, 137.6387] },
+            { "id": "b", "n": "Kamikochi Imperial Hotel", "type": "โรงแรมไม้ในหุบเขา", "note": "ล็อบบี้/ร้านกาแฟ อุ่น", "dur": 30, "q": "Kamikochi Imperial Hotel", "ll": [36.2447, 137.6416] }
           ] },
         { "id": "d5s6", "time": "12:00", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Imperial Hotel Dining", "note": "", "dur": 60, "q": "Kamikochi Imperial Hotel dining" },
-            { "id": "b", "n": "Kamikochi Shokudo", "note": "", "dur": 60, "q": "Kamikochi Shokudo" },
+            { "id": "a", "n": "Imperial Hotel Dining", "type": "ห้องอาหารโรงแรม อาหารตะวันตก", "note": "", "dur": 60, "q": "Kamikochi Imperial Hotel dining" },
+            { "id": "b", "n": "Kamikochi Shokudo", "type": "อาหารญี่ปุ่นง่ายๆ", "note": "", "dur": 60, "q": "Kamikochi Shokudo" },
             { "id": "c", "n": "Gosenjaku Kitchen", "note": "", "dur": 60, "q": "Gosenjaku Kitchen Kamikochi" }
           ] },
         { "id": "d5s7", "time": "13:00", "kind": "nap", "title": "เลือก: กลับรถ (แนะนำ) หรือเดินต่อ", "pick": "one", "def": ["a"],
@@ -295,9 +295,9 @@
           ] },
         { "id": "d5s8", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Miyoshi Soba", "note": "", "dur": 75, "q": "Miyoshi Soba Matsumoto" },
-            { "id": "b", "n": "Kamameshi Oki", "note": "ข้าวอบหม้อดิน ทานง่าย", "dur": 75, "q": "Kamameshi Oki Matsumoto", "kids": true },
-            { "id": "c", "n": "Tomato & Onion", "note": "", "dur": 75, "q": "Tomato and Onion Matsumoto" }
+            { "id": "a", "n": "Miyoshi Soba", "type": "โซบะ", "note": "", "dur": 75, "q": "Miyoshi Soba Matsumoto" },
+            { "id": "b", "n": "Kamameshi Oki", "type": "คามาเมชิ (ข้าวอบหม้อดิน)", "note": "ข้าวอบหม้อดิน ทานง่าย", "dur": 75, "q": "Kamameshi Oki Matsumoto", "kids": true },
+            { "id": "c", "n": "Tomato & Onion", "type": "ร้านอาหารครอบครัว แฮมเบิร์กสเต๊ก", "note": "", "dur": 75, "q": "Tomato and Onion Matsumoto" }
           ] }
       ] },
     { "id": "d6", "n": 6, "dow": 2, "date": "2026-10-20", "label": "Matsumoto → Karuizawa",
@@ -310,18 +310,18 @@
       "slots": [
         { "id": "d6s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Coffee Abe", "note": "", "dur": 45, "q": "Coffee Abe Matsumoto" },
-            { "id": "b", "n": "The Source Diner", "note": "", "dur": 45, "q": "The Source Diner Matsumoto" },
-            { "id": "c", "n": "Bakery Sweet", "note": "", "dur": 45, "q": "Bakery Sweet Matsumoto" }
+            { "id": "a", "n": "Coffee Abe", "type": "คาเฟ่", "note": "", "dur": 45, "q": "Coffee Abe Matsumoto" },
+            { "id": "b", "n": "The Source Diner", "type": "อาหารเช้าแบบไดเนอร์", "note": "", "dur": 45, "q": "The Source Diner Matsumoto" },
+            { "id": "c", "n": "Bakery Sweet", "type": "เบเกอรี่", "note": "", "dur": 45, "q": "Bakery Sweet Matsumoto" }
           ] },
         { "id": "d6s2", "time": "09:30", "kind": "arch", "title": "พิพิธภัณฑ์", "pick": "one", "def": ["a"], "ll": [36.2314, 137.9761],
           "opts": [
-            { "id": "a", "n": "Matsumoto City Museum of Art (Kusama)", "note": "เปิดวันอังคาร (ปิดวันจันทร์)", "dur": 75, "q": "Matsumoto City Museum of Art", "arch": true, "closedDow": [1] }
+            { "id": "a", "n": "Matsumoto City Museum of Art (Kusama)", "type": "พิพิธภัณฑ์ศิลปะ (ผลงาน Yayoi Kusama)", "note": "เปิดวันอังคาร (ปิดวันจันทร์)", "dur": 75, "q": "Matsumoto City Museum of Art", "arch": true, "closedDow": [1] }
           ] },
         { "id": "d6s3", "time": "11:30", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Karaage Center", "note": "", "dur": 60, "q": "Karaage Center Matsumoto" },
-            { "id": "b", "n": "ร้านอาหารญี่ปุ่น", "note": "", "dur": 60, "q": "Japanese restaurant Matsumoto station" }
+            { "id": "a", "n": "Karaage Center", "type": "คาราอาเกะ (ไก่ทอด)", "note": "", "dur": 60, "q": "Karaage Center Matsumoto" },
+            { "id": "b", "n": "ร้านอาหารญี่ปุ่น", "type": "อาหารญี่ปุ่น เลือกหน้างาน", "note": "", "dur": 60, "q": "Japanese restaurant Matsumoto station" }
           ] },
         { "id": "d6s4", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Karuizawa", "pick": "one", "def": ["a"], "ll": [36.3672, 138.59],
           "opts": [
@@ -329,17 +329,17 @@
           ] },
         { "id": "d6s5", "time": "14:15", "kind": "see", "title": "ชมน้ำตก", "pick": "one", "def": ["a"], "ll": [36.3672, 138.59],
           "opts": [
-            { "id": "a", "n": "Shiraito Falls", "note": "ทางเดินสั้นราบ เย็นกว่าปกติ", "dur": 45, "q": "Shiraito Falls Karuizawa", "cold": true, "kids": true }
+            { "id": "a", "n": "Shiraito Falls", "type": "น้ำตกม่านน้ำกว้าง", "note": "ทางเดินสั้นราบ เย็นกว่าปกติ", "dur": 45, "q": "Shiraito Falls Karuizawa", "cold": true, "kids": true }
           ] },
         { "id": "d6s6", "time": "15:15", "kind": "arch", "title": "สถาปัตยกรรม — เลือก", "pick": "any", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Harunire Terrace", "note": "", "dur": 40, "q": "Harunire Terrace Karuizawa", "ll": [36.3487, 138.576] },
-            { "id": "b", "n": "Stone Church (Kendrick Kellogg)", "note": "", "dur": 30, "q": "Karuizawa Stone Church Uchimura Kanzo", "arch": true, "ll": [36.3512, 138.5793] }
+            { "id": "a", "n": "Harunire Terrace", "type": "ย่านร้านค้าทางเดินไม้ริมลำธาร", "note": "", "dur": 40, "q": "Harunire Terrace Karuizawa", "ll": [36.3487, 138.576] },
+            { "id": "b", "n": "Stone Church (Kendrick Kellogg)", "type": "โบสถ์หิน", "note": "", "dur": 30, "q": "Karuizawa Stone Church Uchimura Kanzo", "arch": true, "ll": [36.3512, 138.5793] }
           ] },
         { "id": "d6s7", "time": "16:00", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["c"],
           "opts": [
-            { "id": "a", "n": "Maruyama Coffee", "note": "", "dur": 30, "q": "Maruyama Coffee Karuizawa" },
-            { "id": "b", "n": "Nagai Farm Gelato", "note": "", "dur": 30, "q": "Nagai Farm Karuizawa gelato" },
+            { "id": "a", "n": "Maruyama Coffee", "type": "คาเฟ่กาแฟคั่วพิเศษ", "note": "", "dur": 30, "q": "Maruyama Coffee Karuizawa" },
+            { "id": "b", "n": "Nagai Farm Gelato", "type": "เจลาโต้นมฟาร์ม", "note": "", "dur": 30, "q": "Nagai Farm Karuizawa gelato" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d6s8", "time": "16:45", "kind": "hotel", "title": "เช็กอิน", "pick": "one", "def": ["a"], "ll": [36.3343, 138.6371],
@@ -348,15 +348,15 @@
           ] },
         { "id": "d6s9", "time": "17:30", "kind": "shop", "title": "ช้อปปิ้งสั้นๆ (ถ้าไม่เหนื่อย)", "pick": "one", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Prince Outlet (เดิน 0.9 กม.)", "note": "", "dur": 45, "q": "Karuizawa Prince Shopping Plaza", "ll": [36.3389, 138.6297] },
+            { "id": "a", "n": "Prince Outlet (เดิน 0.9 กม.)", "type": "เอาต์เล็ต", "note": "", "dur": 45, "q": "Karuizawa Prince Shopping Plaza", "ll": [36.3389, 138.6297] },
             { "id": "b", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
         { "id": "d6s10", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "ร้านอาหารใน Cypress (เช็กเมนู/เวลา)", "note": "ฝรั่งเศส/เทปปันยากิ ตรวจเวลาล่าสุด", "dur": 75, "q": "Hotel Cypress Karuizawa restaurant", "reserve": true },
+            { "id": "a", "n": "ร้านอาหารใน Cypress (เช็กเมนู/เวลา)", "type": "ห้องอาหารโรงแรม", "note": "ฝรั่งเศส/เทปปันยากิ ตรวจเวลาล่าสุด", "dur": 75, "q": "Hotel Cypress Karuizawa restaurant", "reserve": true },
             { "id": "b", "n": "Sonmin-Shokudo", "note": "", "dur": 75, "q": "Sonmin Shokudo Karuizawa" },
             { "id": "c", "n": "Aji no Machidori", "note": "", "dur": 75, "q": "Aji no Machidori Karuizawa" },
-            { "id": "d", "n": "ฟู้ดคอร์ท Prince Outlet", "note": "เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)", "dur": 60, "q": "Karuizawa Prince Shopping Plaza food court", "close": "19:00" }
+            { "id": "d", "n": "ฟู้ดคอร์ท Prince Outlet", "type": "ฟู้ดคอร์ท", "note": "เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)", "dur": 60, "q": "Karuizawa Prince Shopping Plaza food court", "close": "19:00" }
           ] }
       ] },
     { "id": "d7", "n": 7, "dow": 3, "date": "2026-10-21", "label": "Karuizawa",
@@ -369,38 +369,38 @@
       "slots": [
         { "id": "d7s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "บุฟเฟต์เช้า Cypress (เสียเงิน 7:30–9:00)", "note": "", "dur": 60, "q": "Hotel Cypress Karuizawa" },
-            { "id": "b", "n": "Sawamura", "note": "มักมีคิว", "dur": 60, "q": "Sawamura Karuizawa", "queue": true },
-            { "id": "c", "n": "Eloise's Cafe (Kunio Maekawa)", "note": "ควรจอง", "dur": 60, "q": "Eloise's Cafe Karuizawa", "reserve": true, "arch": true }
+            { "id": "a", "n": "บุฟเฟต์เช้า Cypress (เสียเงิน 7:30–9:00)", "type": "บุฟเฟต์เช้าโรงแรม", "note": "", "dur": 60, "q": "Hotel Cypress Karuizawa" },
+            { "id": "b", "n": "Sawamura", "type": "เบเกอรี่ + อาหารเช้า", "note": "มักมีคิว", "dur": 60, "q": "Sawamura Karuizawa", "queue": true },
+            { "id": "c", "n": "Eloise's Cafe (Kunio Maekawa)", "type": "คาเฟ่ อาหารเช้า", "note": "ควรจอง", "dur": 60, "q": "Eloise's Cafe Karuizawa", "reserve": true, "arch": true }
           ] },
         { "id": "d7s2", "time": "09:40", "kind": "arch", "title": "ชมสถาปัตยกรรม — เลือก", "pick": "any", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Kumoba Pond", "note": "ใบไม้อาจยังไม่ถึง peak (ต้นๆ ถึงบางส่วน)", "dur": 35, "q": "Kumoba Pond Karuizawa", "kids": true, "ll": [36.3441, 138.6251] },
-            { "id": "b", "n": "Hiroshi Senju Museum (Ryue Nishizawa)", "note": "ปิดวันอังคาร ล่าสุดเข้า 16:30", "dur": 60, "q": "Hiroshi Senju Museum Karuizawa", "arch": true, "closedDow": [2], "last": "16:30", "close": "17:00", "ll": [36.3605, 138.6028] },
-            { "id": "c", "n": "St. Paul's / Karuizawa Taliesin", "note": "", "dur": 40, "q": "Karuizawa Taliesin", "arch": true, "ll": [36.321, 138.618] }
+            { "id": "a", "n": "Kumoba Pond", "type": "บ่อน้ำในป่า ใบไม้เปลี่ยนสี", "note": "ใบไม้อาจยังไม่ถึง peak (ต้นๆ ถึงบางส่วน)", "dur": 35, "q": "Kumoba Pond Karuizawa", "kids": true, "ll": [36.3441, 138.6251] },
+            { "id": "b", "n": "Hiroshi Senju Museum (Ryue Nishizawa)", "type": "พิพิธภัณฑ์ศิลปะ", "note": "ปิดวันอังคาร ล่าสุดเข้า 16:30", "dur": 60, "q": "Hiroshi Senju Museum Karuizawa", "arch": true, "closedDow": [2], "last": "16:30", "close": "17:00", "ll": [36.3605, 138.6028] },
+            { "id": "c", "n": "St. Paul's / Karuizawa Taliesin", "type": "บ้านพักตากอากาศเก่า", "note": "", "dur": 40, "q": "Karuizawa Taliesin", "arch": true, "ll": [36.321, 138.618] }
           ] },
         { "id": "d7s3", "time": "11:20", "kind": "see", "title": "เดินเล่น", "pick": "one", "def": ["a"], "ll": [36.3547, 138.5975], "lit": {"who": "โฮริ ทัตสึโอะ", "work": "ลมพัดมาแล้ว (風立ちぬ)", "levels": {"short": {"th": "ทุ่งหญ้าซูซูกิบนที่สูงในฤดูร้อน ร่มเงาต้นเบิร์ชขาว และเมฆบางเหมือนผืนทรายไหลผ่านฟ้า"}, "medium": {"th": "ทุ่งหญ้าซูซูกิบนที่สูงในฤดูร้อน ร่มเงาต้นเบิร์ชขาว และเมฆบางเหมือนผืนทรายไหลผ่านฟ้า บ่ายวันหนึ่งใกล้ฤดูใบไม้ร่วง ลมพัดมาโดยไม่รู้ที่มา ฟ้าสีครามที่ลอดผ่านใบไม้เหนือศีรษะยืดออกแล้วหดเข้า — ลมพัดมาแล้ว เราต้องพยายามมีชีวิตอยู่"}, "long": {"th": "ทุ่งหญ้าซูซูกิบนที่สูงในฤดูร้อน ร่มเงาต้นเบิร์ชขาว และเมฆบางเหมือนผืนทรายไหลผ่านฟ้า บ่ายวันหนึ่งใกล้ฤดูใบไม้ร่วง ลมพัดมาโดยไม่รู้ที่มา ฟ้าสีครามที่ลอดผ่านใบไม้เหนือศีรษะยืดออกแล้วหดเข้า — ลมพัดมาแล้ว เราต้องพยายามมีชีวิตอยู่\nเมื่อฤดูหนาวมาถึง หมู่บ้านเดียวกันถูกหิมะกลบไปทั้งหมด หุบเล็กๆ ทางเหนือของหมู่บ้านเงียบงัน บ้านพักตากอากาศของชาวต่างชาติถูกทิ้งไว้ใต้หิมะ บนหิมะรอบกระท่อมไม้มีรอยเท้ากระต่าย กระรอก และไก่ฟ้า"}}},
           "opts": [
-            { "id": "a", "n": "Kyu-Karuizawa Ginza", "note": "ทางราบ แต่คนเยอะช่วงสุดสัปดาห์", "dur": 45, "q": "Kyu-Karuizawa Ginza" }
+            { "id": "a", "n": "Kyu-Karuizawa Ginza", "type": "ถนนช้อปปิ้งเก่า", "note": "ทางราบ แต่คนเยอะช่วงสุดสัปดาห์", "dur": 45, "q": "Kyu-Karuizawa Ginza" }
           ] },
         { "id": "d7s4", "time": "12:15", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["b"],
           "opts": [
-            { "id": "a", "n": "Kawakamian", "note": "คิวยาว", "dur": 60, "q": "Kawakamian Karuizawa", "queue": true },
-            { "id": "b", "n": "Atelier de Fromage", "note": "", "dur": 60, "q": "Atelier de Fromage Karuizawa" },
+            { "id": "a", "n": "Kawakamian", "type": "โซบะ", "note": "คิวยาว", "dur": 60, "q": "Kawakamian Karuizawa", "queue": true },
+            { "id": "b", "n": "Atelier de Fromage", "type": "ชีส พิซซ่า", "note": "", "dur": 60, "q": "Atelier de Fromage Karuizawa" },
             { "id": "c", "n": "Karuizawa Kitchen", "note": "", "dur": 60, "q": "Karuizawa Kitchen" }
           ] },
         { "id": "d7s5", "time": "13:15", "kind": "nap", "title": "เด็กนอน (ในรถ/ล็อบบี้)", "pick": "one", "def": ["a"], "ll": [36.3389, 138.6297],
           "opts": [
-            { "id": "a", "n": "พักที่ Prince Garden Mall", "note": "ขับสั้นๆ แล้วจอด ให้เด็กหลับ", "dur": 75, "q": "Prince Garden Mall Karuizawa" }
+            { "id": "a", "n": "พักที่ Prince Garden Mall", "type": "ห้างกลางแจ้ง จอดพัก", "note": "ขับสั้นๆ แล้วจอด ให้เด็กหลับ", "dur": 75, "q": "Prince Garden Mall Karuizawa" }
           ] },
         { "id": "d7s6", "time": "14:30", "kind": "shop", "title": "ช้อปปิ้ง", "pick": "one", "def": ["a"], "ll": [36.3389, 138.6297],
           "opts": [
-            { "id": "a", "n": "Prince Outlet", "note": "", "dur": 60, "q": "Karuizawa Prince Shopping Plaza" }
+            { "id": "a", "n": "Prince Outlet", "type": "เอาต์เล็ต", "note": "", "dur": 60, "q": "Karuizawa Prince Shopping Plaza" }
           ] },
         { "id": "d7s7", "time": "15:30", "kind": "cafe", "title": "คาเฟ่", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Lindt Cafe", "note": "", "dur": 30, "q": "Lindt Cafe Karuizawa" },
-            { "id": "b", "n": "Cafe Comme Ca", "note": "", "dur": 30, "q": "Cafe Comme Ca Karuizawa" }
+            { "id": "a", "n": "Lindt Cafe", "type": "ช็อกโกแลต + คาเฟ่", "note": "", "dur": 30, "q": "Lindt Cafe Karuizawa" },
+            { "id": "b", "n": "Cafe Comme Ca", "type": "คาเฟ่ เค้ก", "note": "", "dur": 30, "q": "Cafe Comme Ca Karuizawa" }
           ] },
         { "id": "d7s8", "time": "16:30", "kind": "hotel", "title": "พักที่โรงแรม", "pick": "one", "def": ["a"], "ll": [36.3343, 138.6371],
           "opts": [
@@ -409,9 +409,9 @@
         { "id": "d7s9", "time": "18:00", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["d"],
           "opts": [
             { "id": "a", "n": "Pyrenees", "note": "ควรจอง", "dur": 75, "q": "Pyrenees Karuizawa", "reserve": true },
-            { "id": "b", "n": "Ningyocho Imahan", "note": "ควรจอง", "dur": 75, "q": "Ningyocho Imahan Karuizawa", "reserve": true },
-            { "id": "c", "n": "Trattoria Primo", "note": "มักมีคิว", "dur": 75, "q": "Trattoria Primo Karuizawa", "queue": true },
-            { "id": "d", "n": "ฟู้ดคอร์ท Prince Outlet", "note": "เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)", "dur": 60, "q": "Karuizawa Prince Shopping Plaza food court", "close": "19:00" }
+            { "id": "b", "n": "Ningyocho Imahan", "type": "สุกี้ยากี้ / เนื้อวากิว", "note": "ควรจอง", "dur": 75, "q": "Ningyocho Imahan Karuizawa", "reserve": true },
+            { "id": "c", "n": "Trattoria Primo", "type": "อาหารอิตาเลียน", "note": "มักมีคิว", "dur": 75, "q": "Trattoria Primo Karuizawa", "queue": true },
+            { "id": "d", "n": "ฟู้ดคอร์ท Prince Outlet", "type": "ฟู้ดคอร์ท", "note": "เวลาปิดโดยประมาณ — ตรวจเวลาจริงก่อนไป (ยังไม่ยืนยัน)", "dur": 60, "q": "Karuizawa Prince Shopping Plaza food court", "close": "19:00" }
           ] },
         { "id": "d7s10", "time": "19:15", "kind": "drive", "title": "กลับโรงแรม", "pick": "one", "def": ["a"],
           "opts": [
@@ -433,7 +433,7 @@
       "slots": [
         { "id": "d8s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า + เช็กเอาต์", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "บุฟเฟต์เช้า Cypress", "note": "", "dur": 45, "q": "Hotel Cypress Karuizawa" }
+            { "id": "a", "n": "บุฟเฟต์เช้า Cypress", "type": "บุฟเฟต์เช้าโรงแรม", "note": "", "dur": 45, "q": "Hotel Cypress Karuizawa" }
           ] },
         { "id": "d8s2", "time": "09:15", "kind": "drive", "title": "ขับ Karuizawa → Takasaki", "pick": "one", "def": ["a"], "ll": [36.323, 139.0585],
           "opts": [
@@ -441,13 +441,13 @@
           ] },
         { "id": "d8s3", "time": "10:00", "kind": "arch", "title": "Takasaki — เลือก", "pick": "any", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Gunma Museum of Modern Art (Arata Isozaki)", "note": "ปิดวันจันทร์", "dur": 60, "q": "Museum of Modern Art, Gunma", "arch": true, "closedDow": [1], "ll": [36.323, 139.0585] },
-            { "id": "b", "n": "Gunma no Mori", "note": "สวนสาธารณะ ทางราบ", "dur": 60, "q": "Gunma no Mori Takasaki", "kids": true, "ll": [36.323, 139.0585] }
+            { "id": "a", "n": "Gunma Museum of Modern Art (Arata Isozaki)", "type": "พิพิธภัณฑ์ศิลปะ", "note": "ปิดวันจันทร์", "dur": 60, "q": "Museum of Modern Art, Gunma", "arch": true, "closedDow": [1], "ll": [36.323, 139.0585] },
+            { "id": "b", "n": "Gunma no Mori", "type": "สวนสาธารณะ", "note": "สวนสาธารณะ ทางราบ", "dur": 60, "q": "Gunma no Mori Takasaki", "kids": true, "ll": [36.323, 139.0585] }
           ] },
         { "id": "d8s4", "time": "12:00", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Himo Takasaki (พาสต้า)", "note": "", "dur": 60, "q": "Himo Takasaki pasta" },
-            { "id": "b", "n": "Himokawa Udon", "note": "", "dur": 60, "q": "Himokawa Udon Takasaki" }
+            { "id": "a", "n": "Himo Takasaki (พาสต้า)", "type": "พาสต้า", "note": "", "dur": 60, "q": "Himo Takasaki pasta" },
+            { "id": "b", "n": "Himokawa Udon", "type": "ฮิโมกาวะอุด้ง (เส้นแบนกว้าง ของกุนมะ)", "note": "", "dur": 60, "q": "Himokawa Udon Takasaki" }
           ] },
         { "id": "d8s5", "time": "13:15", "kind": "nap", "title": "ขับ + เด็กนอน → Tokorozawa", "pick": "one", "def": ["a"], "ll": [35.7842, 139.437],
           "opts": [
@@ -455,12 +455,12 @@
           ] },
         { "id": "d8s6", "time": "14:30", "kind": "arch", "title": "Tokorozawa — เลือก", "pick": "any", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Kadokawa Culture Museum (Kengo Kuma)", "note": "10:00–18:00 ปิดวันอังคาร (วันนี้พฤหัส เปิด) — ออกก่อน 15:30 เพื่อหนีรถติด", "dur": 45, "q": "Kadokawa Culture Museum Tokorozawa", "arch": true, "closedDow": [2], "close": "18:00", "ll": [35.7842, 139.437] },
-            { "id": "b", "n": "Sakura Town / Musashino Reiwa Shrine", "note": "", "dur": 30, "q": "Tokorozawa Sakura Town", "kids": true, "ll": [35.7842, 139.437] }
+            { "id": "a", "n": "Kadokawa Culture Museum (Kengo Kuma)", "type": "พิพิธภัณฑ์ + ห้องสมุดหินแกรนิต", "note": "10:00–18:00 ปิดวันอังคาร (วันนี้พฤหัส เปิด) — ออกก่อน 15:30 เพื่อหนีรถติด", "dur": 45, "q": "Kadokawa Culture Museum Tokorozawa", "arch": true, "closedDow": [2], "close": "18:00", "ll": [35.7842, 139.437] },
+            { "id": "b", "n": "Sakura Town / Musashino Reiwa Shrine", "type": "ศาลเจ้า + ลานกว้าง", "note": "", "dur": 30, "q": "Tokorozawa Sakura Town", "kids": true, "ll": [35.7842, 139.437] }
           ] },
         { "id": "d8s7", "time": "15:15", "kind": "cafe", "title": "คาเฟ่ (ปกติข้าม — ต้องรีบออก 15:30)", "pick": "one", "def": ["c"],
           "opts": [
-            { "id": "a", "n": "KadoCafe", "note": "", "dur": 20, "q": "Kadokawa Culture Museum cafe" },
+            { "id": "a", "n": "KadoCafe", "type": "คาเฟ่ในพิพิธภัณฑ์", "note": "", "dur": 20, "q": "Kadokawa Culture Museum cafe" },
             { "id": "b", "n": "Kadokawa Shokudo", "note": "", "dur": 20, "q": "Kadokawa Shokudo Tokorozawa" },
             { "id": "c", "n": "ข้าม", "note": "", "dur": 0, "q": "", "skip": true }
           ] },
@@ -483,14 +483,14 @@
           ] },
         { "id": "d8s12", "time": "18:15", "kind": "spa", "title": "ออนเซ็น", "pick": "one", "def": ["a"], "ll": [35.5452, 139.7798],
           "opts": [
-            { "id": "a", "n": "Izumi Tenku no Yu (onsen)", "note": "ผ่อนคลาย ผู้สูงอายุอาบได้ง่าย", "dur": 45, "q": "Haneda Airport Garden Izumi Tenku no Yu" }
+            { "id": "a", "n": "Izumi Tenku no Yu (onsen)", "type": "ออนเซ็นบนดาดฟ้า วิวสนามบิน", "note": "ผ่อนคลาย ผู้สูงอายุอาบได้ง่าย", "dur": 45, "q": "Haneda Airport Garden Izumi Tenku no Yu" }
           ] },
         { "id": "d8s13", "time": "19:15", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Grand Aile (บุฟเฟต์)", "note": "", "dur": 75, "q": "Grand Aile Villa Fontaine Haneda buffet", "kids": true },
-            { "id": "b", "n": "Tsurutontan", "note": "", "dur": 75, "q": "Tsurutontan Haneda Airport Garden", "queue": true },
-            { "id": "c", "n": "Katsusen", "note": "", "dur": 75, "q": "Katsusen Haneda Airport Garden" },
-            { "id": "d", "n": "Haneda Sky Brewing", "note": "", "dur": 75, "q": "Haneda Sky Brewing" }
+            { "id": "a", "n": "Grand Aile (บุฟเฟต์)", "type": "บุฟเฟต์นานาชาติในโรงแรม", "note": "", "dur": 75, "q": "Grand Aile Villa Fontaine Haneda buffet", "kids": true },
+            { "id": "b", "n": "Tsurutontan", "type": "อุด้ง", "note": "", "dur": 75, "q": "Tsurutontan Haneda Airport Garden", "queue": true },
+            { "id": "c", "n": "Katsusen", "type": "ทงคัตสึ", "note": "", "dur": 75, "q": "Katsusen Haneda Airport Garden" },
+            { "id": "d", "n": "Haneda Sky Brewing", "type": "คราฟต์เบียร์ + อาหารจานง่าย", "note": "", "dur": 75, "q": "Haneda Sky Brewing" }
           ] }
       ] },
     { "id": "d9", "n": 9, "dow": 5, "date": "2026-10-23", "label": "บินกลับ",
@@ -502,7 +502,7 @@
       "slots": [
         { "id": "d9s1", "time": "07:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
-            { "id": "a", "n": "Saryo Itoen / ร้านใน T3", "note": "", "dur": 30, "q": "Haneda Airport Terminal 3 cafe" }
+            { "id": "a", "n": "Saryo Itoen / ร้านใน T3", "type": "ชาเขียว ของหวานญี่ปุ่น", "note": "", "dur": 30, "q": "Haneda Airport Terminal 3 cafe" }
           ] },
         { "id": "d9s2", "time": "08:00", "kind": "transit", "title": "เช็กอิน", "pick": "one", "def": ["a"], "ll": [35.5494, 139.7845],
           "opts": [
