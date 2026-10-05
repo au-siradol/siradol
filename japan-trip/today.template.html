@@ -68,6 +68,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .nav-link{font-size:13px;color:var(--mute)}
+.links{display:flex;flex-direction:column;gap:6px}
 
 .dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
 .dock .in{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between;pointer-events:auto}
@@ -91,7 +92,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <p class="prose" id="prose" aria-live="polite"></p>
   <div class="note end-note" id="endnote"></div>
   <div class="err" id="err"></div>
-  <a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a>
+  <div class="links"><a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a><a class="nav-link" id="l-places" target="_blank" rel="noopener">แผนที่สถานที่ (My Maps) ↗</a><a class="nav-link" id="l-sheet" target="_blank" rel="noopener">ข้อมูลทริป (Google Sheet) ↗</a></div>
 </main>
 <div class="sheet-bg" id="sheetbg" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><h3 id="sh-t"></h3><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
@@ -192,6 +193,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('endnote').textContent='↘ คืนนี้นอนที่ '+d.night;
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
     $('nav').href=MV.dirUrl(MV.stops(trip,d,sel));
+    const L=trip.meta.links||{};[['l-places',L.places],['l-sheet',L.sheet]].forEach(([id,u])=>{$(id).hidden=!u;if(u)$(id).href=u});
     try{history.replaceState(null,'','#d'+(cur+1))}catch(e){}
     tick();
   }

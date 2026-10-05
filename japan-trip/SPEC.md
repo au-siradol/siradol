@@ -14,7 +14,7 @@ Site entry: `japan-trip/` → `index.html` = the one-day "today" view; `plan.htm
 - `index.html` — build output (committed so it can be opened directly).
 
 ## Data model
-- Meta: `title, subtitle, party, nap ["13:00","14:30"], napStartOk ["12:45","14:15"], dayStart, dayEnd, sunset "17:00", deadlineBuffer 15, napBandOverlap 30, version, rules[]`.
+- Meta: `links{sheet, places}` (source Google Sheet and the Google My Maps of places — shown as links on both pages), `title, subtitle, party, nap ["13:00","14:30"], napStartOk ["12:45","14:15"], dayStart, dayEnd, sunset "17:00", deadlineBuffer 15, napBandOverlap 30, version, rules[]`.
   `version` is part of the localStorage key — bump it when option ids change.
 - Day: `id, n, dow, date, label, route, night, from?{n, ll}, weather[{t, s:"info"|"warn"}], slots[], sunset?`
   `from` = where the day starts (first pin, drawn as a hotel ring).

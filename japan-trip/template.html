@@ -210,6 +210,8 @@ a{color:inherit;text-underline-offset:3px}
       <button id="reset">รีเซ็ตตัวเลือก</button>
       <button id="theme">สว่าง / มืด</button>
       <a href="index.html" class="u">หน้า "วันนี้" ↗</a>
+      <a id="l-places" class="u" target="_blank" rel="noopener">แผนที่สถานที่ ↗</a>
+      <a id="l-sheet" class="u" target="_blank" rel="noopener">ข้อมูลทริป ↗</a>
     </div>
   </header>
   <details class="gallery" id="gallery" open><summary>เลือกสไตล์ (3 แบบ)</summary><div class="gal" role="radiogroup" aria-label="สไตล์" id="gal"></div></details>
@@ -310,7 +312,8 @@ a{color:inherit;text-underline-offset:3px}
     camera();
   }
 
-  function head(){
+  function links(){const L=trip.meta.links||{};[['l-places',L.places],['l-sheet',L.sheet]].forEach(([id,u])=>{const a=$('#'+id);a.hidden=!u;if(u)a.href=u})}
+  function head(){links();
     $('#ttl').textContent=trip.meta.title;
     $('#sub').innerHTML=esc(trip.meta.subtitle)+'<br>'+esc(trip.meta.party);
     $('#rules').innerHTML=trip.meta.rules.map(r=>'<div>· '+esc(r)+'</div>').join('');

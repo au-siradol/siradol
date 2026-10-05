@@ -21,6 +21,10 @@
       "ตะวันตกดินราว 17:00 ในเดือนนี้ — เลี่ยงขับถนนเขาหลังเวลานั้น (ค่าประมาณ ตรวจก่อนไป)"
     ],
     "version": "2",
+    "links": {
+      "sheet": "https://docs.google.com/spreadsheets/d/1jpeUtP2cD9mcuZTRelf-buVmdlH0W-EM_0Ll0TVMw8g/edit?gid=1726096357#gid=1726096357",
+      "places": "https://www.google.com/maps/d/u/0/edit?mid=1bhKxOBFgztD38k1-qyBgM4uDcE717Es&ll=36.05911964775861%2C138.71169999999998&z=9"
+    },
     "sunset": "17:00",
     "deadlineBuffer": 15,
     "napBandOverlap": 30

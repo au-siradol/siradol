@@ -181,18 +181,6 @@ test('stops: pin display-name override', () => {
   assert.equal(o.pin, 'The Celecton Matsumoto');
   assert.equal(M.stopName(M.stops(trip, trip.days[4], {}).pop()), 'The Celecton Matsumoto');
 });
-test('Google Maps: route embed goes A → … → last by place name, driving', () => {
-  for (const d of trip.days) {
-    const st = M.stops(trip, d, {}), u = new URL(M.routeEmbed(st));
-    assert.equal(u.hostname, 'maps.google.com');
-    assert.equal(u.searchParams.get('output'), 'embed', 'D' + d.n);
-    if (M.queries(st).length > 1) {
-      assert.equal(u.searchParams.get('saddr'), M.query(st[0]));
-      assert.equal(u.searchParams.get('dirflg'), 'd');
-      assert.equal(u.searchParams.get('daddr').split(' to:').pop(), M.queries(st).pop());
-    } else assert.equal(u.searchParams.get('q'), M.query(st[0]));
-  }
-});
 test('Google Maps: directions link uses the official Maps URLs API with waypoints', () => {
   const st = M.stops(trip, trip.days[7], {}), q = M.queries(st), u = new URL(M.dirUrl(st));
   assert.equal(u.origin + u.pathname, 'https://www.google.com/maps/dir/');

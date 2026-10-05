@@ -1,6 +1,6 @@
 /* Day route helpers — pure functions, shared by the page and the Node test.
  * stops(): the lettered places of a day (merged when they are the same spot).
- * placeEmbed / routeEmbed: keyless Google Maps iframe URLs.  dirUrl / searchUrl: official Maps URLs (open the app).
+ * dirUrl / searchUrl: official Google Maps URLs (open the app; free links, no embed, no API key).
  * Places are sent to Google by NAME (the option's `q`), so Google resolves the real location;
  * `ll` is only used here to decide which neighbouring items are the same stop. */
 (function (root) {
@@ -43,12 +43,6 @@
   const queries = sts => sts.map(query).filter((q, i, a) => i === 0 || q !== a[i - 1]);
 
   const searchUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + enc(q);
-  const placeEmbed = q => 'https://maps.google.com/maps?q=' + enc(q) + '&z=15&hl=th&output=embed';
-  function routeEmbed(sts) {
-    const q = queries(sts);
-    if (q.length < 2) return placeEmbed(q[0] || '');
-    return 'https://maps.google.com/maps?saddr=' + enc(q[0]) + '&daddr=' + q.slice(1).map(enc).join('+to:') + '&dirflg=d&hl=th&output=embed';
-  }
   function dirUrl(sts) {
     const q = queries(sts);
     if (q.length < 2) return searchUrl(q[0] || '');
@@ -60,7 +54,7 @@
   // [lng, lat] pairs for a GeoJSON LineString (straight segments between stops — not a road route).
   const lineCoords = sts => sts.map(s => [s.ll[1], s.ll[0]]);
 
-  const api = { lineCoords, stops, stopName, query, queries, searchUrl, placeEmbed, routeEmbed, dirUrl, MAX_WAYPOINTS };
+  const api = { lineCoords, stops, stopName, query, queries, searchUrl, dirUrl, MAX_WAYPOINTS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MapView = api;
 })(typeof window !== 'undefined' ? window : globalThis);
