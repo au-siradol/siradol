@@ -132,7 +132,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <div class="note end-note" id="endnote"></div>
   <section class="litc" id="litc" hidden></section>
   <div class="err" id="err"></div>
-  <div class="key">🇹🇭 คนไทยไปเยอะ · 🧒🏻 เหมาะกับเด็ก</div>
+  <div class="key">🇹🇭 ไทยนิยม · 🧒🏻 เหมาะกับเด็ก</div>
   <div class="links"><a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a><a class="nav-link" id="l-places" target="_blank" rel="noopener">แผนที่สถานที่ (My Maps) ↗</a><a class="nav-link" id="l-sheet" target="_blank" rel="noopener">ข้อมูลทริป (Google Sheet) ↗</a></div>
   {{HANDCREDIT}}
 </main>
@@ -206,7 +206,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const COLOR={meal:'food',cafe:'cafe',see:'see',arch:'arch',hotel:'stay',rest:'stay',shop:'shop',spa:'shop',refuel:'must',carreturn:'must',car:'must',drive:'move',nap:'move',transit:'move',move:'move',arrival:'move',flight:'must'};
   const VERB=s=>({meal:'กิน'+s.title.replace(/\s*\+.*$/,'')+'ที่',cafe:'แวะกินกาแฟที่',drive:'ขับรถไป',nap:'ขับรถไป',rest:'แวะพักที่',see:'ไปเที่ยว',arch:'ไปดูงานสถาปัตย์',
     hotel:/เช็กอิน/.test(s.title)?'เช็กอินที่':'กลับไปพักที่',shop:'ช้อปที่',refuel:'เติมน้ำมันที่',car:'',carreturn:'คืนรถที่',spa:'แช่ออนเซ็นที่',transit:'',move:'นั่ง',arrival:'',flight:''}[s.kind]||'');
-  const FLAG=(o,s)=>[s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น',o.thai&&'🇹🇭 คนไทยไปเยอะ ไปเช้าหรือเลี่ยงช่วงคนแน่น',o.avoid].filter(Boolean);   // avoid: a plain 'don't go' reason
+  const FLAG=(o,s)=>[s.kind==='nap'&&'น้องหลับในรถ',o.queue&&'คิวยาว',o.reserve&&'จองก่อน',o.steep&&'บันไดชัน เดินรอบนอก',o.cold&&'ใส่เสื้ออุ่น',o.thai&&'🇹🇭 ไทยนิยม คนเยอะ ไปเช้าหรือเลี่ยงช่วงคนแน่น',o.avoid].filter(Boolean);   // avoid: a plain 'don't go' reason
   const link=o=>o.ig?{href:'https://www.instagram.com/'+encodeURIComponent(o.ig.replace(/^@/,''))+'/',ig:true}:{href:MV.searchUrl(o.q||o.n),ig:false};
   const shortName=n=>n.replace(/\s*\(([^)]*)\)\s*$/,'').replace(/^คืนรถ\s+/,'');
   const label=(s,o)=>s.kind==='drive'||s.kind==='nap'?shortName(o.pin||o.n).replace(/^.*→\s*/,''):shortName(o.n);
@@ -220,7 +220,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function word(s,o,withMark){
     const L=link(o);
     const emo=(o.thai?'🇹🇭':'')+(o.kids?'🧒🏻':'');   // Thai crowds · good for the 4-year-old
-    return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+(emo?'<span class="emo" aria-label="'+[o.thai&&'คนไทยไปเยอะ',o.kids&&'เหมาะกับเด็ก'].filter(Boolean).join(', ')+'">'+emo+'</span>':'')+
+    return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+(emo?'<span class="emo" aria-label="'+[o.thai&&'ไทยนิยม',o.kids&&'เหมาะกับเด็ก'].filter(Boolean).join(', ')+'">'+emo+'</span>':'')+
       (withMark?mark(s,notesOf(s)):'');
   }
   const notesOf=s=>[...new Set(E.selected(s,sel).filter(o=>!o.skip).flatMap(o=>FLAG(o,s)))];

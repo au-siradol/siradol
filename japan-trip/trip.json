@@ -72,7 +72,7 @@
         { "id": "d2s1", "time": "08:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Bakery Coffee Miyabi", "type": "ขนมปังเดนิชชื่อดัง + กาแฟดริป", "note": "", "dur": 45, "q": "Bakery Coffee Miyabi Haneda" },
-            { "id": "b", "n": "Onigiri Konga (おにぎりこんが) T3", "type": "โอนิกิริปั้นสด (ร้านพี่น้องของ Bongo)", "note": "T3 ชั้น 4 · 7:30–21:00", "dur": 30, "q": "Onigiri Konga Haneda Airport Terminal 3", "kids": true }
+            { "id": "b", "n": "Onigiri Konga (おにぎりこんが) T3", "type": "โอนิกิริปั้นสด (ร้านพี่น้องของ Bongo)", "note": "T3 ชั้น 4 · 7:30–20:30 · ซื้อกลับได้", "dur": 30, "q": "Onigiri Konga Haneda Airport Terminal 3", "kids": true }
           ] },
         { "id": "d2s2", "time": "09:15", "kind": "car", "title": "รับรถ Nissan Serena", "pick": "one", "def": ["a"], "ll": [35.5485, 139.784],
           "opts": [
@@ -95,7 +95,7 @@
             { "id": "a", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) · สาขา Higashikoiji อาคารทรงก้อนเมฆสีขาว", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ถึง Kawaguchiko ราว 12:20 จึงควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Higashikoiji", "queue": true, "arch": true, "reserve": true },
             { "id": "b", "n": "Lake Forest — Hana no Miyako", "type": "โรงอาหาร Hanaan ในสวนดอกไม้ Hana no Miyako · หมูผัดขิง ดงหมูไข่ โฮโตฟักทอง", "note": "อยู่ริมทะเลสาบ Yamanaka ไม่ใช่ Kawaguchiko — ขับเพิ่มราว 25–30 นาที", "dur": 45, "q": "Hanaan Hana no Miyako Koen Yamanakako" },
             { "id": "c", "n": "Tempura Ninja", "type": "เทมปุระ ธีมนินจา จัดจานสนุก", "note": "เด็กชอบ", "dur": 45, "q": "Tempura Ninja Kawaguchiko", "kids": true },
-            { "id": "d", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส", "dur": 45, "q": "Houtou Kura Funari Kawaguchiko", "kids": true }
+            { "id": "d", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส · 11:00–21:00 ไม่มีวันหยุด · ไม่รับจอง (รีวิว Tabelog: คิวยาวแทบตลอด)", "dur": 45, "q": "Houtou Kura Funari Kawaguchiko", "kids": true, "queue": true }
           ] },
         { "id": "d2s8", "time": "13:15", "kind": "nap", "title": "ขับเล่นริมทะเลสาบ / เด็กนอน", "pick": "one", "def": ["a"],
           "opts": [
@@ -122,8 +122,8 @@
             { "id": "a", "n": "Restaurant Sylvans", "type": "ร้านของโรงเบียร์ Fujizakura Heights (เบียร์รางวัลระดับโลก) · อาหารบาวาเรียน-ญี่ปุ่น", "note": "กว้างขวาง เหมาะกับครอบครัว", "dur": 75, "q": "Restaurant Sylvans Kawaguchiko" },
             { "id": "b", "n": "Sanrokuen", "type": "ปิ้งย่างบนเตาถ่านแบบอิโรริ", "note": "บรรยากาศบ้านญี่ปุ่นโบราณ · ร้านระดับตำนาน", "dur": 75, "q": "Sanrokuen Kawaguchiko", "reserve": true },
             { "id": "c", "n": "Kosaku", "type": "โฮโต", "note": "โฮโตอ ทานง่าย", "dur": 75, "q": "Kosaku Kawaguchiko houtou" },
-            { "id": "d", "n": "Shoya no Ie (庄屋乃家)", "type": "หม้อโฮโตเป็ดต้มบนโต๊ะ · ห้องเสื่อและโต๊ะกว้าง", "note": "ปิด 20:00 — ไปถึงไม่เกิน 18:30", "dur": 75, "q": "Shoya no Ie Kawaguchiko houtou", "close": "20:00" },
-            { "id": "e", "n": "Gohan-tei Maefuji (ごはん亭まえふじ)", "type": "ร้านอาหารชุดแบบบ้านๆ · ทงคัตสึ หมูผัดขิง ปลา", "note": "ราคาสบาย ครอบครัวเข้าง่าย", "dur": 60, "q": "Gohantei Maefuji Kawaguchiko", "kids": true }
+            { "id": "d", "n": "Shoya no Ie (庄屋乃家)", "type": "หม้อโฮโตเป็ดต้มบนโต๊ะ · ห้องเสื่อและโต๊ะกว้าง", "note": "จ–ศ 11:00–20:00 (สั่งสุดท้าย 19:30) · ปิดวันพุธ · จองได้", "dur": 75, "q": "Shoya no Ie Kawaguchiko houtou", "close": "20:00", "closedDow": [3] },
+            { "id": "e", "n": "Gohan-tei Maefuji (ごはん亭まえふじ)", "type": "โยโชกุบรรยากาศยุคโชวะ · กุ้งทอด คัตสึด้ง แฮมเบิร์ก สเต๊ก", "note": "ร้านเก่าของคนท้องถิ่น ราคาสบาย ¥1,000–2,000", "dur": 60, "q": "Gohantei Maefuji Kawaguchiko", "kids": true }
           ] }
       ] },
     { "id": "d3", "n": 3, "dow": 6, "date": "2026-10-17", "label": "Kawaguchiko → Matsumoto",
@@ -152,8 +152,8 @@
           "opts": [
             { "id": "a", "n": "Kosaku", "type": "โฮโต", "note": "", "dur": 60, "q": "Kosaku Kawaguchiko houtou" },
             { "id": "b", "n": "ร้านริมทะเลสาบ", "type": "เลือกร้านริมทะเลสาบหน้างาน", "note": "", "dur": 60, "q": "restaurant Lake Kawaguchiko lakeside" },
-            { "id": "c", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส", "dur": 60, "q": "Houtou Kura Funari Kawaguchiko", "kids": true },
-            { "id": "d", "n": "Shoya no Ie (庄屋乃家)", "type": "หม้อโฮโตเป็ดต้มบนโต๊ะ · ห้องเสื่อและโต๊ะกว้าง", "note": "11:00–20:00", "dur": 60, "q": "Shoya no Ie Kawaguchiko houtou" }
+            { "id": "c", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส · 11:00–21:00 ไม่มีวันหยุด · ไม่รับจอง (รีวิว Tabelog: คิวยาวแทบตลอด)", "dur": 60, "q": "Houtou Kura Funari Kawaguchiko", "kids": true, "queue": true },
+            { "id": "d", "n": "Shoya no Ie (庄屋乃家)", "type": "หม้อโฮโตเป็ดต้มบนโต๊ะ · ห้องเสื่อและโต๊ะกว้าง", "note": "ส–อา 11:00–21:30 · ปิดวันพุธ · จองได้", "dur": 60, "q": "Shoya no Ie Kawaguchiko houtou", "closedDow": [3] }
           ] },
         { "id": "d3s5", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09], "lit": {"who": "โฮริ ทัตสึโอะ", "work": "ลมพัดมาแล้ว (風立ちぬ)", "levels": {"short": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา"}, "medium": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน"}, "long": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน\nไร่นาสีดินแดงลาดลงไปสุดตา ในวันที่ฟ้าโปร่ง เหนือดงสนที่ยืนเรียงรายไม่สิ้นสุด เทือกแอลป์ใต้กับแนวเขาแยกอีกสองสามแนวผลุบๆ โผล่ๆ อยู่ในเมฆที่ภูเขาก่อขึ้นเอง ตั้งแต่ทิศใต้ไปจนทิศตะวันตก"}}},
           "opts": [
@@ -208,7 +208,7 @@
           "opts": [
             { "id": "a", "n": "Sweet Bakery Nawate", "type": "เบเกอรี่", "note": "ซื้อไปทานบนรถได้", "dur": 45, "q": "Sweet Bakery Nawate Matsumoto" },
             { "id": "b", "n": "Shiori Bakery", "type": "เบเกอรี่", "note": "ซื้อไปทานบนรถได้", "dur": 45, "q": "Shiori Bakery Matsumoto" },
-            { "id": "c", "n": "Matsumoto Hotel Kagetsu Cafe", "type": "คาเฟ่ในโรงแรมเก่า · ชุดอาหารเช้า", "note": "มอร์นิ่ง 8:00–10:00", "dur": 45, "q": "Matsumoto Hotel Kagetsu cafe" }
+            { "id": "c", "n": "Matsumoto Hotel Kagetsu — Kissa Yatoro Onkan", "type": "ห้องกาแฟในโรงแรมเก่า เฟอร์นิเจอร์ไม้ Matsumoto · ชุดอาหารเช้า", "note": "มอร์นิ่ง 7:00–10:00", "dur": 45, "q": "Matsumoto Hotel Kagetsu cafe" }
           ] },
         { "id": "d4s2", "time": "09:15", "kind": "drive", "title": "ขับ Matsumoto → Hakuba Iwatake", "pick": "one", "def": ["a"], "ll": [36.7016, 137.8619],
           "opts": [
@@ -224,7 +224,7 @@
             { "id": "a", "n": "Restaurant Seppo (雪峰) @ Snow Peak Land Station", "type": "ห้องอาหารของ Snow Peak · ดูแลโดยเชฟร้านมิชลิน 3 ดาว Kangaku Ishikawa", "note": "ห้องอาหารเต็มรูปแบบเปิดเฉพาะกลาง ธ.ค.–ต้น มี.ค. · ช่วง ต.ค. มีแค่โรงอาหาร 雪峰食堂", "dur": 60, "q": "Snow Peak Land Station Hakuba", "avoid": "ไม่ต้องไป — เลือก The City Bakery แทน" },
             { "id": "b", "n": "The City Bakery (Mountain Harbor)", "type": "เบเกอรี่ แซนด์วิช", "note": "", "dur": 60, "q": "The City Bakery Hakuba Mountain Harbor" },
             { "id": "c", "n": "Hakuma Dining", "type": "เซตอาหารญี่ปุ่น (ตาม Sheet) — ค้นร้านชื่อนี้ไม่เจอ เช็กชื่ออีกครั้ง", "note": "", "dur": 60, "q": "Hakuma Dining Hakuba" },
-            { "id": "d", "n": "Zen (膳) Hakuba", "type": "โซบะทำมือ แป้งชินชู · ชุดกลางวันมีเทมปุระ", "note": "11:30–14:00 · ปิดวันพุธ (18 ต.ค. วันอาทิตย์ เปิด) · ขับจาก Iwatake ราว 10 นาที", "dur": 60, "q": "Zen soba Hakuba Hokujo", "closedDow": [3] }
+            { "id": "d", "n": "Zen (膳) Hakuba", "type": "โซบะทำมือ แป้งชินชู · ชุดกลางวันมีเทมปุระ", "note": "11:00–14:00 (โซบะหมดก่อนได้) · ปิดอังคาร–พุธ (18 ต.ค. วันอาทิตย์ เปิด) · ขับจาก Iwatake ราว 10 นาที", "dur": 60, "q": "Zen soba Hakuba Hokujo", "closedDow": [2, 3] }
           ] },
         { "id": "d4s5", "time": "13:15", "kind": "nap", "title": "ขับ + เด็กนอน → Azumino", "pick": "one", "def": ["a"], "ll": [36.3494, 137.8283],
           "opts": [
@@ -256,8 +256,8 @@
           "opts": [
             { "id": "a", "n": "Yakiniku House Koma", "type": "ยากินิกุ (ปิ้งย่างเนื้อ)", "note": "ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.)", "dur": 75, "q": "Yakiniku House Koma Matsumoto" },
             { "id": "c", "n": "Matsumoto Beef Club", "type": "เนื้อและสตูเนื้อ (ตาม Sheet) — ค้นร้านชื่อนี้ไม่เจอ เช็กชื่ออีกครั้ง", "note": "", "dur": 75, "q": "Matsumoto Beef Club" },
-            { "id": "d", "n": "Ikekuni (池国) sukiyaki & shabu-shabu", "type": "สุกี้ยากี้ ชาบูชาบู · ร้านเก่าตั้งแต่ 1928 บรรยากาศญี่ปุ่นโมเดิร์น", "note": "ใกล้สถานี Matsumoto · ควรจอง", "dur": 90, "q": "Ikekuni Matsumoto sukiyaki", "reserve": true },
-            { "id": "e", "n": "Gyu-Kaku Matsumoto Chuo", "type": "ยากินิกุ บุฟเฟต์", "note": "เดินจากสถานี ~8 นาที", "dur": 90, "q": "Gyukaku Matsumoto Chuo", "kids": true }
+            { "id": "d", "n": "Meshiya Guri to Niru (召し屋 グリとニル)", "type": "โยโชกุ (อาหารฝรั่งแบบญี่ปุ่น) ย่างเตาถ่าน เนื้อชินชู + อาหารทะเล", "note": "ชั้นใต้ดิน ตึก Pyrene ใกล้สถานี · 17:00–24:00 · ปิดวันจันทร์ · จองได้", "dur": 75, "q": "Meshiya Guri to Niru Matsumoto", "closedDow": [1] },
+            { "id": "e", "n": "Gyu-Kaku Matsumoto Chuo", "type": "ยากินิกุ บุฟเฟต์", "note": "เดินจากสถานี ~6 นาที · 17:00–23:00 ไม่มีวันหยุด · จองได้", "dur": 90, "q": "Gyukaku Matsumoto Chuo", "kids": true }
           ] }
       ] },
     { "id": "d5", "n": 5, "dow": 1, "date": "2026-10-19", "label": "Kamikochi",
@@ -308,7 +308,7 @@
             { "id": "a", "n": "Miyoshi Soba", "type": "โซบะเส้นสดท้องถิ่น", "note": "", "dur": 75, "q": "Miyoshi Soba Matsumoto" },
             { "id": "b", "n": "Kamameshi Oki", "type": "คามาเมชิ (ข้าวอบหม้อดิน)", "note": "ข้าวอบหม้อดิน ทานง่าย", "dur": 75, "q": "Kamameshi Oki Matsumoto", "kids": true },
             { "id": "c", "n": "Tomato & Onion", "type": "ร้านอาหารครอบครัว แฮมเบิร์กสเต๊ก", "note": "", "dur": 75, "q": "Tomato and Onion Matsumoto", "kids": true },
-            { "id": "d", "n": "Meshiya Guri to Niru (召し屋 グリとニル)", "type": "ย่างเตาถ่าน เนื้อชินชู + อาหารทะเล", "note": "ชั้นใต้ดิน ตึก Pyrene ใกล้สถานี", "dur": 75, "q": "Meshiya Guri to Niru Matsumoto" }
+            { "id": "d", "n": "Ikekuni (池国) sukiyaki & shabu-shabu", "type": "สุกี้ยากี้ ชาบูชาบู · ร้านเก่าตั้งแต่ 1928 บรรยากาศญี่ปุ่นโมเดิร์น", "note": "เดินจากสถานี 4 นาที · 17:30–21:30 · ปิดวันอาทิตย์ · ราว ¥6,000–8,000/คน · ควรจอง", "dur": 90, "q": "Ikekuni Matsumoto sukiyaki", "reserve": true, "closedDow": [0] }
           ] }
       ] },
     { "id": "d6", "n": 6, "dow": 2, "date": "2026-10-20", "label": "Matsumoto → Karuizawa",
@@ -324,7 +324,7 @@
             { "id": "a", "n": "Coffee Abe", "type": "คาเฟ่", "note": "", "dur": 45, "q": "Coffee Abe Matsumoto" },
             { "id": "b", "n": "The Source Diner", "type": "อาหารเช้าแบบไดเนอร์", "note": "", "dur": 45, "q": "The Source Diner Matsumoto" },
             { "id": "c", "n": "Bakery Sweet", "type": "เบเกอรี่", "note": "", "dur": 45, "q": "Bakery Sweet Matsumoto" },
-            { "id": "d", "n": "Matsumoto Hotel Kagetsu Cafe", "type": "คาเฟ่ในโรงแรมเก่า · ชุดอาหารเช้า", "note": "มอร์นิ่ง 8:00–10:00", "dur": 45, "q": "Matsumoto Hotel Kagetsu cafe" }
+            { "id": "d", "n": "Matsumoto Hotel Kagetsu — Kissa Yatoro Onkan", "type": "ห้องกาแฟในโรงแรมเก่า เฟอร์นิเจอร์ไม้ Matsumoto · ชุดอาหารเช้า", "note": "มอร์นิ่ง 7:00–10:00", "dur": 45, "q": "Matsumoto Hotel Kagetsu cafe" }
           ] },
         { "id": "d6s2", "time": "09:30", "kind": "arch", "title": "พิพิธภัณฑ์", "pick": "one", "def": ["a"], "ll": [36.2314, 137.9761],
           "opts": [
@@ -334,8 +334,7 @@
           "opts": [
             { "id": "a", "n": "Karaage Center", "type": "คาราอาเกะ (ไก่ทอด)", "note": "", "dur": 60, "q": "Karaage Center Matsumoto" },
             { "id": "b", "n": "ร้านอาหารญี่ปุ่น", "type": "อาหารญี่ปุ่น เลือกหน้างาน", "note": "", "dur": 60, "q": "Japanese restaurant Matsumoto station" },
-            { "id": "c", "n": "Ogiso Seifunsho (小木曽製粉所) Matsumoto", "type": "โซบะแบบบริการตัวเอง + ซันโซกุยากิ", "note": "หน้าสถานี Matsumoto · เร็ว ไม่ต้องรอนาน", "dur": 45, "q": "Ogiso Seifunsho Matsumoto ekimae", "kids": true },
-            { "id": "d", "n": "Soba-chaya Shoka (そば茶屋 松花)", "type": "โซบะ ซันโซกุยากิ ปลาไหล · เมนูหลากหลาย", "note": "", "dur": 60, "q": "Sobachaya Shoka Matsumoto" }
+            { "id": "c", "n": "Kobayashi Honten (こばやし本店)", "type": "โซบะทำมือ ร้านเก่าตั้งแต่ 1889 ข้างศาลเจ้า Yohashira ใกล้ปราสาท", "note": "11:00–16:00 · ปิดพุธ–พฤหัส · มีโต๊ะสำหรับครอบครัว", "dur": 60, "q": "Kobayashi Honten soba Matsumoto", "queue": true, "closedDow": [3, 4] }
           ] },
         { "id": "d6s4", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Karuizawa", "pick": "one", "def": ["a"], "ll": [36.3672, 138.59],
           "opts": [
@@ -402,8 +401,8 @@
             { "id": "a", "n": "Kawakamian", "type": "โซบะเทมปุระกุ้งตัวใหญ่", "note": "คิวยาวมาก", "dur": 60, "q": "Kawakamian Karuizawa", "queue": true },
             { "id": "b", "n": "Atelier de Fromage", "type": "พิซซ่าชีสฟองดูว์ พาสต้า", "note": "เด็กชอบ", "dur": 60, "q": "Atelier de Fromage Karuizawa", "kids": true },
             { "id": "c", "n": "Karuizawa Kitchen", "type": "ร้านขนมปังกะหรี่ + แกงกะหรี่ หน้าสถานี Karuizawa", "note": "เหมาะเป็นของว่าง มากกว่ามื้อกลางวันนั่งกิน", "dur": 60, "q": "Karuizawa Kitchen" },
-            { "id": "d", "n": "Minerva Sabo (ミネルバ茶房)", "type": "พาสต้าสดผสมไข่ พิซซ่าแป้งทำเอง · อาคารไม้เลื้อย", "note": "", "dur": 60, "q": "Minerva Sabo Karuizawa", "kids": true },
-            { "id": "e", "n": "Soba-dokoro Sasakura (蕎麦処ささくら)", "type": "โซบะโม่หินจากเชิงเขาอาซามะ · ชุดโซบะน้ำจิ้ม 3 แบบ", "note": "", "dur": 60, "q": "Sasakura soba Karuizawa" }
+            { "id": "d", "n": "Minerva Sabo (ミネルバ茶房)", "type": "พาสต้าสดผสมไข่ พิซซ่าแป้งทำเอง · อาคารไม้เลื้อย", "note": "อยู่ Naka-Karuizawa ขับจาก Kyu-Karuizawa ราว 15 นาที · 11:00–21:00 · ปิดวันพฤหัส · ที่จอดกว้าง", "dur": 60, "q": "Minerva Sabo Karuizawa", "kids": true, "closedDow": [4] },
+            { "id": "e", "n": "Soba-dokoro Sasakura (蕎麦処ささくら)", "type": "โซบะโม่หินจากเชิงเขาอาซามะ · ชุดโซบะน้ำจิ้ม 3 แบบ", "note": "อยู่ Shinano-Oiwake ขับจาก Kyu-Karuizawa ราว 20–25 นาที · 11:30–16:00 · ปิดวันอังคาร", "dur": 60, "q": "Sasakura soba Karuizawa", "closedDow": [2] }
           ] },
         { "id": "d7s5", "time": "13:15", "kind": "nap", "title": "เด็กนอน (ในรถ/ล็อบบี้)", "pick": "one", "def": ["a"], "ll": [36.3389, 138.6297],
           "opts": [
@@ -464,7 +463,7 @@
           "opts": [
             { "id": "a", "n": "Himo Takasaki (พาสต้า)", "type": "พาสต้า", "note": "", "dur": 60, "q": "Himo Takasaki pasta" },
             { "id": "b", "n": "Himokawa Udon", "type": "ฮิโมกาวะอุด้ง (เส้นแบนกว้าง ของกุนมะ)", "note": "", "dur": 60, "q": "Himokawa Udon Takasaki" },
-            { "id": "c", "n": "Takasaki City Theatre Cafe & Restaurant", "type": "คาเฟ่และร้านอาหารในโรงละคร Takasaki", "note": "ฝั่งตะวันออกสถานี Takasaki · มีที่จอด", "dur": 60, "q": "Takasaki City Theatre cafe restaurant" }
+            { "id": "c", "n": "Theater Cafe & Restaurant (高崎芸術劇場)", "type": "อิตาเลียน พาสต้า คาเฟ่ ในโรงละคร Takasaki", "note": "เดินจากสถานีฝั่งตะวันออก 5 นาที · 11:00–18:00 · ปิดเมื่อโรงละครปิด · โซนร้านอาหารต้องจอง", "dur": 60, "q": "Takasaki City Theatre cafe restaurant" }
           ] },
         { "id": "d8s5", "time": "13:15", "kind": "nap", "title": "ขับ + เด็กนอน → Tokorozawa", "pick": "one", "def": ["a"], "ll": [35.7842, 139.437],
           "opts": [
@@ -520,7 +519,7 @@
         { "id": "d9s1", "time": "07:30", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Saryo Itoen / ร้านใน T3", "type": "ชาเขียว ของหวานญี่ปุ่น", "note": "", "dur": 30, "q": "Haneda Airport Terminal 3 cafe" },
-            { "id": "b", "n": "Onigiri Konga (おにぎりこんが) T3", "type": "โอนิกิริปั้นสด", "note": "T3 ชั้น 4 · เปิด 7:30", "dur": 30, "q": "Onigiri Konga Haneda Airport Terminal 3", "kids": true }
+            { "id": "b", "n": "Onigiri Konga (おにぎりこんが) T3", "type": "โอนิกิริปั้นสด", "note": "T3 ชั้น 4 · 7:30–20:30 · ซื้อกลับได้", "dur": 30, "q": "Onigiri Konga Haneda Airport Terminal 3", "kids": true }
           ] },
         { "id": "d9s2", "time": "08:00", "kind": "transit", "title": "เช็กอิน", "pick": "one", "def": ["a"], "ll": [35.5494, 139.7845],
           "opts": [
