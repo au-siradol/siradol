@@ -63,13 +63,13 @@
           ] }
       ] },
     { "id": "d2", "n": 2, "dow": 5, "date": "2026-10-16", "label": "Haneda → Kawaguchiko",
-      "route": "Haneda → Ebina SA → Gotemba → Asagiri → Motosu/Shoji/Saiko → Kawaguchiko", "night": "Fuji Grand Villa TOKI (รวมอาหารเช้า)",
+      "route": "Haneda → Ebina SA → Ashigara SA → ช่องเขา Kagosaka → ทะเลสาบ Yamanaka → Fujiyoshida", "night": "Fuji Grand Villa TOKI (รวมอาหารเช้า)",
       "from": { "n": "Hotel Villa Fontaine Grand Haneda Airport", "ll": [35.5452, 139.7798] },
       "weather": [
         { "t": "Kawaguchiko ตอนเช้าเย็น ~8–10°C กลางวัน ~17°C เตรียมเสื้อกันลม", "s": "info" },
         { "t": "ใบไม้เปลี่ยนสีทางเลียบทะเลสาบ (Momiji Corridor) ช่วงต้น–กลาง พ.ย. ยังไม่ถึง; Oishi Park มีดอกโคเคีย (kochia) ช่วงกลาง–ปลาย ต.ค. (ไม่เป็นทางการ)", "s": "warn" }
       ],
-      "late": {"times": {"d2s1": "09:40", "d2s2": "10:00", "d2s3": "10:40", "d2s4": "11:25", "d2s5": "12:10", "d2s8": "12:50", "d2s12": "13:55", "d2s13": "14:10", "d2s6": "15:05", "d2s9": "15:40", "d2s10": "16:00"}, "def": {"d2s1": ["b"]}, "dur": {"d2s1": 20, "d2s4": 45, "d2s12": 15}, "notes": ["ซื้อโอนิกิริ Konga ไปกินในรถ", "กลางวันที่ Ebina เร็วขึ้น 10 นาที", "ถ่ายรูปที่ Asagiri สั้นลง", "ช่วงบ่ายเวลาเดิม"]},
+      "late": {"times": {"d2s1": "09:40", "d2s2": "10:00", "d2s3": "10:40", "d2s4": "11:25", "d2s5": "12:15", "d2s12": "12:55", "d2s8": "13:10", "d2s13": "14:15", "d2s9": "15:25"}, "def": {"d2s1": ["b"]}, "dur": {"d2s1": 20, "d2s4": 45, "d2s12": 15, "d2s13": 65}, "notes": ["ซื้อโอนิกิริ Konga ไปกินในรถ", "กลางวันที่ Ebina สั้นลง", "Hana no Miyako สั้นลงเหลือ 65 นาที", "เช็กอินเวลาเดิม"]},
       "slots": [
         {"id": "d2s1", "time": "09:00", "kind": "meal", "title": "อาหารเช้า", "pick": "one", "def": ["a"],
           "opts": [
@@ -88,31 +88,25 @@
           "opts": [
             { "id": "a", "n": "ฟู้ดคอร์ท EXPASA Ebina (ขาออก)", "type": "ศูนย์อาหารใหญ่ หลายร้านให้เลือก · ขนมปังเมลอนปังขึ้นชื่อ", "note": "ห้องน้ำกว้าง ที่นั่งเยอะ · กินเร็วแล้วออกก่อนน้องง่วง", "dur": 55, "q": "EXPASA Ebina Westbound", "kids": true }
           ] },
-        {"id": "d2s5", "time": "12:05", "kind": "drive", "title": "ขับ Ebina → Gotemba", "pick": "one", "def": ["a"], "ll": [35.3, 138.94],
+        {"id": "d2s5", "time": "12:05", "kind": "drive", "title": "ขับ Ebina → Ashigara SA", "pick": "one", "def": ["a"], "ll": [35.326, 138.99],
           "opts": [
-            { "id": "a", "n": "Ebina → Gotemba (ทางด่วน Tomei)", "note": "ราว 40 กม. 40 นาที", "dur": 40, "km": 40, "q": "Gotemba IC" }
+            { "id": "a", "n": "Ebina → Ashigara SA (ขาออก)", "note": "ทางด่วน Tomei ราว 45 กม. 40 นาที", "dur": 40, "km": 45, "q": "EXPASA Ashigara Downbound" }
           ] },
-        {"id": "d2s8", "time": "12:45", "kind": "nap", "title": "ขับรอบภูเขา (น้องหลับ) → Asagiri Kogen", "pick": "one", "def": ["a"],
+        {"id": "d2s12", "time": "12:45", "kind": "rest", "title": "พักที่ Ashigara SA", "pick": "one", "def": ["a"], "ll": [35.326, 138.99],
+          "opts": [
+            { "id": "a", "n": "Ashigara SA (ขาออก) — ระเบียงชมฟูจิ", "type": "จุดพักรถใหญ่อันดับ 2 ของทางด่วน Tomei · มีระเบียงมองเห็นฟูจิ", "note": "ห้องน้ำ + ถ่ายรูปฟูจิครั้งแรกของทริป · อยู่บนทางด่วน ไม่ต้องอ้อม", "dur": 20, "q": "EXPASA Ashigara Downbound", "kids": true }
+          ] },
+        {"id": "d2s8", "time": "13:05", "kind": "nap", "title": "ขับ (น้องหลับ) → ทะเลสาบ Yamanaka", "pick": "one", "def": ["a"],
           "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "รถบัสแล่นผ่านไปอย่างรวดเร็ว แต่กลีบดอกอีฟนิงพริมโรสสีทองดอกเดียวที่ฉันเห็นแวบหนึ่ง ยังสดชัดอยู่ในใจ ยืนเผชิญหน้าฟูจิสูง 3,778 เมตรได้อย่างน่าชื่นชม ไม่หวั่นไหวแม้แต่น้อย ตั้งตรงอย่างกล้าหาญ — แทบอยากเรียกว่าทรงพลังดั่งเฮอร์คิวลิส — ดอกอีฟนิงพริมโรสดอกนั้นงามนัก ฟูจินั้นเข้ากันดีนักกับดอกอีฟนิงพริมโรส"}}},
           "opts": [
-            { "id": "a", "n": "ฝั่งใต้ของฟูจิ: Gotemba → Fujinomiya → Asagiri Kogen", "pin": "รอบภูเขาฝั่งใต้ ถึง Asagiri Kogen", "note": "ถนนเลียบเชิงเขาฝั่งใต้ (ถนน 469 แล้วขึ้นเหนือทางถนน 139) · ราว 60 กม. 65 นาที · น้องหลับระหว่างทาง", "dur": 65, "km": 60, "q": "Asagiri Kogen", "via": ["Fujinomiya"] }
+            { "id": "a", "n": "Ashigara → Gotemba → ช่องเขา Kagosaka → ทะเลสาบ Yamanaka", "pin": "ทะเลสาบ Yamanaka (ผ่านช่องเขา Kagosaka)", "note": "ทางตรงตามถนน 138 ไม่อ้อม · ราว 30 กม. ขับช้าๆ ชมวิว ~65 นาที · น้องหลับระหว่างทาง ถ้ายังหลับตอนถึง จอดให้นอนต่อที่ลานจอดได้", "dur": 65, "km": 30, "q": "Yamanakako Hana no Miyako Park" }
           ] },
-        {"id": "d2s12", "time": "13:50", "kind": "see", "title": "จุดถ่ายรูปฟูจิฝั่งตะวันตก", "pick": "one", "def": ["a"], "ll": [35.42, 138.58],
+        {"id": "d2s13", "time": "14:10", "kind": "see", "title": "ชมวิวทะเลสาบ Yamanaka", "pick": "one", "def": ["a"], "ll": [35.4167, 138.8673],
           "opts": [
-            { "id": "a", "n": "Asagiri Kogen / Fumotoppara", "type": "ทุ่งหญ้าเปิดโล่งเชิงฟูจิฝั่งตะวันตก", "note": "ช่วงบ่ายแดดส่องตรงหน้า ถ่ายรูปไม่ย้อนแสง · ทางราบ จอดใกล้ · น้องตื่นพอดี", "dur": 20, "q": "Asagiri Kogen Fumotoppara", "kids": true }
+            { "id": "a", "n": "Yamanakako Hana no Miyako Park", "type": "สวนดอกไม้กว้าง ทางเดินราบ วิวฟูจิด้านหลังทุ่งดอกไม้", "note": "อยู่ริมถนน 138 ไม่ต้องอ้อม · ตั้งแต่ 16 ต.ค. เปิด 9:00–16:30 ค่าเข้าผู้ใหญ่ 360 เยน (เด็กเล็กฟรี) · ที่จอด 220 คัน · มีร้าน Hanaan กินของว่าง/โฮโต", "dur": 75, "q": "Yamanakako Hana no Miyako Park", "kids": true, "close": "16:30" },
+            { "id": "b", "n": "Yamanakako Panorama-dai", "type": "จุดชมวิวมุมสูง เห็นทะเลสาบ Yamanaka กับฟูจิเต็มตา", "note": "อ้อมจากริมทะเลสาบไปทางช่องเขา Mikuni ราว 10 นาที · ที่จอดแค่ ~7 คัน · มีห้องน้ำ · ช่วงบ่ายฟูจิย้อนแสงเล็กน้อย", "dur": 40, "q": "Yamanakako Panorama-dai" }
           ] },
-        {"id": "d2s13", "time": "14:10", "kind": "drive", "title": "ขับเลียบทะเลสาบ → Kawaguchiko", "pick": "one", "def": ["a"], "ll": [35.4976, 138.7683],
-          "opts": [
-            { "id": "a", "n": "Motosu → Shoji → Saiko → Kawaguchiko", "pin": "เลียบทะเลสาบ Motosu · Shoji · Saiko ถึง Kawaguchiko", "note": "ราว 45 กม. 55 นาที · ชมวิวภาพธนบัตร 1,000 เยนจากริมทะเลสาบ Motosu (แสงข้าง) · ผ่าน Saiko แต่ไม่แวะหมู่บ้าน Saiko Iyashi no Sato Nenba", "dur": 55, "km": 45, "q": "Mt. Fuji World Heritage Centre Yamanashi", "via": ["Motosuko", "Lake Shoji", "Lake Saiko"] }
-          ] },
-        {"id": "d2s6", "time": "15:05", "kind": "arch", "title": "ชมสถาปัตยกรรม", "pick": "any", "def": ["b"],
-          "lit": {"who": "ดาไซ โอซามุ", "work": "ร้อยทัศน์ฟูจิ (富嶽百景)", "levels": {"long": {"th": "มันสมบูรณ์เกินไป ฟูจิอยู่ตรงหน้า และที่เชิงเขาคือทะเลสาบ Kawaguchi แผ่ขาวเยือกเย็น มีภูเขาหมอบนิ่งเงียบโอบอยู่สองข้าง มองแวบเดียวฉันก็หน้าแดงด้วยความอาย มันคือภาพวาดบนผนังโรงอาบน้ำ คือฉากบนเวทีละคร สั่งทำมาเป๊ะจนน่าอับอายที่จะมอง"}}},
-          "opts": [
-            { "id": "a", "n": "Oishi Park", "type": "สวนริมทะเลสาบ", "note": "ทางเลียบทะเลสาบราบ มีดอกโคเคียช่วงปลาย ต.ค.", "dur": 30, "q": "Oishi Park Kawaguchiko", "kids": true, "ll": [35.5228, 138.7594], "thai": true },
-            { "id": "b", "n": "Mt. Fuji World Heritage Centre (Shigeru Ban)", "type": "ศูนย์ข้อมูล / พิพิธภัณฑ์", "note": "สถาปัตยกรรมกรวยไม้ของ Shigeru Ban", "dur": 30, "q": "Mt. Fuji World Heritage Centre Yamanashi", "arch": true, "ll": [35.4844, 138.7639] },
-            { "id": "c", "n": "Saiko Nenba", "type": "หมู่บ้านบ้านหลังคาฟางเก่า", "note": "ชุมชนบ้านฟางเก่า", "dur": 45, "q": "Saiko Iyashi no Sato Nenba", "ll": [35.5012, 138.6857] }
-          ] },
-        {"id": "d2s9", "time": "15:40", "kind": "cafe", "title": "คาเฟ่ (ปกติข้าม — เช็กอิน 16:00)", "pick": "one", "def": ["c"],
+        {"id": "d2s9", "time": "15:25", "kind": "cafe", "title": "คาเฟ่ (ปกติข้าม — เช็กอิน 16:00)", "pick": "one", "def": ["c"],
           "opts": [
             { "id": "a", "n": "Brand New Day", "type": "คาเฟ่กระจกวิวฟูจิ · กาแฟดริป + พิซซ่าเตาฟืน", "note": "", "dur": 45, "q": "Brand New Day cafe Kawaguchiko" },
             { "id": "b", "n": "Cisco / Lake Bake", "type": "Cisco Coffee (สไตล์ซานฟรานซิสโก) / Lake Bake เบเกอรี่เตาฟืนริมน้ำ", "note": "", "dur": 45, "q": "Lake Bake Kawaguchiko" },
