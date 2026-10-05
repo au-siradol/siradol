@@ -24,7 +24,6 @@
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* iOS: no text inflation on rotate */
 a,button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}   /* no double-tap zoom on taps */
-html.locked{overflow:hidden}   /* page stays put while the sheet is open */
 .zoomed .dock{opacity:0;pointer-events:none}   /* pinch-zoomed: the fixed dock would cover the text */
 body{font-family:var(--font);min-height:100dvh;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 22px calc(110px + env(safe-area-inset-bottom))}
 .screen{width:100%;max-width:440px;display:flex;flex-direction:column;gap:20px}
@@ -45,7 +44,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ring .v{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.05}
 .ring .v b{font-size:15px}.ring .v small{display:block;font-size:9.5px;color:var(--mute)}
 
-.note{font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 1px);line-height:1.3}
+.note{font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 1px);line-height:1.05}
 .note.top-note{margin:4px 0 0 -6px}
 .note.end-note{text-align:center}
 /* red handwriting: level lines, slanted letters (synthetic oblique — the font has no italic) */
@@ -96,9 +95,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .mid{display:flex;align-items:center}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
-.nav-link{font-size:13px;color:var(--mute)}
-.links{display:flex;flex-direction:column;gap:6px}
-.credit{font-size:11.5px;color:var(--mute)}
+.nav-link{font-size:13px;line-height:1.3;color:var(--mute)}
+.err:empty{display:none}   /* an empty block would still take a 20px gap */
+.links{display:flex;flex-direction:column;gap:2px}
+.credit{font-size:11.5px;line-height:1.3;color:var(--mute);margin:-16px 0 0}
 
 .dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
 .dock .in{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between;pointer-events:auto}
@@ -434,7 +434,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('sh-opts').innerHTML=list.map((o,i)=>'<li><button data-s="'+s.id+'" data-o="'+o.id+'"'+(s.pick==='any'?' aria-pressed="'+chosen.includes(o)+'"':'')+'>'+(i+1)+') '+esc(o.skip?'ข้าม':shortName(o.n))+'</button></li>').join('');
     const nt=notesOf(s);$('sh-notes').innerHTML=nt.map(x=>'<div>! '+esc(x)+'</div>').join('');
     showSheet();
-    const f=$('sh-opts').querySelector('button')||$('sh-x');f.focus();
+    if(kb)($('sh-opts').querySelector('button')||$('sh-x')).focus({preventScroll:true});
   }
   function openLit(id,from){
     const s=trip.days[cur].slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;if(from)popFrom=from;
@@ -443,7 +443,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('sh-opts').innerHTML=(hasLv?'<li><div class="lens" role="group" aria-label="ความยาวข้อความ">'+LENS.map(([k,n])=>'<button data-len="'+k+'" data-for="'+s.id+'" aria-pressed="'+(k===litLen)+'">'+n+'</button>').join('')+'</div></li>':'')+
       '<li class="lit"><div class="th">'+para(v.th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>';
     $('sh-notes').innerHTML='';showSheet();
-    const f=$('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x');f.focus();
+    if(kb)($('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x')).focus({preventScroll:true});
   }
   function litCards(d){
     const box=$('litc'),ls=d.slots.filter(s=>s.lit);
@@ -451,8 +451,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     box.hidden=false;
     box.innerHTML='<h3>อ่านระหว่างทาง</h3>'+ls.map(s=>'<article><span class="at">'+s.time+' · '+esc(s.title)+'</span>'+litBody(s.lit).replace(/<span class="(ja|th)"/g,'<div class="$1"').replace(/<\/span>/g,'</div>')+'<div class="by">— '+esc(s.lit.who)+', '+esc(s.lit.work)+'</div><div class="nt">'+esc(s.lit.note)+'</div></article>').join('');
   }
-  function showSheet(){$('sheet').hidden=false;$('sheetbg').hidden=false;document.documentElement.classList.add('locked');$('sheet').querySelector('.in').scrollTop=0}
-  function closeSheet(){$('sheet').hidden=true;$('sheetbg').hidden=true;document.documentElement.classList.remove('locked');popSlot=null;if(popFrom&&document.body.contains(popFrom))popFrom.focus()}
+  function showSheet(){$('sheet').hidden=false;$('sheetbg').hidden=false;$('sheet').querySelector('.in').scrollTop=0}
+  function closeSheet(){$('sheet').hidden=true;$('sheetbg').hidden=true;popSlot=null;if(kb&&popFrom&&document.body.contains(popFrom))popFrom.focus({preventScroll:true})}
+  // the background never scrolls under the sheet (no overflow:hidden — on iOS that makes a zoomed page jump)
+  $('sheetbg').addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
     $('date').textContent='วัน'+DOW[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1];
@@ -477,6 +479,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     $('arc').setAttribute('stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
     $('next').innerHTML=nx?'<div><b>'+nx.time+'</b><small>'+(today?'ต่อไป':'เริ่ม')+'</small></div>':'<div><b>✓</b><small>จบวัน</small></div>';
   }
+  /* move focus only for keyboard users: on iPhone, focusing an element scrolls the zoomed page to it */
+  let kb=false;
+  addEventListener('keydown',()=>{kb=true},true);addEventListener('pointerdown',()=>{kb=false},true);
   document.addEventListener('click',e=>{
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
     const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
