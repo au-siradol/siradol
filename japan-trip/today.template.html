@@ -132,7 +132,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <div class="note end-note" id="endnote"></div>
   <section class="litc" id="litc" hidden></section>
   <div class="err" id="err"></div>
-  <div class="key">🇹🇭 คนไทยไปเยอะ · 🧒 เหมาะกับเด็ก</div>
+  <div class="key">🇹🇭 คนไทยไปเยอะ · 🧒🏻 เหมาะกับเด็ก</div>
   <div class="links"><a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a><a class="nav-link" id="l-places" target="_blank" rel="noopener">แผนที่สถานที่ (My Maps) ↗</a><a class="nav-link" id="l-sheet" target="_blank" rel="noopener">ข้อมูลทริป (Google Sheet) ↗</a></div>
   {{HANDCREDIT}}
 </main>
@@ -219,7 +219,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   }
   function word(s,o,withMark){
     const L=link(o);
-    const emo=(o.thai?'🇹🇭':'')+(o.kids?'🧒':'');   // Thai crowds · good for the 4-year-old
+    const emo=(o.thai?'🇹🇭':'')+(o.kids?'🧒🏻':'');   // Thai crowds · good for the 4-year-old
     return '<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+(emo?'<span class="emo" aria-label="'+[o.thai&&'คนไทยไปเยอะ',o.kids&&'เหมาะกับเด็ก'].filter(Boolean).join(', ')+'">'+emo+'</span>':'')+
       (withMark?mark(s,notesOf(s)):'');
   }
@@ -252,7 +252,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const WD=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
   function detail(o,s){
     const nt=o.note||'',has=x=>nt.includes(x);   // skip facts the note already says
-    const info=[o.type,nt,o.last&&!has(o.last)&&'เข้าสุดท้าย '+o.last,o.close&&!o.last&&!has(o.close)&&'ปิด '+o.close,o.closedDow&&!has('ปิดวัน')&&'ปิดวัน'+o.closedDow.map(d=>WD[d]).join('/'),o.km&&'ราว '+o.km+' กม.',o.kids&&'🧒 เหมาะกับเด็ก',o.arch&&s.kind!=='arch'&&'งานสถาปัตย์'].filter(Boolean);
+    const info=[o.type,nt,o.last&&!has(o.last)&&'เข้าสุดท้าย '+o.last,o.close&&!o.last&&!has(o.close)&&'ปิด '+o.close,o.closedDow&&!has('ปิดวัน')&&'ปิดวัน'+o.closedDow.map(d=>WD[d]).join('/'),o.km&&'ราว '+o.km+' กม.',o.kids&&'🧒🏻 เหมาะกับเด็ก',o.arch&&s.kind!=='arch'&&'งานสถาปัตย์'].filter(Boolean);
     const warn=FLAG(o,s).filter(w=>!has(w.replace('ก่อน','')));
     return '<span class="det">'+info.map(esc).join(' · ')+(warn.length?'<span class="wr">! '+warn.map(esc).join(' · ')+'</span>':'')+'</span>';
   }
