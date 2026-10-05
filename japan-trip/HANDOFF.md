@@ -36,14 +36,7 @@ Read this first when continuing in a new session. `SPEC.md` has the data model a
 - **D8** Takasaki (Gunma MoMA) → Tokorozawa (Kadokawa) → refuel → car return 17:10.
 
 ## Open items
-- **Hiroshi Senju Museum (Ryue Nishizawa)**: closed Tuesday → only D7 (Wed) works; it is already option `d7s2/b`. User is deciding whether to make it a default and which other Karuizawa buildings to add (see the list below).
-- Karuizawa architecture candidates, checked Oct 2026:
-  - Former Mikasa Hotel (1906), reopened 1 Oct 2025 after restoration, 9:00–16:30, open daily, has a café.
-  - Mampei Hotel (1894; Alps wing 1936), renovated 2024; café terrace from 9:30 (apple pie).
-  - Raymond's Summer House (1933, now the Peynet Museum) in Karuizawa Taliesin, 9:00–17:00.
-  - Karuizawa Kogen Church, next to the Stone Church in the Hoshino area (not re-checked).
-  - Union Church (W. M. Vories) and Shaw Memorial Chapel on the Kyu-Karuizawa walk (exterior; not re-checked).
-  - Option `d7s2/c` "St. Paul's / Karuizawa Taliesin" joins two places in different areas — split it.
+- Karuizawa architecture: D7 09:40 defaults to the Hiroshi Senju Museum (closed Tue, so D7 only); options include Kumoba, St. Paul's (Raymond), Wakita (Yoshimura), Raymond Summer House/Peynet in Taliesin, Former Mikasa Hotel (reopened Oct 2025), Mampei Hotel and Union Church + Shaw Chapel. D6 adds Karuizawa Kogen Church beside the Stone Church. Kogen Church and Union Church opening details were not re-checked.
 - Check before the trip:
   - **Places:**
     - Marumo weekday opening time (D5 07:30 breakfast).
