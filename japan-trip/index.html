@@ -12,13 +12,13 @@
 <style>
 :root{
   --bg:#ececec;--ink:#1b1b1b;--mute:#666;--red:#c0392f;
-  /* autumn: persimmon, ginkgo, moss, plum, chestnut, rose-hip, maple */
-  --hl-food:#f4b27e;--hl-cafe:#f3d36b;--hl-see:#c9cc8a;--hl-arch:#d9a3a6;--hl-stay:#d8bc9c;--hl-shop:#eeb3a0;--hl-must:#e98c74;
+  /* place colours — set from PALETTES in the script */
+  --hl-food:#c8612b;--hl-cafe:#d29a17;--hl-see:#7d8b35;--hl-arch:#9c4566;--hl-stay:#83563a;--hl-shop:#d0764f;--hl-must:#b3261e;
   /* 'Trip Text' = Sukhumvit Set for Thai + Helvetica Neue for Latin (see #ff); IBM Plex Sans Thai is the web fallback */
   --font:'Trip Text','Helvetica Neue',Helvetica,Arial,'IBM Plex Sans Thai',sans-serif;
   --hand:'iannnnnBKK','Mali',cursive;
   /* typography knobs — set from TYPE in the script */
-  --lh:1.7;--gap:.6em;--red-size:24px;--tilt:-1deg;
+  --body:19px;--lh:1.7;--gap:.6em;--red-size:24px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
@@ -42,13 +42,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ring .v b{font-size:15px}.ring .v small{display:block;font-size:9.5px;color:var(--mute)}
 
 .note{font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 1px);line-height:1.3}
-.note.top-note{transform:rotate(-1.5deg);margin:4px 0 0 -6px}
-.note.end-note{text-align:center;transform:rotate(-1deg)}
+.note.top-note{margin:4px 0 0 -6px}
+.note.end-note{text-align:center}
+/* red handwriting: level lines, slanted letters (synthetic oblique — the font has no italic) */
+.slant .note,.slant .mark,.slant .skip,.slant .err,.slant .sheet ol button,.slant .sheet .notes{font-style:oblique 12deg}
+.slant .sheet ol .cfg button,.slant .sheet ol .lens button{font-style:normal}
 /* prose: the line gap is just enough for one row of small red notes */
-.prose{position:relative;font-size:19px;line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
+.prose{position:relative;font-size:var(--body);line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
 .t{font-size:1em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
 .anc{position:relative}
-.hl{--c:transparent;text-decoration:none;padding:0 .12em;background:linear-gradient(transparent 54%,var(--c) 54%,var(--c) 94%,transparent 94%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hl{--c:transparent;text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:3px;text-underline-offset:.24em;text-decoration-skip-ink:auto}
+.band .hl{text-decoration:none;padding:0 .12em;--b:color-mix(in srgb,var(--c) 45%,transparent);background:linear-gradient(transparent 54%,var(--b) 54%,var(--b) 94%,transparent 94%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .c-food{--c:var(--hl-food)}.c-cafe{--c:var(--hl-cafe)}.c-see{--c:var(--hl-see)}.c-arch{--c:var(--hl-arch)}
 .c-stay{--c:var(--hl-stay)}.c-shop{--c:var(--hl-shop)}.c-must{--c:var(--hl-must)}
 .c-move{border-bottom:1.5px dotted var(--mute)}
@@ -85,6 +89,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet .in{max-height:85dvh;overflow:auto}
 .sheet .lit{display:flex;flex-direction:column;gap:10px;font-size:18px;line-height:1.75}
 .sheet .lit .src{font-size:14px;color:var(--mute)}
+.sheet ol .cfg{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08);font-size:14px}
+.cfg .row{display:flex;justify-content:space-between;align-items:baseline}.cfg .row b{font-weight:500}.cfg .row span{color:var(--mute);font-variant-numeric:tabular-nums}
+.cfg input[type=range]{width:100%;accent-color:var(--ink);margin:2px 0}
+.sheet ol .cfg button{width:auto;text-align:left;font-family:var(--font);color:var(--ink);font-size:14px;padding:7px 10px;border:1px solid rgba(0,0,0,.15);border-radius:12px}
+.sheet ol .cfg button[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.sheet ol .cfg button[aria-pressed=true]::after{content:none}
+.cfg .seg{display:flex;gap:6px}.cfg .seg button{flex:1;text-align:center!important}
+.cfg .pals{display:flex;flex-direction:column;gap:6px}.cfg .pals button{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cfg .dots{display:flex;gap:4px}.cfg .dots i{width:14px;height:14px;border-radius:50%}
+.aa{font:600 13px/1 var(--font);color:var(--ink);margin-left:8px;padding:3px 0 3px 8px;border-left:1px solid rgba(0,0,0,.15)}
+.mid{display:flex;align-items:center}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .nav-link{font-size:13px;color:var(--mute)}
@@ -95,7 +110,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .dock .in{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between;pointer-events:auto}
 .round{width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.08);display:grid;place-items:center;font:500 22px/1 var(--font);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .round:disabled{opacity:.3;cursor:default}
-.mid{font-size:13px;color:var(--mute);text-align:center;background:rgba(236,236,236,.85);border-radius:12px;padding:2px 10px}
+.mid{font-size:13px;color:var(--mute);text-align:center;background:rgba(236,236,236,.85);border-radius:12px;padding:4px 12px}
 .mid a{color:var(--ink)}
 </style>
 <body>
@@ -121,7 +136,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><h3 id="sh-t"></h3><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
-  <div class="mid"><div id="cnt"></div></div>
+  <div class="mid"><div id="cnt"></div><button class="aa" id="aa" aria-label="ปรับตัวอักษรและสี">Aa</button></div>
   <button class="round" id="next-d" aria-label="วันถัดไป">›</button>
 </div></nav>
 
@@ -347,7 +362,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   /* ---------- typography ----------
      th  : Thai glyph size relative to Latin, in % (size-adjust on the Thai half of Sukhumvit Set)
      lh  : prose line height   red: size of the red marks and sheet text (px) */
-  const TYPE_DEFAULT={th:90,lh:1.7,gap:.6,red:24};
+  /* body: prose size (px)   slant: red handwriting leans   pal: place colours   ul: 'line' underline / 'band' highlighter */
+  const TYPE_DEFAULT={th:90,body:19,lh:1.7,gap:.6,red:24,slant:true,pal:'momiji',ul:'line'};
+  // food, cafe, see, arch, stay, shop, must — strong enough to read as a 3px underline
+  const PALETTES={
+    momiji:['ใบไม้เปลี่ยนสี',['#c8612b','#d29a17','#7d8b35','#9c4566','#83563a','#d0764f','#b3261e']],
+    dento:['สีญี่ปุ่นโบราณ',['#eb6101','#e6a700','#3e9a6a','#8f77b5','#7b4b3a','#e16b8c','#d7003a']],
+    fuji:['ทะเลสาบกับภูเขา',['#e07a5f','#e0b14a','#2a9d8f','#5f6caf','#8d6e63','#d48c6a','#c0392f']],
+    sumi:['หมึกกับชาด',['#555','#777','#555','#777','#999','#777','#c0392f']],
+    sakura:['พาสเทลนุ่ม',['#f2a98a','#f0cf6b','#a9c98f','#c6a6d8','#c9ad94','#f3b2c0','#e8836f']]
+  };
+  const HL=['food','cafe','see','arch','stay','shop','must'];
   let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type2')||'{}'))}catch(e){}
   function applyType(t){
     Object.assign(TYPE,t||{});
@@ -355,7 +380,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const EN={400:['Helvetica Neue','HelveticaNeue'],500:['Helvetica Neue Medium','HelveticaNeue-Medium'],600:['Helvetica Neue Bold','HelveticaNeue-Bold'],700:['Helvetica Neue Bold','HelveticaNeue-Bold']};
     const face=(w,names,range,adj)=>"@font-face{font-family:'Trip Text';font-weight:"+w+";src:"+names.map(n=>"local('"+n+"')").join(',')+";unicode-range:"+range+";size-adjust:"+adj+"%}";
     $('ff').textContent=[400,500,600,700].map(w=>face(w,TH[w],'U+0E00-0E7F',TYPE.th)+face(w,EN[w],'U+0000-0DFF,U+0E80-FFFF',100)).join('\n');
-    const r=document.documentElement.style;r.setProperty('--lh',TYPE.lh);r.setProperty('--gap',TYPE.gap+'em');r.setProperty('--red-size',TYPE.red+'px');
+    const r=document.documentElement.style;r.setProperty('--body',TYPE.body+'px');r.setProperty('--lh',TYPE.lh);r.setProperty('--gap',TYPE.gap+'em');r.setProperty('--red-size',TYPE.red+'px');
+    (PALETTES[TYPE.pal]||PALETTES.momiji)[1].forEach((c,i)=>r.setProperty('--hl-'+HL[i],c));
+    document.body.classList.toggle('slant',!!TYPE.slant);document.body.classList.toggle('band',TYPE.ul==='band');
   }
   window.applyType=t=>{applyType(t);ls.set('japan2569.type2',JSON.stringify(TYPE))};
   window.getType=()=>Object.assign({},TYPE);
@@ -436,6 +463,22 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     box.hidden=false;
     box.innerHTML='<h3>อ่านระหว่างทาง</h3>'+ls.map(s=>'<article><span class="at">'+s.time+' · '+esc(s.title)+'</span>'+litBody(s.lit).replace(/<span class="(ja|th)"/g,'<div class="$1"').replace(/<\/span>/g,'</div>')+'<div class="by">— '+esc(s.lit.who)+', '+esc(s.lit.work)+'</div><div class="nt">'+esc(s.lit.note)+'</div></article>').join('');
   }
+  /* sheet: Aa → text size, line spacing, red handwriting, colours */
+  const RANGES=[['body','ขนาดตัวอักษร',14,26,1,v=>v+' px'],['lh','ระยะห่างบรรทัด',1.3,2.4,.05,v=>(+v).toFixed(2)],['red','ขนาดตัวอักษรสีแดง',16,34,1,v=>v+' px']];
+  function openSettings(from,again){
+    popFrom=from;
+    const seg=(k,opts)=>'<div class="seg">'+opts.map(([v,n])=>'<button data-cfg="'+k+'" data-v="'+v+'" aria-pressed="'+(String(TYPE[k])===String(v))+'">'+n+'</button>').join('')+'</div>';
+    $('sh-t').textContent='ตัวอักษรและสี';$('sh-now').textContent='ปรับแล้วเห็นผลทันที · จำไว้ในเครื่องนี้';
+    $('sh-opts').innerHTML=RANGES.map(([k,n,a,b,st,f])=>'<li class="cfg"><label class="row" for="r-'+k+'"><b>'+n+'</b><span id="v-'+k+'">'+f(TYPE[k])+'</span></label><input type="range" id="r-'+k+'" data-range="'+k+'" min="'+a+'" max="'+b+'" step="'+st+'" value="'+TYPE[k]+'"></li>').join('')+
+      '<li class="cfg"><div class="row"><b>ตัวอักษรสีแดง</b></div>'+seg('slant',[['true','เอียง'],['false','ตรง']])+'</li>'+
+      '<li class="cfg"><div class="row"><b>ชื่อสถานที่</b></div>'+seg('ul',[['line','ขีดเส้นใต้'],['band','ไฮไลต์']])+'</li>'+
+      '<li class="cfg"><div class="row"><b>โทนสี</b></div><div class="pals">'+Object.entries(PALETTES).map(([k,[n,c]])=>'<button data-cfg="pal" data-v="'+k+'" aria-pressed="'+(TYPE.pal===k)+'"><span>'+n+'</span><span class="dots">'+c.map(x=>'<i style="background:'+x+'"></i>').join('')+'</span></button>').join('')+'</div></li>'+
+      '<li class="cfg"><div class="seg"><button data-cfg="reset">กลับเป็นค่าเริ่มต้น</button></div></li>';
+    $('sh-notes').innerHTML='';$('sheet').hidden=false;$('sheetbg').hidden=false;
+    if(!again)$('r-body').focus();
+  }
+  document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.range;if(!k)return;
+    const R=RANGES.find(x=>x[0]===k);window.applyType({[k]:+e.target.value});$('v-'+k).textContent=R[5](TYPE[k])});
   function closeSheet(){$('sheet').hidden=true;$('sheetbg').hidden=true;popSlot=null;if(popFrom&&document.body.contains(popFrom))popFrom.focus()}
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
@@ -465,6 +508,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
     const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
     const ln=e.target.closest('[data-len]');if(ln){litLen=ln.dataset.len;ls.set('japan2569.litlen2',litLen);openLit(ln.dataset.for,null);return}
+    if(e.target.closest('#aa')){openSettings(e.target.closest('#aa'));return}
+    const cf=e.target.closest('[data-cfg]');if(cf){const k=cf.dataset.cfg,v=cf.dataset.v;
+      if(k==='reset'){const keep=TYPE.th;window.applyType(Object.assign({},TYPE_DEFAULT,{th:keep}))}
+      else window.applyType({[k]:v==='true'?true:v==='false'?false:v});
+      const y=$('sheet').querySelector('.in').scrollTop;openSettings(popFrom,true);$('sheet').querySelector('.in').scrollTop=y;return}
     if(e.target.closest('#sh-x')||e.target.id==='sheetbg'){closeSheet();return}
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
