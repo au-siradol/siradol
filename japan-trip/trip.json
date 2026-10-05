@@ -246,7 +246,6 @@
         { "id": "d4s10", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["a"],
           "opts": [
             { "id": "a", "n": "Yakiniku House Koma", "type": "ยากินิกุ (ปิ้งย่างเนื้อ)", "note": "ตัด Hakuba Brewing ออก (อยู่ใน Hakuba ห่างจากโรงแรมราว 1 ชม.)", "dur": 75, "q": "Yakiniku House Koma Matsumoto" },
-            { "id": "b", "n": "Don Quijote Steak", "type": "ร้านแฮมเบิร์กสเต๊ก Don Quijote อยู่เมือง Nagano (Uematsu) ไม่ใช่ Matsumoto — ห่างราว 1 ชม.", "note": "ใน Matsumoto มี Don Quijote ที่เป็นร้านขายของ (เปิด 30 มิ.ย. 2026 ในตึก Matsumoto Shena) ไม่ใช่ร้านอาหาร", "dur": 75, "q": "Don Quijote steak Matsumoto" },
             { "id": "c", "n": "Matsumoto Beef Club", "type": "ยังหาร้านชื่อนี้ใน Matsumoto ไม่เจอ — เช็กชื่อใน Sheet อีกครั้ง", "note": "", "dur": 75, "q": "Matsumoto Beef Club" }
           ] }
       ] },
