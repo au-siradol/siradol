@@ -82,7 +82,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet .lit .kind{font-size:12px;color:var(--red)}
 .sheet .in{max-height:85dvh;overflow:auto}
 .sheet .lit{display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.65}
-.sheet .lit .ja{font-size:16px}.sheet .lit .nt{font-size:13.5px;color:var(--mute)}.sheet .lit .src{font-size:12px;color:var(--mute)}
+.sheet .lit .ja{font-size:16px}.sheet .lit .nt{font-size:13.5px;color:var(--mute)}.sheet .lit .src{font-size:13px;color:var(--mute)}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .nav-link{font-size:13px;color:var(--mute)}
@@ -215,10 +215,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function openLit(id,from){
     const s=trip.days[cur].slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;if(from)popFrom=from;
     const v=lev(L,litLen),hasLv=!!L.levels;
-    $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(L.work);$('sh-now').textContent=L.who;
+    $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));$('sh-now').textContent='ทิวทัศน์จากหนังสือ';
     $('sh-opts').innerHTML=(hasLv?'<li><div class="lens" role="group" aria-label="ความยาวข้อความ">'+LENS.map(([k,n])=>'<button data-len="'+k+'" data-for="'+s.id+'" aria-pressed="'+(k===litLen)+'">'+n+'</button>').join('')+'</div></li>':'')+
-      '<li class="lit">'+(v.ja&&litLen==='short'?'<div class="ja" lang="ja">'+para(v.ja)+'</div>':'')+'<div class="th">'+para(v.th)+'</div>'+(v.ja&&litLen!=='short'?'<details><summary>ต้นฉบับญี่ปุ่น</summary><div class="ja" lang="ja">'+para(v.ja)+'</div></details>':'')+(v.kind?'<div class="kind">'+esc(v.kind)+(v.ja?'':' (ไม่มีต้นฉบับญี่ปุ่นช่วงนี้)')+'</div>':'')+
-      '<div class="nt">'+esc(L.note)+'</div><div class="src">ที่มา: '+esc(L.src)+'</div></li>';
+      '<li class="lit"><div class="th">'+para(v.th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>';
     $('sh-notes').innerHTML='';$('sheet').hidden=false;$('sheetbg').hidden=false;
     const f=$('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x');f.focus();
   }

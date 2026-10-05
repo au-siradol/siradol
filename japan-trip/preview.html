@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="th">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iPhone preview · Japan 2569</title>
+<style>
+:root{--bg:#d9d9d9;--ink:#1b1b1b;--mute:#666}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,'Helvetica Neue','Sukhumvit Set',sans-serif;padding:16px}
+h1{font-size:17px;margin:0 0 4px}
+.lead{color:var(--mute);margin:0 0 12px;font-size:13px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:16px;position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
+.bar label{display:flex;gap:6px;align-items:center}
+.bar select,.bar input{font:inherit}
+.bar button{font:inherit;border:1px solid #999;background:#fff;border-radius:999px;padding:4px 12px;cursor:pointer}
+.row{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center}
+figcaption{font-size:12.5px;color:var(--mute);text-align:center}
+figcaption b{color:var(--ink);font-weight:600}
+.scale{transform-origin:top left}
+/* the phone: outer body + screen; the iframe fills the area between status bar and home indicator */
+.phone{position:relative;display:inline-block;width:calc(var(--w) + 24px);background:#111;border-radius:var(--r);padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.screen{position:relative;width:var(--w);height:var(--h);border-radius:calc(var(--r) - 12px);overflow:hidden;background:#ececec}
+.status{position:absolute;left:0;right:0;top:0;height:var(--top);display:flex;justify-content:space-between;align-items:center;padding:0 26px;font:600 15px system-ui,-apple-system,sans-serif;color:#1b1b1b;z-index:2;pointer-events:none}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;background:#000;border-radius:20px;z-index:3}
+.notch{position:absolute;top:0;left:50%;width:162px;height:32px;margin-left:-81px;background:#000;border-radius:0 0 20px 20px;z-index:3}
+.home{position:absolute;bottom:8px;left:50%;width:134px;height:5px;margin-left:-67px;background:#1b1b1b;border-radius:3px;z-index:3;opacity:.85}
+iframe{position:absolute;left:0;right:0;top:var(--top);width:100%;height:calc(var(--h) - var(--top) - var(--bot));border:0;background:#ececec}
+.safari iframe{height:calc(var(--h) - var(--top) - var(--bot) - var(--tool))}
+.toolbar{display:none;position:absolute;left:0;right:0;bottom:var(--bot);height:var(--tool);background:rgba(245,245,245,.96);border-top:1px solid #ccc;z-index:2;align-items:center;justify-content:center;font-size:12px;color:#888}
+.safari .toolbar{display:flex}
+.note{margin-top:20px;font-size:12.5px;color:var(--mute);max-width:760px}
+</style>
+<body>
+<h1>ตรวจหน้า "วันนี้" บน iPhone หลายขนาด</h1>
+<p class="lead">ขนาดเป็นหน่วย CSS pt ตามที่ Safari เห็นจริง · ทุกจอโหลดหน้าเดียวกัน (index.html) · เลื่อนและแตะในแต่ละจอได้</p>
+<div class="bar">
+  <label>วัน <select id="day"></select></label>
+  <label>ย่อ/ขยาย <input id="zoom" type="range" min="40" max="100" value="70"> <span id="zv">70%</span></label>
+  <label><input id="saf" type="checkbox"> แสดงแถบเครื่องมือ Safari</label>
+  <button id="reload">โหลดใหม่ทุกจอ</button>
+</div>
+<div class="row" id="row"></div>
+<p class="note">ใกล้เคียงของจริง ไม่ใช่ตัวจำลองของ Apple: ฟอนต์ Sukhumvit Set / Helvetica Neue จะแสดงถูกต้องเฉพาะเมื่อเปิดหน้านี้บน Mac หรือ iPhone · ขอบมน แถบสถานะ และแถบ Safari วาดขึ้นตามขนาดโดยประมาณ (Safari แถบล่าง ~ 83 pt) · ถ้าต้องการดูแบบตรงที่สุด ให้เปิดเว็บบน iPhone จริง หรือใช้ Safari → Develop → Responsive Design Mode บน Mac</p>
+<script>
+const PHONES=[
+  // name, width, height (CSS pt), status-bar, home-indicator, radius, cutout
+  ['iPhone SE (2nd/3rd)',375,667,20,0,38,'none'],
+  ['iPhone 13 mini',375,812,50,34,50,'notch'],
+  ['iPhone 15 / 16',393,852,59,34,55,'island'],
+  ['iPhone 16 Plus',430,932,59,34,55,'island'],
+  ['iPhone 16 Pro Max',440,956,62,34,60,'island'],
+];
+const row=document.getElementById('row'),day=document.getElementById('day'),zoom=document.getElementById('zoom'),zv=document.getElementById('zv'),saf=document.getElementById('saf');
+for(let i=1;i<=9;i++)day.insertAdjacentHTML('beforeend','<option value="'+i+'">วันที่ '+i+'</option>');
+day.value=(/#d(\d)/.exec(location.hash)||[,3])[1];
+function build(){
+  const z=zoom.value/100;zv.textContent=zoom.value+'%';
+  row.innerHTML=PHONES.map(([n,w,h,top,bot,r,cut])=>{
+    const W=(w+24)*z,H=(h+24)*z;
+    return '<figure><div style="width:'+W+'px;height:'+H+'px"><div class="scale" style="transform:scale('+z+')">'+
+      '<div class="phone'+(saf.checked?' safari':'')+'" style="--w:'+w+'px;--h:'+h+'px;--top:'+top+'px;--bot:'+bot+'px;--tool:83px;--r:'+(r+12)+'px">'+
+      '<div class="screen"><div class="status"><span>9:41</span><span>●●● ▮</span></div>'+(cut==='island'?'<div class="island"></div>':cut==='notch'?'<div class="notch"></div>':'')+
+      '<iframe title="'+n+'" src="index.html#d'+day.value+'"></iframe><div class="toolbar">Safari</div>'+(bot?'<div class="home"></div>':'')+'</div></div></div></div>'+
+      '<figcaption><b>'+n+'</b><br>'+w+' × '+h+' pt · พื้นที่หน้าเว็บ '+w+' × '+(h-top-bot-(saf.checked?83:0))+'</figcaption></figure>';
+  }).join('');
+}
+[day,zoom,saf].forEach(el=>el.addEventListener('input',build));
+document.getElementById('reload').addEventListener('click',build);
+build();
+</script>
+</body>
+</html>
