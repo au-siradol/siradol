@@ -54,6 +54,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
 /* a small red mark after a word; tapping it opens the sheet with choices and notes */
 .mark{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;vertical-align:.55em;margin-left:1px;padding:6px 3px;margin-block:-6px}
+.sheet[hidden],.sheet-bg[hidden]{display:none}   /* .sheet sets display:flex, which would otherwise override [hidden] */
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:30}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;display:flex;justify-content:center;padding:0 12px calc(12px + env(safe-area-inset-bottom))}
 .sheet .in{width:100%;max-width:440px;background:var(--bg);border-radius:20px;padding:16px 20px 18px;box-shadow:0 -6px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:10px}
@@ -96,7 +97,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><h3 id="sh-t"></h3><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
-  <div class="mid"><div id="cnt"></div><a href="index.html">แผนเต็ม ↗</a></div>
+  <div class="mid"><div id="cnt"></div><a href="plan.html">แผนเต็ม ↗</a></div>
   <button class="round" id="next-d" aria-label="วันถัดไป">›</button>
 </div></nav>
 

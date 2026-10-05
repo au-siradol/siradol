@@ -27,14 +27,16 @@ const style = JSON.stringify(JSON.parse(read('map-style.json'))).replace(/<\//g,
 const vendorJs = js('vendor/maplibre-gl.js') + '\n;\n' + js('vendor/pmtiles.js');
 const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map)
   .replace('{{STYLE}}', () => style).replace('{{VENDOR_CSS}}', () => read('vendor/maplibre-gl.css')).replace('{{VENDOR_JS}}', () => vendorJs);
-fs.writeFileSync(path.join(dir, 'index.html'), html);
-console.log('index.html', (html.length / 1024).toFixed(1) + ' KB');
+fs.writeFileSync(path.join(dir, 'plan.html'), html);
+console.log('plan.html', (html.length / 1024).toFixed(1) + ' KB');
 
-// today.html — the one-day "lock screen" view (same data and engine; no map)
+// index.html — the one-day "lock screen" view and entry page (same data and engine; no map)
 const ttpl = read('today.template.html');
 for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}', '{{HANDFONT}}']) if (!ttpl.includes(k)) throw new Error(`today.template.html ไม่มี ${k}`);
 const today = ttpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map);
-fs.writeFileSync(path.join(dir, 'today.html'), today.replace('{{HANDFONT}}', ''));
+fs.writeFileSync(path.join(dir, 'index.html'), today.replace('{{HANDFONT}}', ''));
+// today.html — kept so old links still work; forwards to the entry page with the same #dN
+fs.writeFileSync(path.join(dir, 'today.html'), '<!doctype html><meta charset="utf-8"><title>Today · Japan 2569</title><meta http-equiv="refresh" content="0; url=index.html"><script>location.replace("index.html" + location.hash)</script><a href="index.html">Japan 2569</a>\n');
 
 // today.local.html — same page with the private handwriting font embedded (fonts/ is gitignored: the font is
 // licensed for educational use only, so it is never committed or published).
@@ -44,4 +46,4 @@ if (fs.existsSync(hf)) {
   fs.writeFileSync(path.join(dir, 'today.local.html'), today.replace('{{HANDFONT}}', () => face));
   console.log('today.local.html (with handwriting font, not committed)');
 }
-console.log('today.html', (today.length / 1024).toFixed(1) + ' KB');
+console.log('index.html (today view)', (today.length / 1024).toFixed(1) + ' KB');

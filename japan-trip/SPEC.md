@@ -4,6 +4,7 @@ Goal: self-contained itinerary page built from `trip.json`.
 Family: 2 elderly adults + 1 child (4 y). Nissan Serena from Haneda, 15–23 Oct 2026.
 
 ## Files
+Site entry: `japan-trip/` → `index.html` = the one-day "today" view; `plan.html` = full planner; `today.html` forwards to `index.html` (old links).
 - `trip.json` — single source of truth (9 days → slots → options). Edit this, not the HTML.
 - `engine.js` — pure conflict checker `Engine.analyze(trip, day, sel)` and structural checker `Engine.validate(trip)`.
 - `map.js` — day stops and map/link helpers (pure, also run in Node). `map-style.json` — ELEMNT map style. `vendor/` — MapLibre + PMTiles.
