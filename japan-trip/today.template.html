@@ -74,6 +74,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .litc article{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.035)}
 .litc .ja{font-size:16px;line-height:1.7}.litc .th{font-size:15px}.litc .by{font-size:12.5px;color:var(--mute)}.litc .nt{font-size:13.5px;color:var(--mute);line-height:1.6}
 .litc .at{font-size:12px;color:var(--mute)}
+.book{display:inline-grid;place-items:center;vertical-align:.35em;margin-left:3px;padding:6px 4px;margin-block:-6px;color:var(--red)}
+.book svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lens{display:flex;gap:6px}.sheet ol .lens button{flex:1;width:auto;text-align:center;font-family:var(--font);color:var(--ink);font-size:14px;border:1px solid rgba(0,0,0,.18);border-radius:999px;padding:7px 0;text-decoration:none}
+.sheet ol .lens button[aria-pressed=true]::after{content:none}.sheet ol .lens button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sheet .lit details{font-size:14px;color:var(--mute)}.sheet .lit summary{cursor:pointer;padding:4px 0}.sheet .lit details .ja{margin-top:4px;color:var(--ink)}
+.sheet .lit .kind{font-size:12px;color:var(--red)}
+.sheet .in{max-height:85dvh;overflow:auto}
 .sheet .lit{display:flex;flex-direction:column;gap:6px;font-size:15px;line-height:1.65}
 .sheet .lit .ja{font-size:16px}.sheet .lit .nt{font-size:13.5px;color:var(--mute)}.sheet .lit .src{font-size:12px;color:var(--mute)}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
@@ -157,7 +164,12 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   // literature display: 'a' inline under the sentence · 'b' a red 本 mark that opens the sheet · 'c' a card after the day · '' off
   let LIT=(new URLSearchParams(location.search).get('lit'))??(trip.meta.lit||'');
   window.setLit=m=>{LIT=m;render()};
-  const litBody=L=>'<span class="ja" lang="ja">'+esc(L.ja)+'</span><span class="th">'+esc(L.th)+'</span>';
+  const LENS=[['short','สั้น'],['medium','กลาง'],['long','ยาว']];
+  let litLen=ls.get('japan2569.litlen')||'short';
+  const lev=(L,k)=>(L.levels&&(L.levels[k]||L.levels.short))||{ja:L.ja,th:L.th,kind:'แปลจากต้นฉบับ'};
+  const para=s=>esc(s).replace(/\n/g,'<br>');
+  const litBody=L=>{const v=lev(L,'short');return (v.ja?'<span class="ja" lang="ja">'+esc(v.ja)+'</span>':'')+'<span class="th">'+esc(v.th)+'</span>'};
+  const BOOK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.2 5 7.6 4.5 4 4.8v13c3.6-.3 6.2.2 8 1.7 1.8-1.5 4.4-2 8-1.7v-13c-3.6-.3-6.2.2-8 1.7z"/><path d="M12 6.5v13"/></svg>';
 
   const COLOR={meal:'food',cafe:'cafe',see:'see',arch:'arch',hotel:'stay',rest:'stay',shop:'shop',spa:'shop',refuel:'must',carreturn:'must',car:'must',drive:'move',nap:'move',transit:'move',move:'move',arrival:'move',flight:'must'};
   const VERB=s=>({meal:'กิน'+s.title.replace(/\s*\+.*$/,'')+'ที่',cafe:'แวะกินกาแฟที่',drive:'ขับรถไป',nap:'ขับรถไป',rest:'แวะพักที่',see:'ไปเที่ยว',arch:'ไปดูงานสถาปัตย์',
@@ -183,7 +195,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
     if(!real.length)return t+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+mark(s,[])+' ';
     const v=VERB(s);
-    const L=s.lit,litMark=L&&LIT==='b'?'<button class="mark" data-lit="'+s.id+'" aria-label="อ่านระหว่างทาง: '+esc(L.work)+'">本</button>':'';
+    const L=s.lit,litMark=L&&LIT==='b'?'<button class="book" data-lit="'+s.id+'" aria-label="อ่านจากหนังสือ: '+esc(L.work)+'" title="อ่านจากหนังสือ">'+BOOK+'</button>':'';
     const litBlock=L&&LIT==='a'?'<span class="lit-a">'+litBody(L)+'<span class="by">— '+esc(L.who)+', '+esc(L.work)+'</span></span>':'';
     return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+litMark+litBlock+(litBlock?'':(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว '));
   }
@@ -201,10 +213,14 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const f=$('sh-opts').querySelector('button')||$('sh-x');f.focus();
   }
   function openLit(id,from){
-    const s=trip.days[cur].slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;popFrom=from;
+    const s=trip.days[cur].slots.find(x=>x.id===id);if(!s||!s.lit)return;const L=s.lit;if(from)popFrom=from;
+    const v=lev(L,litLen),hasLv=!!L.levels;
     $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(L.work);$('sh-now').textContent=L.who;
-    $('sh-opts').innerHTML='<li class="lit">'+litBody(L).replace(/<span class="(ja|th)"/g,'<div class="$1"').replace(/<\/span>/g,'</div>')+'<div class="nt">'+esc(L.note)+'</div><div class="src">ที่มา: '+esc(L.src)+'</div></li>';
-    $('sh-notes').innerHTML='';$('sheet').hidden=false;$('sheetbg').hidden=false;$('sh-x').focus();
+    $('sh-opts').innerHTML=(hasLv?'<li><div class="lens" role="group" aria-label="ความยาวข้อความ">'+LENS.map(([k,n])=>'<button data-len="'+k+'" data-for="'+s.id+'" aria-pressed="'+(k===litLen)+'">'+n+'</button>').join('')+'</div></li>':'')+
+      '<li class="lit">'+(v.ja&&litLen==='short'?'<div class="ja" lang="ja">'+para(v.ja)+'</div>':'')+'<div class="th">'+para(v.th)+'</div>'+(v.ja&&litLen!=='short'?'<details><summary>ต้นฉบับญี่ปุ่น</summary><div class="ja" lang="ja">'+para(v.ja)+'</div></details>':'')+(v.kind?'<div class="kind">'+esc(v.kind)+(v.ja?'':' (ไม่มีต้นฉบับญี่ปุ่นช่วงนี้)')+'</div>':'')+
+      '<div class="nt">'+esc(L.note)+'</div><div class="src">ที่มา: '+esc(L.src)+'</div></li>';
+    $('sh-notes').innerHTML='';$('sheet').hidden=false;$('sheetbg').hidden=false;
+    const f=$('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x');f.focus();
   }
   function litCards(d){
     const box=$('litc'),ls=d.slots.filter(s=>s.lit);
@@ -240,6 +256,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   document.addEventListener('click',e=>{
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
     const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
+    const ln=e.target.closest('[data-len]');if(ln){litLen=ln.dataset.len;ls.set('japan2569.litlen',litLen);openLit(ln.dataset.for,null);return}
     if(e.target.closest('#sh-x')||e.target.id==='sheetbg'){closeSheet();return}
     const b=e.target.closest('button[data-s]');
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
