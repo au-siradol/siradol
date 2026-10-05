@@ -24,7 +24,8 @@
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* iOS: no text inflation on rotate */
 a,button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}   /* no double-tap zoom on taps */
-.zoomed .dock{opacity:0;pointer-events:none}   /* pinch-zoomed: the fixed dock would cover the text */
+html{touch-action:pan-x pan-y}   /* no pinch-zoom: on iPhone it made the page jump — A− / A+ in the dock instead */
+.zoomed .dock{opacity:0;pointer-events:none}   /* if zoomed anyway (accessibility), the fixed dock would cover the text */
 body{font-family:var(--font);min-height:100dvh;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 22px calc(110px + env(safe-area-inset-bottom))}
 .screen{width:100%;max-width:440px;display:flex;flex-direction:column;gap:20px}
 a{color:inherit}
@@ -54,7 +55,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .prose{position:relative;font-size:var(--body);line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
 .t{font-size:1em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
 .anc{position:relative}
-.hl{--c:transparent;text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:1.5px;text-underline-offset:.24em;text-decoration-skip-ink:auto}
+.hl{--c:transparent;text-decoration:none;border-bottom:1.5px dotted var(--c)}   /* same dotted line as the drives, in the place colour */
 .band .hl{text-decoration:none;padding:0 .12em;--b:color-mix(in srgb,var(--c) 45%,transparent);background:linear-gradient(transparent 54%,var(--b) 54%,var(--b) 94%,transparent 94%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .c-food{--c:var(--hl-food)}.c-cafe{--c:var(--hl-cafe)}.c-see{--c:var(--hl-see)}.c-arch{--c:var(--hl-arch)}
 .c-stay{--c:var(--hl-stay)}.c-shop{--c:var(--hl-shop)}.c-must{--c:var(--hl-must)}
@@ -92,7 +93,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet .in{max-height:85dvh;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .sheet .lit{display:flex;flex-direction:column;gap:10px;font-size:18px;line-height:1.75}
 .sheet .lit .src{font-size:14px;color:var(--mute)}
-.mid{display:flex;align-items:center}
+.mid{display:flex;align-items:center;gap:4px}
+.fz{font:600 14px/1 var(--font);color:var(--ink);padding:6px 8px;border-radius:8px}.fz:disabled{opacity:.3}
 .skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
 .err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .nav-link{font-size:13px;line-height:1.3;color:var(--mute)}
@@ -100,7 +102,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .links{display:flex;flex-direction:column;gap:2px}
 .credit{font-size:11.5px;line-height:1.3;color:var(--mute);margin:-16px 0 0}
 
-.dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
+.dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:28px 22px calc(14px + env(safe-area-inset-bottom));pointer-events:none;z-index:5;background:linear-gradient(rgba(236,236,236,0),var(--bg) 45%)}   /* text fades out under the controls instead of showing through */
 .dock .in{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between;pointer-events:auto}
 .round{width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.08);display:grid;place-items:center;font:500 22px/1 var(--font);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .round:disabled{opacity:.3;cursor:default}
@@ -130,7 +132,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><h3 id="sh-t"></h3><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
-  <div class="mid"><div id="cnt"></div></div>
+  <div class="mid"><button class="fz" id="fzdn" aria-label="ตัวอักษรเล็กลง">A−</button><div id="cnt"></div><button class="fz" id="fzup" aria-label="ตัวอักษรใหญ่ขึ้น">A+</button></div>
   <button class="round" id="next-d" aria-label="วันถัดไป">›</button>
 </div></nav>
 
@@ -159,6 +161,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   };
   const HL=['food','cafe','see','arch','stay','shop','must'];
   const TYPE=Object.assign({},TYPE_DEFAULT);
+  // A− / A+ : prose size in 2px steps, red notes scale with it; remembered on this phone
+  const FZ=[15,17,19,21,23,25,27];
+  const setBody=b=>{TYPE.body=b;TYPE.red=Math.round(b*TYPE_DEFAULT.red/TYPE_DEFAULT.body)};
+  {const b=+ls.get('japan2569.body');if(FZ.includes(b))setBody(b)}
   function applyType(t){
     Object.assign(TYPE,t||{});
     const TH={400:['Sukhumvit Set Text','SukhumvitSet-Text','Sukhumvit Set'],500:['Sukhumvit Set Medium','SukhumvitSet-Medium'],600:['Sukhumvit Set SemiBold','SukhumvitSet-SemiBold'],700:['Sukhumvit Set Bold','SukhumvitSet-Bold']};
@@ -277,7 +283,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   /* move focus only for keyboard users: on iPhone, focusing an element scrolls the zoomed page to it */
   let kb=false;
   addEventListener('keydown',()=>{kb=true},true);addEventListener('pointerdown',()=>{kb=false},true);
+  function fontStep(d){
+    const i=FZ.indexOf(TYPE.body)+d;if(i<0||i>=FZ.length)return;
+    const h=document.documentElement,max=()=>Math.max(1,h.scrollHeight-innerHeight),f=scrollY/max();   // keep the reading place
+    setBody(FZ[i]);ls.set('japan2569.body',FZ[i]);applyType();scrollTo(0,Math.round(f*max()));fzState();
+  }
+  function fzState(){const i=FZ.indexOf(TYPE.body);$('fzdn').disabled=i<=0;$('fzup').disabled=i>=FZ.length-1}
   document.addEventListener('click',e=>{
+    if(e.target.closest('#fzdn')){fontStep(-1);return}
+    if(e.target.closest('#fzup')){fontStep(1);return}
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}
     const lm=e.target.closest('[data-lit]');if(lm){openLit(lm.dataset.lit,lm);return}
     const ln=e.target.closest('[data-len]');if(ln){litLen=ln.dataset.len;ls.set('japan2569.litlen2',litLen);openLit(ln.dataset.for,null);return}
@@ -306,7 +320,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     if(Math.abs(dx)>70&&Math.abs(dx)>2*Math.abs(dy)){const n=cur+(dx<0?1:-1);if(n>=0&&n<N){cur=n;render();scrollTo(0,0)}}},{passive:true});
   if(window.visualViewport){const z=()=>document.documentElement.classList.toggle('zoomed',zoomed());visualViewport.addEventListener('resize',z);z()}
   
-  applyType();render();setInterval(tick,15000);
+  applyType();fzState();render();setInterval(tick,15000);
 })();
 </script>
 </body>
