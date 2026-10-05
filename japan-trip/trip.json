@@ -165,14 +165,15 @@
             { "id": "b", "n": "Oishi Park (ริมทะเลสาบ Kawaguchiko) → Nenba-hama (ริมทะเลสาบ Saiko)", "type": "จุดชมวิวริมทะเลสาบ 2 แห่ง ทางราบทั้งหมด · Oishi Park ทุ่งโคเคียแดง (ช่วงพีคกลาง–ปลาย ต.ค.) + Kawaguchiko Natural Living Center มีห้องน้ำ ไอศกรีม", "note": "ไป Oishi Park ก่อน (~09:50) แสงยังมาทางซ้ายด้านข้าง ฟูจิไม่ย้อนแสง · Nenba-hama ราว 10:50 แดดเริ่มอยู่หลังฟูจิ ถ่ายผิวน้ำ/ป่า Aokigahara จะสวยกว่าถ่ายฟูจิตรงๆ · Nenba-hama คือหาดริมทะเลสาบ ไม่ได้เข้าหมู่บ้าน Iyashi no Sato Nenba · เสาร์ที่จอด Oishi Park (30 คัน) เต็มเร็ว ไปให้ถึงก่อน 10 โมง · ขับกลับมากินกลางวันที่ Kawaguchiko ~20 นาที", "dur": 130, "km": 40, "q": "Oishi Park Kawaguchiko", "kids": true, "pin": "ชมวิว Kawaguchiko + Saiko" },
             { "id": "c", "n": "Oishi Park อย่างเดียว", "type": "ทุ่งโคเคีย + ริมทะเลสาบ Kawaguchiko ฝั่งเหนือ ทางราบ", "note": "ไม่ไป Saiko · เหลือเวลาเดินช้าๆ / แวะคาเฟ่ใน Natural Living Center", "dur": 60, "q": "Oishi Park Kawaguchiko", "kids": true, "ll": [35.5235, 138.7437] }
           ] },
-        {"id": "d3s4", "time": "11:40", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["a"],
+        {"id": "d3s4", "time": "11:40", "kind": "meal", "title": "อาหารกลางวัน", "pick": "one", "def": ["h"],
           "opts": [
-            { "id": "a", "n": "Kosaku", "type": "โฮโต", "note": "", "dur": 60, "q": "Kosaku Kawaguchiko houtou" },
+            { "id": "h", "n": "Houtou Fudou — สาขา Kawaguchiko Kita Honten (北本店)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) · โต๊ะ + ห้องเสื่อ", "note": "อยู่ริมทะเลสาบฝั่งเหนือ ทางกลับจาก Saiko ผ่านพอดี ไม่ต้องขับอ้อม · 11:00–20:00 เปิดทุกวัน · เสาร์เที่ยงคนเยอะ ถึงก่อน 11:45 จะรอน้อย", "dur": 50, "q": "Houtou Fudou Kawaguchiko Kita Honten", "queue": true },
+            { "id": "a", "n": "Kosaku (小作) สาขา Kawaguchiko", "type": "โฮโต · ร้านใหญ่ โต๊ะ + ห้องเสื่อ", "note": "11:00–20:00 ไม่มีวันหยุดประจำ · ไม่รับจอง เสาร์เที่ยงมักมีคิว · อยู่ในเมือง Kawaguchiko ฝั่งใต้ ขับจาก Saiko ~20 นาที", "dur": 60, "q": "Kosaku Kawaguchiko houtou", "queue": true },
             { "id": "b", "n": "ร้านริมทะเลสาบ", "type": "เลือกร้านริมทะเลสาบหน้างาน", "note": "", "dur": 60, "q": "restaurant Lake Kawaguchiko lakeside" },
             { "id": "c", "n": "Houtou Kura Funari (歩成) Kawaguchiko", "type": "โฮโต · ร้านกว้าง 200 ที่นั่ง โต๊ะ + ห้องเสื่อ", "note": "ห้องในสุดเห็นฟูจิวันฟ้าใส · 11:00–21:00 ไม่มีวันหยุด · ไม่รับจอง (รีวิว Tabelog: คิวยาวแทบตลอด)", "dur": 60, "q": "Houtou Kura Funari Kawaguchiko", "kids": true, "queue": true },
             { "id": "d", "n": "Shoya no Ie (庄屋乃家)", "type": "หม้อโฮโตเป็ดต้มบนโต๊ะ · ห้องเสื่อและโต๊ะกว้าง", "note": "ส–อา 11:00–21:30 · ปิดวันพุธ · จองได้", "dur": 60, "q": "Shoya no Ie Kawaguchiko houtou", "closedDow": [3] },
-            { "id": "f", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) · สาขา Higashikoiji อาคารทรงก้อนเมฆสีขาว", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ควรจองคิวออนไลน์ล่วงหน้า", "dur": 45, "q": "Houtou Fudou Higashikoiji", "queue": true, "arch": true, "reserve": true },
-            { "id": "g", "n": "Tempura Ninja", "type": "เทมปุระ ธีมนินจา จัดจานสนุก", "note": "เด็กชอบ", "dur": 45, "q": "Tempura Ninja Kawaguchiko", "kids": true }
+            { "id": "f", "n": "Houtou Fudou (Takeshi Hosaka)", "type": "โฮโต (เส้นแบนตุ๋นหม้อเหล็ก ฟักทอง ผัก) · สาขา Higashikoiji อาคารทรงก้อนเมฆสีขาว", "note": "อาคารของ Takeshi Hosaka แต่มีคิวยาวช่วงเที่ยง — ควรจองคิวออนไลน์ล่วงหน้า · อยู่ฝั่งตะวันออก (ทาง Fujiyoshida) ขับอ้อม ~15 นาทีก่อนขึ้นเขา Misaka · ปิดไม่แน่นอน เส้นหมดร้านปิด", "dur": 45, "q": "Houtou Fudou Higashikoiji", "queue": true, "arch": true, "reserve": true },
+            { "id": "g", "n": "Tempura Ninja", "type": "เทมปุระ ธีมนินจา จัดจานสนุก", "note": "เด็กชอบ · ร้านเล็ก ถ้ามา 6 คนขึ้นไปควรจอง", "dur": 45, "q": "Tempura Ninja Kawaguchiko", "kids": true, "reserve": true }
           ] },
         {"id": "d3s5", "time": "12:45", "kind": "nap", "title": "ขับ + เด็กนอน → Suwako SA", "pick": "one", "def": ["a"], "ll": [36.043, 138.09],
           "lit": {"who": "โฮริ ทัตสึโอะ", "work": "ลมพัดมาแล้ว (風立ちぬ)", "levels": {"short": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา"}, "medium": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน"}, "long": {"th": "เชิงเขายัตสึงะตะเกะสีดินแดงทอดตัวกว้างใหญ่ ค่อยๆ ลาดลงสู่หุบเขา หมู่บ้านบนเขาเล็กๆ สองสามแห่งเอียงไปตามลาดเขาทั้งหมู่บ้าน ก่อนจะจมหายในดงสนสีดำนับไม่ถ้วน\nไร่นาสีดินแดงลาดลงไปสุดตา ในวันที่ฟ้าโปร่ง เหนือดงสนที่ยืนเรียงรายไม่สิ้นสุด เทือกแอลป์ใต้กับแนวเขาแยกอีกสองสามแนวผลุบๆ โผล่ๆ อยู่ในเมฆที่ภูเขาก่อขึ้นเอง ตั้งแต่ทิศใต้ไปจนทิศตะวันตก"}}},
@@ -215,10 +216,10 @@
           ] },
         {"id": "d3s12", "time": "18:30", "kind": "meal", "title": "อาหารเย็น", "pick": "one", "def": ["d"],
           "opts": [
-            { "id": "a", "n": "Matsumoto Brewery Tap Room", "type": "คราฟต์เบียร์ท้องถิ่นในโกดังเก่า Nakamachi + กับแกล้ม", "note": "", "dur": 75, "q": "Matsumoto Brewery Tap Room" },
-            { "id": "b", "n": "Izakaya Kura", "type": "อาหารพื้นเมืองชินชู ในโกดังโบราณ (kura)", "note": "แนะนำจอง", "dur": 75, "q": "Izakaya Kura Matsumoto", "reserve": true },
-            { "id": "c", "n": "Shabu-shabu Onyasai", "type": "ชาบูชาบู", "note": "มีน้ำซุปสำหรับเด็ก", "dur": 75, "q": "Onyasai Shabu-shabu Matsumoto", "kids": true },
-            { "id": "d", "n": "Sushiro (ซูชิสายพาน)", "type": "ซูชิสายพาน", "note": "ใช้แอปจองคิวล่วงหน้า", "dur": 60, "q": "Sushiro Matsumoto", "kids": true, "reserve": true }
+            { "id": "e", "n": "Sobakiri Miyota (そばきり みよ田) Matsumoto", "type": "โซบะทำมือ + อาหารพื้นเมืองชินชู (ไก่ทอด Sanzoku-yaki, ผักดอง) · ร้านโซบะ-อิซากายะ", "note": "เย็น 17:00–22:00 (วันอาทิตย์เปิดแค่กลางวัน — วันนี้วันเสาร์ เปิด) · พาเด็กมาได้ · เดินจากโรงแรม ~10 นาที", "dur": 75, "q": "Sobakiri Miyota Matsumoto", "kids": true },
+            { "id": "f", "n": "Kura no Mukou (蔵のむこう)", "type": "โซบะ-อิซากายะ อาคารแบบญี่ปุ่น ถอดรองเท้า นั่งโต๊ะ · ซันโซคุยากิ ม้าดิบ (basashi) โซบะ สาเกท้องถิ่น", "note": "เย็น 17:00–23:30 · ใกล้สถานี Matsumoto · ชั้น 2 รับได้ถึง 50 คน — กลุ่มครอบครัวควรจอง", "dur": 75, "q": "Kura no Mukou Matsumoto", "reserve": true },
+            { "id": "c", "n": "Shabu-shabu Onyasai", "type": "ชาบูชาบู", "note": "มีน้ำซุปสำหรับเด็ก · บุฟเฟต์ · สาขา Matsumoto-Hirata อยู่ทางใต้ของเมือง ขับจากโรงแรม ~20 นาที", "dur": 75, "q": "Shabu-shabu Onyasai Matsumoto Hirata", "kids": true },
+            { "id": "d", "n": "Sushiro (ซูชิสายพาน)", "type": "ซูชิสายพาน", "note": "สาขา Matsumoto Chikuma ขับจากโรงแรม ~10 นาที · เสาร์เย็นคิวยาว ใช้แอปจองคิวล่วงหน้า · ถึง 23:00", "dur": 60, "q": "Sushiro Matsumoto Chikuma", "kids": true, "reserve": true }
           ] }
       ] },
     { "id": "d4", "n": 4, "dow": 0, "date": "2026-10-18", "label": "Hakuba & Azumino",
