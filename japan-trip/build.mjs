@@ -29,3 +29,10 @@ const html = tpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => eng
   .replace('{{STYLE}}', () => style).replace('{{VENDOR_CSS}}', () => read('vendor/maplibre-gl.css')).replace('{{VENDOR_JS}}', () => vendorJs);
 fs.writeFileSync(path.join(dir, 'index.html'), html);
 console.log('index.html', (html.length / 1024).toFixed(1) + ' KB');
+
+// today.html — the one-day "lock screen" view (same data, engine and stops; no map library)
+const ttpl = read('today.template.html');
+for (const k of ['{{TRIP}}', '{{ENGINE}}', '{{MAP}}']) if (!ttpl.includes(k)) throw new Error(`today.template.html ไม่มี ${k}`);
+const today = ttpl.replace('{{TRIP}}', () => trip).replace('{{ENGINE}}', () => engine).replace('{{MAP}}', () => map);
+fs.writeFileSync(path.join(dir, 'today.html'), today);
+console.log('today.html', (today.length / 1024).toFixed(1) + ' KB');
