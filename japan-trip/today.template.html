@@ -7,30 +7,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Mali:wght@400;500&display=swap">
-<style>{{VENDOR_CSS}}</style>
 <style>{{HANDFONT}}</style>
+<style id="ff"></style>
 <style>
-/* One family for Thai and Latin so both scripts are the same size.
-   Sukhumvit Set (installed on the device) carries its own Latin; IBM Plex Sans Thai is the web fallback and also carries Latin. */
-@font-face{font-family:'Sukhumvit Set';font-weight:400;src:local('Sukhumvit Set'),local('SukhumvitSet-Text'),local('Sukhumvit Set Text')}
-@font-face{font-family:'Sukhumvit Set';font-weight:500;src:local('Sukhumvit Set Medium'),local('SukhumvitSet-Medium')}
-@font-face{font-family:'Sukhumvit Set';font-weight:600;src:local('Sukhumvit Set SemiBold'),local('SukhumvitSet-SemiBold')}
-@font-face{font-family:'Sukhumvit Set';font-weight:700;src:local('Sukhumvit Set Bold'),local('SukhumvitSet-Bold')}
 :root{
   --bg:#ececec;--ink:#1b1b1b;--mute:#666;--red:#c0392f;
   --hl-food:#f5b98a;--hl-cafe:#f6dc8c;--hl-see:#bfe39a;--hl-arch:#bdb0e0;--hl-stay:#acd3e8;--hl-shop:#f3bfd0;--hl-must:#ee958f;
-  --font:'Sukhumvit Set','IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;
-  --hand:'iannnnnBKK','Mali','Sukhumvit Set',cursive;
+  /* 'Trip Text' = Sukhumvit Set split by script (see #ff); IBM Plex Sans Thai is the web fallback */
+  --font:'Trip Text','IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;
+  --hand:'iannnnnBKK','Mali',cursive;
+  /* typography knobs — set from TYPE in the script */
+  --lh:1.95;--gap:.32em;--red-size:15px;--tilt:-1deg;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 body{font-family:var(--font);min-height:100dvh;display:flex;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 22px calc(110px + env(safe-area-inset-bottom))}
-.screen{width:100%;max-width:440px;display:flex;flex-direction:column;gap:22px}
+.screen{width:100%;max-width:440px;display:flex;flex-direction:column;gap:20px}
 a{color:inherit}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:4px}
 
-/* top: date + clock */
 .top{text-align:center}
 .date{font-size:19px;font-weight:500}
 .clock{font-size:clamp(72px,24vw,104px);font-weight:700;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:4px}
@@ -44,48 +40,30 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .ring .v{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.05}
 .ring .v b{font-size:15px}.ring .v small{display:block;font-size:9.5px;color:var(--mute)}
 
-/* the plan as prose — tall lines leave room for the red notes between them */
-.note{font-family:var(--hand);color:var(--red);font-size:15px;line-height:1.35}
-.note.top-note{transform:rotate(-1.5deg);margin:4px 0 -6px -6px}
+.note{font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 1px);line-height:1.3}
+.note.top-note{transform:rotate(-1.5deg);margin:4px 0 0 -6px}
 .note.end-note{text-align:center;transform:rotate(-1deg)}
-.prose{position:relative;font-size:19px;line-height:2.75;margin:0;overflow-wrap:anywhere}
-.t{font-size:12px;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
+/* prose: the line gap is just enough for one row of small red notes */
+.prose{position:relative;font-size:19px;line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
+.t{font-size:.66em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
 .anc{position:relative}
-.hl{text-decoration:none;padding:.06em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:2px}
-.hl:hover{filter:saturate(1.35)}
+.hl{text-decoration:none;padding:.04em .18em;-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:2px}
 .c-food{background:var(--hl-food)}.c-cafe{background:var(--hl-cafe)}.c-see{background:var(--hl-see)}.c-arch{background:var(--hl-arch)}
 .c-stay{background:var(--hl-stay)}.c-shop{background:var(--hl-shop)}.c-must{background:var(--hl-must)}
 .c-move{border-bottom:1.5px dotted var(--mute)}
-.pin-s{font-size:10px;font-weight:700;vertical-align:.55em;margin-left:2px;color:var(--mute)}
 .ig::after{content:" ◎";font-size:.6em;vertical-align:.45em}
-/* red notes live in the gap between lines: choices above the word, warnings below it */
-.alt,.flag{position:absolute;left:0;font-family:var(--hand);color:var(--red);font-size:var(--hand-size,12.5px);line-height:1.15;white-space:nowrap;pointer-events:none}
-.alt{bottom:calc(100% - .55em);transform:rotate(-2deg);transform-origin:left bottom}
-.flag{top:calc(100% - .5em)}
-.alt button{pointer-events:auto;color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:1px;text-underline-offset:2px;padding:2px 0}
-.alt .sep{margin:0 2px}
-.skip{font-family:var(--hand);color:var(--red);font-size:14px}
-.err{font-family:var(--hand);color:var(--red);font-size:14.5px;line-height:1.5;display:flex;flex-direction:column;gap:4px}
+/* red notes hug their word: choices sit on its top edge, warnings on its bottom edge */
+.alt,.flag{position:absolute;left:0;font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1;white-space:nowrap;pointer-events:none}
+.alt{bottom:calc(100% - var(--gap));transform:rotate(var(--tilt));transform-origin:left bottom}
+.flag{top:calc(100% - var(--gap))}
+.alt button{pointer-events:auto;color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-decoration-thickness:1px;text-underline-offset:2px;padding:3px 0}
+.alt .sep{margin:0 3px}
+.skip{font-family:var(--hand);color:var(--red);font-size:var(--red-size)}
+.err{font-family:var(--hand);color:var(--red);font-size:var(--red-size);line-height:1.4;display:flex;flex-direction:column;gap:4px}
 .key{font-size:12px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 12px}
 .key i{display:inline-block;width:12px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.nav-link{font-size:13px;color:var(--mute)}
 
-/* map — scroll down to it */
-.mapsec{display:flex;flex-direction:column;gap:10px;padding-top:6px}
-.mapsec h3{margin:0;font-size:14px;font-weight:600}
-.mapbox{position:relative;width:100%;aspect-ratio:1/1;border-radius:22px;overflow:hidden;background:#f4f8fc}
-.ml{position:absolute;inset:0}
-.mapbox .fallback{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;font-size:13.5px;color:#4a6f96}
-.mk{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font:700 12px/24px var(--font);text-align:center;cursor:pointer;box-shadow:0 0 0 2px #fff}
-.mk.hotel{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink),0 0 0 2px #fff}
-.mk.on{transform:scale(1.3)}
-.stops{list-style:none;margin:0;padding:0;font-size:14.5px}
-.stops li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:3px 0}
-.stops .k{font-weight:700;font-size:12px}.stops button{text-align:left}.stops .tm{font-size:12px;color:var(--mute)}
-.stops a{font-size:12px;color:var(--mute)}
-.mapnote{font-size:12px;color:var(--mute);margin:0}
-.maplibregl-ctrl-attrib{font-size:10px}
-
-/* bottom: round buttons */
 .dock{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 22px calc(18px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
 .dock .in{width:100%;max-width:440px;display:flex;align-items:center;justify-content:space-between;pointer-events:auto}
 .round{width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.08);display:grid;place-items:center;font:500 22px/1 var(--font);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
@@ -112,12 +90,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <span><i class="c-food"></i>อาหาร</span><span><i class="c-cafe"></i>กาแฟ</span><span><i class="c-see"></i>เที่ยว</span><span><i class="c-arch"></i>สถาปัตย์</span><span><i class="c-stay"></i>ที่พัก</span><span><i class="c-must"></i>ต้องทำ</span>
     <span style="font-family:var(--hand);color:var(--red)">ตัวแดงเหนือคำ = ทางเลือก แตะเพื่อสลับ</span><span>◎ = Instagram</span>
   </div>
-  <section class="mapsec" aria-label="แผนที่">
-    <h3>แผนที่ของวันนี้ ↓</h3>
-    <div class="mapbox" id="mapbox"></div>
-    <ol class="stops" id="stops"></ol>
-    <p class="mapnote">แผนที่ ELEMNT · © OpenStreetMap (ฟรี ไม่ใช้ API แบบเสียเงิน) · เส้นประเชื่อมจุด ไม่ใช่ถนน · ตำแหน่งหมุดโดยประมาณ — <a id="nav" target="_blank" rel="noopener">นำทางในแอป Google Maps ↗</a></p>
-  </section>
+  <a class="nav-link" id="nav" target="_blank" rel="noopener">นำทางทั้งวันในแอป Google Maps ↗</a>
 </main>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
@@ -126,8 +99,6 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 </div></nav>
 
 <script id="trip" type="application/json">{{TRIP}}</script>
-<script id="mapstyle" type="application/json">{{STYLE}}</script>
-<script>{{VENDOR_JS}}</script>
 <script>{{ENGINE}}</script>
 <script>{{MAP}}</script>
 <script>
@@ -138,6 +109,23 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   let sel={};try{sel=JSON.parse(ls.get(KEY)||'{}')||{}}catch(e){}
   const $=id=>document.getElementById(id);
   const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- typography ----------
+     th  : Thai glyph size relative to Latin, in % (size-adjust on the Thai half of Sukhumvit Set)
+     lh  : prose line height   gap: how far a red note overlaps its word (em)   red: red note size (px) */
+  const TYPE_DEFAULT={th:112,lh:1.95,gap:.32,red:15};
+  let TYPE=Object.assign({},TYPE_DEFAULT);try{Object.assign(TYPE,JSON.parse(ls.get('japan2569.type')||'{}'))}catch(e){}
+  function applyType(t){
+    Object.assign(TYPE,t||{});
+    const W=[[400,'Text'],[500,'Medium'],[600,'SemiBold'],[700,'Bold']],face=(w,n,range,adj)=>
+      "@font-face{font-family:'Trip Text';font-weight:"+w+";src:local('Sukhumvit Set "+n+"'),local('SukhumvitSet-"+n+"')"+(w===400?",local('Sukhumvit Set')":'')+";unicode-range:"+range+";size-adjust:"+adj+"%}";
+    $('ff').textContent=W.map(([w,n])=>face(w,n,'U+0E00-0E7F',TYPE.th)+face(w,n,'U+0000-0DFF,U+0E80-FFFF',100)).join('\n');
+    const r=document.documentElement.style;r.setProperty('--lh',TYPE.lh);r.setProperty('--gap',TYPE.gap+'em');r.setProperty('--red-size',TYPE.red+'px');
+    requestAnimationFrame(fitNotes);
+  }
+  window.applyType=t=>{applyType(t);ls.set('japan2569.type',JSON.stringify(TYPE))};
+  window.getType=()=>Object.assign({},TYPE);
+
   const MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const DOW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
   const jst=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
@@ -147,7 +135,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const t=jst().date,i=trip.days.findIndex(d=>d.date===t);
     return i>-1?i:(t<trip.days[0].date?0:N-1);
   }
-  let cur=initialDay(), stops=[], pinOf={};
+  let cur=initialDay();
 
   const COLOR={meal:'food',cafe:'cafe',see:'see',arch:'arch',hotel:'stay',rest:'stay',shop:'shop',spa:'shop',refuel:'must',carreturn:'must',car:'must',drive:'move',nap:'move',transit:'move',move:'move',arrival:'move',flight:'must'};
   const VERB=s=>({meal:'กิน'+s.title.replace(/\s*\+.*$/,'')+'ที่',cafe:'แวะกินกาแฟที่',drive:'ขับรถไป',nap:'ขับรถไป',rest:'แวะพักที่',see:'ไปเที่ยว',arch:'ไปดูงานสถาปัตย์',
@@ -162,9 +150,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     return '<span class="alt">↙ '+(s.pick==='one'?'หรือ ':'+ ')+rest.map(o=>'<button data-s="'+s.id+'" data-o="'+o.id+'">'+esc(o.skip?'ข้าม':shortName(o.n))+'</button>').join('<span class="sep">/</span>')+'</span>';
   }
   function word(s,o,alt){
-    const L=link(o),p=pinOf[s.id+'|'+(o.pin||o.n)],f=FLAG(o,s);
+    const L=link(o),f=FLAG(o,s);
     return '<span class="anc">'+alt+'<a class="hl c-'+(COLOR[s.kind]||'see')+(L.ig?' ig':'')+'" href="'+esc(L.href)+'" target="_blank" rel="noopener">'+esc(label(s,o))+'</a>'+
-      (p?'<span class="pin-s" aria-label="หมุด '+p+'">'+p+'</span>':'')+(f.length?'<span class="flag">'+esc(f.join(' / '))+'</span>':'')+'</span>';
+      (f.length?'<span class="flag">'+esc(f.join(' / '))+'</span>':'')+'</span>';
   }
   function sentence(s){
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
@@ -172,65 +160,29 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const v=VERB(s),a=altLine(s,chosen);
     return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===0?a:'')).join(' และ ')+(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว ');
   }
-  // keep each red note inside the column (shift it left when it would run off the right edge)
+  // keep every red note inside the column
   function fitNotes(){
     const box=$('prose').getBoundingClientRect();
     document.querySelectorAll('.alt,.flag').forEach(n=>{
       n.style.left='0';n.style.whiteSpace='nowrap';n.style.width='';
       const a=n.parentElement.getBoundingClientRect();let w=n.getBoundingClientRect().width;
       if(w>box.width){n.style.whiteSpace='normal';n.style.width=(box.width-8)+'px';w=box.width-8}
-      // the note's left edge, relative to its word, clamped so the whole note stays inside the column
-      const left=Math.max(box.left-a.left,Math.min(0,box.right-w-a.left));
-      n.style.left=left+'px';});
+      n.style.left=Math.max(box.left-a.left,Math.min(0,box.right-w-a.left))+'px';});
   }
-
-  /* map: MapLibre + ELEMNT Blueprint (OpenStreetMap, free, no key) */
-  let map=null,mapEl=null,mapReady=false,markers=[],gm=-1;
-  const mapOK=!!(window.maplibregl&&window.pmtiles)&&(()=>{try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'))}catch(e){return false}})();
-  function camera(){
-    if(!map||!stops.length)return;
-    if(gm>=0){map.flyTo({center:[stops[gm].ll[1],stops[gm].ll[0]],zoom:14,duration:600});return}
-    const b=new maplibregl.LngLatBounds();stops.forEach(s=>b.extend([s.ll[1],s.ll[0]]));map.fitBounds(b,{padding:48,maxZoom:13,duration:0});
-  }
-  function drawMap(){
-    const box=$('mapbox');
-    if(!mapOK){box.innerHTML='<div class="fallback">เครื่องนี้แสดงแผนที่ไม่ได้ (ต้องใช้ WebGL) — ใช้ลิงก์นำทางด้านล่าง</div>';return}
-    if(!map){
-      try{
-        const pm=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',pm.tile);
-        mapEl=document.createElement('div');mapEl.className='ml';box.appendChild(mapEl);
-        map=new maplibregl.Map({container:mapEl,style:JSON.parse(document.getElementById('mapstyle').textContent),center:[138.3,36],zoom:7,attributionControl:{compact:true},cooperativeGestures:true,dragRotate:false});
-        map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
-        map.on('style.load',()=>{map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[]}}});
-          map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#c0392f','line-width':2.4,'line-dasharray':[2,1.6]}});
-          mapReady=true;drawMap()});
-      }catch(e){map=null;box.innerHTML='<div class="fallback">โหลดแผนที่ไม่ได้ — ใช้ลิงก์นำทางด้านล่าง</div>';return}
-    }
-    markers.forEach(m=>m.remove());markers=[];
-    stops.forEach((s,i)=>{const el=document.createElement('button');el.className='mk'+(s.hotel?' hotel':'')+(gm===i?' on':'');el.textContent=s.letter;el.dataset.gm=i;el.setAttribute('aria-label',s.letter+' '+MV.stopName(s));
-      markers.push(new maplibregl.Marker({element:el}).setLngLat([s.ll[1],s.ll[0]]).addTo(map))});
-    if(mapReady)map.getSource('route').setData({type:'Feature',geometry:{type:'LineString',coordinates:MV.lineCoords(stops)}});
-    camera();
-  }
-  function setGm(i){gm=gm===i?-1:i;markers.forEach((m,k)=>m.getElement().classList.toggle('on',k===gm));
-    document.querySelectorAll('#stops li').forEach((li,k)=>li.style.fontWeight=k===gm?'600':'');camera()}
-
   function render(){
     const d=trip.days[cur],p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
-    stops=MV.stops(trip,d,sel);pinOf={};stops.forEach(s=>s.items.forEach(it=>{if(it.slotId)pinOf[it.slotId+'|'+it.name]=s.letter}));
     $('date').textContent='วัน'+DOW[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1];
     $('dayn').textContent='วันที่ '+d.n+' / '+N+(isToday?' · วันนี้':'');
     $('route').textContent=d.label;$('pb').style.width=(d.n/N*100)+'%';$('cnt').textContent=d.n+' / '+N;
     $('prev').disabled=cur===0;$('next-d').disabled=cur===N-1;
     const warn=d.weather.find(w=>w.s==='warn'),daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
-    $('topnote').textContent=(daysTo>0?'↙ อีก '+daysTo+' วันออกเดินทาง · ':'↙ ')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ');
+    $('topnote').textContent=(daysTo>0?'↙ อีก '+daysTo+' วันออกเดินทาง / ':'↙ ')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ');
     $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
     $('endnote').textContent='↘ คืนนี้นอนที่ '+d.night;
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
-    $('stops').innerHTML=stops.map((s,i)=>'<li><span class="k">'+s.letter+'</span><button data-gm="'+i+'">'+esc(MV.stopName(s))+' <span class="tm">'+esc([...new Set(s.items.map(x=>x.time||'ออก'))].join(' · '))+'</span></button><a href="'+MV.searchUrl(MV.query(s))+'" target="_blank" rel="noopener">เปิด ↗</a></li>').join('');
-    $('nav').href=MV.dirUrl(stops);
+    $('nav').href=MV.dirUrl(MV.stops(trip,d,sel));
     try{history.replaceState(null,'','#d'+(cur+1))}catch(e){}
-    requestAnimationFrame(fitNotes);gm=-1;drawMap();tick();
+    requestAnimationFrame(fitNotes);tick();
   }
   function tick(){
     const now=jst(),d=trip.days[cur];$('clock').textContent=now.hm;
@@ -244,16 +196,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     if(b){const s=trip.days[cur].slots.find(x=>x.id===b.dataset.s);
       if(s.pick==='one')sel[s.id]=[b.dataset.o];else sel[s.id]=E.selected(s,sel).map(o=>o.id).concat(b.dataset.o);
       ls.set(KEY,JSON.stringify(sel));render();return}
-    const g=e.target.closest('[data-gm]');if(g){setGm(+g.dataset.gm);return}
     if(e.target.closest('#prev')&&cur>0){cur--;render();scrollTo(0,0)}
     if(e.target.closest('#next-d')&&cur<N-1){cur++;render();scrollTo(0,0)}
   });
-  let x0=null;   // swipe left/right on the text to change day (not on the map)
-  addEventListener('touchstart',e=>{x0=e.target.closest('.mapbox')?null:e.touches[0].clientX},{passive:true});
+  let x0=null;   // swipe left/right to change day
+  addEventListener('touchstart',e=>{x0=e.target.closest('input,.mock')?null:e.touches[0].clientX},{passive:true});
   addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>70){const n=cur+(dx<0?1:-1);if(n>=0&&n<N){cur=n;render();scrollTo(0,0)}}},{passive:true});
   addEventListener('resize',()=>requestAnimationFrame(fitNotes));
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>requestAnimationFrame(fitNotes));
-  render();setInterval(tick,15000);
+  applyType();render();setInterval(tick,15000);
 })();
 </script>
 </body>
