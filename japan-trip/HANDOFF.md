@@ -51,4 +51,4 @@ Read this first when continuing in a new session. `SPEC.md` has the data model a
   - **Book tables for 8:** Miyota, Ikekuni, Pyrenees, Shoya no Ie, Sanrokuen.
 - Restaurants not found online (left in, marked): Kamameshi Oki, Miyoshi Soba, Tomato & Onion (D5 dinner).
 - Shared page for the group-of-8 restaurant review: https://claude.ai/artifact/L3t8ab992j1ZkxYVzHXKsf (private until shared).
-- Google Sheet ("update" tab) was synced from the web on 5 Oct 2026, before Taisho-ike, Yokokawa SA, Yoshida udon and Suwa Taisha were added; re-sync it when the Google Sheets connector is on.
+- Google Sheet "update" tab matches the web as of 6 Oct 2026 (all four must-see additions included). Re-sync after any later web change.
