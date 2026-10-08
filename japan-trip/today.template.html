@@ -202,7 +202,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   window.setLit=m=>{LIT=m;render()};
   const litLen='long';   // the book sheet shows the long passage only
   // passages for a slot: the slot's own, then one per chosen option (o.lit shows only when that option is picked)
-  const litsOf=s=>[s.lit,...E.selected(s,sel).filter(o=>!o.skip).map(o=>o.lit)].filter(Boolean);
+  const litsOf=s=>[s.lit,...E.selected(s,sel).filter(o=>!o.skip).map(o=>o.lit)].flat().filter(Boolean);   // an option may carry one passage or a list
   const lev=(L,k)=>(L.levels&&(L.levels[k]||L.levels.long||L.levels.short))||{ja:L.ja,th:L.th,kind:'แปลจากต้นฉบับ'};
   const para=s=>esc(s).replace(/\n/g,'<br>');
   const litBody=L=>{const v=lev(L,'short');return (v.ja?'<span class="ja" lang="ja">'+esc(v.ja)+'</span>':'')+'<span class="th">'+esc(v.th)+'</span>'};
