@@ -262,9 +262,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const warn=FLAG(o,s).filter(w=>!has(w.replace('ก่อน','')));
     return '<span class="det">'+info.map(esc).join(' · ')+(warn.length?'<span class="wr">! '+warn.map(esc).join(' · ')+'</span>':'')+'</span>';
   }
+  const MT=/ภูเขา|ยอดเขา|เชิงเขา|ช่องเขา|บนเขา|ฟูจิ|อาซามะ|Asama|โฮดากะ|ยาเกะ|โจเนน|ชิโรอุมะ|ที่ราบสูง|หุบเขา/;   // passage about mountains → ⛰️ before the sheet title
   function openLit(id,from){
     const s=view().slots.find(x=>x.id===id),Ls=s?litsOf(s):[];if(!Ls.length)return;if(from)popFrom=from;
-    $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));$('sh-now').textContent='ทิวทัศน์จากหนังสือ';
+    $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));$('sh-now').textContent=(Ls.some(L=>MT.test(lev(L,litLen).th||''))?'⛰️ ':'')+'ทิวทัศน์จากหนังสือ';
     $('sh-opts').innerHTML=Ls.map(L=>'<li class="lit"><div class="th">'+para(lev(L,litLen).th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>').join('');
     $('sh-notes').innerHTML='';showSheet();
     if(kb)($('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x')).focus({preventScroll:true});
