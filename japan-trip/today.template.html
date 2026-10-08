@@ -73,8 +73,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet h3{margin:0;font-size:15px;font-weight:600}.sheet h3 span{color:var(--mute);font-weight:500;margin-right:6px}
 .sheet .now{font-size:14px;color:var(--mute)}
 .sheet .lbl{font-size:12px;letter-spacing:.04em;color:var(--mute)}
-.sheet .cur b{font-size:16px;font-weight:600;color:var(--ink)}
-.sheet .det{display:block;font:400 14px/1.45 var(--font);font-style:normal;color:var(--mute);margin-top:3px}
+.sheet .cur b{font-size:calc(var(--body) - 3px);font-weight:600;color:var(--ink)}
+.sheet .det{display:block;font:400 calc(var(--body) - 5px)/1.45 var(--font);font-style:normal;color:var(--mute);margin-top:3px}
 .sheet .wr{display:block;color:var(--red);margin-top:2px}
 .sheet .notes div{font-size:calc(var(--red-size) - 2px);line-height:1.2}
 .sheet ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
@@ -98,7 +98,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet .lit details{font-size:14px;color:var(--mute)}.sheet .lit summary{cursor:pointer;padding:4px 0}.sheet .lit details .ja{margin-top:4px;color:var(--ink)}
 .sheet .lit .kind{font-size:12px;color:var(--red)}
 .sheet .in{max-height:85dvh;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.sheet .lit{display:flex;flex-direction:column;gap:10px;font-size:18px;line-height:1.75}
+.sheet .lit{display:flex;flex-direction:column;gap:10px;font-size:calc(var(--body) - 1px);line-height:1.75}   /* follows A−/A+ */
+.shtop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.shfz{display:flex;flex:none;margin:-6px -8px 0 0}
+.sheet .lit .mt{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:calc(var(--body) - 4px);line-height:1.4}.sheet .lit .mt a{color:var(--ink);text-decoration:underline;text-decoration-color:rgba(0,0,0,.25);text-underline-offset:3px}
 .sheet .lit .src{font-size:14px;color:var(--mute)}
 .mid{display:flex;align-items:center;gap:4px}
 .fz{font:600 14px/1 var(--font);color:var(--ink);padding:6px 8px;border-radius:8px}.fz:disabled{opacity:.3}
@@ -140,7 +142,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   {{HANDCREDIT}}
 </main>
 <div class="sheet-bg" id="sheetbg" hidden></div>
-<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><h3 id="sh-t"></h3><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" hidden><div class="in"><div class="shtop"><h3 id="sh-t"></h3><span class="shfz"><button class="fz" data-fz="-1" aria-label="ตัวอักษรเล็กลง">A−</button><button class="fz" data-fz="1" aria-label="ตัวอักษรใหญ่ขึ้น">A+</button></span></div><div class="now" id="sh-now"></div><ol id="sh-opts"></ol><div class="notes" id="sh-notes"></div><button class="close" id="sh-x">ปิด</button></div></div>
 <nav class="dock" aria-label="เปลี่ยนวัน"><div class="in">
   <button class="round" id="prev" aria-label="วันก่อนหน้า">‹</button>
   <div class="mid"><button class="fz" id="fzdn" aria-label="ตัวอักษรเล็กลง">A−</button><div id="cnt"></div><button class="fz" id="fzup" aria-label="ตัวอักษรใหญ่ขึ้น">A+</button></div>
@@ -266,7 +268,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   function openLit(id,from){
     const s=view().slots.find(x=>x.id===id),Ls=s?litsOf(s):[];if(!Ls.length)return;if(from)popFrom=from;
     $('sh-t').innerHTML='<span>'+s.time+'</span>'+esc(s.title.replace(/\s*\(.*\)\s*$/,''));$('sh-now').textContent=(Ls.some(L=>MT.test(lev(L,litLen).th||''))?'⛰️ ':'')+'ทิวทัศน์จากหนังสือ';
-    $('sh-opts').innerHTML=Ls.map(L=>'<li class="lit"><div class="th">'+para(lev(L,litLen).th)+'</div><div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>').join('');
+    $('sh-opts').innerHTML=Ls.map(L=>'<li class="lit"><div class="th">'+para(lev(L,litLen).th)+'</div>'+(L.mt?'<div class="mt">'+L.mt.map(([n,q])=>'<a href="'+MV.searchUrl(q)+'" target="_blank" rel="noopener">⛰️ '+esc(n)+'</a>').join('')+'</div>':'')+'<div class="src">— '+esc(L.who)+', '+esc(L.work)+'</div></li>').join('');
     $('sh-notes').innerHTML='';showSheet();
     if(kb)($('sh-opts').querySelector('[aria-pressed=true]')||$('sh-x')).focus({preventScroll:true});
   }
@@ -322,8 +324,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const h=document.documentElement,max=()=>Math.max(1,h.scrollHeight-innerHeight),f=scrollY/max();   // keep the reading place
     setBody(FZ[i]);ls.set('japan2569.body',FZ[i]);applyType();scrollTo(0,Math.round(f*max()));fzState();
   }
-  function fzState(){const i=FZ.indexOf(TYPE.body);$('fzdn').disabled=i<=0;$('fzup').disabled=i>=FZ.length-1}
+  function fzState(){const i=FZ.indexOf(TYPE.body);document.querySelectorAll('#fzdn,[data-fz="-1"]').forEach(b=>b.disabled=i<=0);document.querySelectorAll('#fzup,[data-fz="1"]').forEach(b=>b.disabled=i>=FZ.length-1)}
   document.addEventListener('click',e=>{
+    const fz=e.target.closest('[data-fz]');if(fz){fontStep(+fz.dataset.fz);return}   // A−/A+ inside the sheet
     if(e.target.closest('#fzdn')){fontStep(-1);return}
     if(e.target.closest('#fzup')){fontStep(1);return}
     const pm=e.target.closest('[data-pop]');if(pm){openSheet(pm.dataset.pop,pm);return}

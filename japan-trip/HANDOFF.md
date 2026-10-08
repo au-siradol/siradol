@@ -24,7 +24,7 @@ Read this first when continuing in a new session. `SPEC.md` has the data model a
 - The handwriting font `fonts/2006_iannnnnBKK.ttf` is gitignored and must stay unpublished; keep the credit line.
 - No paid map APIs. Pages are public.
 - Plan B (start 30–45 min late) lives in `days[].late`; tapping the start ring switches Plan A / Plan B.
-- Literature passages: `lit` on slots or options (long version only); source list in `scenery-list.csv` (untracked). The book pop-up shows every passage of a slot (slot lit + chosen options). Fukada (เคียวยะ ฟุคาดะ, Kyūya Fukada) "One Hundred Mountains" passages sit on options D2–D9 in full, as the user selected them from their own Thai translation (user's decision: non-commercial, a few chapters of 100). An option's `lit` may be a list (D5 Taisho walk). D1 hotel has Dazai's "angle of Fuji" passage. Authors carry English names in brackets.
+- Literature passages: `lit` on slots or options (long version only); source list in `scenery-list.csv` (untracked). The book pop-up shows every passage of a slot (slot lit + chosen options). Fukada (เคียวยะ ฟุคาดะ, Kyūya Fukada) "One Hundred Mountains" passages sit on options D2–D9 in full, as the user selected them from their own Thai translation (user's decision: non-commercial, a few chapters of 100). An option's `lit` may be a list (D5 Taisho walk). D1 hotel has Dazai's "angle of Fuji" passage. Authors carry English names in brackets. Each passage may list mountains in `mt` (links under the passage, plan A: main mountain + what is visible from that stop). The sheet has its own A−/A+ and its text follows the same size.
 
 ## State by day (defaults)
 - **D2** Haneda → Ebina SA → Ashigara SA → nap drive → Yamanaka viewpoints → café → TOKI.
