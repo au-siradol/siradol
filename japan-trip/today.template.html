@@ -38,6 +38,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .widgets{display:flex;align-items:center;gap:18px;margin-top:18px}
 .wtrip{flex:1;min-width:0;text-align:left}
 .wtrip b{font-size:14px}
+.day-head{display:flex;align-items:stretch;gap:8px}
+.day-copy{display:flex;flex:1;min-width:0;flex-direction:column}
+.day-copy b,.day-copy span{line-height:18px}
 .ring:disabled{cursor:default}
 .ring .v i{display:block;font-style:normal;font-size:9.5px;color:var(--mute)}
 .ring[aria-pressed=true] .a{stroke:var(--red)}.ring[aria-pressed=true] .v i,.ring[aria-pressed=true] .v b{color:var(--red)}.wtrip span{display:block;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -54,7 +57,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .slant .note,.slant .mark,.slant .skip,.slant .err,.slant .sheet ol button,.slant .sheet .notes{font-style:oblique 12deg}
 .slant .sheet ol .lens button{font-style:normal}
 /* prose: the line gap is just enough for one row of small red notes */
-.prose{position:relative;font-size:var(--body);line-height:var(--lh);margin:calc(var(--red-size) * .6) 0 0;overflow-wrap:anywhere}
+.agenda-toggle{display:grid;place-items:center;width:36px;height:auto;min-height:36px;align-self:stretch;flex:0 0 auto;margin:0;padding:0;border:1px solid rgba(0,0,0,.16);border-radius:12px;background:transparent;color:var(--ink);cursor:pointer;touch-action:manipulation}
+.agenda-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.agenda-toggle[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.agenda-toggle:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.prose{position:relative;font-size:var(--body);line-height:var(--lh);margin:-10px 0 0;overflow-wrap:anywhere}
+.prose.reading .agenda-line{display:grid;grid-template-columns:3em minmax(0,1fr);column-gap:2px;align-items:baseline;margin:0}
+.prose.reading .agenda-copy{min-width:0}
 .t{font-size:1em;font-weight:500;color:var(--mute);margin-right:4px;font-variant-numeric:tabular-nums}
 .anc{position:relative}
 .hl{--c:transparent;text-decoration:none;border-bottom:1.5px dotted var(--c)}   /* same dotted line as the drives, in the place colour */
@@ -128,7 +137,9 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <div class="clock" id="clock">--:--</div>
     <div class="tz">เวลาญี่ปุ่น (JST)</div>
     <div class="widgets">
-      <div class="wtrip"><b id="dayn"></b><span id="route"></span><div class="pbar"><i id="pb"></i></div></div>
+      <div class="wtrip"><div class="day-head"><button class="agenda-toggle" id="agenda-toggle" type="button" aria-label="แสดงกำหนดการแยกตามเวลา" aria-pressed="false" title="สลับการแสดงกำหนดการ">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="11.5" cy="11.5" r="8"/><path d="M11.5 7v4.8l3.2 1.8M17.5 17.5l6 6M9.5 2.5h4M11.5 2.5v1"/></svg>
+      </button><div class="day-copy"><b id="dayn"></b><span id="route"></span></div></div><div class="pbar"><i id="pb"></i></div></div>
       <button class="ring" id="late" aria-pressed="false" aria-label="สลับ Plan A (ปกติ) / Plan B (ออกช้า 30–45 นาที)"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></button>
     </div>
   </header>
@@ -234,11 +245,12 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   const notesOf=s=>[...new Set(E.selected(s,sel).filter(o=>!o.skip).flatMap(o=>FLAG(o,s)))];
   function sentence(s){
     const chosen=E.selected(s,sel),real=chosen.filter(o=>!o.skip),t='<span class="t">'+s.time+'</span>';
-    if(!real.length)return t+'<span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+mark(s,[])+' ';
+    if(!real.length)return t+'<span class="agenda-copy"><span class="skip">(ข้าม'+esc(s.title.replace(/\s*\(.*\)\s*$/,''))+')</span>'+mark(s,[])+' </span>';
     const v=VERB(s);
     const L=litsOf(s)[0],litMark=L&&LIT==='b'?'<button class="book" data-lit="'+s.id+'" aria-label="อ่านจากหนังสือ: '+esc(L.work)+'" title="อ่านจากหนังสือ">'+BOOK+'</button>':'';
     const litBlock=L&&LIT==='a'?'<span class="lit-a">'+litBody(L)+'<span class="by">— '+esc(L.who)+', '+esc(L.work)+'</span></span>':'';
-    return t+(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+litMark+litBlock+(litBlock?'':(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว '));
+    const copy=(v?esc(v)+' ':'')+real.map((o,i)=>word(s,o,i===real.length-1)).join(' และ ')+litMark+litBlock+(litBlock?'':(s.kind==='meal'||s.kind==='hotel'?' ':' แล้ว '));
+    return t+'<span class="agenda-copy">'+copy+'</span>';
   }
   /* sheet: tap a red mark → choose */
   let popSlot=null,popFrom=null;
@@ -285,6 +297,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   /* แผนสอง: a day that starts 30–45 min late (trip.json day.late, applied by Engine.lateDay) */
   let lateOn={};try{lateOn=JSON.parse(ls.get('japan2569.late')||'{}')||{}}catch(e){}
   const view=()=>{const d=trip.days[cur];return (lateOn[d.id]&&E.lateDay(d))||d};
+  let agendaByTime=false;
   function render(){
     const base=trip.days[cur],d=view(),late=!!lateOn[base.id]&&!!base.late,p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
     $('late').disabled=!base.late;$('late').setAttribute('aria-pressed',late);
@@ -295,7 +308,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const warn=d.weather.find(w=>w.s==='warn'),daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
     if(late)$('topnote').innerHTML=ARR('sw')+' '+esc('Plan B (ออกช้า 30–45 นาที): '+base.late.notes.join(' / '));
     else $('topnote').innerHTML=ARR('sw')+' '+esc((daysTo>0?'อีก '+daysTo+' วันออกเดินทาง / ':'')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ'));
-    $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
+    const prose=$('prose');
+    prose.classList.toggle('reading',agendaByTime);
+    $('agenda-toggle').setAttribute('aria-pressed',String(agendaByTime));
+    $('agenda-toggle').setAttribute('aria-label',agendaByTime?'แสดงกำหนดการแบบย่อหน้า':'แสดงกำหนดการแยกตามเวลา');
+    prose.innerHTML=agendaByTime
+      ?d.slots.map(s=>'<span class="agenda-line">'+sentence(s).replace(/ แล้ว (?=<\/span>$)/,'')+'</span>').join('')
+      :d.slots.map(sentence).join('').replace(/ แล้ว (?=<\/span>$)/,'');
     $('endnote').innerHTML=ARR('se')+' '+esc('คืนนี้นอนที่ '+d.night);
     litCards(d);
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
@@ -339,6 +358,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       ls.set(KEY,JSON.stringify(sel));render();
       if(s.pick==='any')openSheet(s.id,null);else closeSheet();
       return}
+    if(e.target.closest('#agenda-toggle')){agendaByTime=!agendaByTime;render();return}
     if(e.target.closest('#late')){const id=trip.days[cur].id;lateOn[id]=!lateOn[id];ls.set('japan2569.late',JSON.stringify(lateOn));render();return}
     if(e.target.closest('#prev')&&cur>0){cur--;render();scrollTo(0,0)}
     if(e.target.closest('#next-d')&&cur<N-1){cur++;render();scrollTo(0,0)}
