@@ -24,6 +24,7 @@ Read this first when continuing in a new session. `SPEC.md` has the data model a
 - The handwriting font `fonts/2006_iannnnnBKK.ttf` is gitignored and must stay unpublished; keep the credit line.
 - No paid map APIs. Pages are public.
 - Plan B (start 30–45 min late) lives in `days[].late`; tapping the start ring switches Plan A / Plan B.
+- Plan C (swap the whole day with another) lives in `days[].swap` {with, times, def, dur, drop, notes}, applied by `Engine.swapDay`. D4 ⇄ D5: Kamikochi on Sunday 18 (leave 07:30, early lunch 11:45, dinner AEON because Ikekuni is closed Sunday), Hakuba on Monday 19. The ring cycles A → B → C; choosing C flips both days together. Added 14 Oct 2026 because the forecast showed Sunday fine and Monday rain.
 - Literature passages: `lit` on slots or options (long version only); source list in `scenery-list.csv` (untracked). The book pop-up shows every passage of a slot (slot lit + chosen options). Fukada (เคียวยะ ฟุคาดะ, Kyūya Fukada) "One Hundred Mountains" passages sit on options D2–D9 in full, as the user selected them from their own Thai translation (user's decision: non-commercial, a few chapters of 100). An option's `lit` may be a list (D5 Taisho walk). D1 hotel has Dazai's "angle of Fuji" passage. Authors carry English names in brackets. Each passage may list mountains in `mt` (links under the passage, plan A: main mountain + what is visible from that stop). The sheet has its own A−/A+ and its text follows the same size.
 
 ## State by day (defaults)

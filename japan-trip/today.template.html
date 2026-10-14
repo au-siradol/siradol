@@ -129,7 +129,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     <div class="tz">เวลาญี่ปุ่น (JST)</div>
     <div class="widgets">
       <div class="wtrip"><b id="dayn"></b><span id="route"></span><div class="pbar"><i id="pb"></i></div></div>
-      <button class="ring" id="late" aria-pressed="false" aria-label="สลับ Plan A (ปกติ) / Plan B (ออกช้า 30–45 นาที)"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></button>
+      <button class="ring" id="late" aria-pressed="false" aria-label="สลับ Plan A (ปกติ) / Plan B (ออกช้า 30–45 นาที) / Plan C (สลับวัน)"><svg viewBox="0 0 62 62"><circle class="t" cx="31" cy="31" r="27"/><circle class="a" id="arc" cx="31" cy="31" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"/></svg><div class="v" id="next"></div></button>
     </div>
   </header>
   <div class="note top-note" id="topnote"></div>
@@ -284,16 +284,19 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   $('sheetbg').addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
   /* แผนสอง: a day that starts 30–45 min late (trip.json day.late, applied by Engine.lateDay) */
   let lateOn={};try{lateOn=JSON.parse(ls.get('japan2569.late')||'{}')||{}}catch(e){}
-  const view=()=>{const d=trip.days[cur];return (lateOn[d.id]&&E.lateDay(d))||d};
+  // lateOn[id]: true = Plan B (late start), 'C' = Plan C (whole day swapped with day.swap.with)
+  const planOf=d=>lateOn[d.id]==='C'&&d.swap?'C':lateOn[d.id]&&d.late?'B':'A';
+  const view=()=>{const d=trip.days[cur],p=planOf(d);return (p==='C'&&E.swapDay(trip,d))||(p==='B'&&E.lateDay(d))||d};
   function render(){
-    const base=trip.days[cur],d=view(),late=!!lateOn[base.id]&&!!base.late,p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
-    $('late').disabled=!base.late;$('late').setAttribute('aria-pressed',late);
+    const base=trip.days[cur],d=view(),plan=planOf(base),late=plan!=='A',p=d.date.split('-'),now=jst(),isToday=now.date===d.date;
+    $('late').disabled=!base.late&&!base.swap;$('late').setAttribute('aria-pressed',late);
     $('date').textContent='วัน'+DOW[E.dowOf(d)]+' '+(+p[2])+' '+MON[+p[1]-1];
     $('dayn').textContent='วันที่ '+d.n+' / '+N+(isToday?' · วันนี้':'');
     $('route').textContent=d.label;$('pb').style.width=(d.n/N*100)+'%';$('cnt').textContent=d.n+' / '+N;
     $('prev').disabled=cur===0;$('next-d').disabled=cur===N-1;
     const warn=d.weather.find(w=>w.s==='warn'),daysTo=Math.round((Date.parse(trip.days[0].date)-Date.parse(now.date))/864e5);
-    if(late)$('topnote').innerHTML=ARR('sw')+' '+esc('Plan B (ออกช้า 30–45 นาที): '+base.late.notes.join(' / '));
+    if(plan==='C')$('topnote').innerHTML=ARR('sw')+' '+esc('Plan C (สลับวัน): '+base.swap.notes.join(' / '));
+    else if(late)$('topnote').innerHTML=ARR('sw')+' '+esc('Plan B (ออกช้า 30–45 นาที): '+base.late.notes.join(' / '));
     else $('topnote').innerHTML=ARR('sw')+' '+esc((daysTo>0?'อีก '+daysTo+' วันออกเดินทาง / ':'')+(warn?'อย่าลืม: '+(warn.t.length>70?warn.t.slice(0,68)+'…':warn.t):'วันนี้ค่อยๆ ไป ไม่ต้องรีบ'));
     $('prose').innerHTML=d.slots.map(sentence).join('').replace(/ แล้ว $/,'');
     $('endnote').innerHTML=ARR('se')+' '+esc('คืนนี้นอนที่ '+d.night);
@@ -313,7 +316,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
     const sl=d.slots.filter(s=>E.slotDur(s,sel)>0||s.kind==='flight'),m=E.mins(now.hm),today=now.date===d.date;
     const nx=today?sl.find(s=>E.mins(s.time)>m):sl[0],a=E.mins(sl[0].time),b=E.mins(sl[sl.length-1].time);
     setAttr($('arc'),'stroke-dashoffset',(169.6*(1-(today?Math.max(0,Math.min(1,(m-a)/Math.max(1,b-a))):0))).toFixed(1));
-    const pl=trip.days[cur].late?'<i>Plan '+(lateOn[trip.days[cur].id]?'B':'A')+'</i>':'';   // tap the ring to switch Plan A / Plan B
+    const b0=trip.days[cur],pl=b0.late||b0.swap?'<i>Plan '+planOf(b0)+'</i>':'';   // tap the ring to switch Plan A / B / C
     setHTML($('next'),nx?'<div><small>'+(today?'Next':'Start')+'</small><b>'+nx.time+'</b>'+pl+'</div>':'<div><small>Done</small><b>✓</b>'+pl+'</div>');
   }
   /* move focus only for keyboard users: on iPhone, focusing an element scrolls the zoomed page to it */
@@ -339,7 +342,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       ls.set(KEY,JSON.stringify(sel));render();
       if(s.pick==='any')openSheet(s.id,null);else closeSheet();
       return}
-    if(e.target.closest('#late')){const id=trip.days[cur].id;lateOn[id]=!lateOn[id];ls.set('japan2569.late',JSON.stringify(lateOn));render();return}
+    if(e.target.closest('#late')){const b=trip.days[cur],id=b.id,prev=planOf(b),order=['A',b.late&&'B',b.swap&&'C'].filter(Boolean),nx=order[(order.indexOf(prev)+1)%order.length];lateOn[id]=nx==='B'?true:nx==='C'?'C':false;if(b.swap&&(prev==='C'||nx==='C')){lateOn[b.swap.with]=nx==='C'?'C':false}   // Plan C swaps both days together
+      ls.set('japan2569.late',JSON.stringify(lateOn));render();return}
     if(e.target.closest('#prev')&&cur>0){cur--;render();scrollTo(0,0)}
     if(e.target.closest('#next-d')&&cur<N-1){cur++;render();scrollTo(0,0)}
   });

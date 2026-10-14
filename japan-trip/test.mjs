@@ -131,6 +131,19 @@ test('plan B (late start) has no errors and keeps the D8 car-return buffer', () 
   const d8 = E.lateDay(trip.days[7]);
   assert.equal(d8.slots.find(s => s.id === 'd8s8').time, trip.days[7].slots.find(s => s.id === 'd8s8').time); // same departure as plan A
 });
+test('plan C (swapped days) keeps the date, swaps the programme and has no errors or new warnings', () => {
+  const swaps = trip.days.filter(d => d.swap);
+  assert.ok(swaps.length >= 2, 'D4/D5 swap');
+  for (const d of swaps) {
+    const C = E.swapDay(trip, d), other = trip.days.find(x => x.id === d.swap.with);
+    assert.equal(C.date, d.date); assert.equal(C.n, d.n); assert.equal(C.label, other.label);
+    assert.equal(other.swap && other.swap.with, d.id, 'swap goes both ways');
+    const issues = E.analyze(trip, C, {});
+    assert.deepEqual(issues.filter(i => i.level === 'err').map(i => i.msg), [], 'plan C D' + d.n);
+    const known = new Set(E.analyze(trip, other, {}).filter(i => i.level === 'warn').map(i => i.msg));
+    assert.deepEqual(issues.filter(i => i.level === 'warn' && !known.has(i.msg)).map(i => i.msg), [], 'new warnings plan C D' + d.n);
+  }
+});
 test('plan B starts each day 30–45 min later than plan A', () => {
   for (const d of trip.days) {
     const L = E.lateDay(d);

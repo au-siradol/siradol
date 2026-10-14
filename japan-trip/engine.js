@@ -146,6 +146,22 @@
     if (!L || !(L.times || L.def || L.dur || L.drop)) return null;
     const d = JSON.parse(JSON.stringify(day));
     d.isLate = true;
+    return adjust(d, L);
+  }
+
+  // Plan C: swap the whole programme with another day (day.swap.with), keeping this day's
+  // number and date (so closed weekdays are checked on the new date), then apply the same
+  // kind of tweaks as Plan B (times, def, dur, drop).
+  function swapDay(trip, day) {
+    const S = day.swap, other = S && trip.days.find(x => x.id === S.with);
+    if (!other) return null;
+    const d = JSON.parse(JSON.stringify(other));
+    Object.assign(d, { n: day.n, date: day.date, dow: day.dow, isSwap: true });
+    delete d.late; delete d.swap;
+    return adjust(d, S);
+  }
+
+  function adjust(d, L) {
     d.slots = d.slots.filter(s => !(L.drop || []).includes(s.id));
     d.slots.forEach(s => {
       if (L.times && L.times[s.id]) s.time = L.times[s.id];
@@ -156,7 +172,7 @@
     return d;
   }
 
-  const api = { mins, hhmm, selected, slotDur, analyze, validate, lateDay, dowOf, nthOf, DOW };
+  const api = { mins, hhmm, selected, slotDur, analyze, validate, lateDay, swapDay, dowOf, nthOf, DOW };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Engine = api;
 })(typeof window !== 'undefined' ? window : globalThis);
