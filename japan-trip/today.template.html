@@ -53,6 +53,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .note{font-family:var(--hand);color:var(--red);font-size:calc(var(--red-size) + 1px);line-height:1.05}
 .note.top-note{margin:4px 0 0 -6px}
 .note.end-note{text-align:center}
+.wear{margin:18px 0 0;padding:12px 14px;border:1px solid rgba(0,0,0,.12);border-radius:14px;font-size:calc(var(--body) - 3px);line-height:1.5}   /* what to wear today + why (day.wear) */
+.wear h3{margin:0 0 4px;font-size:.85em;font-weight:600;color:var(--mute);letter-spacing:.04em}.wear .why{margin-top:6px;font-size:.85em;color:var(--mute)}
 /* red handwriting: level lines, slanted letters (synthetic oblique — the font has no italic) */
 .slant .note,.slant .mark,.slant .skip,.slant .err,.slant .sheet ol button,.slant .sheet .notes{font-style:oblique 12deg}
 .slant .sheet ol .lens button{font-style:normal}
@@ -146,6 +148,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   <div class="note top-note" id="topnote"></div>
   <p class="prose" id="prose" aria-live="polite"></p>
   <div class="note end-note" id="endnote"></div>
+  <section class="wear" id="wear" hidden></section>
   <section class="litc" id="litc" hidden></section>
   <div class="err" id="err"></div>
   <div class="key">🇹🇭 ไทยนิยม · 🧒🏻 เหมาะกับเด็ก</div>
@@ -319,6 +322,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
       ?d.slots.map(s=>'<span class="agenda-line">'+sentence(s).replace(/ แล้ว (?=<\/span>$)/,'')+'</span>').join('')
       :d.slots.map(sentence).join('').replace(/ แล้ว (?=<\/span>$)/,'');
     $('endnote').innerHTML=ARR('se')+' '+esc('คืนนี้นอนที่ '+d.night);
+    const w=d.wear;$('wear').hidden=!w;$('wear').innerHTML=w?'<h3>👕 แต่งตัววันนี้</h3><div>'+esc(w.t)+'</div><div class="why">เหตุผล: '+esc(w.why)+'</div>':'';   // Plan C carries the other day's wear
     litCards(d);
     $('err').innerHTML=E.analyze(trip,d,sel).filter(i=>i.level==='err').map(i=>'<div>! '+esc(i.msg)+'</div>').join('');
     $('nav').href=MV.dirUrl(MV.stops(trip,d,sel));
