@@ -40,9 +40,9 @@ Read this first when continuing in a new session. `SPEC.md` has the data model a
 - Karuizawa architecture: D7 09:40 defaults to the Hiroshi Senju Museum (closed Tue, so D7 only); options include Kumoba, St. Paul's (Raymond), Wakita (Yoshimura), Raymond Summer House/Peynet in Taliesin, Former Mikasa Hotel (reopened Oct 2025), Mampei Hotel and Union Church + Shaw Chapel. D6 adds Karuizawa Kogen Church beside the Stone Church. Kogen Church and Union Church opening details were not re-checked.
 - Check before the trip:
   - **Places:**
-    - Marumo weekday opening time (D5 07:30 breakfast).
     - Zen soba Hakuba lunch hours.
     - Kura no Mukou Sunday hours.
+    - Opening hours checked 14 Oct 2026 (web, not phoned): Marumo is 9:00–16:00, closed Mon–Tue → removed from D4/D5 breakfast (D5 default is now Hotel Kagetsu 7:00). Miyota has no Sunday dinner (closedDow 0). Iwatake gondola 8:30–17:00 until 15 Nov. Snow Peak shop opens 11:00 (Starbucks 7:00, Seppo canteen 11:30, closed Tue). Chihiro Azumino closed Wednesdays. Daio Wasabi 8:00–17:00 daily. Gosenjaku Kitchen / Imperial Hotel open until early Nov.
     - Celecton breakfast included or not.
   - **Car:**
     - Confirm the rental is the 8-seat Serena.
