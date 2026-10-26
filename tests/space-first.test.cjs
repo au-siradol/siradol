@@ -115,3 +115,37 @@ for(const mat of ['concrete','timber']) {
  assert.equal(run("result('folded').plan.c"),run("colW(S.mat,S.H)"));
 }
 console.log('PASS: V-beam diaphragm bearings, closed perimeter tie, proposed side bracing, shared column dimensions');
+// Lite reading: a material shows its span ranges but does not exclude; thrust in words names what takes it.
+run("Object.assign(S,{L:24,W:48,H:6,mat:'prestressed',tm:{},env:null,lite:false})");
+assert.equal(run("eligible(result('portal'))"), false, 'Full: a portal frame is not a prestressed system');
+run("S.lite=true");
+assert.equal(run("eligible(result('portal'))"), true, 'Lite: material does not exclude');
+run("S.lite=false; S.mat='steel'");
+assert.equal(run("thrustLevel(result('tarch')).by"), 'a tie');
+assert.equal(run("thrustLevel(result('garch')).by"), 'the ground', 'a note naming the ground before an optional tie');
+assert.equal(run("thrustLevel(result('beam'))"), null);
+assert.ok(['small','medium','large'].includes(run("thrustLevel(result('vault')).word")));
+console.log('PASS: Lite eligibility and thrust in words');
+// Envelopes: the seating bowl and the raked auditorium; every system clears them, a sloping roof follows the rake.
+for (const [kind, L, W, H] of [['arena', 60, 72, 9], ['theatre', 24, 30, 8], ['arena', 40, 50, 7], ['theatre', 30, 40, 10]]) {
+  run(`Object.assign(S,{L:${L},W:${W},H:${H},mat:'steel',tm:{},env:{kind:'${kind}'}})`);
+  const bad = json(`SYS.flatMap(sys => { try { const r=evaluate(sys); return [r.H,r.top,r.eff,r.footW,r.warp].every(Number.isFinite) && r.H >= S.H - 1e-9 && r.warp >= 0 && scene3D(r).every(o=>o.pts.every(p=>p.every(Number.isFinite))) ? [] : [sys.id]; } catch(e) { return [sys.id+': '+e.message]; } })`);
+  assert.deepEqual(bad, [], `${kind} ${L}×${W}×${H}`);
+  assert.ok(run("envGeom().rows") > 3, `${kind} has rows`);
+  // a flat-bottomed truss must clear the highest need along its whole length (front eave + rise at the back)
+  assert.ok(run("(r => r.H + r.warp * S.W >= envGeom().needMax - 0.02)(result('truss'))"), `${kind}: truss clears the envelope`);
+}
+run("Object.assign(S,{L:24,W:30,H:8,env:{kind:'theatre'}})");
+assert.ok(run("result('portal').warp") > 0, 'a portal frame roof follows the rake');
+assert.equal(run("result('dome').warp"), 0, 'a dome does not slope');
+assert.ok(run("Math.abs(result('portal').H - S.H) < 1e-6"), 'sloping roof keeps the front height asked for');
+run("Object.assign(S,{L:24,W:48,H:6,env:null})");
+assert.equal(run("result('truss').H"), 6, 'no envelope: unchanged');
+console.log('PASS: seating bowl and raked auditorium envelopes, eave heights, sloping roofs');
+// Automatic material: each system in the material Engel's chart suits best at the span; it never excludes.
+run("Object.assign(S,{L:24,W:48,H:6,mat:'auto',tm:{},env:null,lite:false})");
+assert.equal(run("materialMatches(SYS.find(s=>s.id==='portal'))"), true);
+assert.deepEqual(json("SYS.filter(sys => { const r=result(sys.id), sp=r.spanUsed||S.L, best=Math.min(...sys.mats.map(m=>({typ:0,pos:1,out:2})[status(sys,sp,m)])); return ({typ:0,pos:1,out:2})[r.st] !== best; }).map(s=>s.id)"), [], 'auto picks the best span status for the span each system uses');
+for (const L of [12, 60, 100]) { run(`S.L=${L}; S.W=${2*L>200?L:2*L}`); assert.equal(run("SYS.every(sys => sys.mats.includes(matOf(sys)))"), true, `auto stays among a system's materials at ${L} m`); }
+run("Object.assign(S,{L:24,W:48,mat:'steel'})");
+console.log('PASS: automatic material per system');
