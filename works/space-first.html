@@ -365,7 +365,7 @@
     <div class="workspace">
     <div class="workspace-main">
     <div class="hallbar" id="hallbar" data-open="false">
-      <div class="hb-sum"><span class="hb-k">Your space</span>
+      <div class="hb-sum"><span class="hb-k">1. Your space</span>
         <div class="fields hb-fields">
             <div class="fld"><label class="k" for="L" title="Span — column-free">Span</label><span class="line"><input id="L" type="number" min="3" max="200" step="0.5"><span class="u">m</span></span><input id="rL" type="range" min="0" max="1000"></div>
             <div class="fld"><label class="k" for="W" title="Length must be at least the span">Length</label><span class="line"><input id="W" type="number" min="3" max="200" step="1"><span class="u">m</span></span><input id="rW" type="range" min="3" max="200" step="1"></div>
@@ -384,7 +384,7 @@
     </div>
 
     <section class="tree fsec step" data-sec="tree" id="panel-tree">
-        <div class="thead"><h2>Systems to explore</h2><b class="workspace-count" id="fitCount"></b><div class="seg" id="treeView" role="group" aria-label="Show the types as"><button type="button" data-tv="types">Types</button><button type="button" data-tv="drawings">Drawings</button></div><span>Engel’s families and types (pp.44–53), read against your space. Click a type to add a Compare column with a variant that fits; click it again for another. Faint types have no variant that fits.</span></div>
+        <div class="thead"><h2>2. Systems to explore</h2><b class="workspace-count" id="fitCount"></b><div class="seg" id="treeView" role="group" aria-label="Show the types as"><button type="button" data-tv="types">Types</button><button type="button" data-tv="drawings">Drawings</button></div><span>Engel’s families and types (pp.44–53), read against your space. Click a type to add a Compare column with a variant that fits; click it again for another. Faint types have no variant that fits.</span></div>
         <div id="types" class="fbody"></div>
         <p id="cmpNote" class="cmp-note" role="status" aria-live="polite"></p>
         <div id="cmpPick"></div>
@@ -393,7 +393,7 @@
 
     <section class="fsec step" data-sec="cmp" id="panel-cmp">
     <div class="bar">
-        <div class="lead"><h2>Compare</h2><b class="workspace-count" id="selectionCount"></b> <span class="fsum" id="cmpSum"></span><span class="fopen">The chosen systems at one scale · ‹ › change the variant within its type · click a drawing to enlarge it.</span></div>
+        <div class="lead"><h2>3. Compare</h2><b class="workspace-count" id="selectionCount"></b> <span class="fsum" id="cmpSum"></span><span class="fopen">The chosen systems at one scale · ‹ › change the variant within its type · click a drawing to enlarge it.</span></div>
         <span class="sgrp full-only"><button class="btn" id="suggest">Suggest five by</button><select id="metric2" title="First criterion — weight 100% alone, 62.5% with two criteria, 50% with three"></select><span class="then">then</span><select id="crit2" title="Second criterion — optional; weights renormalize to 100%"></select><span class="then">then</span><select id="crit3" title="Third criterion — optional; duplicate criteria count once"></select></span>
         <div class="comparison-actions"><span class="basis full-only" id="cmpBasis"></span>
         <div class="seg" id="views"><button data-v="3d">3D</button><button data-v="section">Section</button><button data-v="plan">Plan</button></div></div>
@@ -4453,7 +4453,7 @@
     let spaceJob = 0;
     const trackSpace = (wait = 0) => { clearTimeout(spaceJob); spaceJob = setTimeout(() => track('space', spaceNow()), wait); };
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') track('leave', { seconds: Math.round((Date.now() - T0) / 1000), compare: slots.join(' '), view: S.view, tree: treeView }); });
-    // your space (the bar at the top): open on a first visit, folded once a building type is chosen; remembered on this device
+    // your space (the bar at the top): open on a first visit, folded only with Done (choosing a building type keeps it open); remembered on this device
     const HB_KEY = 'space-first-hallbar';
     function setHallbar(open) {
         $('hallbar').dataset.open = open; $('hbTog').setAttribute('aria-expanded', open); $('hbTog').textContent = open ? 'Done ▾' : 'Edit ▴';
@@ -4462,7 +4462,7 @@
     { let v = null; try { v = localStorage.getItem(HB_KEY); } catch (_) {} setHallbar(v !== 'folded'); }
     $('hbTog').addEventListener('click', () => setHallbar($('hallbar').dataset.open !== 'true'));
     document.querySelector('.workspace-main').addEventListener('click', e => {
-        const t = e.target.closest('[data-ptype]'); if (t) { const p = PTYPES.find(x => x.id === t.dataset.ptype); ptype = p.id; Object.assign(S, { L: p.L, W: p.W, H: p.H, env: p.env ? { kind: p.env } : null }); S.req = { ...REQ0, ...p.req }; S.rot = axoRot(); setHallbar(false); render(); trackSpace(); return; }
+        const t = e.target.closest('[data-ptype]'); if (t) { const p = PTYPES.find(x => x.id === t.dataset.ptype); ptype = p.id; Object.assign(S, { L: p.L, W: p.W, H: p.H, env: p.env ? { kind: p.env } : null }); S.req = { ...REQ0, ...p.req }; S.rot = axoRot(); render(); trackSpace(); return; }
         const q = e.target.closest('[data-preq]'); if (q) { S.req[q.dataset.preq] = !S.req[q.dataset.preq]; render(); trackSpace(); return; }
         const rl = e.target.closest('[data-relax]'); if (rl) { if (rl.dataset.relax === 'material') S.mat = 'auto'; else S.req[rl.dataset.relax] = false; render(); track('relax', rl.dataset.relax); trackSpace(); return; }
         if (e.target.closest('[data-go-cmp]')) { setFold('cmp'); return; }
