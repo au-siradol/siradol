@@ -11,10 +11,12 @@ const run = s => vm.runInContext(s, ctx);
 const json = s => JSON.parse(run(`JSON.stringify(${s})`));
 run(scripts[0]);
 run(`const result = id => evaluate(SYS.find(s => s.id === id));`);
-for (const [id, expected] of [['t_int', 2], ['u_int', 5], ['i_int', 8], ['k_bi', 7], ['p_can2', 7]]) {
+for (const [id, expected] of [['t_int', 2], ['u_int', 5], ['k_bi', 7], ['p_can2', 7]]) {
   assert.equal(run(`result('${id}').interior`), expected, id);
   assert.equal(run(`result('${id}').columnFree`), false, id);
 }
+// i_int: flying masts on cables (Engel 1.2.3.2, p.95) — nothing stands in the space
+assert.equal(run("result('i_int').columnFree"), true, 'i_int: flying masts, no interior supports');
 assert.equal(run("result('portal').columnFree"), true);
 assert.equal(run("result('t_bound').columnFree"), true);
 // Boundary columns do not become interior columns on short plans.
@@ -55,7 +57,7 @@ run(between('    function suggest()', '    function drawModal()'));
 run("Object.assign(S,{L:24,W:48,H:6,mat:'membrane'}); RES=SYS.map(evaluate); suggest();");
 assert.ok(run('slots.length > 0'));
 assert.equal(run('slots.every(id=>eligible(result(id)))'), true);
-assert.equal(run("slots.some(id=>['t_int','u_int','i_int'].includes(id))"), false);
+assert.equal(run("slots.some(id=>['t_int','u_int'].includes(id))"), false);
 run("Object.assign(S,{mat:'prestressed'}); RES=SYS.map(evaluate); suggest();");
 assert.equal(run('slots.length'), 3, 'do not fill up with other materials');
 run("S.L=100; S.W=100; RES=SYS.map(evaluate); const retained=slots.join(); suggest();");
@@ -127,7 +129,7 @@ assert.equal(run("thrustLevel(result('beam'))"), null);
 assert.ok(['small','medium','large'].includes(run("thrustLevel(result('vault')).word")));
 console.log('PASS: Lite eligibility and thrust in words');
 // Envelopes: the seating bowl and the raked auditorium; every system clears them, a sloping roof follows the rake.
-for (const [kind, L, W, H] of [['arena', 60, 72, 9], ['theatre', 24, 30, 8], ['arena', 40, 50, 7], ['theatre', 30, 40, 10]]) {
+for (const [kind, L, W, H] of [['arena', 60, 72, 9], ['theatre', 24, 30, 8], ['arena', 40, 50, 7], ['theatre', 30, 40, 10], ['lecture', 15, 18, 3.5], ['arena', 120, 140, 12]]) {
   run(`Object.assign(S,{L:${L},W:${W},H:${H},mat:'steel',tm:{},env:{kind:'${kind}'}})`);
   const bad = json(`SYS.flatMap(sys => { try { const r=evaluate(sys); return [r.H,r.top,r.eff,r.footW,r.warp].every(Number.isFinite) && r.H >= S.H - 1e-9 && r.warp >= 0 && scene3D(r).every(o=>o.pts.every(p=>p.every(Number.isFinite))) ? [] : [sys.id]; } catch(e) { return [sys.id+': '+e.message]; } })`);
   assert.deepEqual(bad, [], `${kind} ${L}×${W}×${H}`);
@@ -135,13 +137,24 @@ for (const [kind, L, W, H] of [['arena', 60, 72, 9], ['theatre', 24, 30, 8], ['a
   // a flat-bottomed truss must clear the highest need along its whole length (front eave + rise at the back)
   assert.ok(run("(r => r.H + r.warp * S.W >= envGeom().needMax - 0.02)(result('truss'))"), `${kind}: truss clears the envelope`);
 }
+// a big bowl comes in tiers of at most 30 rows, each upper one over the one below and higher; a long auditorium gets cross-aisles
+run("Object.assign(S,{L:120,W:140,H:12,env:{kind:'arena'}}); ENVC={key:'',g:null}");
+assert.ok(run("envGeom().sight.tiers.every(t=>t.R.length<=30)"), 'no block over 30 rows');
+assert.ok(run("envGeom().rows") === 30 && run("envGeom().Ztop") < 25, 'a big bowl stops at one 30-row block');
+run("Object.assign(S,{L:60,W:72,H:9,env:{kind:'arena'}}); ENVC={key:'',g:null}");
+assert.equal(run("envGeom().sight.tiers.length"), 1, 'a bowl that fits in one block has one tier');
+run("Object.assign(S,{L:30,W:50,H:10,env:{kind:'theatre'}}); ENVC={key:'',g:null}");
+assert.ok(run("envGeom().sight.aisles") >= 1, 'a theatre past 30 rows has a cross-aisle');
+run("Object.assign(S,{L:15,W:18,H:3.5,env:{kind:'lecture'}}); ENVC={key:'',g:null}");
+assert.ok(run("envGeom().need(7.5, 17.5) - envGeom().floor(7.5, 17.5)") >= 2.3 - 1e-9, 'lecture: 2.30 m over the back rows');
+assert.equal(run("envGeom().stageHouse"), undefined, 'lecture: no stage house');
 run("Object.assign(S,{L:24,W:30,H:8,env:{kind:'theatre'}})");
 assert.ok(run("result('portal').warp") > 0, 'a portal frame roof follows the rake');
 assert.equal(run("result('dome').warp"), 0, 'a dome does not slope');
 assert.ok(run("Math.abs(result('portal').H - S.H) < 1e-6"), 'sloping roof keeps the front height asked for');
 run("Object.assign(S,{L:24,W:48,H:6,env:null})");
 assert.equal(run("result('truss').H"), 6, 'no envelope: unchanged');
-console.log('PASS: seating bowl and raked auditorium envelopes, eave heights, sloping roofs');
+console.log('PASS: seating bowl (one 30-row block), raked auditorium (with cross-aisles) and lecture theatre envelopes, eave heights, sloping roofs');
 // Automatic material: each system in the material Engel's chart suits best at the span; it never excludes.
 run("Object.assign(S,{L:24,W:48,H:6,mat:'auto',tm:{},env:null,lite:false})");
 assert.equal(run("materialMatches(SYS.find(s=>s.id==='portal'))"), true);

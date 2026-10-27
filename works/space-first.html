@@ -295,6 +295,7 @@
     .preq { position:relative; }
     .preq .tip { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:6; width:max-content; max-width:280px; padding:7px 9px; background:#fff; color:var(--ink); border:1px solid var(--ink); font-size:10.5px; line-height:1.45; text-align:left; white-space:normal; letter-spacing:0; text-transform:none; font-weight:400; pointer-events:none; }
     .preq:hover .tip, .preq:focus-visible .tip { display:block; }
+    .preq .tip { max-width:min(280px, 90vw); } .preq .tip.flip { left:auto; right:0; }
     .hylist { flex-basis:100%; font-size:10.5px; line-height:1.5; color:#555; }
     .hylist summary { cursor:pointer; color:#767676; }
     .hylist ul { margin:6px 0 0; padding-left:16px; } .hylist u { text-underline-offset:2px; } .hylist p { margin:4px 0 0; color:#767676; }
@@ -421,7 +422,7 @@
         <p><b>Loads and forces:</b> roof load combines estimated self-weight and covering, services (usually 0.10 kN/m²), and the existing live-load assumptions attributed to Thai Ministerial Regulation No.6 (B.E.2527): 0.30 kN/m², or 1.0 for the concrete-roof cases in this model. These assumptions are separate from Engel and are not a check of current regulatory compliance. Individual force estimates name their statics model and sources. Wind, asymmetric loading, buckling, connection design and prestress losses are not checked. Prestressed concrete span references do not make the displayed dimensions a prestress design.</p>
         <p><b>Measurements:</b> clear-section ratio = L×H divided by the modeled enclosing section area, not usable floor area or volume. Overall footprint width is a transverse distance, not a site area. Interior support counts use modeled support locations inside 0&lt;x&lt;L and 0&lt;y&lt;W; boundary supports and continuous walls are described separately. Visible line density is projected visible structural line length per floor area, not a validated measure of visual calmness.</p>
         <p><b>Lite and Full:</b> Lite keeps Engel’s reading — mechanism, form and space, design potential: no estimated loads, force figures, roof coverings, timber products, ceiling measures or weighted scores; a material shows its span ranges but does not exclude a system; thrust is given in words, H/V being the horizontal force over the vertical load at the same support (thresholds 0.3 / 0.8 are the author’s). Full shows everything.</p>
-        <p><b>Building types and shaped spaces:</b> sizes follow Neufert, <i>Architects’ Data</i>, 4th ed., where it gives them — sports hall 27 × 45 × 7 m, the triple multi-functional hall (p.350); workshop sheds 3–6 m high, more with an overhead crane (p.265); a hangar sized for a B747-400, 64.9 m span, 70.7 m long, 19.6 m to the tail (p.423); museum at least 4 m clear (p.208) — and are the author’s elsewhere (market hall, exhibition hall, assembly hall, station concourse); the starting requirements are the author’s. The requirements “daylight”, “hung loads” and “extendable” are the author’s readings of each system; “low” means a total height of at most 1.5 × the clear height. Hybrid systems follow Engel pp.320–327: not a family of their own but two systems linked by superposition, coupling or both; all fifteen of Engel’s are modeled; their depths, sags, mast heights and spans are the author’s first estimates, as Engel gives no span chart for hybrids. The indoor stadium is a seating bowl round a basketball court (FIBA Venue Guide: 28 × 15 m court in a 2.0 m boundary area, at least 7.0 m free height); the theatre is a raked auditorium with a separate stage house (commonly 1.5–2.5 × the proscenium opening high; 2 × used). The rows follow Neufert, <i>Architects’ Data</i>, 4th ed.: in a sports hall up to 10 rows rise linearly by 0.28–0.32 m a row (0.30 used) and more rows rise parabolically by sightlines — eye 1.25 m, 0.15 m above the eye in front, rows 0.80–0.85 m (0.85 used; FIBA asks for at least 0.865 m), origin 0.5 m over the boundary line (p.354); in a theatre the sightlines run to the O-point at the stage edge at forestage height (0.9 m used), eye 1.10 m, 12 cm every second row with staggered seats (6 cm a row used), rows 0.90 m, and a floor steeper than 10° is stepped (pp.211–212). A step higher than 50 cm needs a guard at least 0.9 m high (p.319); the front barrier is 1.0 m (p.354). Seats come in blocks of at most 30 rows with a cross-aisle of at least 1.20 m behind and between them (p.319); the rows behind an aisle start their sightlines 1.20 m further out. The museum follows Neufert pp.207–208: at least 4 m clear, no direct daylight on the works — light from north-facing or filtered rooflights — and flexible lighting hung from the roof; 20 × 40 × 6 m is the author’s, twice the 10 m gallery Neufert shows (p.207, figs 6–7). The sections draw the seating as a stepped concrete slab (about 0.25 m, the author’s) with a few sightlines. Author assumptions: 3.0 m clear above every row, 2.0 m behind the last row; first theatre row 3.0 m from the stage edge. Each system is raised until its modeled underside clears this space (from its 3D surfaces where they are plain modules, otherwise from its section); systems whose roof can slope along the hall follow the rake instead (a shear: the least front height and rise), by the author’s reading of which forms can slope. Daylight and hung-load judgements in “Your space” are the author’s, not Engel’s.</p>
+        <p><b>Building types and shaped spaces:</b> sizes follow Neufert, <i>Architects’ Data</i>, 4th ed., where it gives them — sports hall 27 × 45 × 7 m, the triple multi-functional hall (p.350); workshop sheds 3–6 m high, more with an overhead crane (p.265); a hangar sized for a B747-400, 64.9 m span, 70.7 m long, 19.6 m to the tail (p.423); museum at least 4 m clear (p.208); swimming pool 25 × 16.66 m with 2–4.5 m round it and at least 4.0 m clear over the water (pp.362–365); lecture theatre with 0.90 m rows and 2.30 m clear over the back rows (pp.198–201) — and are the author’s elsewhere (market hall / station concourse, exhibition hall, assembly hall); a seating bowl stops at one 30-row block (p.319): by Neufert’s sightlines more rows, or an upper tier, would rise past 45°; the starting requirements are the author’s. The requirements “daylight”, “hung loads” and “extendable” are the author’s readings of each system; “low” means a total height of at most 1.5 × the clear height. Frame depths (portal, three-hinged, fixed-end) follow the span/depth ratios of the <i>Metric Handbook</i> (single-storey frames: steel L/d 35–40, glulam 30–50, precast concrete 22–30), the knee twice the rafter; Engel (pp.189–192) gives the tapered form, not a ratio. Hybrid systems follow Engel pp.320–327: not a family of their own but two systems linked by superposition, coupling or both; all fifteen of Engel’s are modeled; their depths, sags, mast heights and spans are the author’s first estimates, as Engel gives no span chart for hybrids. The indoor stadium is a seating bowl round a basketball court (FIBA Venue Guide: 28 × 15 m court in a 2.0 m boundary area, at least 7.0 m free height); the theatre is a raked auditorium with a separate stage house (commonly 1.5–2.5 × the proscenium opening high; 2 × used). The rows follow Neufert, <i>Architects’ Data</i>, 4th ed.: in a sports hall up to 10 rows rise linearly by 0.28–0.32 m a row (0.30 used) and more rows rise parabolically by sightlines — eye 1.25 m, 0.15 m above the eye in front, rows 0.80–0.85 m (0.85 used; FIBA asks for at least 0.865 m), origin 0.5 m over the boundary line (p.354); in a theatre the sightlines run to the O-point at the stage edge at forestage height (0.9 m used), eye 1.10 m, 12 cm every second row with staggered seats (6 cm a row used), rows 0.90 m, and a floor steeper than 10° is stepped (pp.211–212). A step higher than 50 cm needs a guard at least 0.9 m high (p.319); the front barrier is 1.0 m (p.354). Seats come in blocks of at most 30 rows with a cross-aisle of at least 1.20 m behind and between them (p.319); the rows behind an aisle start their sightlines 1.20 m further out. The museum follows Neufert pp.207–208: at least 4 m clear, no direct daylight on the works — light from north-facing or filtered rooflights — and flexible lighting hung from the roof; 20 × 40 × 6 m is the author’s, twice the 10 m gallery Neufert shows (p.207, figs 6–7). The sections draw the seating as a stepped concrete slab (about 0.25 m, the author’s) with a few sightlines. Author assumptions: 3.0 m clear above every row, 2.0 m behind the last row; first theatre row 3.0 m from the stage edge. Each system is raised until its modeled underside clears this space (from its 3D surfaces where they are plain modules, otherwise from its section); systems whose roof can slope along the hall follow the rake instead (a shear: the least front height and rise), by the author’s reading of which forms can slope. Daylight and hung-load judgements in “Your space” are the author’s, not Engel’s.</p>
         <p><b>Ranking:</b> only matching options enter suggestions and combined scores. Single criteria retain equal values; ties are ordered alphabetically, not by an undisclosed depth preference. Combined scores use average ranks for ties, normalized to 0–1 and weighted 50/30/20 (one criterion: 100%; two: 62.5/37.5%). Displayed score = 100×(1−weighted rank); higher is preferred. Scores are relative to the current matching set and are not engineering performance ratings.</p>
     </details>
 </div>
@@ -480,7 +481,7 @@
             line([[-c / 2, hm], [L / 4, z(L / 4) + d]], 'cable'), line([[-c / 2, hm], [L * 0.45, z(L * 0.45) + d]], 'cable'),
             line([[L + c / 2, hm], [3 * L / 4, z(3 * L / 4) + d]], 'cable'), line([[L + c / 2, hm], [L * 0.55, z(L * 0.55) + d]], 'cable'),
             line([[-c / 2, hm], [-a, 0]], 'cable'), line([[L + c / 2, hm], [L + a, 0]], 'cable'), hingeAt(-c / 2, 0.2, 0.2), hingeAt(L + c / 2, 0.2, 0.2)];
-        if (o.crown) parts.push(hingeAt(L / 2, hc + d / 2, Math.max(0.15, d)));
+        if (o.crown) parts.push(hingeAt(L / 2, hc + d / 2, 0.45 * d));   // the crown hinge, drawn within the beam's depth
         return { parts, roof: [[-c, 0], [-c, hm], ...pts.slice(1, -1).map(([x, y]) => [x, y + d]), [L + c, hm], [L + c, 0]], foot: [-a, L + a], zone: hm - H,
             cols: alongSides(W, s), colNote: `frames every ${f1(s)} m; masts over the columns, backstayed to anchors ${f1(a)} m outside`,
             thrust: q * s * L * L / (16 * (hm - H)), thrustNote: 'per mast, the backstay’s pull — taken by anchors in the ground outside the walls', thrustPerArch: true, plan: { kind: 'oneway', s },
@@ -760,9 +761,9 @@
           } },
         { id: 'portal', fam: 3, code: '3.2.1', name: 'Portal frame', mats: ['steel', 'timber', 'concrete'],
           spans: { steel: { lim: [10, 80], typ: [[15, 60]] }, timber: { lim: [10, 50], typ: [[15, 40]] }, concrete: { lim: [7, 30], typ: [[10, 25]] } },
-          rule: { steel: 'rafter L/40, haunch ×2', timber: 'rafter L/25, knee ×2', concrete: 'rafter L/20, knee ×2' },
+          rule: { steel: 'rafter L/38, haunch ×2 (Metric Handbook: steel frames L/d 35–40)', timber: 'rafter L/40, knee ×2 (Metric Handbook: glulam frames L/d 30–50)', concrete: 'rafter L/26, knee ×2 (Metric Handbook: precast frames L/d 22–30)' },
           build(L, H, W, m, q) {
-              const dr = L / ({ steel: 40, timber: 25, concrete: 20 }[m]), dh = 2 * dr, s = { steel: 6, timber: 5, concrete: 6 }[m];
+              const dr = L / ({ steel: 38, timber: 40, concrete: 26 }[m]), dh = 2 * dr, s = { steel: 6, timber: 5, concrete: 6 }[m];
               const tan = Math.tan(6 * Math.PI / 180), Lh = L * 0.12;
               const top = x => H + dh + tan * (L / 2 - Math.abs(x - L / 2) + dh) - tan * dh;
               const dep = x => { const e = Math.min(Math.abs(x), Math.abs(L - x)); return e >= Lh ? dr : dh - (dh - dr) * e / Lh; };
@@ -1082,7 +1083,8 @@
         vault: { masonry: { lim: [4, 30], typ: [[8, 20]] } },
         lattice: { timber: { lim: [10, 150], typ: [[20, 90]] }, steel: { lim: [10, 150], typ: [[20, 90]] } }
     };
-    const rowRects = (L, W) => { const n = Math.max(1, Math.round(W / L)), b = W / n; return Array.from({ length: n }, (_, k) => [0, k * b, L, (k + 1) * b]); };
+    let FIELDS_HIT = false;   // set when a build lays the hall out in repeated near-square fields
+    const rowRects = (L, W) => { FIELDS_HIT = true; const n = Math.max(1, Math.round(W / L)), b = W / n; return Array.from({ length: n }, (_, k) => [0, k * b, L, (k + 1) * b]); };
     // a circular plan that contains the whole hall: its diameter is the hall's diagonal
     const hallDisk = (L, W) => [L / 2, W / 2, Math.hypot(L, W) / 2];
     const ringLine = (d, z, c = 'member') => ({ c, pts: Array.from({ length: 49 }, (_, i) => { const a = 2 * Math.PI * i / 48; return [d[0] + d[2] * Math.cos(a), d[1] + d[2] * Math.sin(a), z]; }) });
@@ -1416,30 +1418,45 @@
               return Object.assign(r, { zone: e + F, cols: o.posts.length, colNote: `${n} mast${n > 1 ? 's' : ''} inside the space along mid-span`, thrust: null, thrustNote: 'membrane anchored at the edges',
                   notes: ['A mast at mid-span lifts each ridge cable over a saddle; valley cables hold the membrane down between (Engel 1.2.2.2).', `One mast per ridge stands in the space, ${f1_(p)} m apart.`] });
           } },
-        { id: 'i_ext', fam: 1, name: 'Tent hung from outside arches', ...M(SP.tentInd, ['membrane']), rule: { membrane: 'arches clear the membrane by 1.5 m, hangers' }, roofType: 'membrane', own: () => 0.04,
+        { id: 'i_ext', fam: 1, name: 'Tent hung from an exterior structure', ...M(SP.tentInd, ['membrane']), rule: { membrane: 'high points +L/6, hung from cables between leaning masts outside the walls, backstayed' }, roofType: 'membrane', own: () => 0.04,
           build(L, H, W, m, q) {
-              const e = 0.4, F = L / 6, n = Math.max(1, Math.round(W / clamp(L / 2, 8, 20))), p = W / n, Zt = H + e + F + 1.5, Sa = L * 1.3, za = x => Zt * (1 - (2 * (x - L / 2) / Sa) ** 2);
-              const zm = (x, y) => { const u = 2 * x / L - 1; return H + e + F * (1 - u * u) * wave(y - p / 2, p) ** 0.7; };
-              const o = { kind: 'membrane', mods: [{ rect: [0, 0, L, W], z: zm, nj: n * 10 }], posts: [], lines3: [], secY: p / 2, footExtra: [L / 2 - Sa / 2, L / 2 + Sa / 2],
-                  extra2d: [line(Array.from({ length: 33 }, (_, i) => { const x = L / 2 - Sa / 2 + Sa * i / 32; return [x, Math.max(0, za(x))]; }), 'member')] };
-              for (let k = 0; k < n; k++) { const y = (k + 0.5) * p; o.lines3.push({ c: 'member', pts: Array.from({ length: 33 }, (_, i) => { const x = L / 2 - Sa / 2 + Sa * i / 32; return [x, y, Math.max(0, za(x))]; }) });
-                  for (const x of [L / 4, L / 2, 3 * L / 4]) o.lines3.push({ c: 'cable', pts: [[x, y, za(x)], [x, y, zm(x, y)]] }); }
+              // Engel 1.2.3.1, p.93 ("suspension structure for high points in line"): a pair of masts outside the long walls per row of
+              // high points, a cable between their heads, hangers down to eye rings at the high points; the membrane falls from them
+              const e = 0.4, F = L / 6, n = Math.max(1, Math.round(W / clamp(L / 2, 8, 20))), p = W / n, pk = [], a = L / 8;
+              for (let k = 0; k < n; k++) for (const x of [L / 3, 2 * L / 3]) pk.push([x, (k + 0.5) * p]);
+              const rad = Math.min(p, L / 3) * 0.75, zp = H + e + F, zm = (x, y) => H + e + F * Math.max(...pk.map(([u, v]) => Math.max(0, 1 - Math.hypot(x - u, y - v) / rad) ** 1.4));
+              const zc = zp + 2, Hm = zc + Math.max(2, L / 6), xl = -0.4 * a, xr = L + 0.4 * a, sag = Hm - zc;
+              const o = { kind: 'membrane', mods: [{ rect: [0, 0, L, W], z: zm, ni: 24, nj: n * 12 }], posts: [], lines3: [], secY: p / 2 };
+              for (let k = 0; k < n; k++) { const y = (k + 0.5) * p;
+                  o.lines3.push({ c: 'member', pts: [[-a, y, 0], [xl, y, Hm]] }, { c: 'member', pts: [[L + a, y, 0], [xr, y, Hm]] },
+                      { c: 'cable', pts: [[xl, y, Hm], [L / 3, y, zc], [2 * L / 3, y, zc], [xr, y, Hm]] });
+                  for (const x of [L / 3, 2 * L / 3]) o.lines3.push({ c: 'cable', pts: [[x, y, zc], [x, y, zp]] });
+                  guy(o, [xl, y, Hm], [-a - Hm * 0.5, y]); guy(o, [xr, y, Hm], [L + a + Hm * 0.5, y]); }
               for (let k = 0; k <= 2 * n; k++) for (const x of [0, L]) o.posts.push([x, k * p / 2, H + e]);
-              const r = surfaceHall(o);
-              return Object.assign(r, { zone: Zt - H, cols: o.posts.length, colNote: `arches every ${f1_(p)} m outside; edge posts`, thrust: q * p * Sa * Sa / (8 * Zt), thrustNote: 'arch thrust at each foot', thrustPerArch: true,
-                  notes: ['The membrane is not pushed up but hung from a separate structure above it (Engel 1.2.3.1).'] });
+              const r = surfaceHall(o), Ls = xr - xl;
+              return Object.assign(r, { zone: Hm - H, topOverride: Hm, cols: o.posts.length, colNote: `edge posts; ${2 * n} masts outside the walls, backstayed`,
+                  secCut: [sampleX(0, L, 32).map(x => [x, zm(x, p / 2)]), [[-a, 0], [xl, Hm]], [[L + a, 0], [xr, Hm]], [[xl, Hm], [L / 3, zc], [2 * L / 3, zc], [xr, Hm]], [[L / 3, zc], [L / 3, zp]], [[2 * L / 3, zc], [2 * L / 3, zp]], [[xl, Hm], [-a - Hm * 0.5, 0]], [[xr, Hm], [L + a + Hm * 0.5, 0]]],
+                  thrust: q * p * Ls * Ls / (8 * sag), thrustNote: 'per mast, the backstay’s pull — taken by anchors in the ground outside the walls', thrustPerArch: true,
+                  notes: ['The membrane is not pushed up but hung from a separate structure above it: cables between masts outside the walls carry the high points on hangers (Engel 1.2.3.1, p.93).', 'Nothing stands in the space; the masts and their anchors need ground outside the walls.'] });
           } },
-        { id: 'i_int', fam: 1, name: 'Tent on interior umbrella masts', ...M(SP.tentInd, ['membrane']), rule: { membrane: 'peaks +L/6 on masts at L/3' }, roofType: 'membrane', own: () => 0.04,
+        { id: 'i_int', fam: 1, name: 'Tent on cable-supported flying masts', ...M(SP.tentInd, ['membrane']), rule: { membrane: 'high points +L/6 on short masts carried by cables strung beneath the membrane' }, roofType: 'membrane', own: () => 0.04,
           build(L, H, W, m, q) {
+              // Engel 1.2.3.2, p.95 ("cable supported high-point constructions"): each high point on a short mast that does not reach
+              // the ground — a cable net strung from the edges beneath the membrane holds its foot
               const e = 0.4, F = L / 6, n = Math.max(1, Math.round(W / clamp(L / 2, 8, 20))), p = W / n, pk = [];
               for (let k = 0; k < n; k++) for (const x of [L / 3, 2 * L / 3]) pk.push([x, (k + 0.5) * p]);
-              const rad = Math.min(p, L / 3) * 0.75, zm = (x, y) => H + e + F * Math.max(...pk.map(([a, b]) => Math.max(0, 1 - Math.hypot(x - a, y - b) / rad) ** 1.4));
-              const o = { kind: 'membrane', mods: [{ rect: [0, 0, L, W], z: zm, ni: 24, nj: n * 12 }], posts: pk.map(([a, b]) => [a, b, H + e + F]), secY: p / 2,
-                  lines3: pk.flatMap(([a, b]) => [0, 1, 2, 3].map(k => { const t = k * Math.PI / 2 + Math.PI / 4, rr = rad * 0.45, x = a + rr * Math.cos(t), y = b + rr * Math.sin(t); return { c: 'member', pts: [[a, b, H + e + F * 0.55], [x, y, zm(x, y)]] }; })) };
+              const rad = Math.min(p, L / 3) * 0.75, zp = H + e + F, zm = (x, y) => H + e + F * Math.max(...pk.map(([a, b]) => Math.max(0, 1 - Math.hypot(x - a, y - b) / rad) ** 1.4));
+              const mb = H + e + 0.15 * F;   // the foot of each flying mast, held by the cables
+              const o = { kind: 'membrane', mods: [{ rect: [0, 0, L, W], z: zm, ni: 24, nj: n * 12 }], posts: [], secY: p / 2, lines3: [] };
+              for (const [a, b] of pk) { o.lines3.push({ c: 'member', pts: [[a, b, mb], [a, b, zp + 0.4]] });
+                  for (const [x, y] of [[a < L / 2 ? 0 : L, b], [a, b - p / 2], [a, b + p / 2], [a < L / 2 ? 0 : L, b - p / 2], [a < L / 2 ? 0 : L, b + p / 2]]) o.lines3.push({ c: 'cable', pts: [[x, y, H + e], [a, b, mb]] }); }
+              for (let k = 0; k < n; k++) o.lines3.push({ c: 'cable', pts: [[L / 3, (k + 0.5) * p, mb], [2 * L / 3, (k + 0.5) * p, mb]] });
               for (let k = 0; k <= 2 * n; k++) for (const x of [0, L]) o.posts.push([x, k * p / 2, H + e]);
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: e + F, cols: o.posts.length, colNote: `${pk.length} masts inside the space`, thrust: null, thrustNote: 'membrane anchored at the edges',
-                  notes: ['Masts inside carry umbrella heads whose arms push the membrane up at several points (Engel 1.2.3.2).', `${pk.length} masts stand in the space, on a ${f1_(L / 3)} × ${f1_(p)} m grid.`] });
+              return Object.assign(r, { zone: e + F, cols: o.posts.length, colNote: `edge posts only; ${pk.length} flying masts held by cables`,
+                  secCut: [sampleX(0, L, 32).map(x => [x, zm(x, p / 2)]), [[0, H + e], [L / 3, mb], [2 * L / 3, mb], [L, H + e]], [[L / 3, mb], [L / 3, zp + 0.4]], [[2 * L / 3, mb], [2 * L / 3, zp + 0.4]]],
+                  thrust: null, thrustNote: 'membrane and cables anchored at the edges',
+                  notes: ['Each high point sits on a short mast that floats: cables strung beneath the membrane from the edges hold its foot, so nothing stands in the space (Engel 1.2.3.2, p.95).', `${pk.length} flying masts, on a ${f1_(L / 3)} × ${f1_(p)} m grid.`] });
           } },
         // --- 1.3 pneumatics ---
         { id: 'p_neg', fam: 1, name: 'Underpressure roof', ...M(SP.airHall, ['membrane']), rule: { membrane: 'membrane sucked down L/12 into an airtight box' }, roofType: 'membrane', own: () => 0.02,
@@ -1712,7 +1729,7 @@
         { id: 'g_arch', fam: 1, name: 'Gridshell with boundary arches', ...M(SP.lattice, ['timber', 'steel']), rule: { timber: 'rise S/4, open ends on edge arches', steel: 'rise S/4, open ends on edge arches' },
           own: (m, L) => (m === 'timber' ? 0.8 : 1) * (0.08 + 0.002 * L),
           build(L, H, W, m, q) {
-              const r_ = 0.25, Sp = (H / r_ + Math.sqrt((H / r_) ** 2 + 4 * L * L)) / 2, F = r_ * Sp, x0 = L / 2 - Sp / 2;
+              const r_ = 0.25, He = H / 0.82, Sp = (He / r_ + Math.sqrt((He / r_) ** 2 + 4 * L * L)) / 2, F = r_ * Sp, x0 = L / 2 - Sp / 2;   // the open ends drop 18%: sized so the corners still clear H
               const za = x => { const u = (x - x0) / Sp; return 4 * F * u * (1 - u); };
               const o = { kind: 'membrane', mods: [{ rect: [x0, 0, x0 + Sp, W], z: (x, y) => za(x) * (1 - 0.18 * (2 * y / W - 1) ** 2), ni: 18, nj: 18, cables: true, li: 18, lj: 18 }], secY: W / 2,
                   lines3: [0, W].map(y => ({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const x = x0 + Sp * i / 24; return [x, y, za(x) * 0.82]; }) })) };
@@ -1898,10 +1915,10 @@
                   notes: ['Beams balanced on one central row of columns, cantilevering to both sides (Engel 3.1.4.2).', `The column row stands in the middle of the hall; each cantilever is ${f1_(L / 2)} m.`] };
           } },
         // --- 3.2 frames ---
-        { id: 'f_3h', fam: 3, name: 'Three-hinged frame', mats: MAT3, spans: SP3.frame1, rule: rules3(m => `knee L/${R3(m, 18, 12, 10)}, crown L/${R3(m, 60, 40, 30)} · hinges at feet and crown`),
-          own: (m, L) => beamOwn(m, L, L / R3(m, 18, 12, 10), spacing3(m), 0.55),
+        { id: 'f_3h', fam: 3, name: 'Three-hinged frame', mats: MAT3, spans: SP3.frame1, rule: rules3(m => `knee L/${R3(m, 19, 20, 13)}, crown L/${R3(m, 60, 60, 40)} · hinges at feet and crown (depths after the Metric Handbook’s frame L/d)`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 19, 20, 13), spacing3(m), 0.55),
           build(L, H, W, m, q) {
-              const dh = L / R3(m, 18, 12, 10), d0 = L / R3(m, 60, 40, 30), s = spacing3(m), P = portalParts(L, H, { dr: d0, dh, d0, wb: dh * 0.45 });
+              const dh = L / R3(m, 19, 20, 13), d0 = L / R3(m, 60, 60, 40), s = spacing3(m), P = portalParts(L, H, { dr: d0, dh, d0, wb: dh * 0.45 });
               const k = Math.max(0.15, dh * 0.25), hc = P.top(L / 2) - d0 / 2;
               return { parts: [P.frame, hingeAt(L / 2, hc, k), hingeAt(-dh * 0.22, k, k), hingeAt(L + dh * 0.22, k, k)],
                   roof: [[-dh, 0], ...P.topPts, [L + dh, 0]], foot: [-dh, L + dh], zone: Math.max(...P.topPts.map(p => p[1])) - H, depthSplit: { knee: dh, mid: d0, rise: Math.tan(6 * Math.PI / 180) * L / 2 },
@@ -1909,10 +1926,10 @@
                   thrust: q * s * L * L / (8 * hc), thrustNote: `per frame at each foot, H = qsL²/8h with the crown hinge ${f2(hc)} m up`, thrustPerArch: true, plan: { kind: 'oneway', s },
                   notes: ['Three hinges make the frame statically determinate: no moment at the crown and the feet, the most at the knees — so it tapers both ways (Engel pp.189–192).', 'Settlement and temperature cause no extra stress.'] };
           } },
-        { id: 'f_fix', fam: 3, name: 'Frame with fixed ends', mats: MAT3, spans: SP3.frame1, rule: rules3(m => `rafter L/${R3(m, 45, 28, 22)}, haunch ×1.6 · fixed feet`),
-          own: (m, L) => beamOwn(m, L, L / R3(m, 45, 28, 22), spacing3(m), 0.5),
+        { id: 'f_fix', fam: 3, name: 'Frame with fixed ends', mats: MAT3, spans: SP3.frame1, rule: rules3(m => `rafter L/${R3(m, 40, 45, 28)}, haunch ×1.6 · fixed feet (Metric Handbook frame L/d)`),
+          own: (m, L) => beamOwn(m, L, L / R3(m, 40, 45, 28), spacing3(m), 0.5),
           build(L, H, W, m, q) {
-              const dr = L / R3(m, 45, 28, 22), dh = 1.6 * dr, s = spacing3(m), P = portalParts(L, H, { dr, dh, wb: dh });
+              const dr = L / R3(m, 40, 45, 28), dh = 1.6 * dr, s = spacing3(m), P = portalParts(L, H, { dr, dh, wb: dh });
               return { parts: [P.frame, rect(-dh - 0.4, -0.7, 0.4, 0, 'light'), rect(L - 0.4, -0.7, L + dh + 0.4, 0, 'light')],
                   roof: [[-dh, 0], ...P.topPts, [L + dh, 0]], foot: [-dh - 0.4, L + dh + 0.4], zone: Math.max(...P.topPts.map(p => p[1])) - H, depthSplit: { knee: dh, mid: dr, rise: Math.tan(6 * Math.PI / 180) * L / 2 },
                   cols: alongSides(W, s), colNote: `frames every ${f1_(s)} m, columns fixed into the foundations`, plan: { kind: 'oneway', s },
@@ -3262,6 +3279,7 @@
         stand: 'Neufert p.318–319 (stadiums, spectator stands): with staggered seats each row sees over the heads two rows in front, which gives a parabolic curve; a step higher than 50 cm needs fall protection at least 90 cm high (not where backrests are higher than 65 cm); stepped reinforced-concrete slabs, e.g. 78 cm rows (figs 8–9)',
         theatre: 'Neufert p.211–212 (theatres): sightlines to the O-point on the proscenium line at forestage height (0.60–0.90 m, at most 1.1 m; 0.9 used); seated eye 1.10 m; 12 cm super-elevation every second row with staggered seats (6 cm per row used); rows at least 0.90 m (better 0.96–1.00); a floor steeper than 10° is stepped',
         fly: 'Stage house: commonly 1.5–2.5 × the proscenium opening high (theatre practice: theatrecrafts.com, “The flying system”; ControlBooth forum, “Flyspace”) — 2 × used here; a reference block, not designed',
+        lecture: 'Neufert pp.198–201 (lecture theatres): rows 0.90 m on steps (0.85 m level), a reference point about 1.0 m above the front floor, at least 2.0 m from the first row, at least 2.30 m clear over the back rows; about 0.8–0.95 m² a student; a 200-seat room about 11.4 × 10.5 m with a ceiling of about 3.5 m. 6 cm a row (12 cm every second row, the theatre value, p.212) used',
         author: 'Author assumptions: 3.0 m clear above every seating row and back zone; 2.0 m circulation behind the last row; first theatre row 3.0 m from the stage edge; stage house 0.6 L deep; the seating drawn as a stepped concrete slab about 0.25 m thick'
     };
     // eye heights above the focal point for n rows whose eyes stand D0 + (k + 0.55)·T from it: each sightline passes C above
@@ -3278,65 +3296,102 @@
     }
     const rakeWords = (rk, sg) => sg.linear ? `a linear rise of ${Math.round(rk.first * 100)} cm a row (${Math.round(rk.degFirst)}°)` : `a parabolic rise from ${Math.round(rk.first * 100)} cm (${Math.round(rk.degFirst)}°) to ${Math.round(rk.last * 100)} cm (${Math.round(rk.degLast)}°) a row`;
     const seatFace = (pts, c) => ({ pts, c });
+    // rows of seats out from a front edge, as distances d from it and floor levels z: by sightlines (or a linear rise for a
+    // short stand), in blocks of at most 30 rows — either with a 1.20 m cross-aisle behind each block (Neufert p.319), or as
+    // tiers, each upper tier reaching back over the last third of the one below with 3.0 m clear under it (as the Berlin
+    // stadium section, Neufert p.319 fig 10; the overhang is the author's)
+    function seatRows(o) {
+        const tiers = [], max = 30;
+        let dStart = 0, zStart = 0;
+        while (true) {
+            const R = [];
+            for (let k = 0; ; k++) { const d = dStart + k * o.T + (o.mode === 'aisles' ? Math.floor(k / max) * o.aisle : 0);
+                if (d + o.T > o.room + 1e-9 || (o.mode === 'tiers' && k >= max)) break; R.push(d); }
+            const n = R.length; if (!n) break;
+            const linear = o.lin && !tiers.length && n <= 10;
+            const Z = linear ? R.map((_, k) => k * o.lin) : sightRows(n, o.T, o.fpD + dStart, zStart + o.eye - o.fpZ, o.C, R.map(r => r - dStart)).map(e => e - (o.eye - o.fpZ));
+            const rise = n > 1 ? Z[n - 1] - Z[n - 2] : 0.4, end = R[n - 1] + o.T;
+            tiers.push({ R, Z, start: dStart, end, Ztop: Z[n - 1] + rise, linear });
+            if (o.mode !== 'tiers' || n < max || tiers.length >= (o.maxTiers || 1)) break;   // another tier only after a full block
+            const nextStart = end - (end - dStart) / 3; if (nextStart + o.T > o.room + 1e-9) break;
+            dStart = nextStart; zStart = Z[n - 1] + rise + o.clear;
+        }
+        const last = tiers[tiers.length - 1];
+        // the floor at distance d: the highest tier there (a row, a cross-aisle at the level of the row in front, or the back zone)
+        const floorAt = d => { let z = 0; tiers.forEach((t, i) => { const isLast = i === tiers.length - 1, to = isLast ? Infinity : t.end + o.aisle;
+            if (d < t.start - 1e-9 || d >= to) return; let v; if (d >= t.end) v = t.Ztop; else { let k = 0; for (let j = 0; j < t.R.length && t.R[j] <= d + 1e-9; j++) k = j; v = t.Z[k]; } z = Math.max(z, v); }); return z; };
+        const steps = tiers.flatMap(t => t.Z.slice(1).map((z, k) => z - t.Z[k])), deg = x => Math.atan(x / o.T) * 180 / Math.PI;
+        const rake = steps.length ? { first: steps[0], last: steps[steps.length - 1], degFirst: deg(steps[0]), degLast: deg(steps[steps.length - 1]), guards: steps.filter(x => x > 0.5 + 1e-9).length } : { first: 0, last: 0, degFirst: 0, degLast: 0, guards: 0 };
+        const n = tiers.reduce((a, t) => a + t.R.length, 0), aisles = tiers.reduce((a, t) => a + t.R.slice(1).filter((r, k) => r - t.R[k] > o.T + 1e-6).length, 0);
+        const capped = o.mode === 'tiers' && !!last && last.R.length >= max && last.end + o.T <= o.room;   // a full block and room left behind it
+        return { tiers, n, Ztop: last ? last.Ztop : 0, end: last ? last.end : 0, floorAt, rake, aisles, capped, linear: !!(tiers[0] && tiers[0].linear) };
+    }
+    const tierWords = sr => sr.capped && sr.tiers.length === 1 ? '; seating stops at 30 rows, one Neufert block (p.319): by these sightlines more rows would rise past 45°, and an upper tier would start higher still — larger arenas relax the sightline rise for their upper rows, not modeled here; the rest of the depth is a level concourse' : sr.tiers.length > 1 ? `, in ${sr.tiers.length} tiers of at most 30 rows, each upper tier over the back third of the one below` : sr.aisles ? `, with ${sr.aisles} cross-aisle${sr.aisles > 1 ? 's' : ''} of 1.20 m after every 30 rows (Neufert p.319)` : '';
     function arenaEnv(L, W, H) {
         const cw = 19, cl = 32, T = 0.85, eye = 1.25, C = 0.15, fpD = 2.0, fpZ = 0.5, lin = 0.30, back = 2.0, head = 3.0, Hc = Math.max(H, 7.0);
         const x0 = (L - cw) / 2, x1 = x0 + cw, y0 = (W - cl) / 2, y1 = y0 + cl;
-        // blocks of at most 30 rows, a 1.20 m cross-aisle behind each (Neufert p.319); the rows as deep as the room allows
-        const block = 30, aisle = 1.2, rowAt = k => k * T + Math.floor(k / block) * aisle, room = Math.min(x0, y0) - back;
-        let n = 0; while (rowAt(n) + T <= room + 1e-9) n++;
-        const linear = n <= 10, R = Array.from({ length: n }, (_, k) => rowAt(k)), aisles = n ? Math.floor((n - 1) / block) : 0;
         // up to 10 rows a linear rise; more rows by sightlines to a point 0.5 m above the court's boundary line, 2.0 m in front
-        const Z = !n ? [] : linear ? Array.from({ length: n }, (_, k) => k * lin) : sightRows(n, T, fpD, eye - fpZ, C, R).map(e => e - (eye - fpZ));
-        const rise = n > 1 ? Z[n - 1] - Z[n - 2] : 0.4, Ztop = n ? Z[n - 1] + rise : 0, rk = rakeOf(Z, T), end = n ? R[n - 1] + T : 0;
-        const sight = { n, T, Z, R, end, eye, C, linear, aisles, aisle, block, focal: { d: -fpD, z: fpZ }, guard: 0.9, barrier: 1.0, rake: rk };
+        const sr = seatRows({ T, eye, C, fpD, fpZ, lin, room: Math.min(x0, y0) - back, mode: 'tiers', aisle: 1.2, clear: head + 0.5 });
+        const n = sr.n, Ztop = sr.Ztop, rk = sr.rake;
+        const sight = { n, T, eye, C, linear: sr.linear, tiers: sr.tiers, aisles: sr.aisles, focal: { d: -fpD, z: fpZ }, guard: 0.9, barrier: 1.0, rake: rk };
         const off = (x, y) => Math.max(x0 - x, x - x1, y0 - y, y - y1, 0);
-        // the floor at a distance d out from the court: a row, the cross-aisle behind it (at its level), or the back zone
-        const rowOf = d => { let k = -1; for (let i = 0; i < n && R[i] <= d + 1e-9; i++) k = i; return k; };
-        const floor = (x, y) => { const d = off(x, y); if (d <= 0 || !n) return 0; if (d >= end) return Ztop; const k = rowOf(d); return k < 0 ? 0 : Z[k]; };
+        const floor = (x, y) => { const d = off(x, y); return d <= 0 || !n ? 0 : sr.floorAt(d); };
         const need = (x, y) => off(x, y) <= 0 ? Hc : floor(x, y) + head;
-        // the bowl: L∞ rings round the court, each a step up; then the back zone at the top, out to the walls
+        // the bowl: L∞ rings round the court, each a step up; an upper tier starts with a fascia; then the back zone, out to the walls
         const faces = [], ring = (a, b, z) => { const A = [x0 - a, y0 - a, x1 + a, y1 + a], B = [x0 - b, y0 - b, x1 + b, y1 + b];
             const c = (R, i) => [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]]][i];
             for (let i = 0; i < 4; i++) { const p = c(A, i), q = c(A, (i + 1) % 4), u = c(B, (i + 1) % 4), v = c(B, i); faces.push(seatFace([[p[0], p[1], z], [q[0], q[1], z], [u[0], u[1], z], [v[0], v[1], z]], 'seat')); } };
         const riser = (a, z0, z1) => { const R = [x0 - a, y0 - a, x1 + a, y1 + a], P = [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]]];
             for (let i = 0; i < 4; i++) { const p = P[i], q = P[(i + 1) % 4]; faces.push(seatFace([[p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1]], 'riser')); } };
-        for (let k = 0; k < n; k++) { if (Z[k] > (k ? Z[k - 1] : 0) + 1e-3) riser(R[k], k ? Z[k - 1] : 0, Z[k]); ring(R[k], k < n - 1 ? R[k + 1] : end, Z[k]); }
-        if (n) { riser(end, Z[n - 1], Ztop);
-            const A = [x0 - end, y0 - end, x1 + end, y1 + end], B = [0, 0, L, W], c = (R, i) => [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]]][i];
+        sr.tiers.forEach((t, ti) => { const m = t.R.length, isLast = ti === sr.tiers.length - 1;
+            for (let k = 0; k < m; k++) { const z0 = k ? t.Z[k - 1] : ti ? t.Z[0] - 0.5 : 0; if (t.Z[k] > z0 + 1e-3) riser(t.R[k], z0, t.Z[k]); ring(t.R[k], k < m - 1 ? t.R[k + 1] : t.end, t.Z[k]); }
+            riser(t.end, t.Z[m - 1], t.Ztop);
+            if (!isLast) ring(t.end, t.end + 1.2, t.Ztop); });
+        if (n) { const A = [x0 - sr.end, y0 - sr.end, x1 + sr.end, y1 + sr.end], B = [0, 0, L, W], c = (R, i) => [[R[0], R[1]], [R[2], R[1]], [R[2], R[3]], [R[0], R[3]]][i];
             for (let i = 0; i < 4; i++) { const p = c(A, i), q = c(A, (i + 1) % 4), u = c(B, (i + 1) % 4), v = c(B, i); faces.push(seatFace([[p[0], p[1], Ztop], [q[0], q[1], Ztop], [u[0], u[1], Ztop], [v[0], v[1], Ztop]], 'seat')); } }
         return { kind: 'arena', word: 'seating bowl', floor, need, Hc, rows: n, Ztop, head, faces, court: [x0, x1, y0, y1], sight,
             starts: { A: [[x0, -1], [x1, 1]], B: [[y0, -1], [y1, 1]] }, band: { A: [y0, y1], B: [x0, x1] },
             flats: n ? [[x0, y0, x1, y1, 0]] : [[0, 0, L, W, 0]],
             eye: { x: L / 2, y: W / 2, yaw: 0 }, tooSmall: x0 < back + T || y0 < back + T,
-            note: `A seating bowl of ${n} rows round a ${cl} × ${cw} m court area (FIBA: 28 × 15 m court and a 2 m boundary); ${rakeWords(rk, sight)} (Neufert p.354), up to ${f1(Ztop)} m${aisles ? `, with ${aisles} cross-aisle${aisles > 1 ? 's' : ''} of 1.20 m after every 30 rows (p.319)` : ''}${rk.guards ? `; ${rk.guards} of its steps are higher than 50 cm and need a 0.9 m guard (p.319)` : ''}; ${f1(Hc)} m clear over the court${H < 7 ? ' (raised to FIBA’s 7.0 m minimum)' : ''}, 3.0 m over every row.`,
+            note: `A seating bowl of ${n} rows round a ${cl} × ${cw} m court area (FIBA: 28 × 15 m court and a 2 m boundary); ${rakeWords(rk, sight)} (Neufert p.354)${tierWords(sr)}, up to ${f1(Ztop)} m${rk.guards ? `; ${rk.guards} of its steps are higher than 50 cm and need a 0.9 m guard (p.319)` : ''}; ${f1(Hc)} m clear over the court${H < 7 ? ' (raised to FIBA’s 7.0 m minimum)' : ''}, 3.0 m over every row.`,
             src: [ENV_SRC.fiba, ENV_SRC.hall, ENV_SRC.stand, ENV_SRC.author] };
     }
+    // a raked room facing one end: a theatre auditorium (with its stage house) or a lecture theatre
+    function rakedEnv(L, W, H, o) {
+        const { T, eye, fz, front, back, head, C } = o;
+        const sr = seatRows({ T, eye, C, fpD: front, fpZ: fz, room: W - front - back, mode: 'aisles', aisle: 1.2 });
+        const n = sr.n, Ztop = sr.Ztop, rk = sr.rake, t0 = sr.tiers[0];
+        const sight = { n, T, eye, C, linear: false, tiers: sr.tiers, aisles: sr.aisles, focal: { d: -front, z: fz }, guard: 0.9, barrier: 0, rake: rk };
+        const floor = (x, y) => y < front || !n ? 0 : sr.floorAt(y - front);
+        const need = (x, y) => y < front ? H : Math.max(H, floor(x, y) + head);   // the room's height, raised where the rake brings the seats up
+        const faces = [];
+        if (n) { const R = t0.R, Z = t0.Z, m = R.length;
+            for (let k = 0; k < m; k++) { const ya = front + R[k], yn = front + (k < m - 1 ? R[k + 1] : t0.end), z0 = k ? Z[k - 1] : 0;
+                if (Z[k] > z0 + 1e-3) faces.push(seatFace([[0, ya, z0], [L, ya, z0], [L, ya, Z[k]], [0, ya, Z[k]]], 'riser'));
+                faces.push(seatFace([[0, ya, Z[k]], [L, ya, Z[k]], [L, yn, Z[k]], [0, yn, Z[k]]], 'seat')); }
+            const yb = front + t0.end; faces.push(seatFace([[0, yb, Z[m - 1]], [L, yb, Z[m - 1]], [L, yb, Ztop], [0, yb, Ztop]], 'riser'), seatFace([[0, yb, Ztop], [L, yb, Ztop], [L, W, Ztop], [0, W, Ztop]], 'seat')); }
+        const g = { kind: o.kind, word: o.word, floor, need, rows: n, Ztop, head, faces, flats: n ? [[0, 0, L, front, 0]] : [[0, 0, L, W, 0]],
+            eye: { x: L / 2, y: front + 0.6 * n * T, yaw: Math.PI }, tooSmall: n < 3, sight, starts: { B: [[front, 1]] }, band: { B: [0, L] } };
+        return Object.assign(g, o.finish(g, sr));
+    }
     function theatreEnv(L, W, H) {
-        const T = 0.90, eye = 1.10, stage = 0.9, front = 3.0, back = 2.0, head = 3.0, C = 0.06;
-        const n = Math.max(0, Math.floor((W - front - back) / T));
-        // sightlines to the O-point at the stage edge, at forestage height (Neufert p.212)
-        const E = n ? sightRows(n, T, front, eye - stage, C) : [], Z = E.map(e => e + stage - eye), rise = n > 1 ? Z[n - 1] - Z[n - 2] : 0.4, Ztop = n ? Z[n - 1] + rise : 0, rk = rakeOf(Z, T);
-        const sight = { n, T, Z, eye, C, linear: false, focal: { d: -front, z: stage }, guard: 0.9, barrier: 0, rake: rk };
-        const floor = (x, y) => { if (y < front || !n) return 0; const k = Math.floor((y - front) / T); return k < n ? Z[k] : Ztop; };
-        const need = (x, y) => y < front ? H : Math.max(H, floor(x, y) + head);   // the auditorium's height, raised where the rake brings the seats up
-        const faces = [], yb = n * T + front;
-        for (let k = 0; k < n; k++) { const ya = front + k * T, z0 = k ? Z[k - 1] : 0;
-            if (Z[k] > z0 + 1e-3) faces.push(seatFace([[0, ya, z0], [L, ya, z0], [L, ya, Z[k]], [0, ya, Z[k]]], 'riser'));
-            faces.push(seatFace([[0, ya, Z[k]], [L, ya, Z[k]], [L, ya + T, Z[k]], [0, ya + T, Z[k]]], 'seat')); }
-        if (n) { faces.push(seatFace([[0, yb, Z[n - 1]], [L, yb, Z[n - 1]], [L, yb, Ztop], [0, yb, Ztop]], 'riser'), seatFace([[0, yb, Ztop], [L, yb, Ztop], [L, W, Ztop], [0, W, Ztop]], 'seat')); }
-        const sd = Math.max(8, 0.6 * L), sh = stage + 2 * Math.max(2, H - stage);
-        return { kind: 'theatre', word: 'raked auditorium', floor, need, rows: n, Ztop, head, faces, flats: n ? [[0, 0, L, front, 0]] : [[0, 0, L, W, 0]],
-            stageHouse: [0, L, -sd, 0, sh, stage], eye: { x: L / 2, y: front + 0.6 * n * T, yaw: Math.PI }, tooSmall: n < 3, sight,
-            starts: { B: [[front, 1]] }, band: { B: [0, L] },
-            note: `A raked auditorium of ${n} rows: ${rakeWords(rk, sight)} by sightlines to the stage edge (Neufert p.212), up to ${f1(Ztop)} m at the back${Math.max(rk.degFirst, rk.degLast) > 10 ? '; steeper than 10°, so the floor is stepped' : ''}; ${f1(H)} m clear at the front, and 3.0 m over every row where the rake rises above that. The stage house (${f1(sh)} m high, ${f1(sd)} m deep) stands apart, drawn for reference only.`,
-            src: [ENV_SRC.theatre, ENV_SRC.stand, ENV_SRC.fly, ENV_SRC.author] };
+        const stage = 0.9;
+        return rakedEnv(L, W, H, { kind: 'theatre', word: 'raked auditorium', T: 0.90, eye: 1.10, fz: stage, front: 3.0, back: 2.0, head: 3.0, C: 0.06,
+            finish: (g, sr) => { const sd = Math.max(8, 0.6 * L), sh = stage + 2 * Math.max(2, H - stage), rk = sr.rake;
+                return { stageHouse: [0, L, -sd, 0, sh, stage], src: [ENV_SRC.theatre, ENV_SRC.stand, ENV_SRC.fly, ENV_SRC.author],
+                    note: `A raked auditorium of ${sr.n} rows: ${rakeWords(rk, g.sight)} by sightlines to the stage edge (Neufert p.212)${tierWords(sr)}, up to ${f1(sr.Ztop)} m at the back${Math.max(rk.degFirst, rk.degLast) > 10 ? '; steeper than 10°, so the floor is stepped' : ''}; ${f1(H)} m clear at the front, and 3.0 m over every row where the rake rises above that. The stage house (${f1(sh)} m high, ${f1(sd)} m deep) stands apart, drawn for reference only.` }; } });
+    }
+    function lectureEnv(L, W, H) {
+        return rakedEnv(L, W, H, { kind: 'lecture', word: 'raked lecture theatre', T: 0.90, eye: 1.10, fz: 1.0, front: 2.0, back: 1.2, head: 2.3, C: 0.06,
+            finish: (g, sr) => ({ src: [ENV_SRC.lecture, ENV_SRC.author],
+                note: `A lecture theatre of ${sr.n} rows: ${rakeWords(sr.rake, g.sight)} by sightlines to a point 1.0 m above the front floor (Neufert p.198)${tierWords(sr)}, up to ${f1(sr.Ztop)} m at the back; ${f1(H)} m clear at the front, and 2.30 m over the back rows (Neufert p.198, fig 5).` }) });
     }
     const NOT_STRUCTURE = ['hatch', 'box', 'seat', 'riser', 'stage'];   // drawn with the hall, but not part of a system
     let ENVC = { key: '', g: null };
     function envGeom() {
         const kind = S.env && S.env.kind; if (!kind) return null;
         const key = [kind, S.L, S.W, S.H].join('|'); if (ENVC.key === key) return ENVC.g;
-        const g = kind === 'arena' ? arenaEnv(S.L, S.W, S.H) : theatreEnv(S.L, S.W, S.H);
+        const g = kind === 'arena' ? arenaEnv(S.L, S.W, S.H) : kind === 'lecture' ? lectureEnv(S.L, S.W, S.H) : theatreEnv(S.L, S.W, S.H);
         const xs = Array.from({ length: 25 }, (_, i) => S.L * i / 24), ys = Array.from({ length: 49 }, (_, j) => 0.25 + (S.W - 0.5) * j / 48);   // out to the wall lines: a roof must clear the seating where it meets them
         g.xs = xs; g.ys = ys;
         g.needX = xs.map(x => Math.max(...ys.map(y => g.need(x, y))));
@@ -3393,7 +3448,7 @@
         let m = matOf(sys); if (S.mat === 'auto') { const probe = sys.build(S.L, S.H, S.W, m, 1); if (probe.spanUsed) m = bestMat(sys, probe.spanUsed); }
         const env = envGeom(), fit = env ? envFit(h => sys.build(S.L, h, S.W, m, 1), env, sys) : { H: S.H, b: 0 }, H = fit.H;
         const r0 = sys.build(S.L, H, S.W, m, 1), load = roofLoad(sys, m, S.L, r0);
-        const r = sys.build(S.L, H, S.W, m, load.q); r.load = load; r.H = H; r.Hraise = H - S.H; r.warp = fit.b; r.Hback = H + fit.b * S.W;
+        FIELDS_HIT = false; const r = sys.build(S.L, H, S.W, m, load.q); r.fields = FIELDS_HIT; r.load = load; r.H = H; r.Hraise = H - S.H; r.warp = fit.b; r.Hback = H + fit.b * S.W;
         const top = (r.topOverride != null ? r.topOverride : Math.max(...r.parts.flatMap(p => p.pts.map(q => q[1])))) + r.warp * S.W;
         // a roof that rises along the hall encloses, on average, half its rise more over the width
         const enclosed = polyArea(r.roof.concat(r.roof[0][1] === 0 ? [] : [[r.roof[r.roof.length - 1][0], 0], [r.roof[0][0], 0]])) + S.L * r.warp * S.W / 2;
@@ -3468,32 +3523,37 @@
             + `<path d="M${P(fl)}" fill="none" stroke="#9a9a9a" stroke-width="${sw * 0.6}"/>`;
         let lo = 0, top = Math.max(...nd.map(q => q[1])), notes = [];
         if (square) {
-            const { n, T, Z } = sg, R = sg.R || Z.map((_, k) => k * T), end = sg.end != null ? sg.end : n * T, th = 0.25, Ztop = env.Ztop, fs = length / 55, blue = 'rgba(25,118,210,0.75)';
-            // the soffit runs under the inner corners of the steps, a slab thickness below them
-            const soff = [[0, 0]]; for (let k = 1; k < n; k++) soff.push([R[k], Math.max(0, Z[k - 1] - th)]);
-            soff.push([end, Math.max(0, Z[n - 1] - th)], [end + 0.01, Math.max(0, Ztop - th)]);
-            const soffAt = u => { if (u >= soff[soff.length - 1][0]) return soff[soff.length - 1][1]; for (let i = 1; i < soff.length; i++) if (u <= soff[i][0]) { const [a0, z0] = soff[i - 1], [a1, z1] = soff[i]; return z0 + (z1 - z0) * (u - a0) / Math.max(1e-9, a1 - a0); } return 0; };
+            const { T } = sg, tiers = sg.tiers, th = 0.25, Ztop = env.Ztop, fs = length / 55, blue = 'rgba(25,118,210,0.75)';
+            // each tier a stepped concrete slab: its top the rows (and the back zone of the last tier, out to the wall), its soffit
+            // under the inner corners of the steps a slab thickness down; an upper tier stands on a post at the back of the one below
+            const tierTop = (t, u, isLast) => { if (u >= t.end) return t.Ztop; let k = 0; for (let j = 0; j < t.R.length && t.R[j] <= u + 1e-9; j++) k = j; return t.Z[k]; };
+            const tierSoff = (t, ti) => { const S0 = [[t.start, ti ? t.Z[0] - 0.5 : 0]]; for (let k = 1; k < t.R.length; k++) S0.push([t.R[k], Math.max(0, t.Z[k - 1] - th)]);
+                S0.push([t.end, Math.max(0, t.Z[t.R.length - 1] - th)], [t.end + 0.01, Math.max(0, t.Ztop - th)]); return S0; };
+            const along = (S0, u) => { if (u >= S0[S0.length - 1][0]) return S0[S0.length - 1][1]; for (let i = 1; i < S0.length; i++) if (u <= S0[i][0]) { const [a0, z0] = S0[i - 1], [a1, z1] = S0[i]; return z0 + (z1 - z0) * (u - a0) / Math.max(1e-9, a1 - a0); } return S0[0][1]; };
             starts.forEach(([t0, dir], si) => {
-                const uEnd = dir > 0 ? length - t0 : t0, M = Math.max(60, Math.ceil(uEnd / 0.05)), tp = [], bt = [];
-                for (let i = 0; i <= M; i++) { const u = uEnd * i / M, t = t0 + dir * u, [x, y] = at(t); tp.push([t, env.floor(x, y)]); bt.push([t, soffAt(u)]); }
-                svg += `<path d="M${P(tp)}L${P(bt.reverse())}Z" fill="#dcdcdc" stroke="#8a8a8a" stroke-width="${sw * 0.6}"/>`;
-                const X = u => t0 + dir * u, rail = (u, z0, h) => `<line x1="${X(u)}" x2="${X(u)}" y1="${-z0}" y2="${-(z0 + h)}" stroke="#444" stroke-width="${sw * 1.2}"/>`;
-                if (sg.barrier) svg += rail(0.05, Z[0], sg.barrier);
-                for (let k = 1; k < n; k++) if (Z[k] - Z[k - 1] > 0.5 + 1e-9) svg += rail(R[k] + 0.05, Z[k], sg.guard);
-                // a cross-aisle, level with the row in front of it: labelled in the enlarged view
-                for (let k = 1; k < n; k++) if (R[k] - R[k - 1] > T + 1e-6) {
-                    if (detail && !si) svg += `<text x="${X(R[k - 1] + T + (R[k] - R[k - 1] - T) / 2)}" y="${-(Z[k - 1] + sg.guard + 0.4)}" text-anchor="middle" font-size="${fs * 0.8}" fill="#555" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">cross-aisle ${f2(R[k] - R[k - 1] - T)} m</text>`; }
+                const uEnd = dir > 0 ? length - t0 : t0, X = u => t0 + dir * u, rail = (u, z0, h) => `<line x1="${X(u)}" x2="${X(u)}" y1="${-z0}" y2="${-(z0 + h)}" stroke="#444" stroke-width="${sw * 1.2}"/>`;
+                tiers.forEach((t, ti) => { const isLast = ti === tiers.length - 1, uTo = isLast ? uEnd : Math.min(uEnd, t.end + 1.2), S0 = tierSoff(t, ti), M = Math.max(40, Math.ceil((uTo - t.start) / 0.05)), tp = [], bt = [];
+                    if (uTo <= t.start) return;
+                    for (let i = 0; i <= M; i++) { const u = t.start + (uTo - t.start) * i / M; tp.push([X(u), tierTop(t, u, isLast)]); bt.push([X(u), along(S0, u)]); }
+                    svg += `<path d="M${P(tp)}L${P(bt.reverse())}Z" fill="#dcdcdc" stroke="#8a8a8a" stroke-width="${sw * 0.6}"/>`;
+                    if (ti) { const lower = tiers[ti - 1], up = lower.end + 0.6; svg += `<line x1="${X(up)}" x2="${X(up)}" y1="${-lower.Ztop}" y2="${-along(S0, up)}" stroke="#8a8a8a" stroke-width="${sw * 2}"/>`; }
+                    if (sg.barrier || ti) svg += rail(t.start + 0.05, t.Z[0], sg.barrier || 1.0);
+                    for (let k = 1; k < t.R.length; k++) if (t.Z[k] - t.Z[k - 1] > 0.5 + 1e-9) svg += rail(t.R[k] + 0.05, t.Z[k], sg.guard);
+                    // a cross-aisle, level with the row in front of it: labelled in the enlarged view
+                    for (let k = 1; k < t.R.length; k++) if (t.R[k] - t.R[k - 1] > T + 1e-6 && detail && !si)
+                        svg += `<text x="${X(t.R[k - 1] + T + (t.R[k] - t.R[k - 1] - T) / 2)}" y="${-(t.Z[k - 1] + sg.guard + 0.4)}" text-anchor="middle" font-size="${fs * 0.8}" fill="#555" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">cross-aisle ${f2(t.R[k] - t.R[k - 1] - T)} m</text>`;
+                });
                 if (si) return;
-                // sightlines from a few rows to the focal point
-                const F = [X(sg.focal.d), sg.focal.z], picks = [...new Set([0, Math.floor((n - 1) / 3), Math.floor(2 * (n - 1) / 3), n - 1])];
-                for (const k of picks) { const e = [X(R[k] + 0.55 * T), Z[k] + sg.eye];
-                    svg += `<line x1="${e[0]}" y1="${-e[1]}" x2="${F[0]}" y2="${-F[1]}" stroke="${blue}" stroke-width="${sw * 0.7}" stroke-dasharray="${sw * 5} ${sw * 3}"/><circle cx="${e[0]}" cy="${-e[1]}" r="${sw * 2.2}" fill="${blue}"/>`; }
+                // sightlines to the focal point from the front, middle and back rows of each tier
+                const F = [X(sg.focal.d), sg.focal.z];
+                tiers.forEach(t => { const m = t.R.length; for (const k of [...new Set([0, Math.floor((m - 1) / 2), m - 1])]) { const e = [X(t.R[k] + 0.55 * T), t.Z[k] + sg.eye];
+                    svg += `<line x1="${e[0]}" y1="${-e[1]}" x2="${F[0]}" y2="${-F[1]}" stroke="${blue}" stroke-width="${sw * 0.7}" stroke-dasharray="${sw * 5} ${sw * 3}"/><circle cx="${e[0]}" cy="${-e[1]}" r="${sw * 2.2}" fill="${blue}"/>`; } });
                 svg += `<path d="M${F[0] - sw * 4},${-F[1]}L${F[0] + sw * 4},${-F[1]}M${F[0]},${-F[1] - sw * 4}L${F[0]},${-F[1] + sw * 4}" stroke="${blue}" stroke-width="${sw}"/>`;
                 if (!detail) return;
-                const rk = sg.rake;
-                notes.push([`${n} rows · ${rakeWords(rk, sg)} · up to ${f1(Ztop)} m`, '#333'],
-                    [sg.linear ? 'linear rise: up to 10 rows (Neufert p.354)' : `sightlines (blue) ${Math.round(sg.C * 100)} cm above the eye in front · eye ${f2(sg.eye)} m · ${env.kind === 'arena' ? 'origin 0.5 m over the boundary line (Neufert p.354)' : 'O-point at the stage edge (Neufert p.212)'}`, blue],
-                    [`${sg.barrier ? `front barrier ${f1(sg.barrier)} m · ` : ''}${rk.guards ? `${rk.guards} steps over 50 cm: guards ${f1(sg.guard)} m (Neufert p.319)` : 'no step over 50 cm: no guards needed (Neufert p.319)'} · stepped concrete slab, the author’s`, '#555']);
+                const rk = sg.rake, origin = env.kind === 'arena' ? 'origin 0.5 m over the boundary line (Neufert p.354)' : env.kind === 'lecture' ? 'reference point 1.0 m above the front floor (Neufert p.198)' : 'O-point at the stage edge (Neufert p.212)';
+                notes.push([`${sg.n} rows${tiers.length > 1 ? ` in ${tiers.length} tiers` : ''} · ${rakeWords(rk, sg)} · up to ${f1(Ztop)} m`, '#333'],
+                    [sg.linear ? 'linear rise: up to 10 rows (Neufert p.354)' : `sightlines (blue) ${Math.round(sg.C * 100)} cm above the eye in front · eye ${f2(sg.eye)} m · ${origin}`, blue],
+                    [`${sg.barrier ? `front barrier ${f1(sg.barrier)} m · ` : ''}${rk.guards ? `${rk.guards} steps over 50 cm: guards ${f1(sg.guard)} m (Neufert p.319)` : 'no step over 50 cm: no guards needed (Neufert p.319)'} · stepped concrete slab${tiers.length > 1 ? 's, upper tiers over the back third of the one below with 3.0 m clear' : ''}, the author’s`, '#555']);
             });
             if (detail && env.kind === 'arena') svg += `<text x="${length / 2}" y="${-env.Hc / 2}" text-anchor="middle" font-size="${fs}" fill="rgba(25,118,210,0.8)" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">${f1(env.Hc)} m clear over the court</text>`;
         }
@@ -3751,7 +3811,7 @@
             for (let k = 0; k <= ny; k += 2) for (const x of [0, L]) box3(add, x - pl.c/2, x + pl.c/2, zig[k][0] - pl.c/2, zig[k][0] + pl.c/2, 0, H);
         } else if (sys === 'pneu') {
             const chain = resample(r.roof.filter(p => p[1] >= 0), 18), cx = L / 2, g = pl.g;
-            const yA = Math.min(g, W / 2), yB = Math.max(W - g, W / 2), nφ = 6;
+            const yA = 0, yB = W, nφ = 6;   // the barrel covers the whole length; the rounded ends stand beyond the end walls
             for (let i = 0; i < chain.length - 1; i++) {
                 const [xa, za] = chain[i], [xb, zb] = chain[i + 1];
                 if (yB > yA) add('face', [[xa, yA, za], [xb, yA, zb], [xb, yB, zb], [xa, yB, za]], 'membrane');
@@ -4149,15 +4209,16 @@
     // would start from; the requirements are switches the student can change
     const PTYPES = [
         { id: 'museum', n: 'Museum / gallery', d: 'top-lit galleries: daylight filtered or from the north, no direct sun on the works (Neufert p.207)', L: 20, W: 40, H: 6, req: { noCols: true, daylight: true, rigging: true } },
-        { id: 'market', n: 'Market hall', d: 'stalls under one roof; columns may stand among them · size: the author’s', L: 24, W: 48, H: 6, req: { noCols: false, daylight: true } },
+        { id: 'market', n: 'Market hall / station concourse', d: 'a long covered hall, light from above; columns may stand in it · size: the author’s (platform roofs at least 3.25 m, Neufert p.416)', L: 30, W: 72, H: 8, req: { noCols: false, daylight: true } },
         { id: 'workshop', n: 'Workshop / warehouse', d: 'loads hung from the roof; 3–6 m high, more with an overhead crane (Neufert p.265)', L: 30, W: 72, H: 6, req: { noCols: false, rigging: true } },
         { id: 'sports', n: 'Sports hall', d: 'a triple multi-functional hall, divisible into three (Neufert p.350)', L: 27, W: 45, H: 7, req: { noCols: true, daylight: true } },
+        { id: 'pool', n: 'Indoor swimming pool', d: 'a 25 × 16.66 m pool with 2–4.5 m round it, at least 4.0 m clear over the water (Neufert pp.362–365); humid, chlorinated air: steel needs protection', L: 22, W: 34, H: 4, req: { noCols: true, daylight: true } },
         { id: 'exhibition', n: 'Exhibition hall', d: 'an open floor, things hung from the roof · size: the author’s', L: 60, W: 90, H: 12, req: { noCols: true, rigging: true } },
         { id: 'assembly', n: 'Assembly / worship hall', d: 'one gathering room, light from above · size: the author’s', L: 20, W: 36, H: 9, req: { noCols: true, daylight: true } },
-        { id: 'station', n: 'Station concourse', d: 'a long covered hall, light from above · size: the author’s (platform roofs at least 3.25 m, Neufert p.416)', L: 30, W: 80, H: 10, req: { noCols: false, daylight: true } },
         { id: 'hangar', n: 'Hangar', d: 'one wide door; a B747-400 spans 64.9 m, is 70.7 m long and 19.6 m high at the tail (Neufert p.423)', L: 80, W: 85, H: 21, req: { noCols: true, rigging: true } },
         { id: 'stadium', n: 'Indoor stadium', d: 'a seating bowl round a court', L: 60, W: 72, H: 9, env: 'arena', req: { noCols: true, rigging: true } },
-        { id: 'theatre', n: 'Theatre auditorium', d: 'raked seats facing a stage house', L: 24, W: 30, H: 8, env: 'theatre', req: { noCols: true, rigging: true } }
+        { id: 'theatre', n: 'Theatre auditorium', d: 'raked seats facing a stage house', L: 24, W: 30, H: 8, env: 'theatre', req: { noCols: true, rigging: true } },
+        { id: 'lecture', n: 'Lecture theatre', d: 'about 300 raked seats, 0.90 m rows, 2.30 m clear over the back rows (Neufert pp.198–201)', L: 15, W: 18, H: 3.5, env: 'lecture', req: { noCols: true } },
     ];
     // what each requirement means, and how it is read (the readings of daylight, hung loads and extension are the author's)
     const PREQS = [
@@ -4187,8 +4248,11 @@
     }
     // author's reading: a system extends along the length when it repeats one bay; centred, radial, domed and closed forms do not
     const NO_EXTEND = /dome|radial|cupola|conical|hypar|saddle|cushion|peak|umbrella|\bring\b|cloister|cross vault|pendentive|squinch|concentric|pneu|four-point|hyperbolic|funnel|shell on .*points/i;
-    const extendOf = r => ({ ok: !NO_EXTEND.test(r.sys.name) && !['dome', 'pneu', 'surf'].includes(r.plan && r.plan.kind) });
-    const pushesGround = r => { const T = thrustLevel(r); return !!T && !/tie|ring|neighbouring/.test(T.by); };
+    // a hall grows along its length by repeating what it is made of: frames or bays (one-way), folds, barrels, or near-square
+    // fields; otherwise (a single dome, a radial or saddle form) it does not — the author's reading
+    const extendOf = r => { const k = r.plan && r.plan.kind; return { ok: ['oneway', 'folded', 'barrel'].includes(k) || !!r.fields || (!NO_EXTEND.test(r.sys.name) && !['dome', 'pneu', 'surf'].includes(k)) }; };
+    // anchors pull on the ground, so they count as a push on it; a tie or a ring keeps the force inside the structure
+    const pushesGround = r => { const T = thrustLevel(r); return !!T && (/anchor/.test(T.by) || !/tie|ring|neighbouring/.test(T.by)); };
     function projFails(r) {
         const q = S.req, f = [];
         if (r.st === 'out') f.push('span');
@@ -4370,6 +4434,10 @@
         if (!cmpPick) return '';
         return `<div class="cpick" role="dialog" aria-label="Replace a Compare column"><div class="q">Compare holds five. Replace which one with ${esc(sysName(cmpPick))}?</div><div class="opts">${slots.map((id, i) => `<button type="button" class="btn" data-replace="${i}">${esc(sysName(id))}</button>`).join('')}<button type="button" class="btn ghost" data-replace="-1">Cancel</button></div></div>`;
     }
+    // a requirement's meaning is placed so it stays on screen: it opens to the left when it would run off the right edge
+    const placeTip = b => { const t = b && b.querySelector('.tip'); if (!t) return; const w = Math.min(280, innerWidth * 0.9); t.classList.toggle('flip', b.getBoundingClientRect().left + w > innerWidth - 8); };
+    document.addEventListener('pointerover', e => { const b = e.target.closest && e.target.closest('.preq'); if (b) placeTip(b); });
+    document.addEventListener('focusin', e => { const b = e.target.closest && e.target.closest('.preq'); if (b) placeTip(b); });
     $('types').addEventListener('keydown', e => { const z = e.target.closest && e.target.closest('[data-zoom]'); if (z && e.target === z && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openModal(z.dataset.zoom); } });
     // the class version records anonymous use — what is explored, not who — to a sheet; it runs only where the page is given
     // window.SF_LOG_URL (the copy for students), so this page sends nothing. A random id per visit, no names, no addresses.
@@ -4501,7 +4569,7 @@
         { t: 'Interior supports', full: true, tip: 'Support axes strictly inside the requested plan; boundary/outside supports excluded. Not a full clearance check.', f: r => `<span class="eligibility ${r.columnFree ? '' : 'fail'}">${r.columnFree ? 'None in modeled plan' : `${r.interior} interior supports${r.internalWalls ? ' + wall / pier intrusion' : ''} — fails column-free brief`}</span>`, sub2: () => 'Basis: modeled support locations; author screening check' },
         { t: 'Reference span', tl: 'Span (Engel)', tip: 'Historical reference intervals, not a structural capacity or clearance check', f: r => {
             const sp = r.sys.spans[r.m], X = v => 100 * (Math.log(Math.max(3, v)) - Math.log(3)) / (Math.log(500) - Math.log(3));
-            return `<span class="st ${r.st}">${CHIP[r.st]}</span><div class="mini">${rangesOf(sp).map(([a,b]) => `<span class="lim" style="left:${X(a)}%;width:${X(b)-X(a)}%"></span>`).join('')}${sp.typ.map(([a,b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6,X(b)-X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${S.lite ? esc(materialLabel(r.sys, r.m)) + ' · ' : ''}${r.spanUsed ? (r.spanLabel || `uses Ø${f1(r.spanUsed)} m`) + ' · ' : ''}${rangeText(rangesOf(sp))} m · usual ${rangeText(sp.typ)}</small>`;
+            return `<span class="st ${r.st}">${r.sys.spanSrc ? (r.st === 'out' ? 'outside the author’s estimate' : 'author’s estimate — no Engel chart') : CHIP[r.st]}</span><div class="mini">${rangesOf(sp).map(([a,b]) => `<span class="lim" style="left:${X(a)}%;width:${X(b)-X(a)}%"></span>`).join('')}${sp.typ.map(([a,b]) => `<span class="typ" style="left:${X(a)}%;width:${Math.max(0.6,X(b)-X(a))}%"></span>`).join('')}<span class="me" style="left:${X(r.spanUsed || S.L)}%"></span></div><small>${S.lite ? esc(materialLabel(r.sys, r.m)) + ' · ' : ''}${r.spanUsed ? (r.spanLabel || `uses Ø${f1(r.spanUsed)} m`) + ' · ' : ''}${rangeText(rangesOf(sp))} m · usual ${rangeText(sp.typ)}</small>`;
         }, sub2: r => spanSource(r.sys) },
         { t: 'Depth · total height', lite: true, tip: 'The structure zone above the clear height, and the height from the ground to the top', f: r => `≈ ${f1(r.zone)} · ${f1(r.top)} m`,
           // a frame's zone is its knee plus the roof's rise: say so, with the depth at mid-span, so it does not read as a deep beam
