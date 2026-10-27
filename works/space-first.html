@@ -799,15 +799,14 @@
           rule: { steel: 'd = Ls/20 · √(2α)', timber: 'd = Ls/18 · √(2α)', concrete: 'd = Ls/18 · √(2α)' },
           twoWay: true,
           build(L, H, W, m, q) {
-              const tw = twoWayShare(L, W), d = tw.short / ({ steel: 20, timber: 18, concrete: 18 }[m]) * tw.k, c = colW(m, H), s = 6, a = clamp(L / Math.round(L / 3), 2, 5);
+              const tw = twoWayShare(L, W), d = tw.short / ({ steel: 20, timber: 18, concrete: 18 }[m]) * tw.k, s = 6, a = clamp(L / Math.round(L / 3), 2, 5), R0 = [0, 0, L, W];
+              // beams of the full depth both ways, on the same a grid, cut at every crossing — drawn like the other beam grids
               const ribs = []; for (let x = a; x < L - 1e-6; x += a) ribs.push(line([[x, H], [x, H + d]], 'thin'));
-              return {
-                  parts: [...columns(L, H, c), rect(-c, H + d * 0.82, L + c, H + d), line([[-c, H], [L + c, H]], 'member'), ...ribs],
-                  roof: [[-c, 0], [-c, H + d], [L + c, H + d], [L + c, 0]], foot: [-c, L + c],
-                  zoneLabel: `d ${f2(d)}`, zone: d, cols: perimeter(L, W, s), colNote: `perimeter columns every ${f1(s)} m, grid ${f1(a)} m`,
-                  plan: { kind: 'grid', s, a },
+              const r = gridHall(L, H, W, m, { d, segs: [...gridLines(0, a, R0), ...gridLines(90, a, R0), ...edgesOf(R0)], secExtra: ribs, colNote: `perimeter columns every ${f1(s)} m, grid ${f1(a)} m` });
+              return Object.assign(r, {
+                  zoneLabel: `d ${f2(d)}`, zone: d, plan: Object.assign(r.plan, { a }),
                   notes: [`Plan ${f1(L)} × ${f1(W)} m: the short direction carries ${Math.round(tw.share * 100)}% of the load (author approximation from Engel p.200: two equal-section beams, point load at their crossing), author depth heuristic: ×${tw.k.toFixed(2)} of the square-plan value.`, tw.share > 0.85 ? 'At this ratio the grid works almost one-way — one-way beams would do the same with less.' : 'Both directions share the load: that is what the grid pays for.']
-              };
+              });
           } },
 
         // ===== 4 SURFACE-ACTIVE =====
@@ -1994,7 +1993,6 @@
           own: (m, L) => gridOwn(m, L, L / R3(m, 18, 16, 16)) * 0.85,
           build(L, H, W, m, q) {
               const d = L / R3(m, 18, 16, 16), a = gridA(L), R0 = [0, 0, L, W];
-              const main = gridLines(90, 2 * a, [0, 0, W, L]).map(([y1, x1, y2, x2]) => [x1, y1, x2, y2, 1]);
               const segs = [...gridLines(0, 2 * a, R0).map(sg => [...sg.slice(0, 4), 1]), ...gridLines(90, a, R0).map(sg => [...sg.slice(0, 4), 0.55]), ...edgesOf(R0)];
               const r = gridHall(L, H, W, m, { d, segs });
               return Object.assign(r, { notes: ['A hierarchy: deep main beams across the span, shallower secondary beams between them — the grid is graded to the load path (Engel 3.3.2.1, p.203).'] });
@@ -2153,8 +2151,41 @@
             faces.push({ c: cl === 'fold' ? (j % 2 ? 'fold2' : 'fold1') : cl, pts: [Q(i, j / nt, y), Q(i + 1, j / nt, y), Q(i + 1, (j + 1) / nt, y), Q(i, (j + 1) / nt, y)] });
         return { faces, edge: path.map((p, i) => [p[0] + off[i][0] * prof(0), p[1] + off[i][1] * prof(0)]) };
     }
-    // n members centred in equal bays across W; the gaps between them are glazed
+    // n members centred in equal bays across W; fill < 1 leaves a gap between them (glazed)
     const bays = (W, s, fill) => { const n = Math.max(1, Math.round(W / s)), p = W / n; return { n, p, b: p * fill, ys: Array.from({ length: n }, (_, k) => (k + 0.5) * p) }; };
+    // Engel's linear folded and linear shell systems (pp.225–227, 242–244): units side by side with no gap, each a closed section
+    // round its own line — a diamond of four plates (ridge-to-ridge folding) or a lens of two cylindrical surfaces — whose depth
+    // runs out to nothing at a hinge. path is the unit's inner line (it touches the clear space); depth(i) the section depth at
+    // its vertex i; the section is laid outward from the path, so nothing passes inside it
+    function linHall(L, H, W, o) {
+        const path = o.path, n = path.length, ys = o.ys, b = o.b, lens = o.kind === 'lens', nt = lens ? 8 : 2;
+        const nrm = (a, c) => { const dx = c[0] - a[0], dz = c[1] - a[1], l = Math.hypot(dx, dz); return [-dz / l, dx / l]; };
+        const off = path.map((p, i) => {
+            const n1 = i > 0 ? nrm(path[i - 1], p) : null, n2 = i < n - 1 ? nrm(p, path[i + 1]) : null;
+            if (!n1) return n2; if (!n2) return n1;
+            const d = 1 + n1[0] * n2[0] + n1[1] * n2[1]; return [(n1[0] + n2[0]) / d, (n1[1] + n2[1]) / d];
+        });
+        const sh = lens ? t => 1 - (2 * t - 1) ** 2 : t => 1 - Math.abs(2 * t - 1);
+        const at = (i, t, sg) => { const e = o.depth(i) * (0.5 + 0.5 * sg * sh(t)); return [path[i][0] + off[i][0] * e, path[i][1] + off[i][1] * e]; };
+        const faces = [];
+        for (const y of ys) for (const sg of [1, -1]) for (let j = 0; j < nt; j++) for (let i = 0; i < n - 1; i++) {
+            const Q = (k, t) => { const [x, z] = at(k, t, sg); return [x, y - b / 2 + b * t, z]; };
+            faces.push({ c: lens ? 'shellx' : (j % 2 ? 'fold2' : 'fold1'), pts: [Q(i, j / nt), Q(i + 1, j / nt), Q(i + 1, (j + 1) / nt), Q(i, (j + 1) / nt)] });
+        }
+        const top = path.map((_, i) => at(i, 0.5, 1)), side = path.map((_, i) => at(i, 0, 1)), xs = top.concat(side, path).map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+        return surfaceHall({ kind: 'none', mods: ys.map(y => ({ rect: [x0, y - b / 2, x1, y + b / 2], z: () => H, ni: 1, nj: 1 })), faces3: faces, secY: ys[0], sec: top,
+            secParts: [line(path, 'member'), line(side, 'thin')] });
+    }
+    // a polygon of facets on a half-ellipse over the hall, from angle a0 (below the horizontal for feet turned in) up to the crown
+    // hinge at 90°, the same on both sides; B (the half-height) is raised until the facets clear the corners of the clear space
+    function hingedArch(L, H, a0, nSide) {
+        const deg = Math.PI / 180, A = (L / 2) / Math.cos(a0 * deg), ang = Array.from({ length: nSide + 1 }, (_, k) => a0 + (90 - a0) * k / nSide);
+        const pts = B => { const zc = -B * Math.sin(a0 * deg), half = ang.map(a => [L / 2 - A * Math.cos(a * deg), zc + B * Math.sin(a * deg)]); return half.concat(half.slice(0, -1).reverse().map(([x, z]) => [L - x, z])); };
+        const inside = (P, x, z) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, zi] = P[i], [xj, zj] = P[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+        let lo = H * 0.5, hi = H * 4 + L;
+        for (let k = 0; k < 50; k++) { const B = (lo + hi) / 2, P = pts(B); if (inside(P, 1e-3, H) && inside(P, L - 1e-3, H) && inside(P, L / 2, H)) hi = B; else lo = B; }
+        return pts(hi);
+    }
     function stripHall(L, H, W, o) {
         const { faces, edge } = stripFaces(o.path, o.prof, o.nt, o.ys, o.b, o.cl), xs = [...o.path, ...edge].map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
         const posts = o.posts || [], c = 0.3;
@@ -2372,22 +2403,31 @@
               return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} V-beams ${f1_(B.b)} m wide; end diaphragms transfer load to columns at each valley; glazing between`,
                   notes: ['Each beam is a narrow folded plate — two inclined plates meeting at a fold (Engel 4.2.4.1).'] });
           } },
-        { id: 'fl_frame', fam: 4, name: 'Folded frames', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section rafters and legs, h = L/12', timber: 'V-section rafters and legs, h = L/10' },
+        { id: 'fl_frame', fam: 4, name: 'Folded frames', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'diamond section, h = L/12 at the knees · side by side', timber: 'diamond section, h = L/10 at the knees · side by side' },
           own: (m, L) => foldOwn(m, L) * 0.85,
           build(L, H, W, m, q) {
-              const h = L / (m === 'timber' ? 10 : 12), B = bays(W, m === 'timber' ? 5 : 6, 0.75);
-              const r = stripHall(L, H, W, { path: [[0, 0], [0, H], [L, H], [L, 0]], prof: t => h * Math.abs(2 * t - 1), nt: 2, ys: B.ys, b: B.b, cl: 'fold' });
-              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} folded frames ${f1_(B.b)} m wide, glazing between — the legs are folded plates too`,
-                  notes: ['Rafter and legs are one V-shaped folded plate, turned down at the knees (Engel 4.2.4.2).'] });
+              // Engel p.225, two-hinged frame, ridge-to-ridge folding: diamond units side by side, deepest at the knees, running out to
+              // the hinges at the feet; the roof rises gently to the ridge (1:6 and the 0.6 h at the ridge are the author's)
+              const h = L / (m === 'timber' ? 10 : 12), B = bays(W, m === 'timber' ? 4 : 5, 1), rise = L / 12;
+              const r = linHall(L, H, W, { path: [[0, 0], [0, H], [L / 2, H + rise], [L, H], [L, 0]], depth: i => [0, 1, 0.6, 1, 0][i] * h, kind: 'diamond', ys: B.ys, b: B.b });
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} folded frames ${f1_(B.b)} m wide, side by side — hinged at the feet, the legs folded plates too`,
+                  notes: ['Rafters and legs are one folded unit of diamond section, deepest at the knees and running out to a hinge at each foot; the units stand side by side, ridge to ridge, and make the whole roof and walls (Engel 4.2.4.2, p.225).', 'Adaptation: the 1:6 roof, the 0.6 h at the ridge and the unit width are the author’s; Engel gives the form, not the proportions.'] });
           } },
-        { id: 'fl_arch', fam: 4, name: 'Folded arches', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'V-section, six facets on a half-circle · h = S/25', timber: 'V-section, six facets on a half-circle · h = S/20' },
+        { id: 'fl_arch', fam: 4, name: 'Folded arches', mats: MAT4, spans: SP4.fold4, roofType: 'shell', rule: { concrete: 'diamond section, h = L/12 · side by side · top hinge or three hinges', timber: 'diamond section, h = L/10 · side by side · top hinge or three hinges' },
           own: (m, L) => foldOwn(m, L) * 1.0,
           build(L, H, W, m, q) {
-              const sp = semiPoly(L, H, 6), R = sp.R, h = 2 * R / (m === 'timber' ? 20 : 25), B = bays(W, m === 'timber' ? 5 : 6, 0.75);
-              const r = stripHall(L, H, W, { path: sp.pts, prof: t => h * Math.abs(2 * t - 1), nt: 2, ys: B.ys, b: B.b, cl: 'fold' });
-              return Object.assign(withZone(r, H), { spanUsed: 2 * R, spanLabel: `the arches span ${f1_(2 * R)} m`, cols: 2 * B.n, colNote: `${B.n} arches ${f1_(B.p)} m apart, glazing between; feet ${f1_(R - L / 2)} m outside the hall`,
-                  thrust: q * B.p * R / 2, thrustNote: `at each foot, per arch (${f1_(B.p)} m apart): H = qsS²/8f with S = 2R, f = R, so H = qsR/2`, thrustPerArch: true,
-                  notes: ['Arches whose section is a V-shaped folded plate: the fold gives the thin arch the stiffness to resist uneven load (Engel 4.2.4.3).'] });
+              // Engel p.227: diamond units side by side, the depth running out at each hinge. 'top': straight legs up the walls and three
+              // facets a side to a hinge at the crown (fixed feet, kept at half depth); 'three': facets on a half-ellipse whose feet turn
+              // back in to hinges on the wall lines, raised until the facets clear the space (rise 0.3 L, 30° and four facets are the author's)
+              const three = modeOf('fl_arch', 'top') === 'three', h = L / (m === 'timber' ? 10 : 12), B = bays(W, m === 'timber' ? 4 : 5, 1);
+              let path, depth;
+              if (three) { path = hingedArch(L, H, -30, 4); const nv = path.length, mid = (nv - 1) / 2; depth = i => h * Math.min(1, 2.2 * Math.min(i, nv - 1 - i, Math.abs(i - mid)) / mid); }
+              else { const f = 0.3 * L, top = [180, 150, 120, 90, 60, 30, 0].map(a => [L / 2 + (L / 2) * Math.cos(a * Math.PI / 180), H + f * Math.sin(a * Math.PI / 180)]);
+                  path = [[0, 0], ...top, [L, 0]]; depth = i => h * [0.5, 1, 0.9, 0.6, 0, 0.6, 0.9, 1, 0.5][i]; }
+              const r = linHall(L, H, W, { path, depth, kind: 'diamond', ys: B.ys, b: B.b }), fC = Math.max(...path.map(p => p[1]));
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} folded arches ${f1_(B.b)} m wide, side by side — ${three ? 'three hinges: the feet and the crown' : 'a hinge at the crown, fixed feet'}`,
+                  thrust: q * B.p * L * L / (8 * fC), thrustNote: `at each foot, per arch (${f1_(B.p)} m wide): H = qsL²/8f with f = ${f1_(fC)} m, the crown height`, thrustPerArch: true,
+                  notes: [three ? 'Three-hinged folded arch: diamond units side by side, the feet turned back in to hinges, a third hinge at the crown (Engel 4.2.4.3, p.227).' : 'Folded arch with a hinge at the crown: diamond units side by side on straight legs, faceted over the top (Engel 4.2.4.3, p.227).', 'The fold gives each thin unit the depth to carry uneven load; at a hinge the section runs out to a point.', 'Adaptation: the rise, the facets and the unit width are the author’s; Engel gives the form, not the proportions.'] });
           } },
         // --- 4.3 shells ---
         { id: 'sc_cone', fam: 4, name: 'Conical shells', mats: ['concrete'], spans: SP4.shell3, spanNote: rowsNote4.shell3, roofType: 'shell', rule: { concrete: 'h from L/40 to L/7 along the span, alternating' },
@@ -2482,25 +2522,31 @@
           build(L, H, W, m, q) {
               const h = L / 12, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 0.75), P = B.ys.flatMap(y => [[0, y, H], [L, y, H]]);
               const r = stripHall(L, H, W, { path: [[0, H], [L, H]], prof: t => h * (2 * t - 1) ** 2, nt: 8, ys: B.ys, b: B.b, cl: 'shellx', posts: P });
-              return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} trough-shaped girders ${f1_(B.b)} m wide on end columns; glazing between`,
+              // an end diaphragm across each trough, over its column: it keeps the section's shape and brings the load down to the bearing
+              for (const x of [0, L]) for (const y of B.ys) r.surf.faces3.push({ c: 'solid', pts: Array.from({ length: 9 }, (_, i) => { const t = i / 8; return [x, y - B.b / 2 + B.b * t, H + h * (2 * t - 1) ** 2]; }) });
+              return Object.assign(withZone(r, H), { cols: P.length, colNote: `${B.n} trough-shaped girders ${f1_(B.b)} m wide on end columns, an end diaphragm over each; glazing between`,
                   notes: ['Narrow curved shells used as beams: the curve gives the thin section its depth (Engel 4.3.4.1).'] });
           } },
-        { id: 'ls_frame', fam: 4, name: 'Shell frames', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'U-section rafters and legs, h = L/12' },
+        { id: 'ls_frame', fam: 4, name: 'Shell frames', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'lens section, h = L/12 at the knees · side by side' },
           own: (m, L) => shellOwn(m, L, 1.3) * 0.85,
           build(L, H, W, m, q) {
-              const h = L / 12, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 0.75);
-              const r = stripHall(L, H, W, { path: [[0, 0], [0, H], [L, H], [L, 0]], prof: t => h * (2 * t - 1) ** 2, nt: 8, ys: B.ys, b: B.b, cl: 'shellx' });
-              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell frames ${f1_(B.b)} m wide, glazing between — the legs are shells too`,
-                  notes: ['A trough-shaped shell rafter turned down into trough-shaped legs: one continuous frame (Engel 4.3.4.2).'] });
+              // Engel p.242, two-hinged frame of folded cylindrical surfaces: lens-section units side by side, deepest at the knees,
+              // running out to the hinges at the feet; the roof rises gently to the ridge (1:6 and 0.6 h at the ridge are the author's)
+              const h = L / 12, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rise = L / 12;
+              const r = linHall(L, H, W, { path: [[0, 0], [0, H], [L / 2, H + rise], [L, H], [L, 0]], depth: i => [0, 1, 0.6, 1, 0][i] * h, kind: 'lens', ys: B.ys, b: B.b });
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell frames ${f1_(B.b)} m wide, side by side — hinged at the feet, the legs shells too`,
+                  notes: ['Rafters and legs are one unit of lens section — two cylindrical surfaces meeting at its edges — deepest at the knees and running out to a hinge at each foot; the units stand side by side (Engel 4.3.4.2, p.242).', 'Adaptation: the 1:6 roof, the 0.6 h at the ridge and the unit width are the author’s; Engel gives the form, not the proportions.'] });
           } },
-        { id: 'ls_arch', fam: 4, name: 'Shell arches', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'U-section · straight legs, 45° haunches L/6, flat top' },
+        { id: 'ls_arch', fam: 4, name: 'Shell arches', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'lens section, h = L/12 · straight legs, 45° haunches L/6, a top hinge · side by side' },
           own: (m, L) => shellOwn(m, L, 1.3) * 0.9,
           build(L, H, W, m, q) {
-              const h = L / 12, a = L / 6, F = H + a, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 0.75);
-              const r = stripHall(L, H, W, { path: [[0, 0], [0, H], [a, F], [L - a, F], [L, H], [L, 0]], prof: t => h * (2 * t - 1) ** 2, nt: 8, ys: B.ys, b: B.b, cl: 'shellx' });
-              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell arches ${f1_(B.p)} m apart, glazing between`,
-                  thrust: q * B.p * L * L / (8 * F), thrustNote: `at each foot, per arch (${f1_(B.p)} m apart): H = qsL²/8f with f = ${f1_(F)} m, the crown height`, thrustPerArch: true,
-                  notes: ['Arches of trough-shaped shell section, with straight legs and sloping haunches as Engel draws them (4.3.4.3).', 'The shape is not the funicular of a uniform load, so the section also takes bending.'] });
+              // Engel p.243, arch with a top hinge: straight legs, sloping haunches and a shallow top to a hinge at the crown, lens-section
+              // units side by side; the section runs out at the crown hinge and is kept at half depth at the fixed feet
+              const h = L / 12, a = L / 6, rise = (L / 2 - a) / 6, F = H + a + rise, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1);
+              const r = linHall(L, H, W, { path: [[0, 0], [0, H], [a, H + a], [L / 2, F], [L - a, H + a], [L, H], [L, 0]], depth: i => [0.5, 1, 1, 0, 1, 1, 0.5][i] * h, kind: 'lens', ys: B.ys, b: B.b });
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell arches ${f1_(B.b)} m wide, side by side — a hinge at the crown, fixed feet`,
+                  thrust: q * B.p * L * L / (8 * F), thrustNote: `at each foot, per arch (${f1_(B.p)} m wide): H = qsL²/8f with f = ${f1_(F)} m, the crown height`, thrustPerArch: true,
+                  notes: ['Arches of lens section — two cylindrical surfaces — with straight legs, sloping haunches and a hinge at the crown, side by side as Engel draws them (4.3.4.3, p.243).', 'The shape is not the funicular of a uniform load, so the section also takes bending.', 'Adaptation: the haunches, the 1:6 top and the unit width are the author’s.'] });
           } }
     ];
     for (const s of FAM4) SYS.push(Object.assign({ code: '' }, s));
@@ -3035,7 +3081,8 @@
         k_uni: 'Not in Engel · hold-down force T = qsL²/2a: moment equilibrium of the cantilever about the column line (statics)',
         f_3h: 'Engel pp.186–192: frames push out at the feet; three hinges make it determinate · H = qsL²/8h (statics)',
         p_can1: 'Not in Engel · hold-down force T = qsL²/2a: moment equilibrium of the cantilever plate about its support line (statics)',
-        fb_barrel: EHALF, fl_arch: EHALF, tl_arch: EHALF, sl_arch: EHALF,
+        fb_barrel: EHALF, tl_arch: EHALF, sl_arch: EHALF,
+        fl_arch: 'Engel p.114: thrust grows as the rise falls · H = qsL²/8f by moment equilibrium about the crown hinge, f the crown height (statics, not in Engel; exact for the three-hinged form, an estimate with fixed feet)',
         sd_schw: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sd_lat: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sd_par: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sd_lam: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', geodesic: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)', sv_sphere: 'Engel p.155 (spherical trusses) · ring tension, treating the net as the spherical cap it follows: T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)',
         tf_poly: 'Not in Engel (p.49 shows the form only) · minimum thrust: moment equilibrium of half the pyramid with the line of thrust through the apex, T = qL²b/16f per edge tie (method: J. Heyman, The Stone Skeleton, 1995)',
         cy_int: 'Not in Engel (p.49 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
@@ -4815,9 +4862,10 @@
         v_cross: [['aisles', 'Side vaults'], ['tie', 'Ties'], ['mass', 'Buttresses']],
         dome: [['ring', 'On a ring of columns'], ['ground', 'On four points on the ground']],
         ss_rot: [['columns', 'On columns'], ['ground', 'From the ground']],
-        hyparT: [['columns', 'On side columns + tie'], ['ground', 'On two points on the ground']]
+        hyparT: [['columns', 'On side columns + tie'], ['ground', 'On two points on the ground']],
+        fl_arch: [['top', 'Arch with a top hinge'], ['three', 'Three-hinged arch']]
     };
-    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel p.53' };
+    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel p.53', fl_arch: 'Form · Engel p.227' };
     function modeVariants(id) {
         const keep = S.tm, sys = SYS.find(x => x.id === id), pr = projector(), cur = (keep && keep[id]) || MODES[id][0][0];
         const V = MODES[id].map(([mode, name]) => { S.tm = Object.assign({}, keep, { [id]: mode }); const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return { r, mode, name }; });
