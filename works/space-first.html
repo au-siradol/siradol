@@ -130,21 +130,29 @@
     .notes summary { cursor: pointer; }
 
     /* ---- enlarged view ---- */
-    .modal { position: fixed; inset: 0; background: var(--bg); z-index: 20; display: none; padding: 0 24px 24px; overflow: auto; }
+    .modal { position: fixed; inset: 0; background: var(--bg); z-index: 20; display: none; padding: 0 24px; overflow: hidden; }
     .modal.show { display: block; }
-    .modal .in { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; }
+    /* layout A: four drawings in a 2×2 grid filling the screen, notes in a column that scrolls on its own */
+    .modal .in { max-width: 1600px; height: 100vh; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 280px; grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); gap: 10px 18px; padding-bottom: 14px; box-sizing: border-box; }
     .modal .hd { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--ink); padding: 14px 0 8px; }
     .modal .hd b { font-size: 13px; }
     .modal .hd span { color: var(--mute); font-size: 11px; margin-left: 8px; }
+    .modal .cell { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+    .modal .cell .k { margin-bottom: 4px; flex: none; }
+    .modal .cell > .big, .modal .cell > .plan, .modal .cell > .sec { flex: 1 1 0; min-height: 0; }
     .modal .big { touch-action: none; cursor: grab; }
-    .modal .big svg, .modal .sec svg { width: 100%; height: auto; display: block; }
-    .modal .pair { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-    .modal .pair .k { margin-bottom: 4px; }
-    .modal .big { height: min(46vh, 420px); } .modal .big svg { height: 100%; }
-    .modal .views2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .modal .views2 .big { height: min(40vh, 360px); }
+    .modal .big svg, .modal .sec svg, .modal .plan svg { width: 100%; height: 100%; display: block; }
+    .modal .plan svg { max-height: none !important; }
     .modal .big.eye { background: #fcfcfc; outline: 1px solid #eee; overflow: hidden; }
-    @media (max-width: 860px) { .modal .views2 { grid-template-columns: 1fr; } }
+    .modal .side { grid-column: 3; grid-row: 2 / 4; overflow-y: auto; min-height: 0; padding-right: 4px; }
+    @media (max-width: 860px) {
+        .modal { overflow: auto; padding: 0 16px 24px; }
+        .modal .in { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+        .modal .side { grid-column: auto; grid-row: auto; overflow: visible; }
+        .modal .cell > .big, .modal .cell > .plan, .modal .cell > .sec { flex: none; }
+        .modal .cell > .big { height: min(46vh, 420px); }
+        .modal .sec svg, .modal .plan svg { height: auto; }
+    }
     .modal .side { display: flex; flex-direction: column; gap: 12px; font-size: 11px; color: #444; }
     .vv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .vvi { cursor: pointer; padding: 4px; border: 1px solid transparent; font-size: 10px; }
@@ -156,8 +164,6 @@
     .modal .side ul { margin: 0; padding-left: 14px; line-height: 1.5; }
     .modal .hallread { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); padding: 8px 0 10px; margin-top: 8px; }
     .modal .hallread .h { font-size: 10px; letter-spacing: .4px; text-transform: uppercase; color: #888; margin: 6px 0 2px; }
-    .modal .plan svg { width: 100%; height: auto; display: block; }
-    @media (max-width: 860px) { .modal .in { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { .grid { grid-template-columns: 84px repeat(var(--n), minmax(150px, 1fr)); overflow-x: auto; } body { padding: 0 16px 40px; } }
 
     /* svg classes */
@@ -184,7 +190,7 @@
 
     /* Your project: building types, requirements, the systems that fit */
     .ptypes { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin:0 0 18px; }
-    .ptype { text-align:left; background:transparent; border:1px solid var(--line); padding:8px 10px; cursor:pointer; font:inherit; color:var(--ink); }
+    .ptype { text-align:left; background:transparent; border:1px solid var(--line); padding:8px 10px; cursor:pointer; font:inherit; color:var(--ink); display:flex; flex-direction:column; justify-content:flex-start; align-items:stretch; }
     .ptype b { display:block; font-size:12px; font-weight:600; }
     .ptype small { display:block; color:#777; font-size:10.5px; margin-top:3px; line-height:1.4; }
     .ptype[aria-pressed="true"] { background:var(--ink); color:#fff; }
@@ -265,6 +271,7 @@
     .vt figcaption small { display:block; color:#888; }
     .vt.off { opacity:.3; }
     .vt.nomod { opacity:.45; } .vt.nomod .vd { border:1px dashed #bbb; margin-bottom:3px; }
+    .vsub { font-size:10px; letter-spacing:.3px; text-transform:uppercase; color:#777; border-top:1px solid var(--line); padding-top:5px; margin:4px 0 0; }
     .vt.in { background:#111; color:#fff; border-color:#111; } .vt.in .vd svg { filter:invert(1); }
     .vt .vadd { position:absolute; right:3px; bottom:3px; width:18px; height:18px; padding:0; border:1px solid var(--line); background:#fff; color:var(--ink); font:inherit; font-size:11px; line-height:16px; cursor:pointer; }
     .vt.in .vadd { background:#111; color:#fff; border-color:#666; }
@@ -429,8 +436,11 @@
 
 <div class="modal" id="modal"><div class="in">
     <div class="hd"><div><b id="mName"></b><span id="mSub"></span></div><button class="btn" id="mClose">Close</button></div>
-    <div class="pair"><div class="views2"><div><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div><div><div class="k">Inside, eye at 1.68 m · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div></div><div><div class="k">Section A–A · across the hall</div><div class="sec" id="mSec"></div><div class="k">Section B–B · along the hall</div><div class="sec" id="mSecB"></div><p class="scope-note">Cuts through the modeled surfaces at the dashed plan lines. A–A passes through a nearby frame where the system consists of separate frames. Members outside the cut plane are omitted. Thin surfaces are shown as lines.</p></div></div>
-    <div class="side"><div id="mStatus"></div><div class="k">Plan</div><div class="plan" id="mPlan"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
+    <div class="cell"><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div>
+    <div class="cell"><div class="k">Inside, eye at 1.68 m · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div>
+    <div class="cell secs"><div class="k">Section A–A · across the hall</div><div class="sec" id="mSec"></div><div class="k">Section B–B · along the hall</div><div class="sec" id="mSecB"></div></div>
+    <div class="cell"><div class="k">Plan</div><div class="plan" id="mPlan"></div></div>
+    <div class="side"><div id="mStatus"></div><ul id="mNotes"></ul><div id="mVar"></div><p class="scope-note">Sections cut through the modeled surfaces at the dashed plan lines. A–A passes through a nearby frame where the system consists of separate frames. Members outside the cut plane are omitted. Thin surfaces are shown as lines.</p></div>
 </div></div>
 
 <script id="engine">
@@ -468,6 +478,8 @@
     const colW = (m, H) => m === 'concrete' ? Math.max(0.3, H / 15) : m === 'timber' ? Math.max(0.2, H / 18) : Math.max(0.2, H / 25);
     const alongSides = (W, s) => 2 * (Math.ceil(W / s - 1e-9) + 1);
     const perimeter = (L, W, s) => Math.ceil(2 * (L + W) / s);
+    // a post under a surface system: square, 1/20 of its height and at least 0.25 m (the author's, between colW's steel and concrete)
+    const postW = z => Math.max(0.25, z / 20);
     function columns(L, H, c) { return [rect(-c, 0, 0, H), rect(L, 0, L + c, H)]; }
     // hybrids: a member of depth d along a → b, the spans the author assumes (no Engel chart), the frame spacing
     const hbar = (a, b, d, c = 'solid') => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l * d, nz = dx / l * d; return poly([a, b, [b[0] + nx, b[1] + nz], [a[0] + nx, a[1] + nz]], c); };
@@ -823,10 +835,11 @@
                   notes: ['A thin plate made to act as a deep beam by its folds: ridge in compression, valley in tension (ARCH 445 02b).', 'Needs edge stiffeners or diaphragms, or the folds flatten out.']
               };
           } },
-        { id: 'barrel', fam: 4, code: '4.3.1', name: 'Long barrel shell', mats: ['concrete'],
+        { id: 'barrel', fam: 4, code: '4.3.1', name: 'Barrel shell', mats: ['concrete'],
           spans: { concrete: { lim: [10, 75], typ: [[20, 60]] } },
-          rule: { concrete: 'h = L/12, chord width L/4' },
+          rule: { concrete: 'long: h = L/12, chord width L/4 · short: arch across the span, rise L/6, stiffening arches every 2L/5 (Engel p.237)' },
           build(L, H, W, m, q) {
+              if (modeOf('barrel', 'long') === 'short') return shortBarrel(L, H, W, m, q);
               const h = L / 12, c = colW('concrete', H), b = clamp(r05(L / 4), 6, 15), t = Math.max(0.08, L / 600);
               return {
                   parts: [...columns(L, H, c), rect(-c, H, L + c, H + t * 3), poly([[0, H], [L, H], [L, H + h], [0, H + h]], 'light'), line([[0, H], [0, H + h]], 'member'), line([[L, H], [L, H + h]], 'member')],
@@ -1197,7 +1210,7 @@
         for (const l of [...(o.lines3 || []), ...(o.faces3 || [])]) for (const p of l.pts) zmax = Math.max(zmax, p[2]);
         const inM0 = y => m0.disk && !m0.rect ? Math.abs(y - m0.disk[1]) <= m0.disk[2] + 0.01 : (y >= m0.rect[1] - 0.01 && y <= m0.rect[3] + 0.01);
         const parts = o.secParts ? [line(sec, 'member'), ...o.secParts] : [line(sec, o.kind === 'shellx' ? 'member' : 'cable'), ...(o.extra2d || [])];
-        if (!o.secParts) for (const [x, y, z] of o.posts || []) if (m0.disk ? Math.abs(y - m0.disk[1]) < 0.3 : inM0(y)) parts.push(rect(x - 0.12, 0, x + 0.12, z));
+        if (!o.secParts) for (const [x, y, z] of o.posts || []) if (m0.disk ? Math.abs(y - m0.disk[1]) < 0.3 : inM0(y)) parts.push(rect(x - postW(z) / 2, 0, x + postW(z) / 2, z));
         // boxes cut by the section plane, plus piers standing behind it in the first bay (not walls running across)
         const ysec = o.secY != null ? o.secY : m0.disk ? m0.disk[1] : (o.secY != null ? o.secY : modPt(m0, 0.5, o.secT != null ? o.secT : 0.5)[1]);
         if (!o.secParts) for (const b of o.boxes || []) if ((b[2] - 0.01 <= ysec && ysec <= b[3] + 0.01) || ((inM0(b[2]) || inM0(b[3])) && b[1] - b[0] < S.L / 2)) parts.push(rect(b[0], b[4], b[1], b[5], 'light'));
@@ -1228,7 +1241,7 @@
                 if (dir !== 'y') for (let j = 0; j <= kj; j++) { const pts = []; for (let t = 0; t <= si; t++) pts.push(P(t * ni / si, j * nj / kj, ni, nj)); add('line', pts, cs); }
             }
         }
-        for (const [x, y, z] of o.posts || []) add('line', [[x, y, 0], [x, y, z]], 'post');
+        for (const [x, y, z] of o.posts || []) { const c = postW(z) / 2; box3(add, x - c, x + c, y - c, y + c, 0, z, 'solid'); }
         for (const b of o.boxes || []) box3(add, b[0], b[1], b[2], b[3], b[4], b[5], 'solid', b[6] || {});
         for (const f of o.faces3 || []) add('face', f.pts, f.c || 'solid', f.e);
         for (const l of o.lines3 || []) add('line', l.pts, l.c || 'cable');
@@ -1534,7 +1547,7 @@
                   notes: ['Inflated tubes form a skeleton of arches; a separate skin is hung between them (Engel 1.3.3.2).'] });
           } },
         // --- 1.4 vaults and lattices ---
-        { id: 'v_cross', fam: 1, name: 'Cross (groin) vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'bays L × ~L, semicircular webs rising L/2 (Engel p.47), piers at the corners · thrust taken by side rooms, ties or buttresses' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * (Math.PI - 2),   // two semicircular barrels crossing: surface (π − 2) × plan
+        { id: 'v_cross', fam: 1, name: 'Cross (groin) vault', ref: true, ...M(SP.vault, ['masonry']), rule: { masonry: 'bays L × ~L, semicircular webs rising L/2 (Engel p.47), piers at the corners · thrust taken by side rooms, ties or buttresses' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * (Math.PI - 2),   // two semicircular barrels crossing: surface (π − 2) × plan
           build(L, H, W, m, q) {
               const mode = modeOf('v_cross', 'aisles'), f = L / 2, rs = rowRects(L, W), b = rs[0][3] - rs[0][1], tp = Math.max(0.8, L / 12);
               const Hx1 = q * L * L * b / (16 * f), Hy1 = q * L * b * b / (16 * f), V1 = q * L * b / 4, ys = [...new Set(rs.flatMap(([, y0, , y1]) => [y0, y1]))];
@@ -1581,7 +1594,7 @@
               const r = surfaceHall(vault);
               return Object.assign(r, { zone: f, cols, colNote, thrust, thrustNote, thrustPerArch: true, forces, notes: [...notes, 'Click the drawing to compare side vaults, ties and buttresses.'] });
           } },
-        { id: 'v_cloister', fam: 1, name: 'Cloister vault', ...M(SP.vault, ['masonry']), rule: { masonry: 'semicircular webs rising L/2 from all four walls (Engel p.47) · thrust taken by buttressed walls, ties or wall mass' }, roofType: 'shell',
+        { id: 'v_cloister', fam: 1, name: 'Cloister vault', ref: true, ...M(SP.vault, ['masonry']), rule: { masonry: 'semicircular webs rising L/2 from all four walls (Engel p.47) · thrust taken by buttressed walls, ties or wall mass' }, roofType: 'shell',
           // surface per plan: the two hip ends make one cloister vault over L × L (2L²), the middle is a barrel (π/2 per plan)
           own: (m, L) => { const W = Math.max(S.W, L); return 20 * Math.max(0.2, L / 50) * (2 * L * L + (W - L) * L * Math.PI / 2) / (L * W); },
           build(L, H, W, m, q) {
@@ -1637,7 +1650,7 @@
               const r = surfaceHall(o);
               return Object.assign(r, { zone: f, cols: 0, colNote, thrust, thrustNote, thrustPerArch: perArch, forces, notes: [...notes, 'Click the drawing to compare buttressed walls, ties and walls by mass.'] });
           } },
-        { id: 'v_arch', fam: 1, name: 'Sail vault on four arches', ...M(SP.vault, ['masonry']), rule: { masonry: 'one sphere through the four corners, cut by the four sides' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
+        { id: 'v_arch', fam: 1, name: 'Sail vault on four arches', ref: true, ...M(SP.vault, ['masonry']), rule: { masonry: 'one sphere through the four corners, cut by the four sides' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
               const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], R1 = Math.hypot(L / 2, b / 2), tp = Math.max(0.8, L / 12); let VP;
               const redge = t => { const th = angT(t, L, b); return Math.min(L / 2 / Math.max(1e-6, Math.abs(Math.cos(th))), b / 2 / Math.max(1e-6, Math.abs(Math.sin(th)))); };
@@ -1656,7 +1669,7 @@
                   thrust: q * L * L * b / (8 * R1), thrustNote: `interior pier, across the hall — minimum thrust with the line of thrust through the crown ${f2(R1)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * R1))} kN diagonal`, thrustPerArch: true,
                   notes: ['One spherical cap through the four corners, cut by the four side planes: the cuts are the arches, the bay stands on four piers (Engel 1.4.2.4, p.47).', `The crown stands ${f1_(R1)} m above the springing — half the diagonal of the bay.`, VP.note] });
           } },
-        { id: 'v_pend', fam: 1, name: 'Dome on pendentives', ...M(SP.vault, ['masonry']), rule: { masonry: 'pendentives up to the inscribed circle, hemispherical dome above' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
+        { id: 'v_pend', fam: 1, name: 'Dome on pendentives', ref: true, ...M(SP.vault, ['masonry']), rule: { masonry: 'pendentives up to the inscribed circle, hemispherical dome above' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
               const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], a = Math.min(L, b), R1 = Math.hypot(L / 2, b / 2), z1 = Math.sqrt(Math.max(0, R1 * R1 - (a / 2) ** 2)), tp = Math.max(0.8, L / 12), c = z1 + a / 2; let VP;
               const mods = [], lines3 = [];
@@ -1676,7 +1689,7 @@
                   thrust: q * L * L * b / (8 * c), thrustNote: `interior pier, across the hall — minimum thrust (Heyman), line of thrust through the crown ${f2(c)} m up: Hx = qL²b/8c; end piers ${Math.round(q * L * b * Math.hypot(L, b) / (16 * c))} kN diagonal`, thrustPerArch: true,
                   notes: ['Pendentives — spherical triangles cut from one sphere through the four corners — carry the round dome down to four piers; the cut edges are the arches between piers (Engel 1.4.2.5).', `A hemispherical dome over a ${f1_(a)} m square stands ${f1_(c)} m above the springing — that height is the geometry of the system (Hagia Sophia proportions).`, VP.note] });
           } },
-        { id: 'v_squinch', fam: 1, name: 'Dome on squinches', ...M(SP.vault, ['masonry']), rule: { masonry: 'arches on four piers, squinches turn the square into an octagon, dome above' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
+        { id: 'v_squinch', fam: 1, name: 'Dome on squinches', ref: true, ...M(SP.vault, ['masonry']), rule: { masonry: 'arches on four piers, squinches turn the square into an octagon, dome above' }, roofType: 'shell', own: (m, L) => 20 * Math.max(0.2, L / 50) * 1.3,
           build(L, H, W, m, q) {
               const rs = rowRects(L, W), b = rs[0][3] - rs[0][1], a = Math.min(L, b), Hs = H + Math.max(L, b) / 2, s8 = a * Math.tan(Math.PI / 8), hq = s8 / 2, Hq = Hs + hq, c = Hq + a / 2 - H;
               const tp = Math.max(0.8, L / 12), tw = Math.max(0.4, a / 30), dC = (a - s8) / 2; let VP;
@@ -2192,7 +2205,7 @@
     }
     // n members centred in equal bays across W; fill < 1 leaves a gap between them (glazed)
     const bays = (W, s, fill) => { const n = Math.max(1, Math.round(W / s)), p = W / n; return { n, p, b: p * fill, ys: Array.from({ length: n }, (_, k) => (k + 0.5) * p) }; };
-    // Engel's linear folded and linear shell systems (pp.225–227, 242–244): units side by side with no gap, each a closed section
+    // Linear folded-plate members: units side by side, each a closed section
     // round its own line — a diamond of four plates (ridge-to-ridge folding) or a lens of two cylindrical surfaces — whose depth
     // runs out to nothing at a hinge. path is the unit's inner line (it touches the clear space); depth(i) the section depth at
     // its vertex i; the section is laid outward from the path, so nothing passes inside it
@@ -2219,6 +2232,128 @@
             .concat(ys.flatMap(y => path.slice(1, -1).map((_, k) => { const i = k + 1, w = b * wf(i); return { c: 'member', pts: Array.from({ length: 13 }, (_, j) => { const t = j / 12, [x, z] = at(i, t, 1); return [x, y - w / 2 + w * t, z]; }) }; })));
         return surfaceHall({ kind: 'none', mods: ys.map(y => ({ rect: [x0, y - b / 2, x1, y + b / 2], z: () => H, ni: 1, nj: 1 })), faces3: faces, lines3, secY: ys[0], sec: top,
             secParts: [line(path, 'member'), line(side, 'thin')] });
+    }
+    // short barrel shell (Engel pp.236–237): the cylinder arches across the span L and is carried along the hall on edge beams;
+    // stiffening arches every few metres stand on columns, so it extends by adding length. Rise L/6 and spacing are the author's.
+    function shortBarrel(L, H, W, m, q) {
+        const f = L / 6, R = (L * L / 4 + f * f) / (2 * f), zc = H + f - R, n = 24, c = colW('concrete', H), t = Math.max(0.08, L / 600);
+        const arc = Array.from({ length: n + 1 }, (_, i) => { const x = L * i / n; return [x, zc + Math.sqrt(Math.max(0, R * R - (x - L / 2) ** 2))]; });
+        const nb = Math.max(1, Math.round(W / (0.4 * L))), sp = W / nb, ys = Array.from({ length: nb + 1 }, (_, k) => k * sp);
+        const faces3 = [], lines3 = [];
+        for (let k = 0; k < nb; k++) for (let i = 0; i < n; i++) { const [x0, z0] = arc[i], [x1, z1] = arc[i + 1];
+            faces3.push({ c: 'shellx', pts: [[x0, ys[k], z0], [x1, ys[k], z1], [x1, ys[k + 1], z1], [x0, ys[k + 1], z0]] }); }
+        for (const y of ys) lines3.push({ c: 'member', pts: arc.map(([x, z]) => [x, y, z]) });
+        for (const x of [0, L]) lines3.push({ c: 'member', pts: [[x, 0, H], [x, W, H]] });
+        const posts = ys.flatMap(y => [[0, y, H], [L, y, H]]);
+        const r = surfaceHall({ kind: 'none', mods: [{ rect: [0, 0, L, W], z: () => H, ni: 1, nj: 1 }], faces3, lines3, posts, secY: W / 2, sec: arc,
+            secParts: [band(arc, t), ...columns(L, H, c)] });
+        return Object.assign(withZone(r, H), { cols: posts.length, colNote: `stiffening arches every ${f1(sp)} m on columns along both edge beams`,
+            thrust: q * sp * L * L / (8 * f), thrustNote: 'per stiffening arch at each foot — taken by ties or buttresses', thrustPerArch: true,
+            notes: ['Short barrel shell (Engel p.237, lower drawing): the cylinder arches across the span, so it pushes outward like a vault; stiffening arches carry it to columns, and the hall extends by adding length.',
+                'Rise L/6 and arch spacing 0.4 L are the author\u2019s; Engel gives the form, not the proportions. Arch thrust H = qsL²/8f per stiffening arch (statics, not in Engel).'] });
+    }
+    // Folded cylindrical strips (Engel pp.242–244). Each segment has a constant
+    // circular section. At a fold, intersect its two offset axis lines in x/z;
+    // interpolating section depths at vertices instead makes a warped surface.
+    // path follows the rims; signs describe which side of each axis holds the cylinder.
+    function foldedCylinderHall(L, H, W, o) {
+        const P = o.path, radius = o.b / 2, count = 24;
+        const normals = P.slice(1).map((p, i) => {
+            const dx = p[0] - P[i][0], dz = p[1] - P[i][1], len = Math.hypot(dx, dz);
+            if (len < 1e-8) { if (o.axisNormals && o.axisNormals[i]) return o.axisNormals[i]; throw new Error('Zero-length folded-cylinder segment'); }
+            return [-dz / len, dx / len];
+        });
+        const signs = o.signs || normals.map(() => -1);
+        const section = (i, theta) => {
+            const sag = radius * Math.sin(theta), p = P[i];
+            if (i === 0 || i === P.length - 1) {
+                const k = i === 0 ? 0 : normals.length - 1, n = normals[k];
+                const q = [p[0] + n[0] * signs[k] * sag, p[1] + n[1] * signs[k] * sag];
+                // Trim the vertical end cylinder into an arched opening. This moves
+                // along its axis, retaining the radius rather than flattening it.
+                if (o.feet && Math.abs(n[1]) < 1e-8) q[1] += o.feet * Math.sin(theta);
+                // a foot cut by the vertical plane through its hinge (Engel pp.242–243): rims stay on the hinge, mid-width rises
+                if (o.footPlane && p[1] < 1e-9) {
+                    const axis = [n[1], -n[0]];
+                    if (Math.abs(axis[0]) > 1e-8) { const shift = (p[0] - q[0]) / axis[0]; q[0] = p[0]; q[1] += axis[1] * shift; }
+                }
+                if (o.groundRise != null) {
+                    const axis = [n[1], -n[0]], target = p[1] + o.groundRise * Math.sin(theta);
+                    if (Math.abs(axis[1]) > 1e-8) { const shift = (target - q[1]) / axis[1]; q[0] += axis[0] * shift; q[1] = target; }
+                }
+                return q;
+            }
+            const a = normals[i - 1], b = normals[i], det = a[0] * b[1] - a[1] * b[0];
+            if (Math.abs(det) < 1e-8) {
+                if (signs[i - 1] !== signs[i]) throw new Error('Opposed cylinders need a nonparallel fold');
+                return [p[0] + a[0] * signs[i] * sag, p[1] + a[1] * signs[i] * sag];
+            }
+            const u = signs[i - 1] * sag, v = signs[i] * sag;
+            return [p[0] + (u * b[1] - a[1] * v) / det, p[1] + (a[0] * v - u * b[0]) / det];
+        };
+        const faces3 = [], lines3 = [], rings = [];
+        for (const y of o.ys) {
+            const R = P.map((_, i) => Array.from({ length: count + 1 }, (_, j) => {
+                const theta = Math.PI * j / count, [x, z] = section(i, theta);
+                return [x, y - radius * Math.cos(theta), z];
+            }));
+            rings.push(R);
+            for (let i = 0; i < P.length - 1; i++) {
+                if (o.segments && !o.segments.includes(i)) continue;
+                for (let j = 0; j < count; j++) faces3.push({ c: 'shellx',
+                    pts: [R[i][j], R[i + 1][j], R[i + 1][j + 1], R[i][j + 1]],
+                    e: [j === 0, false, j === count - 1, false] });
+                for (const j of [0, count]) lines3.push({ c: 'foldedge', pts: [R[i][j], R[i + 1][j]] });
+            }
+            // The fold curves use exactly the same vertices as the surface mesh.
+            for (let i = 0; i < R.length; i++) if (!o.segments || o.segments.includes(i) || o.segments.includes(i - 1))
+                lines3.push({ c: 'foldedge', pts: R[i] });
+        }
+        const sec = P.map((_, i) => section(i, Math.PI / 2));
+        const xs = rings.flat(2).map(p => p[0]);
+        const r = surfaceHall({ kind: 'none', mods: o.ys.map(y => ({ rect: [Math.min(...xs), y - radius, Math.max(...xs), y + radius], z: () => H, ni: 1, nj: 1 })),
+            faces3, lines3, secY: o.ys[0], sec, secParts: [line(P, 'thin')] });
+        // Geometry metadata supports regression checks of the cylinder equations.
+        r.cylinder = { path: P, normals, signs, radius, rings };
+        return r;
+    }
+    // Elliptic cylinder pieces that stop on a plane, fold into a neighbouring cylinder, or are cut narrower (Engel pp.243–244).
+    // c0→c1 is the trough bottom at mid-width, m the unit normal toward its rims (k·r away); lo/hi(eta) give the x/z line where
+    // the generator at y = yc + eta·r stops; trim(s) is the half-width share kept at s along c0→c1.
+    function cylinderPieces(pieces, ys, b) {
+        const r = b / 2, nS = 12, faces3 = [], lines3 = [], xs = [];
+        const gen = (p, eta) => { const e = p.k * r * (1 - Math.sqrt(Math.max(0, 1 - eta * eta))); return [[p.c0[0] + p.m[0] * e, p.c0[1] + p.m[1] * e], [p.c1[0] - p.c0[0], p.c1[1] - p.c0[1]]]; };
+        const cut = ([A, d], [B, e]) => { const det = d[0] * e[1] - d[1] * e[0]; return Math.abs(det) < 1e-12 ? null : ((B[0] - A[0]) * e[1] - (B[1] - A[1]) * e[0]) / det; };
+        const span = (p, eta) => {
+            const g = gen(p, eta); let s0 = cut(g, p.lo(eta)), s1 = cut(g, p.hi(eta));
+            if (s0 == null || s1 == null || s1 < s0 - 1e-9) return null;
+            if (p.trim) {
+                const a = Math.abs(eta), ok = s => p.trim(s) >= a - 1e-9, A = ok(s0), B = ok(s1);
+                if (!A && !B) return null;
+                if (A !== B) { let lo = s0, hi = s1; for (let k = 0; k < 50; k++) { const mid = (lo + hi) / 2; if (ok(mid) === A) lo = mid; else hi = mid; } if (A) s1 = lo; else s0 = hi; }
+            }
+            return [g, s0, s1];
+        };
+        for (const p of pieces) {
+            const nE = p.nEta || 24, w = p.wmax || 1, etas = Array.from({ length: nE + 1 }, (_, j) => -w * Math.cos(Math.PI * j / nE)), spans = etas.map(e => span(p, e));
+            for (const yc of ys) {
+                const P = (j, u) => { const [[[x, z], d], s0, s1] = spans[j], s = s0 + (s1 - s0) * u; return [x + d[0] * s, yc + etas[j] * r, z + d[1] * s]; };
+                const valid = etas.map((_, j) => !!spans[j]), first = valid.indexOf(true), last = valid.lastIndexOf(true);
+                for (let j = 0; j < nE; j++) if (valid[j] && valid[j + 1]) for (let i = 0; i < nS; i++)
+                    faces3.push({ c: 'shellx', pts: [P(j, i / nS), P(j, (i + 1) / nS), P(j + 1, (i + 1) / nS), P(j + 1, i / nS)], e: [j === first, i === nS - 1, j + 1 === last, i === 0], piece: true });
+                const run = u => { const pts = []; for (let j = first; j <= last; j++) if (valid[j]) pts.push(P(j, u)); return pts; };
+                for (const u of [0, 1]) lines3.push({ c: 'foldedge', pts: run(u) });
+                for (const j of [first, last]) lines3.push({ c: 'foldedge', pts: Array.from({ length: nS + 1 }, (_, i) => P(j, i / nS)) });
+                for (const j of [first, last]) for (const u of [0, 1]) xs.push(P(j, u)[0]);
+                for (let j = first; j <= last; j++) if (valid[j]) xs.push(P(j, 0)[0], P(j, 1)[0]);
+            }
+        }
+        return { faces3, lines3, xs, meta: { radius: r, ys, pieces: pieces.map(p => ({ c0: p.c0, c1: p.c1, m: p.m, k: p.k })) } };
+    }
+    // the same piece on the other side of the hall's mid-span
+    function mirrorPiece(p, L) {
+        const f = ([q, d]) => [[L - q[0], q[1]], [-d[0], d[1]]];
+        return Object.assign({}, p, { c0: [L - p.c0[0], p.c0[1]], c1: [L - p.c1[0], p.c1[1]], m: [-p.m[0], p.m[1]], lo: e => f(p.lo(e)), hi: e => f(p.hi(e)) });
     }
     // a polygon of facets on a half-ellipse over the hall, from angle a0 (below the horizontal for feet turned in) up to the crown
     // hinge at 90°, the same on both sides; B (the half-height) is raised until the facets clear the corners of the clear space
@@ -2563,51 +2698,119 @@
                   thrust: q * L * L / (8 * F), thrustNote: 'per metre at mid-length, across the hall: H = qL²/8F — the arching direction alone, an upper bound',
                   notes: ['A hanging parabola slid along a standing one: it arches one way and hangs the other (Engel 4.3.3.2, p.256).'] });
           } },
-        // --- 4.3.4 linear shells: units of one half-cylinder open outward, side by side (Engel pp.242–244) ---
-        { id: 'ls_gird', fam: 4, name: 'Shell girders', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'troughs side by side, open outward, depth = half the unit width · on end columns (p.53) or cantilevered from central supports (p.244)' },
+        // --- 4.3.4 linear shells: folded cylindrical strips, Engel pp.242–244 ---
+        { id: 'ls_gird', fam: 4, name: 'Shell girders', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell',
+          rule: { concrete: 'cylindrical strips with constant radius · cantilevered on folded central supports, Engel p.244' },
           own: (m, L) => shellOwn(m, L, 1.3) * 0.85,
           build(L, H, W, m, q) {
-              // the unit is a trough spanning the hall, open upward, its depth half its width; neighbours meet at the rims. 'ends': on columns at both
-              // ends of every rim line, a trough-shaped end plate stiffening each (p.236); 'central': cantilevered both ways from V-shaped supports
-              // in the middle, the tips lifting a little (p.244; the V's place and the lift are the author's)
-              const central = modeOf('ls_gird', 'ends') === 'central', B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rb = B.b / 2, edges = Array.from({ length: B.n + 1 }, (_, k) => k * B.p);
-              const path = central ? [[0, H + L / 24], [L / 2, H], [L, H + L / 24]] : [[0, H], [L, H]];
-              const r = linHall(L, H, W, { path, depth: () => rb, kind: 'trough', ys: B.ys, b: B.b });
-              const arch = (x, y, z0) => Array.from({ length: 13 }, (_, i) => { const t = i / 12; return [x, y - B.b / 2 + B.b * t, z0 + rb * (1 - Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2)))]; });
+              // p.244 lower: units 0.11 of the length wide; tips 0.07 of the length long, rising at 35°
+              const B = bays(W, Math.max(2.5, 0.11 * L), 1), rb = B.b / 2, z = H + rb;
+              const tip = 0.07 * L, path = [[0, z + 0.7 * tip], [tip, z], [L - tip, z], [L, z + 0.7 * tip]];
+              // p.244: the upturned tips are troughs turned over (∩), so the end view shows a full circle over the ∪ of the beam
+              const r = foldedCylinderHall(L, H, W, { path, ys: B.ys, b: B.b, signs: [1, -1, 1] });
+              const edges = Array.from({ length: B.n + 1 }, (_, k) => k * B.p);
               FIELDS_HIT = true;
-              if (central) {
-                  const d = L / 10;
-                  for (const y of B.ys) for (const x0 of [L / 2 - d, L / 2 + d]) r.surf.faces3.push({ c: 'solid', pts: [[x0 - d / 2, y, H + L / 24 * (2 * Math.abs(x0 - d / 2 - L / 2) / L)], [x0 + d / 2, y, H + L / 24 * (2 * Math.abs(x0 + d / 2 - L / 2) / L)], [x0, y, 0]] });
-                  r.surf.posts = B.ys.flatMap(y => [[L / 2 - d, y, 0.01], [L / 2 + d, y, 0.01]]);
-                  return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} troughs ${f1_(B.b)} m wide, side by side, each on two V-shaped supports in the middle of the hall, cantilevering ${f1_(L / 2)} m both ways`,
-                      notes: ['Shell-type beams — troughs open upward — side by side, cantilevered both ways from V-shaped supports in the middle; the tips lift a little (Engel 4.3.4.1, p.244).', 'Adaptation: the unit width, the depth of half its width, the V supports at L/2 ± L/10 and the L/24 lift are the author’s reading.'] });
-              }
-              for (const x of [0, L]) for (const y of B.ys) r.surf.faces3.push({ c: 'solid', pts: arch(x, y, H) });
-              r.surf.posts = edges.flatMap(y => [[0, y, H + rb], [L, y, H + rb]]);   // under the rims, where neighbours meet
-              return Object.assign(withZone(r, H), { cols: 2 * (B.n + 1), colNote: `${B.n} troughs ${f1_(B.b)} m wide, side by side, on columns at both ends of every rim line · an end plate in each`,
-                  notes: ['Shell-type girders: troughs, open upward, side by side spanning the hall, their rims meeting on columns at both ends (Engel 4.3.4.1, pp.53, 242–244).', 'End plates keep each trough’s section (Engel p.236).', 'Adaptation: the unit width and the depth of half its width are the author’s reading of Engel’s drawings.'] });
+              const d = L / 12, support = foldedCylinderHall(L, H, W, {
+                  path: [[L / 2 - d, 0], [L / 2 - d * 0.4, z], [L / 2 + d * 0.4, z], [L / 2 + d, 0]],
+                  signs: [1, -1, 1], groundRise: H * 0.35, segments: [0, 2], ys: B.ys, b: B.b });
+              // The support knees end on the same horizontal roof cylinder.
+              r.surf.faces3.push(...support.surf.faces3); r.surf.lines3.push(...support.surf.lines3);
+              r.parts.push(...support.parts);
+              r.surf.posts = []; r.plan.posts = [];
+              r.plan.supportPoints = edges.flatMap(y => [[L / 2 - d, y], [L / 2 + d, y]]);
+              r.supportCylinder = support.cylinder;
+              return Object.assign(withZone(r, H), { cols: 2 * (B.n + 1),
+                  colNote: 'Two central rows of folded shell supports with arched openings; interior supports',
+                  notes: ['Cantilevered beam on central supports: cylindrical roof strips and folded cylindrical supports, with arched openings (Engel p.244).',
+                      'The beam is a trough (∪) and its upturned tips are troughs turned over (∩): the end view shows a circle, the plan a fold curve reaching in from each tip. Units 0.11 of the length wide and tips 0.07 long at 35°, measured on p.244; support spacing and opening height are parametric. Barrel shells on end columns are under Barrel shell (pp.236–237).'] });
           } },
-        { id: 'ls_frame', fam: 4, name: 'Shell frames', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'troughs side by side, open outward, depth = half the unit width · roof 1:6 · hinged feet' },
+        { id: 'ls_frame', fam: 4, name: 'Shell frames', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell',
+          rule: { concrete: 'folded cylindrical roof and legs · constant radius · two-hinged frame, Engel p.242' },
           own: (m, L) => shellOwn(m, L, 1.3) * 0.85,
           build(L, H, W, m, q) {
-              // Engel p.242, two-hinged frame: troughs side by side, open outward, folded down at the knees into trough legs, the roof rising
-              // gently to the ridge; at the feet (the hinges) the trough flattens (the 1:6 roof and the flattening to 0.3 are the author's)
-              const B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rb = B.b / 2, rise = L / 12;
-              const r = linHall(L, H, W, { path: [[0, 0], [0, H], [L / 2, H + rise], [L, H], [L, 0]], depth: i => [-0.3, -1, 1, -1, -0.3][i] * rb, kind: 'trough', ys: B.ys, b: B.b });
-              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell frames ${f1_(B.b)} m wide, side by side — hinged at the feet, the legs troughs too`,
-                  notes: ['Two-hinged frame of folded cylindrical surfaces: troughs, open outward, side by side, folded down at the knees into trough legs, hinged at the feet (Engel 4.3.4.2, p.242).', 'Adaptation: the 1:6 roof, the depth of half the unit width and the unit width are the author’s; Engel gives the form, not the proportions.'] });
+              if (modeOf('ls_frame', 'two') === 'a') {
+                  // unit width 0.45 of the half-span h, as in the side elevation on p.244; it sets how round the knee wings read
+                  const h = L / 2 + H / 1.3, B = bays(W, 0.45 * h, 1), rb = B.b / 2;
+                  // Engel p.244: the rims run straight from each hinged foot F to the apex T. The leg bulges inward, cut below by the
+                  // plane F–I (I under the apex), so it reads as a wedge in section, a tall arch in elevation and a bow tie in plan.
+                  // Outside it, a wing bulging outward to the knee K closes the leg. Ratios measured on p.244 in half-spans h:
+                  // apex 2.08, I 1.35, knee 0.26 out and 0.52 up; J, where the wing crosses the rim, is halfway up.
+                  const X = (x, z) => [L / 2 + x * h, z * h];
+                  const F = X(-1, 0), T = X(0, 2.08), I = X(0, 1.35), K = X(-1.26, 0.52), J = [F[0] + 0.495 * (T[0] - F[0]), 0.495 * T[1]];
+                  const al = Math.hypot(T[0] - F[0], T[1]), a = [(T[0] - F[0]) / al, T[1] / al], nIn = [a[1], -a[0]];
+                  const dot = (p, q) => p[0] * q[0] + p[1] * q[1], sub = (p, q) => [p[0] - q[0], p[1] - q[1]], off = (p, d) => [p[0] + nIn[0] * d, p[1] + nIn[1] * d];
+                  const D = dot(sub(I, F), nIn), plane = (p, q) => () => [p, sub(q, p)];
+                  const leg = { c0: off(F, D), c1: off(T, D), m: [-nIn[0], -nIn[1]], k: D / rb, lo: plane(F, I), hi: () => [[L / 2, 0], [0, 1]] };
+                  // the wing runs from the knee K up to I (on p.244 K–J points at I) and folds into the leg along the plane F–I,
+                  // closing it: its rims pinch to the hinge F, its free edge is the plane F–K
+                  const ku = sub(I, K), kl = Math.hypot(...ku), u = [ku[0] / kl, ku[1] / kl], w = sub(F, K), wp = [w[0] - dot(w, u) * u[0], w[1] - dot(w, u) * u[1]], Dw = Math.hypot(...wp);
+                  const wing = { c0: K, c1: I, m: [wp[0] / Dw, wp[1] / Dw], k: Dw / rb, lo: plane(F, K), hi: plane(F, I) };
+                  const left = [leg, wing], cp = cylinderPieces([...left, ...left.map(p => mirrorPiece(p, L))], B.ys, B.b);
+                  const M = p => [L - p[0], p[1]], xs = cp.xs, hinge = p => line([[p[0] - 0.35, 0], [p[0], 0.5], [p[0] + 0.35, 0], [p[0] - 0.35, 0]], 'thin');
+                  const r = surfaceHall({ kind: 'none', mods: B.ys.map(y => ({ rect: [Math.min(...xs), y - rb, Math.max(...xs), y + rb], z: () => H, ni: 1, nj: 1 })),
+                      faces3: cp.faces3, lines3: cp.lines3, secY: B.ys[0], sec: [F, K, J, T, M(J), M(K), M(F)],
+                      secParts: [line([F, T, M(F)], 'thin'), line([F, I, M(F)], 'thin'), hinge(F), hinge(M(F))] });
+                  r.pieces = cp.meta;
+                  const edges = Array.from({ length: B.n + 1 }, (_, k) => k * B.p);
+                  r.plan.supportPoints = edges.flatMap(y => [[F[0], y], [L - F[0], y]]);
+                  return Object.assign(withZone(r, H), { cols: 2 * (B.n + 1), colNote: 'Two inclined shell legs hinged at every rim; no posts; feet outside the clear rectangle',
+                      notes: ['Two-hinged A-frame of folded cylindrical surfaces (Engel p.244, upper drawing): straight rims from hinged feet to the apex, legs bulging inward and cut by the plane from foot to crown, closed outside by wings that bulge to the knee and fold into the leg along that plane.',
+                          'Ratios measured on p.244 (apex 2.08, crown underside 1.35, knee 0.26 out and 0.52 up, in half-spans). Each piece keeps one elliptical section; depths follow the drawing, not specified construction dimensions. Hinge details are schematic.'] });
+              }
+              const B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rb = B.b / 2, rise = L / 12, z = H + rb * Math.hypot(1, 1 / 6);
+              const r = foldedCylinderHall(L, H, W, { path: [[0, 0], [0, z], [L / 2, z + rise], [L, z], [L, 0]],
+                  signs: [1, -1, -1, 1], feet: H * 0.45, ys: B.ys, b: B.b });
+              return Object.assign(withZone(r, H), { cols: 2 * (B.n + 1), colNote: 'Continuous folded shell legs; ground contacts at shared strip edges, with arched openings between',
+                  notes: ['Two-hinged frame of folded cylindrical surfaces (Engel p.242, upper drawing). Roof and legs retain a circular cross-section; their intersection defines each curved knee.',
+                      'Roof slope 1:6, unit width and opening height are modelling choices, not dimensions specified by Engel. Shell thickness, reinforcement and hinge design require structural analysis.'] });
           } },
-        { id: 'ls_arch', fam: 4, name: 'Shell arches', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell', rule: { concrete: 'troughs open outward, depth = half the unit width · straight legs narrowing to posts, 45° haunches L/6, a top hinge' },
+        { id: 'ls_arch', fam: 4, name: 'Shell arches', mats: ['concrete'], spans: SP4.shell5, roofType: 'shell',
+          rule: { concrete: 'folded cylindrical arch with a crown hinge · constant-width strips and separate lower posts' },
           own: (m, L) => shellOwn(m, L, 1.3) * 0.9,
           build(L, H, W, m, q) {
-              // Engel p.243, arch with a top hinge: troughs, open outward, on straight legs that narrow to posts at the ground (open between them),
-              // sloping haunches and a shallow top narrowing to the crown hinge — in plan each half-arch reads as an ellipse
-              const a = L / 6, rise = (L / 2 - a) / 6, F = H + a + rise, B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rb = B.b / 2;
-              const wid = [0.25, 0.3, 1, 0.2, 1, 0.3, 0.25], dep = [-0.25, -0.3, 1, 0.2, 1, -0.3, -0.25];   // legs: trough opens inward (Engel p.242–243); roof: outward
-              const r = linHall(L, H, W, { path: [[0, 0], [0, H], [a, H + a], [L / 2, F], [L - a, H + a], [L, H], [L, 0]], depth: i => dep[i] * rb, width: i => wid[i], kind: 'trough', ys: B.ys, b: B.b });
-              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: `${B.n} shell arches ${f1_(B.p)} m apart on legs narrowing to posts — a hinge at the crown`,
-                  thrust: q * B.p * L * L / (8 * F), thrustNote: `at each foot, per arch (${f1_(B.p)} m wide): H = qsL²/8f with f = ${f1_(F)} m, the crown height`, thrustPerArch: true,
-                  notes: ['Arch with a top hinge of folded cylindrical surfaces: troughs over the top, open outward, on straight legs that narrow to posts at the ground, open between them; each half-arch narrows to the crown hinge (Engel 4.3.4.3, p.243).', 'The shape is not the funicular of a uniform load, so the section also takes bending.', 'Adaptation: the haunches, the 1:6 top, the narrowing and the unit width are the author’s reading.'] });
+              if (modeOf('ls_arch', 'top') === 'two') {
+                  // p.243 upper, in half-spans from the foot: knee 0.41 out at 0.39 of the crown, shoulder 0.17 in at 0.95. As on
+                  // p.242, the rims run straight from the hinge out to the knee and the leg bulges inward; the vertical plane through
+                  // the hinge cuts it into an arch (front view) and leaves the hatched triangle over each hinge (section).
+                  const B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rb = B.b / 2, over = Math.max(rb * 1.5, 0.41 * L / 2);
+                  const crown = Math.max(1.65 * H, 0.6 * L) + rb, knee = Math.max(crown * 0.39, rb * 1.8), shoulder = crown * 0.95;
+                  const r = foldedCylinderHall(L, H, W, { path: [[0, 0], [-over, knee], [L / 12, shoulder], [L / 2, crown], [L * 11 / 12, shoulder], [L + over, knee], [L, 0]],
+                      signs: [-1, -1, -1, -1, -1, -1], footPlane: true, ys: B.ys, b: B.b });
+                  return Object.assign(withZone(r, H), { cols: 2 * (B.n + 1), thrust: null,
+                      colNote: 'Folded shell legs from outward knees down to ground hinges at the rims; no posts',
+                      notes: ['Two-hinged arch of folded cylindrical surfaces (Engel p.243, upper drawing): straight rims from each hinge out to the knee; the vertical plane through the hinge cuts the leg into an arch.',
+                          'Ratios measured on p.243 (knee 0.41 of the half-span out at 0.39 of the crown height; shoulder 0.17 in at 0.95). Thrust is not calculated for this indeterminate arch.'] });
+              }
+              // Engel p.243, lower drawing, measured with the half-span 395 units to the leg: the leg is the shell itself, a narrow
+              // strip cut from a deep elliptic cylinder bulging inward (plan: the outline steps in at mid-unit), 0.70 of the unit wide
+              // at the ground and 0.48 at its rounded top, where it folds into the haunch. The haunch leans in 16°, bulges outward and
+              // widens like a vase to the full unit; it folds straight into the crown: per half a lens-shaped dish hanging from the
+              // point R where the rims meet, running in to touch the other half at the hinge, mid-width.
+              const B = bays(W, clamp(L / 5, 3, 6) * 1.35, 1), rb = B.b / 2, u = (L / 2) / 395, zp = Math.max(340 * u, H + 0.25), zR = zp + Math.max(310 * u, 1.2 * rb);
+              const sl = Math.hypot(58, 202), dir = [58 / sl, 202 / sl], mv = [dir[1], -dir[0]], c0 = [0, zp], c1 = [58 * u, zp + 202 * u];
+              const R = [c0[0] + mv[0] * rb + dir[0] * (zR - c0[1] - mv[1] * rb) / dir[1], zR], M = p => [L - p[0], p[1]];
+              const kp = 0.55 / (1 - Math.sqrt(1 - 0.35 ** 2)), sq = eta => Math.sqrt(Math.max(0, 1 - eta * eta));
+              const pillarGen = eta => [[-kp * rb * (1 - sq(eta)), 0], [0, 1]], vaseGen = eta => [[c0[0] + mv[0] * rb * (1 - sq(eta)), c0[1] + mv[1] * rb * (1 - sq(eta))], dir];
+              const lensGen = eta => [[0, zR - rb * sq(eta)], [1, 0]];
+              const pillar = { c0: [0, 0], c1: [0, zp], m: [-1, 0], k: kp, wmax: 0.35, trim: s => 0.35 - 0.11 * s, lo: () => [[0, 0], [1, 0]], hi: vaseGen };
+              // the vase's free edges land on the leg's shoulders, so the leg's rounded top rises into the haunch as a fold
+              const e24 = sq(0.24), sSh = (-kp * rb * (1 - e24) - mv[0] * rb * (1 - e24)) / (58 * u);
+              const vase = { c0, c1, m: mv, k: 1, trim: s => 0.24 + 0.76 * (1 - (1 - clamp((s - sSh) / (1 - sSh), 0, 1)) ** 2), lo: pillarGen, hi: lensGen };
+              const lens = { c0: [R[0], zR - rb], c1: [L / 2, zR - rb], m: [0, 1], k: 1, lo: vaseGen, hi: () => [R, [L / 2 - R[0], -rb]] };
+              const cp = cylinderPieces([pillar, vase, lens, ...[pillar, vase, lens].map(p => mirrorPiece(p, L))], B.ys, B.b), xs = cp.xs;
+              const xe = -kp * rb * (1 - sq(0.35)), xt = -kp * rb * (1 - e24), Qc = [c0[0] + dir[0] * (zR - rb - zp) / dir[1], zR - rb], V0 = [mv[0] * rb, zp + mv[1] * rb];
+              const r = surfaceHall({ kind: 'none', mods: B.ys.map(y => ({ rect: [Math.min(...xs), y - rb, Math.max(...xs), y + rb], z: () => H, ni: 1, nj: 1 })),
+                  faces3: cp.faces3, lines3: cp.lines3, secY: B.ys[0], sec: [[0, 0], c0, Qc, [L / 2, zR - rb], M(Qc), M(c0), [L, 0]],
+                  secParts: [line([V0, R, M(R), M(V0)], 'thin'), line([[xe, 0], [xt, zp - 0.8 * rb]], 'thin'), line([[0, 0], [xe, 0]], 'thin'),
+                      line([[L - xe, 0], [L - xt, zp - 0.8 * rb]], 'thin'), line([[L, 0], [L - xe, 0]], 'thin')] });
+              r.pieces = cp.meta;
+              r.foot = [Math.min(r.foot[0], xe - 0.3), Math.max(r.foot[1], L - xe + 0.3)];
+              const edges = Array.from({ length: B.n }, (_, k) => B.ys[k]);
+              r.plan.supportPoints = edges.flatMap(y => [[0, y], [L, y]]);
+              return Object.assign(withZone(r, H), { cols: 2 * B.n, colNote: 'Narrow shell legs, one at mid-unit on each side; no posts; crown hinge is conceptual',
+                  thrust: null, thrustNote: 'A crown hinge alone does not establish three-hinged-arch statics; support restraint and shell analysis are required.',
+                  notes: ['Arch with top hinge (Engel p.243, lower drawing): each unit stands on a narrow strip of its own shell, cut from a deep cylinder bulging inward; the haunch bulges outward and widens like a vase to the full unit, then folds into two lens-shaped dishes that meet at the crown hinge.',
+                      'Ratios measured on p.243 (leg 0.70 of the unit wide at the ground, 0.48 at its rounded top; haunch leaning 16°). The leg is raised when the clear height needs it. At the crown each half is a lens-shaped dish; the two touch at the hinge, and the floor shows between the units (p.243 plan). Hinge hardware and reinforcement are not modelled.'] });
           } },
         // --- 4.3.3.3 straight-edged hypars for large spaces (Engel pp.261, 264–265) ---
         { id: 'hp_umb', fam: 4, name: 'Hypar umbrellas on centre columns', mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'units ≈ 12 m square, 4 hypars each, rise a/4 over the column', timber: 'units ≈ 12 m square, 4 hypars each, rise a/4 over the column' },
@@ -3302,7 +3505,7 @@
         fp_tri: 'Engel pp.245–248 (domes) · treated as the spherical cap it approximates: ring T = Nφ·cosφ₀·a with Nφ = qR/2 (membrane theory, Timoshenko & Woinowsky-Krieger)',
         fi_2: 'Not in Engel (p.53 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
         sc_int: 'Not in Engel (p.53 shows the form only) · derived as for the cross vault: moment equilibrium of half the bay; the cut at mid-span lies at one height f, so Hx = qL²b/16f per corner from each bay (method: J. Heyman, 1995)',
-        ls_arch: 'Engel p.114: thrust grows as the rise falls · H = qsL²/8f by moment equilibrium about the crown, taking hinges at the crown and feet (three-hinged arch; statics, not in Engel)',
+        ls_arch: 'Engel p.243 shows an arch with a top hinge; it does not establish pinned feet. No thrust number is reported without a defined restraint model and shell analysis.',
         sd_trans: 'Not in Engel (p.53 shows the form only) · derived here, in each direction: moment equilibrium of half the shell about the line through two corner supports, with the resultant of the mid-span cut at the cut’s mean height (fx + ⅔fy across, fy + ⅔fx along); the corner takes half of each (statics)',
         ss_rot: 'Engel p.256: in the arching direction a saddle works as an arch · H = qL²/8F per metre, taking that direction alone — an upper bound (statics)',
         ss_trans: 'Engel p.256: in the arching direction a saddle works as an arch · H = qL²/8F per metre, taking that direction alone — an upper bound (statics)',
@@ -3416,7 +3619,7 @@
     }
     function supportCheck(r) {
         const pl = r.plan || {}, eps = 1e-6, inside = (x, y) => x > eps && x < S.L - eps && y > eps && y < S.W - eps;
-        let pts = pl.posts || [];
+        let pts = [...(pl.posts || []), ...(pl.supportPoints || [])];
         if (pl.colsX) pts = pl.colsX.flatMap(x => ysOf(S.W, pl.s).map(y => [x, y]));
         const interior = new Set(pts.filter(([x, y]) => inside(x, y)).map(([x, y]) => `${x.toFixed(5)},${y.toFixed(5)}`)).size;
         const internalWalls = (pl.boxes || []).some(([x0, x1, y0, y1, z0, z1]) => z0 < (r.H ?? S.H) && z1 > 0 && x0 < S.L - eps && x1 > eps && y0 < S.W - eps && y1 > eps);
@@ -4031,8 +4234,9 @@
                 }
             }
             const zc = sys === 'space' ? zt : H;
-            for (const x of ysOf(L, pl.s)) { add('line', [[x, 0, 0], [x, 0, zc]], 'post'); add('line', [[x, W, 0], [x, W, zc]], 'post'); }
-            for (const y of ysOf(W, pl.s)) { add('line', [[0, y, 0], [0, y, zc]], 'post'); add('line', [[L, y, 0], [L, y, zc]], 'post'); }
+            const pc = postW(zc) / 2, post = (x, y) => box3(add, x - pc, x + pc, y - pc, y + pc, 0, zc, 'solid');
+            for (const x of ysOf(L, pl.s)) { post(x, 0); post(x, W); }
+            for (const y of ysOf(W, pl.s)) { post(0, y); post(L, y); }
         } else if (sys === 'dome') {
             const f = r.zone, a = L / 2, R = (a * a + f * f) / (2 * f), zc = H + f - R;
             const n = Math.max(1, Math.round(W / L)), nm = 16, nr = 6;
@@ -4041,7 +4245,7 @@
                 const pt = (ri, mi) => { const rho = a * ri / nr, th = 2 * Math.PI * mi / nm; return [cx + rho * Math.cos(th), cy + rho * Math.sin(th), zc + Math.sqrt(R * R - rho * rho)]; };
                 for (let ri = 0; ri < nr; ri++) for (let mi = 0; mi < nm; mi++) add('face', [pt(ri, mi), pt(ri + 1, mi), pt(ri + 1, mi + 1), pt(ri, mi + 1)], 'shell');
                 const nc = Math.max(8, Math.round(Math.PI * L / 6));
-                for (let i = 0; i < nc; i++) { const th = 2 * Math.PI * i / nc, x = cx + a * Math.cos(th), y = cy + a * Math.sin(th); add('line', [[x, y, 0], [x, y, H]], 'post'); }
+                for (let i = 0; i < nc; i++) { const th = 2 * Math.PI * i / nc, x = cx + a * Math.cos(th), y = cy + a * Math.sin(th), pc = postW(H) / 2; box3(add, x - pc, x + pc, y - pc, y + pc, 0, H, 'solid'); }
             }
         } else if (sys === 'barrel') {
             const h = r.zone, b = pl.b, ysb = ysOf(W, b), nx = 6, na = 10;
@@ -4362,13 +4566,51 @@
     const pathD = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');
     const ghostPaths = ghost => ghost.filter(o => o.t !== 'person' && o.c !== 'hatch' && o.c !== 'box').map(o => `<path d="${pathD(o.P)}${o.t === 'face' ? 'Z' : ''}" fill="none" stroke="#1565c0" stroke-opacity="0.55" stroke-width="0.8" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>`).join('');
     // quick = while a view is being dragged: order by depth only (cheap); the full plane-based order is drawn on release
+    // Clip the tagged fold lines against actual projected triangles. Painter-order
+    // cycles must not erase a visible edge merely because two bounding boxes overlap.
+    function visibleFoldEdges(proj) {
+        if (!proj.some(o=>o.c==='foldedge')) return [];
+        const meshEdges = new Map(), silhouettes = [];
+        for(const f of proj) if(f.t==='face' && f.c==='shellx' && f.e) {
+            const P=f.P, area=P.reduce((a,p,i)=>a+p[0]*P[(i+1)%P.length][1]-p[1]*P[(i+1)%P.length][0],0);
+            for(let i=0;i<P.length;i++){ const A=P[i],B=P[(i+1)%P.length], ka=A.map(x=>x.toFixed(7)).join(','),kb=B.map(x=>x.toFixed(7)).join(','),key=ka<kb?ka+'|'+kb:kb+'|'+ka;
+                if(!meshEdges.has(key))meshEdges.set(key,{P:[A,B],areas:[]});meshEdges.get(key).areas.push(area); }
+        }
+        for(const e of meshEdges.values()) if(e.areas.some(a=>a>1e-9)&&e.areas.some(a=>a< -1e-9)) silhouettes.push({c:'foldedge',t:'line',P:e.P});
+        const triangles = [], output = [], cross = (a,b,c) => (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+        const near = p => proj[0]?.Q ? -1 / p[2] : p[2];
+        for (const f of proj) if(f.t==='face') for(let i=1;i+1<f.P.length;i++) {
+            const T=[f.P[0],f.P[i],f.P[i+1]], area=cross(...T);
+            if(Math.abs(area)<1e-10)continue;
+            triangles.push({T,area,box:[Math.min(...T.map(p=>p[0])),Math.min(...T.map(p=>p[1])),Math.max(...T.map(p=>p[0])),Math.max(...T.map(p=>p[1]))]});
+        }
+        for(const o of [...proj,...silhouettes]) if(o.c==='foldedge') for(let i=1;i<o.P.length;i++) {
+            const A=o.P[i-1],B=o.P[i], mix=t=>A.map((v,k)=>v+(B[k]-v)*t), intervals=[];
+            for(const {T,area,box} of triangles) {
+                if(Math.max(A[0],B[0])<box[0]||Math.min(A[0],B[0])>box[2]||Math.max(A[1],B[1])<box[1]||Math.min(A[1],B[1])>box[3])continue;
+                let lo=0,hi=1;
+                for(let k=0;k<3;k++) { const u=cross(T[k],T[(k+1)%3],A)/area, v=cross(T[k],T[(k+1)%3],B)/area, d=v-u;
+                    if(Math.abs(d)<1e-12) {if(u< -1e-9){hi=-1;break;}} else if(d>0)lo=Math.max(lo,-u/d);else hi=Math.min(hi,-u/d); }
+                if(hi<=lo)continue;
+                const gap=t=>{const P=mix(t),u=cross(T[1],T[2],P)/area,v=cross(T[2],T[0],P)/area;
+                    return u*near(T[0])+v*near(T[1])+(1-u-v)*near(T[2])-(near(A)+(near(B)-near(A))*t)-1e-6;};
+                const g0=gap(lo),g1=gap(hi);if(g0<=0&&g1<=0)continue;
+                if(g0<=0)lo=lo+(hi-lo)*(-g0)/(g1-g0);else if(g1<=0)hi=lo+(hi-lo)*(-g0)/(g1-g0);
+                intervals.push([lo,hi]);
+            }
+            intervals.sort((a,b)=>a[0]-b[0]);let t=0;
+            for(const [lo,hi]of intervals){if(lo>t+1e-7)output.push([mix(t),mix(lo)]);t=Math.max(t,hi);}
+            if(t<1-1e-7)output.push([mix(t),B]);
+        }
+        return output;
+    }
     function axoBody(proj, quick = false) {
         // metres in an axonometric (1 cm is plenty); a perspective is in view units of ±1, so it needs finer steps
         const dp = proj.length && proj[0].Q ? 4 : 2, path = P => P.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(dp)},${p[1].toFixed(dp)}`).join('');
         // B: the drawing of a scene is made once and reused wherever the same scene is shown (only the frame differs)
         let s = quick ? null : bodyCache.get(proj);
         if (s == null) { s = '';
-        for (const o of (quick ? proj.slice().sort((a, b) => a.depth - b.depth) : paintOrder(proj))) {
+        for (const o of (quick ? proj.slice().sort((a, b) => a.depth - b.depth) : paintOrder(proj.filter(o=>o.c!=='foldedge')))) {
             if (o.t === 'face' && o.e) {
                 // a piece of a larger face: filled, its seams hidden, and only the edges flagged in o.e drawn — in its own place in the depth order
                 const st = (STYLE3.face[o.c] || STYLE3.face.solid).match(/stroke="([^"]*)" stroke-width="([^"]*)"/), fill = (STYLE3.face[o.c] || STYLE3.face.solid).match(/fill="([^"]*)"/)[1];
@@ -4381,7 +4623,7 @@
             else if (o.t === 'face') s += `<path d="${path(o.P)}Z" ${STYLE3.face[o.c] || STYLE3.face.solid} stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
             else s += `<path d="${path(o.P)}" fill="none" ${STYLE3.line[o.c] || STYLE3.line.member}${o.seg ? ' stroke-linecap="round"' : ''} vector-effect="non-scaling-stroke"/>`;
         }
-        if (!quick) bodyCache.set(proj, s); }
+        if (!quick) { for(const P of visibleFoldEdges(proj)) s += `<path d="${path(P)}" fill="none" ${STYLE3.line.member} stroke-linecap="round" vector-effect="non-scaling-stroke"/>`; bodyCache.set(proj, s); } }
         return s;
     }
 
@@ -4591,9 +4833,25 @@
         for (const id of typeVariants(t)) if (!seen.has(id)) out.push([sysName(id), id]);
         return out;
     }
+    // straight-edged hypars (Engel pp.257–265) as a group of their own in the shell type: fitted to the hall first, then the
+    // reference compositions, each in page order
+    const HYPAR_FIT = ['hyparT', 'hp_sq4', 'hp_umb', 'hp_butt', 'hp_conoid'];
+    const isHyparRef = id => /^hpr_/.test(id);
+    const pageNum = id => { const v = PAGE[id], p = v && typeof v === 'object' ? Object.values(v)[0] : v; return p ? +p.match(/\d+/)[0] : 999; };
     function typeDrawings(t) {
         if (TREE[t] && TREE[t][2]) return '';
-        const figs = typeList(t).map(([name, id]) => {
+        let list = typeList(t);
+        if (S.lite) list = list.filter(([, id]) => id);
+        if (t === '4.3') {
+            const hyp = list.filter(([, id]) => id && (HYPAR_FIT.includes(id) || isHyparRef(id))), rest = list.filter(x => !hyp.includes(x)), byPage = (a, b) => pageNum(a[1]) - pageNum(b[1]);
+            const fit = hyp.filter(([, id]) => !isHyparRef(id)).sort(byPage), ref = hyp.filter(([, id]) => isHyparRef(id)).sort(byPage);
+            return figsOf(rest) + `<div class="vsub">Straight-edged hypars · Engel pp.257–265</div>` + figsOf(fit)
+                + (ref.length ? `<div class="vsub">Hypar compositions · reference only, pp.260–263</div>` + figsOf(ref) : '');
+        }
+        return figsOf(list);
+    }
+    function figsOf(list) {
+        const figs = list.map(([name, id]) => {
             if (!id) return `<figure class="vt nomod"><div class="vd"></div><figcaption>${esc(name)}<small>no model yet</small></figcaption></figure>`;
             const ok = fitsHall(id), on = slots.includes(id), zoom = ok || byId(id).sys.ref;   // a reference form can be enlarged, not compared
             return `<figure class="vt ${ok ? '' : 'off'} ${on ? 'in' : ''}"><div class="vd" data-lazy="${id}" ${zoom ? `data-zoom="${id}" role="button" tabindex="0" aria-label="Enlarge ${esc(name)}"` : ''}></div>`
@@ -4606,7 +4864,7 @@
         resAll();
         const dw = treeView === 'drawings', block = t => typeButton(t) + (dw ? typeDrawings(t) : '');
         document.querySelectorAll('#treeView button').forEach(b => b.classList.toggle('on', b.dataset.tv === treeView));
-        let h = `${dw ? '<p class="tvnote">Every variant Engel lists, in his order; each drawing at its own scale. Click a drawing to enlarge it, + to put that variant in Compare.</p>' : ''}<div class="gtree ${dw ? 'drawings' : ''}">`;
+        let h = `${dw ? '<p class="tvnote">Every variant Engel lists, in his order; each drawing at its own scale. Click a drawing to enlarge it, + to add that variant as a Compare column (several of one type can stand side by side).</p>' : ''}<div class="gtree ${dw ? 'drawings' : ''}">`;
         for (const f of [1, 2, 3, 4]) h += `<div class="gcol"><div class="gfam"><span class="code">${f}</span>${FAMILY[f]}<small>${esc(FAMSUB[f] || '')}</small></div>${Object.keys(TREE).filter(t => t[0] === String(f)).map(block).join('')}</div>`;
         h += '</div>';
         const list = Object.keys(HYB).map(k => `<li><b>${HYB[k][0]}</b> — ${esc(HYB[k][1])}: ${HYB[k][2].map(([v, id]) => id ? `<u>${esc(v)}</u>` : esc(v)).join(' · ')}</li>`).join('');
@@ -4616,11 +4874,10 @@
         $('types').innerHTML = h;
         if (dw) document.querySelectorAll('#types [data-lazy]').forEach(el => thumbIO.observe(el));
     }
-    // a drawn variant into Compare: it takes its type's column if the type is there, else a new one (or the replace prompt)
+    // a drawn variant into Compare as a column of its own, so variants of one type can stand side by side (or the replace prompt)
     function pickVariant(id) {
-        const r = byId(id); if (!r) return; const here = inType(typeOf(r.sys)); cmpPick = null;
+        const r = byId(id); if (!r) return; cmpPick = null;
         if (slots.includes(id)) { cmpNote = `${sysName(id)} is in Compare.`; return; }
-        if (here.length) { slots[slots.indexOf(here[0])] = id; cmpNote = `${sysName(here[0])} → ${sysName(id)} in Compare.`; return; }
         if (slots.length >= 5) { cmpPick = id; cmpNote = ''; return; }
         slots.push(id); cmpNote = `Added ${sysName(id)}.`;
     }
@@ -5009,7 +5266,7 @@
     function drawModal() {
         const r = byId(modalId);
         $('mName').textContent = r.sys.name;
-        $('mSub').textContent = r.sys.ref ? `Engel reference: ${codeLabel(r.sys)} · reference only — the author’s drawing of Engel’s spatial form, not fitted to the hall` : `Engel reference: ${codeLabel(r.sys)} · parametric adaptation · ${FAM[r.sys.fam]} · ${materialLabel(r.sys, r.m)}`;
+        $('mSub').textContent = r.sys.ref ? `Engel reference: ${codeLabel(r.sys)}${pageLabel(r.sys)} · reference only — the author’s drawing of Engel’s spatial form, not fitted to the hall` : `Engel reference: ${codeLabel(r.sys)}${pageLabel(r.sys)} · parametric adaptation · ${FAM[r.sys.fam]} · ${materialLabel(r.sys, r.m)}`;
         drawBig(); drawEye();
         $('mSec').innerHTML = cutSVG(r, 'A');
         $('mSecB').innerHTML = cutSVG(r, 'B');
@@ -5028,19 +5285,85 @@
     function hallRead(r) {
         const fits = resAll().filter(x => !projFails(x).length), d = projRead(r, fits), f = projFails(r);
         return `<div class="hallread"><div class="k">For your hall</div>${f.length ? `<p class="eligibility fail">Does not fit: ${esc(f.map(k => FAILTXT[k]).join(' · '))}</p>` : ''}`
-            + `<div class="h">Gets</div><ul>${li(d.gets)}</ul><div class="h">Gives up</div><ul>${li(d.gives)}</ul><div class="h">Needs in addition</div><ul>${li(d.needs)}</ul></div>`;
+            + (S.lite ? `<div class="h">What it gives your hall</div><ul>${li(d.gets.map(t => sayLite(t, 'gets')))}</ul><div class="h">What it costs your hall</div><ul>${li(d.gives.map(t => sayLite(t, 'gives')))}</ul><div class="h">What else it needs</div><ul>${li(d.needs.map(t => sayLite(t, 'needs')))}</ul></div>`
+                : `<div class="h">Gets</div><ul>${li(d.gets)}</ul><div class="h">Gives up</div><ul>${li(d.gives)}</ul><div class="h">Needs in addition</div><ul>${li(d.needs)}</ul></div>`);
+    }
+    // the Lite reading of "For your hall": each short phrase as a sentence that says why it matters, compared with the
+    // other systems that fit this hall (the author's wording of the same readings)
+    const SAY = [
+        [/^a shallow structure zone \(≈ (.+) m\)/, m => `A shallow structure: the roof needs only about ${m[1]} m of depth, less than most systems that fit, so the building can stay lower.`],
+        [/^a deep structure zone \(≈ (.+) m\)/, m => `A deep structure: about ${m[1]} m of depth above the clear height, more than most systems that fit — the building grows taller for the same space.`],
+        [/^a low overall height \(≈ (.+) m\)/, m => `A low building: about ${m[1]} m in all, among the lowest that fit.`],
+        [/^a tall overall height \(≈ (.+) m\)/, m => `A tall building: about ${m[1]} m in all, among the tallest that fit — more wall, more volume to heat or cool.`],
+        [/^stays within the walls/, () => 'It stays inside the footprint: nothing stands or anchors outside the walls.'],
+        [/^≈ (.+) m of ground outside the walls/, m => `It needs about ${m[1]} m of ground outside the walls, for inclined legs, stays or anchors.`],
+        [/^little unused volume above the space \((.+)\)/, m => `Little wasted volume: the space you asked for fills ${m[1]} of what the structure encloses.`],
+        [/^much volume above the space \((.+)\)/, m => `Much volume above the space: what you asked for fills only ${m[1]} of what it encloses.`],
+        [/^no horizontal push on its supports/, () => 'No sideways push on its supports: its columns or walls only carry weight straight down.'],
+        [/^its thrust stays inside the structure \((.+)\)/, m => `It pushes outward, but ${m[1]} holds that push inside the structure, so the ground takes only weight.`],
+        [/^a large thrust onto (.+)/, m => `A large sideways push onto ${m[1]}: the arching or hanging form that spans so well also pushes hard where it lands.`],
+        [/^its roof follows the rake/, () => 'Its roof can slope with the seating, so it rises only where the space rises.'],
+        [/^stands ≈ (.+) m higher than the others to clear the (.+)/, m => `It has to stand about ${m[1]} m higher than the others to clear the ${m[2]}, because its form cannot follow the slope.`],
+        [/^beyond Engel’s usual span range/, () => 'Your span is outside the range Engel shows as usual for this type: possible, but less common.'],
+        [/^footings that resist its thrust/, () => 'Footings that resist its sideways push, or a tie under the floor between its feet.'],
+        [/^(.+) to take its thrust/, m => `${m[1][0].toUpperCase() + m[1].slice(1)} to take its sideways push.`],
+        [/^(\d+) supports inside the space/, m => `${m[1]} supports standing inside the space — they break up the open floor.`],
+        [/^nothing beyond its own supports/, () => 'Nothing beyond its own supports, as modeled.']
+    ];
+    function sayLite(t, kind) {
+        for (const [re, f] of SAY) { const m = re.exec(t); if (m) return f(m); }
+        const s = t[0].toUpperCase() + t.slice(1);
+        return /[.!]$/.test(s) ? s : s + '.';
     }
     function envNote(r) {
         const env = envGeom(); if (!env) return '';
         return `<li><b>The space:</b> ${esc(env.note)}${env.tooSmall ? ' <b>The hall is barely big enough for it.</b>' : ''} ${r.warp > 1e-6 ? `This system’s roof can slope along the hall, so it follows the rake: eaves ≈ ${f2(r.H)} m at the front rising to ≈ ${f2(r.Hback)} m at the back.` : r.Hraise > 0.05 ? `This system has to stand ${f2(r.Hraise)} m higher than asked to clear it (eaves ≈ ${f2(r.H)} m).` : 'This system clears it at the height asked for.'}<br><i>Sources: ${esc(env.src.join(' · '))}</i></li>`;
     }
     function liteNotes(r) {
-        const T = thrustLevel(r), stat = /kN|kNm|N\/mm|from statics|middle third|resultant|Heyman|qL|q·|\bH = |\bT = |EN 1995|estimate/i;
-        return envNote(r) + `<li><b>Support load path:</b> ${esc(supportScheme(r)[0])}</li><li><b>Horizontal reactions:</b> ${esc(supportScheme(r)[1])}</li>`
-            + `<li><b>Thrust:</b> ${T ? `${T.word}${T.ratio == null ? '' : ` (H/V ≈ ${f1(T.ratio)})`}, taken by ${T.by}` : 'none reported by the model'}</li>`
+        const stat = /kN|kNm|N\/mm|from statics|middle third|resultant|Heyman|qL|q·|\bH = |\bT = |EN 1995|estimate/i;
+        return envNote(r) + `<li><b>How the load travels:</b> ${esc(loadStory(r))}</li>`
             + r.notes.filter(n => !stat.test(n)).map(n => `<li>${esc(n)}</li>`).join('')
-            + `<li><b>Span basis:</b> ${esc(spanSource(r.sys))}</li><li><b>Reading:</b> Lite — Engel’s mechanism, form and space; estimated loads, forces and sizes are in Full.</li>`;
+            + `<li><b>Span basis:</b> ${esc(liteSpan(r))}</li><li><b>Reading:</b> Lite — Engel’s mechanism, form and space; estimated loads, forces and sizes are in Full.</li>`;
     }
+    // the load path in one paragraph, for students: the members the load passes through, then what happens sideways
+    function loadStory(r) {
+        const sc = supportScheme(r), T = thrustLevel(r), generic = /schematically/.test(sc[0]);
+        const path = generic ? `The roof carries its load to its supports: ${r.colNote.replace(/;.*$/, '')}.` : `The load passes ${sc[0].split(' → ').map((x, i) => i ? 'into ' + x.toLowerCase() : 'from the ' + x.toLowerCase()).join(', then ')}, and down to the ground.`;
+        const side = !T ? 'It presses straight down on its supports: as modeled, nothing pushes them sideways, so plain columns or walls can carry it.'
+            : T.word === 'ring force' ? `Its edge pulls or pushes round the whole rim, so a ring has to hold it together; that ring keeps the push off the supports.`
+            : `Because its form arches or hangs, it also pushes sideways where it lands — a ${T.word} push${T.ratio == null ? '' : `, about ${f1(T.ratio)} times as strong as the weight it brings down there`} — and ${T.by} must take that push${T.by === 'the ground' ? ' through footings that resist sliding' : ''}.`;
+        return `${path} ${side}`;
+    }
+    // Engel's span chart for this system's row: his usual and possible spans in the chosen material; he gives no depth formula
+    function liteSpan(r) {
+        const sp = r.sys.spans[r.m], rg = a => a.map(([x, y]) => `${x}–${y} m`).join(', ');
+        if (r.sys.spanSrc || !spanPage(r.sys) || !sp) return 'Engel gives no span chart for this system; the span range used here is the author’s estimate. Engel gives no formula for the depth either: the depth drawn is the author’s model.';
+        const where = r.st === 'typ' ? 'within the usual range' : r.st === 'pos' ? 'possible, but outside the usual range' : 'outside the ranges Engel draws';
+        return `Engel’s span chart (p.${spanPage(r.sys)}) gives this type in ${MATNAME[r.m] || r.m} a usual span of ${rg(sp.typ)} and a possible span of ${rg(rangesOf(sp))}; ${r.spanUsed && Math.abs(r.spanUsed - S.L) > 0.5 ? `this system spans ${f1(r.spanUsed)} m to clear your ${f1(S.L)} m hall, which is` : `your ${f1(S.L)} m span is`} ${where}. The chart gives spans only — Engel states no formula for the structural depth, so the depth drawn here (≈ ${f1(r.zone)} m) is the author’s model, not his.`;
+    }
+    // Engel page of each system's full drawing in its chapter (by mode where the modes are different drawings);
+    // null: Engel draws it only in the genealogy (pp.44–55) or in principle, not as a full drawing
+    const PAGE = {
+        cable: 'p.67', c_iso: 'p.69', c_stag: 'pp.70–71', r_wt: 'p.72', r_iso: 'p.72', r_stag: 'p.73', n_arch: 'pp.82–83', n_beam: 'p.84', n_cable: 'p.80', ctruss: 'p.77', ct_rad: 'p.78',
+        t_bound: 'p.86', t_int: 'p.88', tent: 'pp.90–91', u_bound: 'p.87', u_int: 'p.89', i_ext: 'pp.92–93', i_int: 'p.95',
+        pneu: 'p.106', p_neg: 'p.102', p_posneg: 'p.102', cu_pos: 'p.111', cu_neg: 'p.102', cu_pn: 'p.110', at_env: 'p.107', at_skel: 'p.107',
+        tarch: 'p.115', garch: 'p.118', arch3: 'p.119', vault: 'p.113', v_cross: null, v_cloister: null, v_arch: null, v_pend: null, v_squinch: null, gshell: 'pp.120–125', g_arch: 'pp.126–131',
+        ptruss: 'p.142', tt_bow: null, tt_trap: 'p.142', tb_v: null, tb_cat: null, tb_trap: null, tc_rhomb: null, tc_lens: null, truss: 'p.142', tk_sciss: null, tk_cresc: null, tk_mans: null,
+        tl_beam: 'p.146', tl_frame: 'p.147', tl_arch: 'p.147', tl_irreg: 'p.147', tf_par: 'p.148', tf_poly: null, tf_taper: null, ti_2: null, ti_3: null,
+        lamella: 'p.149', cy_int: 'p.150', sa_arch: null, sa_beam: 'p.151', dm_long: null, sd_schw: 'p.152', sd_lat: 'p.152', sd_par: 'p.153', sd_lam: 'p.153', geodesic: 'p.155',
+        space: 'p.163', st_tetra: 'p.163', st_prism: 'p.157', sf_fold: null, sv_barrel: 'p.167', sv_double: 'p.167', sv_sphere: 'p.167', sl_beam: 'p.168', sl_frame: 'p.168', sl_arch: 'p.168',
+        beam: 'pp.178–179', b_pitch: null, b_angle: null, b_curve: null, cb_h: 'pp.181–182', cb_p: null, cb_a: null, gb_h: null, gb_c: null, k_uni: null, k_bi: null,
+        portal: 'pp.186–187', f_3h: 'pp.189–192', f_fix: null, sf_one: null, vier: 'pp.194–199', sf_multi: null, mf_cont: null, mf_pin: null, mf_fix: null,
+        grid: 'pp.200–201', g_diag: 'p.202', g_tri: 'p.203', gg_orth: 'p.203', gg_skew: 'p.202', gg_tri: null, gc_ring: null, gc_pin: null,
+        p_rect: 'pp.217–218', p_pitch: null, p_step: null, p_cont: null, p_cstep: null, p_can1: null, p_can2: null, p_x2: null, p_x3: null,
+        folded: 'pp.219–221', fb_box: null, fb_barrel: null, fp_pyr: 'p.231', fp_tri: 'p.232', fi_2: 'p.229', fi_3: 'p.228', fl_beam: 'p.221', fl_frame: 'pp.225–226', fl_arch: 'p.227',
+        barrel: { long: 'pp.236–237', short: 'p.237' }, sc_cone: null, sc_int: 'pp.238–239', dome: 'pp.245–249', sd_trans: 'p.256', ss_rot: null, ss_trans: 'p.256', hyparT: 'p.257',
+        ls_gird: 'p.244', ls_frame: { two: 'p.242', a: 'p.244' }, ls_arch: { top: 'p.243', two: 'p.243' },
+        hp_umb: 'p.264', hp_butt: 'p.264', hp_conoid: 'p.265', hp_sq4: 'p.261', hpr_2: 'p.260', hpr_3: 'p.260', hpr_tri: 'p.261', hpr_hex: 'p.261', hpr_5a: 'p.262', hpr_5b: 'p.262', hpr_8: 'p.262', hpr_16: 'p.263', hpr_12: 'p.263',
+        cbeam: 'p.323', hy_3h: 'p.324', hy_arch2: 'p.324', hy_poly: 'p.324', hy_bil2: 'p.325', hy_3hr: 'p.325', hy_portb: 'p.325', hy_ctr: 'p.326', hy_carch: 'p.326', hy_trf: 'p.327', hy_ctg: 'p.327', hy_cfp: 'p.327', hy_par: 'p.323', hy_conc: 'p.323', hy_grid: 'p.323'
+    };
+    const pageOf = sys => { const v = PAGE[sys.id]; if (v && typeof v === 'object') return v[modeOf(sys.id, MODES[sys.id][0][0])]; return v; };
+    const pageLabel = sys => pageOf(sys) ? ` · ${pageOf(sys)}` : ' · no full drawing';
     // the same vault with its thrust taken three ways (Engel p.113); the first is the default
     const MODES = {
         vault: [['buttress', 'Buttresses'], ['tie', 'Ties'], ['adjacent', 'Neighbouring vaults']],
@@ -5050,9 +5373,11 @@
         ss_rot: [['columns', 'On columns'], ['ground', 'From the ground']],
         hyparT: [['columns', 'On side columns + tie'], ['ground', 'On two points on the ground']],
         fl_arch: [['top', 'Arch with a top hinge'], ['three', 'Three-hinged arch']],
-        ls_gird: [['ends', 'On end columns'], ['central', 'Cantilevered on central supports']]
+        barrel: [['long', 'Long barrel shell'], ['short', 'Short barrel shell']],
+        ls_frame: [['two', 'Two-hinged frame'], ['a', 'Two-hinged A-frame']],
+        ls_arch: [['top', 'Arch with top hinge'], ['two', 'Two-hinged arch']]
     };
-    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel pp.53, 264', fl_arch: 'Form · Engel p.227', ls_gird: 'Supports · Engel pp.53, 244' };
+    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel pp.53, 264', fl_arch: 'Form · Engel p.227', barrel: 'Form · Engel pp.236–237', ls_frame: 'Form · Engel pp.242, 244', ls_arch: 'Form · Engel p.243' };
     function modeVariants(id) {
         const keep = S.tm, sys = SYS.find(x => x.id === id), pr = projector(), cur = (keep && keep[id]) || MODES[id][0][0];
         const V = MODES[id].map(([mode, name]) => { S.tm = Object.assign({}, keep, { [id]: mode }); const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return { r, mode, name }; });
