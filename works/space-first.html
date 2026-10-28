@@ -2161,7 +2161,14 @@
     }
     // the reference compositions (pp.260–263) are drawn about the hall's centre at a size s = the larger plan side; they are Engel's
     // spatial forms, not fitted to a rectangular hall, so they are shown for reference and never enter Compare
-    const refHall = (L, H, W, o, note) => Object.assign(withZone(hpHall(L, H, W, o), H), { cols: (o.posts || []).length, colNote: note, notes: o.notes });
+    // Engel draws these compositions with their low points on the ground (pp.260–263): the form is lowered until its lowest point
+    // touches the ground, and stands there without posts
+    const refHall = (L, H, W, o, note) => {
+        const pts = [...(o.quads || []).flat(), ...(o.posts || [])], z0 = (o.posts || []).length ? Math.min(...pts.map(p => p[2])) : 0;   // already anchored to the ground: left as it is
+        const dn = a => a && a.map(P => P.map(p => [p[0], p[1], p[2] - z0]));
+        const o2 = Object.assign({}, o, { quads: dn(o.quads), glass: dn(o.glass), anchors: o.anchors && o.anchors.map(p => [p[0], p[1], Math.max(0, p[2] - z0)]), posts: [] });
+        return Object.assign(withZone(hpHall(L, H, W, o2), H), { cols: 0, colNote: (note || '').replace(/ on (posts|columns)[^;]*/i, ''), notes: o.notes });
+    };
     const sq = (cx, cy, r) => [[cx - r, cy - r], [cx + r, cy - r], [cx + r, cy + r], [cx - r, cy + r]];
     const shellOwn = (m, L, f = 1.2) => m === 'timber' ? 0.4 : 25 * Math.max(0.08, L / 500) * f;
     const zigAt = (y, b) => { const p = ((y / b) % 2 + 2) % 2; return p <= 1 ? p : 2 - p; };
@@ -3062,12 +3069,21 @@
         const d = hallDisk(L, W), R = d[2], f = R * fr, Rs = (R * R + f * f) / (2 * f), zc = H + f - Rs;
         return { d, R, f, Rs, zc, P: (rho, th) => [d[0] + rho * Math.cos(th), d[1] + rho * Math.sin(th), zc + Math.sqrt(Math.max(0, Rs * Rs - rho * rho))] };
     }
+    // a spherical cap springing from the ground (Engel pp.152–155 draw truss domes standing on the ground): rise Ø/6 of its
+    // base, the base widened until the dome stands H above the hall's corners (the half-diagonal Rh from the centre)
+    function groundCap(L, W, H) {
+        const h = hallDisk(L, W), Rh = h[2], at = Rb => { const f = Rb / 3, Rs = (Rb * Rb + f * f) / (2 * f), zc = f - Rs; return { f, Rs, zc, z: zc + Math.sqrt(Math.max(0, Rs * Rs - Rh * Rh)) }; };
+        let lo = Rh, hi = Rh * 4 + 6 * H;
+        for (let k = 0; k < 60; k++) { const mid = (lo + hi) / 2; if (at(mid).z < H) lo = mid; else hi = mid; }
+        const R = hi, { f, Rs, zc } = at(R), d = [h[0], h[1], R];
+        return { d, R, f, Rs, zc, P: (rho, th) => [d[0] + rho * Math.cos(th), d[1] + rho * Math.sin(th), zc + Math.sqrt(Math.max(0, Rs * Rs - rho * rho))] };
+    }
     function domeHall(L, H, W, m, q, cap, lines3, o) {
-        const { d, R, Rs } = cap, posts = ringPosts(d, H), phi0 = Math.asin(R / Rs), ring = q * Rs / 2 * Math.cos(phi0) * R;
-        lines3.push(ringLine(d, H));
+        const { d, R, Rs } = cap, posts = [], phi0 = Math.asin(R / Rs), ring = q * Rs / 2 * Math.cos(phi0) * R;
+        lines3.push(ringLine(d, 0));
         const r = surfaceHall({ kind: 'none', mods: [{ disk: d, z: (x, y) => cap.P(Math.hypot(x - d[0], y - d[1]), 0)[2], ni: 1, nj: 8 }], lines3, posts, secY: d[1],
-            sec: Array.from({ length: 25 }, (_, i) => { const x = d[0] - R + 2 * R * i / 24; return [x, cap.P(Math.abs(x - d[0]), 0)[2]]; }), secParts: [rect(d[0] - R - 0.3, 0, d[0] - R, H), rect(d[0] + R, 0, d[0] + R + 0.3, H)] });
-        return Object.assign(r, { zone: r.topOverride - H, spanUsed: 2 * R, cols: posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the hall; ring beam on columns`,
+            sec: Array.from({ length: 25 }, (_, i) => { const x = d[0] - R + 2 * R * i / 24; return [x, cap.P(Math.abs(x - d[0]), 0)[2]]; }), secParts: [] });
+        return Object.assign(r, { zone: r.topOverride - H, spanUsed: 2 * R, cols: 0, colNote: `springs from a ground ring Ø${f1_(2 * R)} m, wide enough to stand ${f1_(H)} m over the hall's corners; no columns (Engel pp.152–155)`,
             thrust: ring, thrustNote: 'tension in the ring beam, treating the net as the spherical cap it follows', thrustIsRing: true, notes: o.notes });
     }
     // columns under the top-layer nodes along the two long edges (u = 0 and 1), about every s
@@ -3296,44 +3312,44 @@
                   notes: ['A barrel whose ends round off into quarter-domes: the net is curved both ways over a long plan (Engel 2.3.3).'] });
           } },
         // --- 2.3.4 spherical trusses: one dome over the hall's circle, on a ring of columns ---
-        { id: 'sd_schw', fam: 2, name: 'Schwedler dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · meridians, rings, one diagonal per field', timber: 'Ø = hall diagonal · rise Ø/6 · meridians, rings, one diagonal per field' },
+        { id: 'sd_schw', fam: 2, name: 'Schwedler dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · meridians, rings, one diagonal per field', timber: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · meridians, rings, one diagonal per field' },
           own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
           build(L, H, W, m, q) {
-              const cap = capOf(L, W, H), N = 24, K = 6, rho = k => cap.R * (1 - k / (K + 0.6)), lines3 = [];
+              const cap = groundCap(L, W, H), N = 24, K = 6, rho = k => cap.R * (1 - k / (K + 0.6)), lines3 = [];
               for (let k = 1; k <= K; k++) lines3.push({ c: 'member', pts: Array.from({ length: N + 1 }, (_, i) => cap.P(rho(k), 2 * Math.PI * i / N)) });
               for (let i = 0; i < N; i++) { lines3.push({ c: 'member', pts: Array.from({ length: K + 1 }, (_, k) => cap.P(rho(k), 2 * Math.PI * i / N)) });
                   for (let k = 0; k < K; k++) lines3.push({ c: 'thin', pts: [cap.P(rho(k), 2 * Math.PI * i / N), cap.P(rho(k + 1), 2 * Math.PI * (i + 1) / N)] }); }
               return domeHall(L, H, W, m, q, cap, lines3, { notes: ['Meridians and rings, braced by one diagonal in each field; an open compression ring at the top (Engel 2.3.4.1).'] });
           } },
-        { id: 'sd_lat', fam: 2, name: 'Lattice dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · rings with triangles between', timber: 'Ø = hall diagonal · rise Ø/6 · rings with triangles between' },
+        { id: 'sd_lat', fam: 2, name: 'Lattice dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · rings with triangles between', timber: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · rings with triangles between' },
           own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
           build(L, H, W, m, q) {
-              const cap = capOf(L, W, H), N = 24, K = 6, rho = k => cap.R * (1 - k / (K + 0.6)), node = (k, i) => cap.P(rho(k), 2 * Math.PI * (i + 0.5 * (k % 2)) / N), lines3 = [];
+              const cap = groundCap(L, W, H), N = 24, K = 6, rho = k => cap.R * (1 - k / (K + 0.6)), node = (k, i) => cap.P(rho(k), 2 * Math.PI * (i + 0.5 * (k % 2)) / N), lines3 = [];
               for (let k = 1; k <= K; k++) lines3.push({ c: 'member', pts: Array.from({ length: N + 1 }, (_, i) => node(k, i)) });
               for (let k = 0; k < K; k++) for (let i = 0; i < N; i++) lines3.push({ c: 'thin', pts: [node(k, i), node(k + 1, k % 2 ? i + 1 : i), node(k, i + 1)] });
               return domeHall(L, H, W, m, q, cap, lines3, { notes: ['Rings joined by a zigzag of bars into triangles — no meridians (Engel 2.3.4.2).'] });
           } },
-        { id: 'sd_par', fam: 2, name: 'Parallel lattice dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · three-way grid projected on the sphere', timber: 'Ø = hall diagonal · rise Ø/6 · three-way grid projected on the sphere' },
+        { id: 'sd_par', fam: 2, name: 'Parallel lattice dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · three-way grid projected on the sphere', timber: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · three-way grid projected on the sphere' },
           own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
           build(L, H, W, m, q) {
-              const cap = capOf(L, W, H), [cx, cy, R] = cap.d, a = 2 * R / 12, lines3 = [];
+              const cap = groundCap(L, W, H), [cx, cy, R] = cap.d, a = 2 * R / 12, lines3 = [];
               for (const t of [0, 60, 120]) { const th = t * Math.PI / 180, ux = Math.cos(th), uy = Math.sin(th);
                   for (let k = -6; k <= 6; k++) { const c = k * a * Math.sqrt(3) / 2, h = Math.sqrt(Math.max(0, R * R - c * c)); if (h < 0.5) continue;
                       lines3.push({ c: 'member', pts: Array.from({ length: 25 }, (_, i) => { const s_ = -h + 2 * h * i / 24, x = cx - uy * c + ux * s_, y = cy + ux * c + uy * s_; return cap.P(Math.hypot(x - cx, y - cy), Math.atan2(y - cy, x - cx)); }) }); } }
               return domeHall(L, H, W, m, q, cap, lines3, { notes: ['A flat three-way grid projected onto the sphere: three families of parallel bars (Engel 2.3.4.3).'] });
           } },
-        { id: 'sd_lam', fam: 2, name: 'Lamella dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · diamond net of short bars', timber: 'Ø = hall diagonal · rise Ø/6 · diamond net of short bars' },
+        { id: 'sd_lam', fam: 2, name: 'Lamella dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · diamond net of short bars', timber: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · diamond net of short bars' },
           own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
           build(L, H, W, m, q) {
-              const cap = capOf(L, W, H), N = 24, K = 7, rho = k => cap.R * (1 - k / (K + 0.6)), node = (k, i) => cap.P(rho(k), 2 * Math.PI * (i + 0.5 * (k % 2)) / N), lines3 = [];
+              const cap = groundCap(L, W, H), N = 24, K = 7, rho = k => cap.R * (1 - k / (K + 0.6)), node = (k, i) => cap.P(rho(k), 2 * Math.PI * (i + 0.5 * (k % 2)) / N), lines3 = [];
               for (let k = 0; k < K; k++) for (let i = 0; i < N; i++) { const j = k % 2 ? i + 1 : i; lines3.push({ c: 'member', pts: [node(k, i), node(k + 1, j)] }, { c: 'member', pts: [node(k, i + 1), node(k + 1, j)] }); }
               lines3.push({ c: 'member', pts: Array.from({ length: N + 1 }, (_, i) => node(K, i)) });
               return domeHall(L, H, W, m, q, cap, lines3, { notes: ['Short bars of one length meet in diamonds that spiral both ways up the dome (Engel 2.3.4.4).'] });
           } },
-        { id: 'geodesic', fam: 2, name: 'Geodesic dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · icosahedron, frequency 6', timber: 'Ø = hall diagonal · rise Ø/6 · icosahedron, frequency 6' },
+        { id: 'geodesic', fam: 2, name: 'Geodesic dome', mats: MAT2, spans: SP2.cu3, rule: { steel: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · icosahedron, frequency 6', timber: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · icosahedron, frequency 6' },
           own: (m, L, r0) => K2(m) * (0.06 + 0.002 * r0.spanUsed),
           build(L, H, W, m, q) {
-              const cap = capOf(L, W, H), { Rs, zc } = cap, [cx, cy] = cap.d, zb = H - zc, lines3 = [], seen = new Set(), t = (1 + Math.sqrt(5)) / 2, fq = 6;
+              const cap = groundCap(L, W, H), { Rs, zc } = cap, [cx, cy] = cap.d, zb = -zc, lines3 = [], seen = new Set(), t = (1 + Math.sqrt(5)) / 2, fq = 6;
               const V = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(p => { const l = Math.hypot(...p); return [p[0] / l, p[2] / l, p[1] / l]; });
               const Fc = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
               const S_ = p => { const l = Math.hypot(...p); return [p[0] / l * Rs, p[1] / l * Rs, p[2] / l * Rs]; }, W3 = p => [cx + p[0], cy + p[1], zc + p[2]];
@@ -3410,15 +3426,15 @@
                   thrust: q * L * L / (8 * f), thrustNote: 'per metre at the ends, across the hall: H = qL²/8f — the arching direction alone, an upper bound',
                   notes: ['The double-layer grid is curved both ways, like a translational shell (Engel 2.4.3.2).'] });
           } },
-        { id: 'sv_sphere', fam: 2, name: 'Curved space truss (spherical)', mats: MAT2, spans: SP2.sp1, spanNote: rowNote2.sp2, rule: { steel: 'Ø = hall diagonal · rise Ø/6 · d = Ø/50', timber: 'Ø = hall diagonal · rise Ø/6 · d = Ø/40' },
+        { id: 'sv_sphere', fam: 2, name: 'Curved space truss (spherical)', mats: MAT2, spans: SP2.sp1, spanNote: rowNote2.sp2, rule: { steel: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · d = Ø/50', timber: 'from the ground · rise Ø/6, Ø so it stands H over the hall corners · d = Ø/40' },
           own: (m, L, r0) => K2(m) * (0.10 + 0.0025 * r0.spanUsed),
           build(L, H, W, m, q) {
-              const cap = capOf(L, W, H), R = cap.R, d = 2 * R / (m === 'timber' ? 40 : 50), n = clamp(Math.round(2 * R / clamp(d * 1.8, 2, 7)), 8, 24);
+              const cap = groundCap(L, W, H), R = cap.R, d = 2 * R / (m === 'timber' ? 40 : 50), n = clamp(Math.round(2 * R / clamp(d * 1.8, 2, 7)), 8, 24);
               const F = (u, v) => { const a = 2 * u - 1, b = 2 * v - 1, x = a * Math.sqrt(1 - b * b / 2), y = b * Math.sqrt(1 - a * a / 2), rho = R * Math.hypot(x, y); return cap.P(rho, Math.atan2(y, x)); };
-              const lines3 = [], s2 = spaceNet(F, n, n, d, [cap.d[0], cap.d[1], cap.zc], lines3), posts = ringPosts(cap.d, H), phi0 = Math.asin(R / cap.Rs);
-              lines3.push(ringLine(cap.d, H));
-              const r = surfaceHall({ kind: 'none', mods: [{ disk: cap.d, z: () => H, ni: 1, nj: 8 }], lines3, posts, secY: cap.d[1], sec: s2.secTop, secParts: [line(s2.secBot, 'thin'), rect(cap.d[0] - R - 0.3, 0, cap.d[0] - R, H), rect(cap.d[0] + R, 0, cap.d[0] + R + 0.3, H)] });
-              return Object.assign(r, { zone: r.topOverride - H, spanUsed: 2 * R, cols: posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the hall; ring beam on columns`,
+              const lines3 = [], s2 = spaceNet(F, n, n, d, [cap.d[0], cap.d[1], cap.zc], lines3), posts = [], phi0 = Math.asin(R / cap.Rs);
+              lines3.push(ringLine(cap.d, 0));
+              const r = surfaceHall({ kind: 'none', mods: [{ disk: cap.d, z: () => H, ni: 1, nj: 8 }], lines3, posts, secY: cap.d[1], sec: s2.secTop, secParts: [line(s2.secBot, 'thin')] });
+              return Object.assign(r, { zone: r.topOverride - H, spanUsed: 2 * R, cols: 0, colNote: `springs from a ground ring Ø${f1_(2 * R)} m, wide enough to stand ${f1_(H)} m over the hall's corners; no columns (Engel pp.152–155)`,
                   thrust: q * cap.Rs / 2 * Math.cos(phi0) * R, thrustNote: 'tension in the ring beam, treating the grid as the spherical cap it follows', thrustIsRing: true,
                   notes: ['A double-layer dome: the second layer lets a very flat, very large dome resist buckling (Engel 2.4.3.3).'] });
           } },
