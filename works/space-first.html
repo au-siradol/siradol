@@ -144,9 +144,17 @@
     .modal .big svg, .modal .sec svg, .modal .plan svg { width: 100%; height: 100%; display: block; }
     .modal .plan svg { max-height: none !important; }
     .modal .big.eye { background: #fcfcfc; outline: 1px solid #eee; overflow: hidden; }
+    .section-info, .section-legend { font-size:10px; line-height:1.4; color:#777; flex:none; }
+    .section-legend { margin:5px 0; }
+    .modal.sections-focus .in { grid-template-columns:minmax(0,2fr) minmax(0,1fr); }
+    .modal.sections-focus .in > .cell:nth-child(2), .modal.sections-focus .in > .cell:nth-child(3), .modal.sections-focus .side { display:none; }
+    .modal.sections-focus .secs { grid-column:1; grid-row:2 / 4; }
+    .modal.sections-focus .in > .cell:nth-child(5) { grid-column:2; grid-row:2 / 4; }
     .modal .side { grid-column: 3; grid-row: 2 / 4; overflow-y: auto; min-height: 0; padding-right: 4px; }
     @media (max-width: 860px) {
         .modal { overflow: auto; padding: 0 16px 24px; }
+        .modal.sections-focus .in { grid-template-columns:minmax(0,1fr); }
+        .modal.sections-focus .secs, .modal.sections-focus .in > .cell:nth-child(5) { grid-column:auto; grid-row:auto; }
         .modal .in { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
         .modal .side { grid-column: auto; grid-row: auto; overflow: visible; }
         .modal .cell > .big, .modal .cell > .plan, .modal .cell > .sec { flex: none; }
@@ -438,9 +446,9 @@
     <div class="hd"><div><b id="mName"></b><span id="mSub"></span></div><button class="btn" id="mClose">Close</button></div>
     <div class="cell"><div class="k">Axonometric · drag to turn · <button class="linkbtn" id="mReset">reset angle</button></div><div class="big" id="mBig"></div></div>
     <div class="cell"><div class="k">Inside, eye at 1.68 m · drag to look around · <button class="linkbtn" id="mEyeReset">reset view</button></div><div class="big eye" id="mEye"></div></div>
-    <div class="cell secs"><div class="k">Section A–A · across the hall</div><div class="sec" id="mSec"></div><div class="k">Section B–B · along the hall</div><div class="sec" id="mSecB"></div></div>
-    <div class="cell"><div class="k">Plan</div><div class="plan" id="mPlan"></div></div>
-    <div class="side"><div id="mStatus"></div><ul id="mNotes"></ul><div id="mVar"></div><p class="scope-note">Sections cut through the modeled surfaces at the dashed plan lines. A–A passes through a nearby frame where the system consists of separate frames. Members outside the cut plane are omitted. Thin surfaces are shown as lines.</p></div>
+    <div class="cell secs"><div class="k">Section A–A · across the hall · <button class="linkbtn" id="mSections" aria-pressed="false">expand sections</button></div><div class="section-info" id="mSecInfo"></div><div class="sec" id="mSec"></div><div class="k">Section B–B · along the hall</div><div class="section-info" id="mSecBInfo"></div><div class="sec" id="mSecB"></div><div class="section-legend">Dark: cut · grey: visible beyond · arrows in plan show view direction.<br>Single-line surfaces have no modeled thickness.</div></div>
+    <div class="cell"><div class="k">Plan</div><div class="plan" id="mPlan"></div><div class="section-info" id="mPlanInfo"></div></div>
+    <div class="side"><div id="mStatus"></div><ul id="mNotes"></ul><div id="mVar"></div></div>
 </div></div>
 
 <script id="engine">
@@ -2093,7 +2101,9 @@
         const pts = [...(o.quads || []).flat(), ...(o.posts || [])], z0 = (o.posts || []).length ? Math.min(...pts.map(p => p[2])) : 0;   // already anchored to the ground: left as it is
         const dn = a => a && a.map(P => P.map(p => [p[0], p[1], p[2] - z0]));
         const o2 = Object.assign({}, o, { quads: dn(o.quads), glass: dn(o.glass), anchors: o.anchors && o.anchors.map(p => [p[0], p[1], Math.max(0, p[2] - z0)]), posts: [] });
-        return Object.assign(withZone(hpHall(L, H, W, o2), H), { cols: 0, colNote: (note || '').replace(/ on (posts|columns)[^;]*/i, ''), notes: o.notes });
+        const supports = [...(o.posts || []), ...(o.anchors || [])].map(p => [p[0],p[1],Math.max(0,p[2]-z0)]);
+        const referenceStudy = { quads: o2.quads, supports: supports.filter((p,i)=>!supports.slice(0,i).some(q=>Math.hypot(p[0]-q[0],p[1]-q[1])<1e-6)) };
+        return Object.assign(withZone(hpHall(L, H, W, o2), H), { referenceStudy, cols: 0, colNote: (note || '').replace(/ on (posts|columns)[^;]*/i, ''), notes: o.notes });
     };
     const sq = (cx, cy, r) => [[cx - r, cy - r], [cx + r, cy - r], [cx + r, cy + r], [cx - r, cy + r]];
     const shellOwn = (m, L, f = 1.2) => m === 'timber' ? 0.4 : 25 * Math.max(0.08, L / 500) * f;
@@ -3860,6 +3870,23 @@
         return res;
     }
 
+    // A cloneable, small result for screening/ranking. Geometry is built only when a
+    // drawing/section is requested; copying a surface would lose its z/map functions.
+    function screeningSummary(r) {
+        const out = { id: r.sys.id, load: { ...r.load }, plan: {}, notes: r.notes.slice() };
+        if (r.referenceStudy) out.referenceStudy = r.referenceStudy;
+        for (const k of Object.keys(r)) if (r[k] == null || ['number','string','boolean'].includes(typeof r[k])) out[k] = r[k];
+        for (const k of ['kind','s','bay']) if (r.plan && r.plan[k] !== undefined) out.plan[k] = r.plan[k];
+        return out;
+    }
+    function screeningWorkerMain() {
+        self.onmessage = e => {
+            const { job, s } = e.data; Object.assign(S, s);
+            try { postMessage({ job, results: SYS.map(sys => screeningSummary(evaluate(sys))) }); }
+            catch (err) { postMessage({ job, error: String(err) }); }
+        };
+    }
+
     // ---------- SVG drawing ----------
     const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
     function frameBox(results) {
@@ -3875,38 +3902,109 @@
             return `<path d="${d}" class="${cls}" stroke-width="${ghost ? sw * 1.1 : w}" vector-effect="none"/>`;
         }).join('');
     }
-    function cutPlane(r, axis='A') {
-        if(axis==='A' && r.plan.s && ['arch','oneway'].includes(r.plan.kind)) {
-            const ys=ysOf(S.W,r.plan.s); return ys.reduce((a,b)=>Math.abs(b-S.W/2)<Math.abs(a-S.W/2)?b:a);
-        }
-        if(axis==='A' && r.surf?.kind==='none' && r.surf.mods.every(m=>m.rect && !m.map) && !r.surf.mods.some(m=>m.rect[1]<=S.W/2 && m.rect[3]>=S.W/2)) {
-            const ys=r.surf.mods.map(m=>(m.rect[1]+m.rect[3])/2);
-            return ys.reduce((a,b)=>Math.abs(b-S.W/2)<Math.abs(a-S.W/2)?b:a);
-        }
-        return axis==='A'?S.W/2:S.L/2;
+    function supportLocations(r) {
+        const p=r.plan||{}, out=[...(p.posts||[]),...(p.supportPoints||[]),...(p.anchors||[])];
+        if(p.colsX) for(const x of p.colsX) for(const y of ysOf(S.W,p.s)) out.push([x,y,0]);
+        if(p.kind==='arch') for(const x of [p.x0,p.x0+p.S]) for(const y of ysOf(S.W,p.s)) out.push([x,y,0]);
+        if(p.kind==='oneway'&&!p.colsX) for(const x of [0,S.L]) for(const y of ysOf(S.W,p.s)) out.push([x,y,0]);
+        return out;
     }
+    // Presets describe where the cut actually is. A looks +Y, B looks -X;
+    // these directions also drive the arrows in plan and the retained half-model.
+    function sectionLocation(r,axis='A') {
+        const a=axis==='A', k=a?1:0, centre=a?S.W/2:S.L/2;
+        const nearest=xs=>xs.reduce((p,q)=>Math.abs(q-centre)<Math.abs(p-centre)-1e-7?q:p);
+        if(/^ls_/.test(r.sys.id)) {
+            if(a) {
+                const ys=(r.surf?.mods||[]).filter(m=>m.rect).map(m=>(m.rect[1]+m.rect[3])/2);
+                if(ys.length)return {plane:nearest(ys),label:'through the middle of a shell unit',dir:1};
+            } else {
+                const xs=supportLocations(r).map(p=>p[0]);
+                // Continuous folded legs without discrete posts: their foot is in the cylinder path.
+                if(!xs.length && r.cylinder) xs.push(r.cylinder.path[0][0]);
+                if(xs.length)return {plane:Math.min(...xs),label:'through a support row',dir:-1};
+            }
+        }
+        if(a && r.plan.s && ['arch','oneway'].includes(r.plan.kind))
+            return {plane:nearest(ysOf(S.W,r.plan.s)),label:'through a frame / truss',dir:1};
+        if(a && r.surf?.kind==='none' && r.surf.mods.every(m=>m.rect&&!m.map)) {
+            const ys=r.surf.mods.map(m=>(m.rect[1]+m.rect[3])/2);
+            if(ys.length)return {plane:nearest(ys),label:'through the middle of a module',dir:1};
+        }
+        if(a && r.plan.kind==='barrel') {
+            const ys=ysOf(S.W,r.plan.b), mids=ys.slice(1).map((y,i)=>(y+ys[i])/2);
+            if(mids.length)return {plane:nearest(mids),label:'through a barrel crown',dir:1};
+        }
+        return {plane:centre,label:a?'through the centre, across':'through the centre, along',dir:a?1:-1};
+    }
+    function cutPlane(r,axis='A') { return sectionLocation(r,axis).plane; }
+    const sectionScene = r => r._sc || (r._sc=scene3D(r));
     function sectionSegments(r, axis = 'A') {
-        const k = axis === 'A' ? 1 : 0, u = 1-k, plane = cutPlane(r,axis), eps=1e-7, out=[];
-        for (const o of scene3D(r)) {
-            if (NOT_STRUCTURE.includes(o.c)) continue;
-            const p=o.pts, closed=o.t==='face', hits=[];
+        if(r._cutLines?.[axis])return r._cutLines[axis];
+        const k=axis==='A'?1:0,u=1-k,plane=cutPlane(r,axis),eps=1e-7,out=[];
+        for(const o of sectionScene(r)) {
+            if(NOT_STRUCTURE.includes(o.c))continue;
+            const p=o.pts,closed=o.t==='face',hits=[],coplanar=p.every(q=>Math.abs(q[k]-plane)<eps);
             for(let i=0;i<p.length-(closed?0:1);i++) {
-                const a=p[i], b=p[(i+1)%p.length], da=a[k]-plane, db=b[k]-plane;
-                if(Math.abs(da)<eps && Math.abs(db)<eps) out.push([[a[u],a[2]],[b[u],b[2]]]);
-                else if((da<=eps && db>=-eps)||(db<=eps && da>=-eps)) {
-                    const t=da/(da-db);
-                    if(t>=0 && t<=1 && Number.isFinite(t)) hits.push([a[u]+t*(b[u]-a[u]), a[2]+t*(b[2]-a[2])]);
+                const a=p[i],b=p[(i+1)%p.length],da=a[k]-plane,db=b[k]-plane;
+                if(Math.abs(da)<eps&&Math.abs(db)<eps) {
+                    if(!coplanar||!o.e||o.e[i])out.push([[a[u],a[2]],[b[u],b[2]]]);
+                } else if((da<=eps&&db>=-eps)||(db<=eps&&da>=-eps)) {
+                    const t=da/(da-db);if(t>=0&&t<=1&&Number.isFinite(t))hits.push([a[u]+t*(b[u]-a[u]),a[2]+t*(b[2]-a[2])]);
                 }
             }
-            if(closed && hits.length>=2) {
+            if(closed&&hits.length>=2) {
                 const unique=hits.filter((p,i)=>!hits.slice(0,i).some(q=>Math.hypot(p[0]-q[0],p[1]-q[1])<eps));
-                unique.sort((a,b)=>a[0]-b[0] || a[1]-b[1]);
-                for(let i=0;i+1<unique.length;i+=2) out.push([unique[i],unique[i+1]]);
+                unique.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+                for(let i=0;i+1<unique.length;i+=2)out.push([unique[i],unique[i+1]]);
             }
         }
-        // cables and posts hung in space that the cut does not pass through exactly, drawn as they show across the hall
-        if (axis === 'A' && r.secCut) for (const pl of r.secCut) for (let i = 0; i + 1 < pl.length; i++) out.push([pl[i], pl[i + 1]]);
-        return out.filter(([a,b])=>Math.hypot(a[0]-b[0],a[1]-b[1])>eps);
+        const seen=new Set(), clean=out.filter(([a,b])=>{
+            if(Math.hypot(a[0]-b[0],a[1]-b[1])<=eps)return false;
+            const A=a.map(v=>v.toFixed(6)).join(','),B=b.map(v=>v.toFixed(6)).join(','),key=A<B?A+'|'+B:B+'|'+A;
+            if(seen.has(key))return false;seen.add(key);return true;
+        });
+        (r._cutLines||(r._cutLines={}))[axis]=clean;return clean;
+    }
+    // Clip the near half away BEFORE projecting. The existing hidden-line renderer
+    // then retains only visible edges behind the cut, rather than an X-ray elevation.
+    function sectionBeyond(r,axis='A') {
+        if(r._cutBeyond?.[axis])return r._cutBeyond[axis];
+        const k=axis==='A'?1:0,u=1-k,{plane,dir}=sectionLocation(r,axis),eps=1e-7,items=[];
+        const distance=p=>dir*(p[k]-plane),cross=(a,b)=>{const t=(plane-a[k])/(b[k]-a[k]);return a.map((v,j)=>v+t*(b[j]-v));};
+        const add=(o,pts,e)=>{if(pts.length>=(o.t==='face'?3:2))items.push({...o,pts,...(e?{e}:{})});};
+        for(const o of sectionScene(r)) {
+            if(NOT_STRUCTURE.includes(o.c))continue;
+            const P=o.pts;
+            if(o.t==='face') {
+                const clipped=[];
+                for(let i=0;i<P.length;i++) {
+                    const a=P[i],b=P[(i+1)%P.length],ia=distance(a)>=-eps,ib=distance(b)>=-eps;
+                    if(ia)clipped.push(a);if(ia!==ib)clipped.push(cross(a,b));
+                }
+                // Preserve the hidden tessellation seams; a new cut edge is drawn in the bold layer.
+                const onEdge=(p,a,b)=>{const d=b.map((v,j)=>v-a[j]),v=p.map((x,j)=>x-a[j]),dd=d.reduce((n,x)=>n+x*x,0),t=v.reduce((n,x,j)=>n+x*d[j],0)/(dd||1);return t>=-eps&&t<=1+eps&&Math.hypot(...v.map((x,j)=>x-t*d[j]))<eps;};
+                const e=o.e&&clipped.map((p,i)=>P.some((a,j)=>o.e[j]&&onEdge(p,a,P[(j+1)%P.length])&&onEdge(clipped[(i+1)%clipped.length],a,P[(j+1)%P.length])));
+                add(o,clipped,e);
+            } else if(o.t==='line') for(let i=1;i<P.length;i++) {
+                const a=P[i-1],b=P[i],ia=distance(a)>=-eps,ib=distance(b)>=-eps;
+                if(ia&&ib)add(o,[a,b]);else if(ia!==ib)add(o,ia?[a,cross(a,b)]:[cross(a,b),b]);
+            }
+        }
+        const projected=projectScene(items,p=>[p[u],-p[2],-dir*p[k]]);
+        const result={projected,body:axoBody(projected).replace(/stroke="([^"]*)"/g,(all,c)=>c==='none'?all:'stroke="#999"').replace(/stroke-width="[^"]*"/g,'stroke-width="0.55"')};
+        (r._cutBeyond||(r._cutBeyond={}))[axis]=result;return result;
+    }
+    function sectionPlanMarks(r,bounds,sw) {
+        const [x0,y0,x1,y1]=bounds,span=Math.max(x1-x0,y1-y0),a=cutPlane(r,'A'),b=cutPlane(r,'B'),d=span*.035,fs=span/32;
+        const arrow=(x,y,dx,dy)=>`<path d="M${x},${y}l${dx},${dy}m${-dx*.3-dy*.2},${-dy*.3+dx*.2}l${dx*.3+dy*.2},${dy*.3-dx*.2}l${-dx*.3+dy*.2},${-dy*.3-dx*.2}"/>`;
+        return `<g class="section-marks" fill="none" stroke="#555" stroke-width="${sw}"><path d="M${x0},${a}H${x1}M${b},${y0}V${y1}" stroke-dasharray="${sw*5} ${sw*3}"/>${arrow(x0,a,0,d)}${arrow(x1,a,0,d)}${arrow(b,y0,-d,0)}${arrow(b,y1,-d,0)}</g><g fill="#555" font-size="${fs}"><text x="${x0}" y="${a-fs*.35}">A</text><text x="${x1}" y="${a-fs*.35}">A</text><text x="${b+fs*.35}" y="${y0}">B</text><text x="${b+fs*.35}" y="${y1}">B</text></g>`;
+    }
+    function referencePlanSVG(study,r=null) {
+        const pts=study.quads.flat(),x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),y0=Math.min(...pts.map(p=>p[1])),y1=Math.max(...pts.map(p=>p[1])),span=Math.max(x1-x0,y1-y0),pad=span*.09,rad=span*.018;
+        const panels=study.quads.map(Q=>`<path d="M${Q.map(p=>p.slice(0,2).join(',')).join('L')}Z" fill="#fafafa" stroke="#888" stroke-width="${span/250}"/>`).join('');
+        const supports=study.supports.map(p=>`<circle class="support-point" cx="${p[0]}" cy="${p[1]}" r="${rad}" fill="${p[2]>1e-6?'#fff':'#111'}" stroke="#111" stroke-width="${span/180}"/>`).join('');
+        return `<svg viewBox="${x0-pad} ${y0-pad} ${x1-x0+2*pad} ${y1-y0+2*pad}" role="img" aria-label="Composition plan and support locations">${panels}${supports}${r?sectionPlanMarks(r,[x0,y0,x1,y1],span/350):''}</svg>`;
     }
     // the space a building type asks for, cut along the section: the clear space above the seating in blue (up to the height
     // it needs), a theatre's stage house dashed beside it. Where the cut runs square to the rows, the seating is drawn as a
@@ -3964,14 +4062,26 @@
         return { svg, lo, top, notes };
     }
     function cutSVG(r, axis='A', common=null) {
-        const segs=sectionSegments(r,axis), length=axis==='A'?S.L:S.W, plane=axis==='A'?cutPlane(r,'A'):S.L/2;
-        const detail=!common, pre=envCut(axis, plane, length, 1, detail);
-        const pts=segs.flat(), lo=Math.min(common?.x0 ?? 0, pre.lo, ...pts.map(p=>p[0])), hi=Math.max(common?.x1 ?? length,...pts.map(p=>p[0]));
-        const top=Math.max(common?.y1 ?? S.H, pre.top, ...pts.map(p=>p[1])), pad=(hi-lo)*0.08+1, width=hi-lo+pad*2, sw=width/650;
-        const ec=envCut(axis, plane, length, sw, detail), nf=width/70, nh=ec.notes.length?nf*(ec.notes.length*1.4+0.6):0;
-        // the notes on the seating sit under the title, left-aligned, so they never cross the structure
-        const notes=ec.notes.map(([t,c],i)=>`<text x="${lo-pad*0.6}" y="${pad*0.7+nf*(1.6+1.4*i)}" font-size="${nf}" fill="${c}" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">${esc(t)}</text>`).join('');
-        return `<svg viewBox="${lo-pad} ${-top-pad} ${width} ${top+2*pad+nh}" role="img" aria-label="Section ${axis}–${axis} from modeled geometry">${ec.svg}<line class="s-ground" x1="${lo-pad}" x2="${hi+pad}" y1="0" y2="0" stroke-width="${sw}"/>`+segs.map(([a,b])=>`<path d="M${a[0]},${-a[1]} L${b[0]},${-b[1]}" fill="none" stroke="#222" stroke-width="${sw}"/>`).join('')+`<text x="${length/2}" y="${pad*0.7}" text-anchor="middle" font-size="${width/45}">${axis}–${axis} · ${f1(length)} m clear ${axis==='A'?'width':'length'}</text>${notes}</svg>`;
+        const segs=sectionSegments(r,axis), beyond=sectionBeyond(r,axis), length=axis==='A'?S.L:S.W, location=sectionLocation(r,axis);
+        const detail=!common, pre=envCut(axis,location.plane,length,1,detail);
+        let lo=Math.min(common?.x0??0,pre.lo),hi=Math.max(common?.x1??length,length),top=Math.max(common?.y1??S.H,pre.top),bottom=0;
+        const include=(x,z)=>{lo=Math.min(lo,x);hi=Math.max(hi,x);top=Math.max(top,z);bottom=Math.min(bottom,z);};
+        for(const seg of segs)for(const p of seg)include(p[0],p[1]);
+        for(const o of beyond.projected)for(const p of o.P)include(p[0],-p[1]);
+        if(detail&&!r.sys.ref)top=Math.max(top,r.top); // include the full overall-height dimension, even on a support-row cut
+        const pad=(hi-lo)*.12+1,width=hi-lo+2*pad,sw=width/700,fs=width/55;
+        const ec=envCut(axis,location.plane,length,sw,detail), rows=detail?1+ec.notes.length:1, extra=fs*(rows*1.5+1);
+        const path=segs.map(([a,b])=>`M${a[0]},${-a[1]}L${b[0]},${-b[1]}`).join('');
+        let dims='';
+        if(detail&&!r.sys.ref) {
+            dims+=dimH(bottom-fs*1.7,0,length,`${f1(length)} m clear ${axis==='A'?'span':'length'}`,sw*.6,fs);
+            dims+=dimV(lo-pad*.2,0,S.H,`H ${f1(S.H)} m`,sw*.6,fs,true);
+            dims+=dimV(hi+pad*.2,0,r.top,`total ${f1(r.top)} m`,sw*.6,fs*.7,false);
+        }
+        const labels=detail?ec.notes.map(([t])=>t):[`${axis}–${axis} · ${location.label}`];
+        const labelY=-bottom+fs*(detail&&!r.sys.ref?3.4:1.6);
+        const notes=labels.map((t,i)=>`<text x="${lo}" y="${labelY+fs*1.45*i}" font-size="${fs}" fill="#666">${esc(t)}</text>`).join('');
+        return `<svg viewBox="${lo-pad} ${-top-pad} ${width} ${top-bottom+2*pad+extra}" role="img" aria-label="Section ${axis}–${axis}, ${location.label}, with visible structure beyond"><g class="section-beyond">${beyond.body}</g>${r.sys.ref?'':ec.svg}<line class="s-ground" x1="${lo-pad}" x2="${hi+pad}" y1="0" y2="0" stroke-width="${sw}"/><path class="section-cut" d="${path}" fill="none" stroke="#111" stroke-width="${sw*1.6}" stroke-linejoin="round"/>${dims}${notes}</svg>`;
     }
     function sectionSVG(r, box, opts = {}) {
         const { big = false, ghost = null } = opts;
@@ -4012,6 +4122,7 @@
     }
 
     function planSVG(r) {
+        if(r.referenceStudy)return referencePlanSVG(r.referenceStudy,r);
         const L = S.L, W = S.W, pl = r.plan;
         const x0 = Math.min(0, r.foot[0]), x1 = Math.max(L, r.foot[1]);
         const ey = pl.ext || (pl.kind === 'geo' ? Math.max(0, pl.R - W / (2 * pl.n)) : 0);
@@ -4040,7 +4151,7 @@
             }
             for (const g of pl.segs || []) s += ln(g[0], g[1], g[2], g[3], sw * (0.5 + 0.9 * (g[4] == null ? 1 : g[4])));
             for (const b of pl.boxes) if (b[4] < 0.01) s += `<rect x="${b[0]}" y="${b[2]}" width="${b[1] - b[0]}" height="${b[3] - b[2]}" fill="#111"/>`;   // cut above the floor: lintels and arcades are not in plan
-            for (const p of pl.posts) s += dot(p[0], p[1]);
+            for (const p of [...pl.posts,...(pl.supportPoints||[])]) s += dot(p[0], p[1]);
             for (const a of pl.anchors) s += `<circle cx="${a[0]}" cy="${a[1]}" r="${cr * 0.4}" fill="none" stroke="#111" stroke-width="${sw}"/>`;
         } else if (pl.kind === 'oneway') {
             for (const y of ys(pl.s)) { s += ln(pl.x0 != null ? pl.x0 : 0, y, pl.x1 != null ? pl.x1 : L, y, sw * 1.6); for (const x of pl.colsX || [0, L]) s += dot(x, y); for (const x of pl.anchorsX || []) s += `<circle cx="${x}" cy="${y}" r="${cr * 0.4}" fill="none" stroke="#c62828" stroke-width="${sw}"/>`; if (pl.masts) s += ln(0, y, -pl.anchors, y, sw * 0.7, '#111', `${sw * 2} ${sw * 2}`) + ln(L, y, L + pl.anchors, y, sw * 0.7, '#111', `${sw * 2} ${sw * 2}`); }
@@ -4089,7 +4200,7 @@
             s += `<circle cx="${L / 2}" cy="${Math.min(W, L) / 2}" r="${L / 2}" fill="rgba(0,0,0,0.04)" stroke="#111" stroke-width="${sw * 1.6}"/>`;
             for (let i = 0; i < n; i++) { const a = 2 * Math.PI * i / n; s += dot(L / 2 + L / 2 * Math.cos(a), Math.min(W, L) / 2 + L / 2 * Math.sin(a)); }
         }
-        s += `<g stroke="#1565c0" stroke-width="${sw}" stroke-dasharray="${sw*5} ${sw*3}"><line x1="0" y1="${cutPlane(r,'A')}" x2="${L}" y2="${cutPlane(r,'A')}"/><line x1="${L/2}" y1="0" x2="${L/2}" y2="${W}"/></g><g fill="#1565c0" font-size="${Math.max(vw,vh)/35}"><text x="0" y="${cutPlane(r,'A')}">A</text><text x="${L}" y="${cutPlane(r,'A')}">A</text><text x="${L/2}" y="0">B</text><text x="${L/2}" y="${W}">B</text></g>`;
+        s += sectionPlanMarks(r,[Math.min(x0,cutPlane(r,'B')),0,Math.max(x1,cutPlane(r,'B')),W],sw);
         s += `<text x="${L / 2}" y="${W + pad * 0.8}" font-size="${Math.max(vw, vh) / 30}" text-anchor="middle" fill="#888" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">${f1(L)} × ${f1(W)} m</text>`;
         return s + '</svg>';
     }
@@ -4526,10 +4637,23 @@
             if(Math.abs(area)<1e-10)continue;
             triangles.push({T,area,box:[Math.min(...T.map(p=>p[0])),Math.min(...T.map(p=>p[1])),Math.max(...T.map(p=>p[0])),Math.max(...T.map(p=>p[1]))]});
         }
+        // Broad phase only: index the same triangles by their screen bounds. The exact
+        // clipping/depth tests below are unchanged, including for perspective views.
+        let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+        for(const {box} of triangles){x0=Math.min(x0,box[0]);y0=Math.min(y0,box[1]);x1=Math.max(x1,box[2]);y1=Math.max(y1,box[3]);}
+        const G=64,cw=(x1-x0)/G||1,ch=(y1-y0)/G||1,cells=new Map();
+        const cellRange=b=>[clamp(Math.floor((b[0]-x0)/cw),0,G-1),clamp(Math.floor((b[2]-x0)/cw),0,G-1),clamp(Math.floor((b[1]-y0)/ch),0,G-1),clamp(Math.floor((b[3]-y0)/ch),0,G-1)];
+        triangles.forEach((t,i)=>{const [a,b,c,d]=cellRange(t.box);for(let u=a;u<=b;u++)for(let v=c;v<=d;v++){const k=u*G+v;if(!cells.has(k))cells.set(k,[]);cells.get(k).push(i);}});
         for(const o of [...proj,...silhouettes]) if(o.c==='foldedge') for(let i=1;i<o.P.length;i++) {
             const A=o.P[i-1],B=o.P[i], mix=t=>A.map((v,k)=>v+(B[k]-v)*t), intervals=[];
-            for(const {T,area,box} of triangles) {
-                if(Math.max(A[0],B[0])<box[0]||Math.min(A[0],B[0])>box[2]||Math.max(A[1],B[1])<box[1]||Math.min(A[1],B[1])>box[3])continue;
+            const bounds=[Math.min(A[0],B[0]),Math.min(A[1],B[1]),Math.max(A[0],B[0]),Math.max(A[1],B[1])], candidates=new Set();
+            if(triangles.length && bounds[2]>=x0 && bounds[0]<=x1 && bounds[3]>=y0 && bounds[1]<=y1){
+                const [a,b,c,d]=cellRange(bounds);for(let u=a;u<=b;u++)for(let v=c;v<=d;v++)for(const j of cells.get(u*G+v)||[])candidates.add(j);
+            }
+            // Keep original triangle order too, so coincident boundaries retain identical output.
+            for(const j of [...candidates].sort((a,b)=>a-b)) {
+                const {T,area,box}=triangles[j];
+                if(bounds[2]<box[0]||bounds[0]>box[2]||bounds[3]<box[1]||bounds[1]>box[3])continue;
                 let lo=0,hi=1;
                 for(let k=0;k<3;k++) { const u=cross(T[k],T[(k+1)%3],A)/area, v=cross(T[k],T[(k+1)%3],B)/area, d=v-u;
                     if(Math.abs(d)<1e-12) {if(u< -1e-9){hi=-1;break;}} else if(d>0)lo=Math.max(lo,-u/d);else hi=Math.min(hi,-u/d); }
@@ -4714,6 +4838,10 @@
         $('hbSum').textContent = [p ? p.n : 'Your own size', on.length ? on.join(' · ') : 'no requirements'].concat(!S.lite && S.mat !== 'auto' ? [MATNAME[S.mat] || S.mat] : []).join(' · ');
         $('ptypes').innerHTML = PTYPES.map(t => `<button type="button" class="ptype" data-ptype="${t.id}" aria-pressed="${ptype === t.id}"><b>${esc(t.n)}</b><small>${esc(t.d)} · ${t.L} × ${t.W} × ${t.H} m${t.env ? ' · shaped space' : ''}</small></button>`).join('');
         $('preqs').innerHTML = PREQS.map(q => `<button type="button" class="preq" data-preq="${q.k}" aria-pressed="${!!S.req[q.k]}" aria-describedby="pd-${q.k}">${esc(q.n)}<span class="tip" role="tooltip" id="pd-${q.k}">${esc(q.desc)}</span></button>`).join('');
+        if (screenPending || screenError) {
+            $('fitCount').textContent = screenError ? 'Calculation unavailable' : 'Checking systems…';
+            $('prelax').textContent = ''; return;
+        }
         const all = resAll(), nOk = all.filter(r => !projFails(r).length).length, env = envGeom();
         $('fitCount').textContent = `${nOk} of ${all.length} fit`;
         const relax = PREQS.filter(q => S.req[q.k]).concat(S.lite || S.mat === 'auto' ? [] : [{ k: 'material', relax: 'take any material (auto)' }]).map(q => {
@@ -4777,6 +4905,10 @@
     }
     // straight-edged hypars (Engel pp.257–265) as a group of their own in the shell type: fitted to the hall first, then the
     // reference compositions, each in page order
+    function hyparLibrary(ref) {
+        const list = ref.map(([name, id]) => [name.replace(/ \(reference\)$/, ''), id]);
+        return `<div class="vsub">Hypar compositions · reference only, pp.260–263</div>` + figsOf(list);
+    }
     const HYPAR_FIT = ['hyparT', 'hp_sq4', 'hp_umb', 'hp_butt', 'hp_conoid'];
     const isHyparRef = id => /^hpr_/.test(id);
     const pageNum = id => { const v = PAGE[id], p = v && typeof v === 'object' ? Object.values(v)[0] : v; return p ? +p.match(/\d+/)[0] : 999; };
@@ -4788,7 +4920,7 @@
             const hyp = list.filter(([, id]) => id && (HYPAR_FIT.includes(id) || isHyparRef(id))), rest = list.filter(x => !hyp.includes(x)), byPage = (a, b) => pageNum(a[1]) - pageNum(b[1]);
             const fit = hyp.filter(([, id]) => !isHyparRef(id)).sort(byPage), ref = hyp.filter(([, id]) => isHyparRef(id)).sort(byPage);
             return figsOf(rest) + `<div class="vsub">Straight-edged hypars · Engel pp.257–265</div>` + figsOf(fit)
-                + (ref.length ? `<div class="vsub">Hypar compositions · reference only, pp.260–263</div>` + figsOf(ref) : '');
+                + (ref.length ? hyparLibrary(ref) : '');
         }
         return figsOf(list);
     }
@@ -5025,22 +5157,64 @@
         { t: 'Why', tip: '', f: r => { const tn = !S.lite && timberNote(r), cn = !S.lite && coverNote(r); return `<div class="why">${esc(r.notes[0])}</div>` + (tn ? `<div class="why tim"><b>Timber:</b> ${esc(tn.t)}<small title="${esc(tn.src)}">Sources: ${esc(tn.src)}</small></div>` : '') + (cn ? `<div class="why tim"><b>Covering:</b> ${esc(cn.t)}<small title="${esc(cn.src)}">Sources: ${esc(cn.src)}</small></div>` : ''); } }
     ];
 
-    // results are built on demand and kept until the hall or the load changes: what is on screen first,
-    // the rest in short slices of idle time (the ranking needs them all and is drawn when they are done)
-    let resKey = '', EV = new Map(), restJob = 0;
+    // Screening runs separately from drawing, so a complex drawing cannot delay a
+    // new space. Only small summaries cross the worker boundary. Full geometry is
+    // evaluated lazily for Compare and the enlarged view.
+    let resKey = '', EV = new Map(), MODELS = new Map(), restJob = 0;
+    let screeningWorker = null, screenPending = false, screenError = '';
     function compute() {
         PR = projector();
         const k = JSON.stringify([S.L, S.W, S.H, S.mat, S.finish, JSON.stringify(S.tm), S.q, S.env && S.env.kind]);
         if (k === resKey) return;
         suggestionNotice = '';
-        resKey = k; EV = new Map(); RES = []; clearTimeout(restJob); DRAW.clear(); asked.clear(); CEIL.clear(); askedC.clear(); drawJob++;
-        let i = 0; const key = k;
-        const step = () => { if (key !== resKey) return; const t0 = performance.now(); while (i < SYS.length && performance.now() - t0 < 8) byId(SYS[i++].id);
-            if (i < SYS.length) restJob = setTimeout(step, 0); else { resAll(); drawRank(); } };
-        restJob = setTimeout(step, 40);
+        resKey = k; EV = new Map(); MODELS = new Map(); RES = []; clearTimeout(restJob);
+        if (screeningWorker) { screeningWorker.terminate(); screeningWorker = null; }
+        DRAW.clear(); asked.clear(); CEIL.clear(); askedC.clear(); drawJob++;
+        screenPending = true; screenError = ''; afterCeil = null;
+        const job = drawJob, state = { ...S };
+        const finish = results => {
+            if (job !== drawJob) return;
+            EV = new Map(results.map(r => [r.id, { ...r, sys: SYS.find(s_ => s_.id === r.id) }]));
+            RES = SYS.map(s_ => EV.get(s_.id)); screenPending = false; render();
+        };
+        const fail = err => { if (job !== drawJob) return; screenPending = false; screenError = String(err); render(); };
+        // Workers unavailable: yield between small batches, never force resAll() to
+        // construct everything synchronously. Also used after a worker startup error.
+        const fallback = () => {
+            if (job !== drawJob) return;
+            if (screeningWorker) { screeningWorker.terminate(); screeningWorker = null; }
+            let i = 0; const results = [];
+            const step = () => {
+                if (job !== drawJob) return;
+                try {
+                    const t0 = performance.now();
+                    do { results.push(screeningSummary(evaluate(SYS[i++]))); } while (i < SYS.length && performance.now() - t0 < 8);
+                    if (i < SYS.length) restJob = setTimeout(step, 0); else finish(results);
+                } catch (err) { fail(err); }
+            };
+            restJob = setTimeout(step, 0);
+        };
+        let url;
+        try {
+            url = URL.createObjectURL(new Blob([document.getElementById('engine').textContent, '\n(', screeningWorkerMain.toString(), ')();'], { type: 'text/javascript' }));
+            const w = screeningWorker = new Worker(url);
+            w.onmessage = e => {
+                if (job !== drawJob || e.data.job !== job) return;
+                w.terminate(); screeningWorker = null;
+                if (e.data.error) fail(e.data.error); else finish(e.data.results);
+            };
+            w.onerror = fallback; w.onmessageerror = fallback;
+            w.postMessage({ job, s: state });
+        } catch (_) { fallback(); }
+        finally { if (url) URL.revokeObjectURL(url); }
     }
-    function resAll() { if (RES.length !== SYS.length) RES = SYS.map(s_ => byId(s_.id)); return RES; }
-    const byId = id => { let r = EV.get(id); if (!r) { const sys = SYS.find(s_ => s_.id === id); if (!sys) return undefined; r = evaluate(sys); EV.set(id, r); } return r; };
+    function resAll() { return RES; }
+    const byId = id => EV.get(id);
+    const modelById = id => {
+        if (!EV.has(id)) return undefined;
+        if (!MODELS.has(id)) MODELS.set(id, evaluate(EV.get(id).sys));
+        return MODELS.get(id);
+    };
     const matOk = r => materialMatches(r.sys);
     // F: axonometric drawings are made in a background worker built from the engine script itself — it evaluates, projects,
     // orders and writes the paths, and sends back only text; the page places it. Without workers everything is drawn here.
@@ -5054,7 +5228,7 @@
         w.onmessage = e => drawArrived(e.data); w.onerror = () => {}; return w; } catch (_) { return null; } })();
     function wantDraw(ids) {
         const need = ids.filter(id => !DRAW.has(id) && !asked.has(id)); if (!need.length) return;
-        if (!worker) { for (const id of need) { const r = byId(id); DRAW.set(id, { body: axoBody(r.P3), box: bounds3([r.P3]) }); } return; }
+        if (!worker) { for (const id of need) { const r = modelById(id); DRAW.set(id, { body: axoBody(r.P3), box: bounds3([r.P3]) }); } return; }
         need.forEach(id => asked.add(id)); worker.postMessage({ job: drawJob, s: Object.assign({}, S), ids: need });
     }
     const unionBox = ids => { const b = ids.map(id => DRAW.get(id).box); return { x0: Math.min(...b.map(q => q.x0)), x1: Math.max(...b.map(q => q.x1)), y0: Math.min(...b.map(q => q.y0)), y1: Math.max(...b.map(q => q.y1)) }; };
@@ -5062,13 +5236,13 @@
     const CEIL = new Map(), askedC = new Set(), CEILM = ['calm', 'busy']; let afterCeil = null, ceilFrame = 0;
     function wantCeil(ids) {
         const need = ids.filter(id => !CEIL.has(id) && !askedC.has(id)); if (!need.length) return;
-        if (!worker) { for (const id of need) CEIL.set(id, ceilingStats(byId(id))); return; }
+        if (!worker) { for (const id of need) CEIL.set(id, ceilingStats(modelById(id))); return; }
         need.forEach(id => askedC.add(id)); worker.postMessage({ job: drawJob, s: Object.assign({}, S), ids: need, what: 'ceil' });
     }
     const ceilOf = r => { const c = CEIL.get(r.sys.id); if (!c) wantCeil([r.sys.id]); return c; };
     const allCeil = () => SYS.every(s_ => CEIL.has(s_.id));
     function ceilArrived(m) {
-        CEIL.set(m.id, m.ceil || ceilingStats(byId(m.id)));
+        CEIL.set(m.id, m.ceil || ceilingStats(modelById(m.id)));
         if (!ceilFrame) ceilFrame = setTimeout(() => { ceilFrame = 0;   // batched; a timer, not a frame, so it also runs in a hidden tab
             if (!folded.cmp && document.querySelector('#grid .cwait')) render(true);
             if (allCeil()) { if (needCeil()) drawRank(); if (afterCeil) { const f = afterCeil; afterCeil = null; f(); } } }, 30);
@@ -5076,7 +5250,7 @@
     function drawArrived(m) {
         if (m.job !== drawJob) return;
         if (m.ceil || m.what === 'ceil') return ceilArrived(m);
-        if (m.err) { const r = byId(m.id); m = { id: m.id, body: axoBody(r.P3), box: bounds3([r.P3]) }; }   // fall back to drawing it here
+        if (m.err) { const r = modelById(m.id); m = { id: m.id, body: axoBody(r.P3), box: bounds3([r.P3]) }; }   // fall back to drawing it here
         DRAW.set(m.id, { body: m.body, box: m.box });
         document.querySelectorAll(`[data-draw="${m.id}"]`).forEach(el => { el.innerHTML = axoFrame(m.body, m.box); el.removeAttribute('data-draw'); });
         // the compared drawings share one scale, so they are placed together once all of them are here
@@ -5090,8 +5264,20 @@
     }
 
     function render(light = false) {   // light: while turning, only the compared drawings and the enlarged view are redrawn
-        syncFinish(); compute(); syncInputs(); if (!light) refitSlots();
-        const sel = slots.map(byId), more = sel.length < 5;
+        syncFinish(); compute(); syncInputs();
+        $('suggest').disabled = screenPending || !!screenError;
+        for (const id of ['types', 'grid']) $(id).setAttribute('aria-busy', String(screenPending));
+        if (screenPending || screenError) {
+            drawProject(); thumbIO.disconnect();
+            const message = screenError ? 'Could not check this space. Change a dimension to retry.' : 'Checking systems for your space…';
+            $('types').innerHTML = $('grid').innerHTML = `<div class="cmp-empty" role="status">${message}</div>`;
+            $('cmpPick').innerHTML = ''; $('cmpNote').textContent = '';
+            if (modalId) { for (const id of ['mBig','mEye','mSec','mSecB','mSecInfo','mSecBInfo','mPlan','mPlanInfo','mNotes','mVar','mStatus']) $(id).textContent = ''; $('mStatus').textContent = message; }
+            if (screenError) console.error('Space screening:', screenError);
+            return;
+        }
+        if (!light) refitSlots();
+        const sel = slots.map(modelById), more = sel.length < 5;
         const g = $('grid'); g.style.setProperty('--n', sel.length + (more ? 1 : 0));
         const pad = more ? '<div></div>' : '';
         // the column head names the Engel type, then the variant; ‹ › below the drawing change the variant within the type
@@ -5134,7 +5320,7 @@
     }
 
     // E: a card or variant drawing is made when it comes near the screen
-    const thumbIO = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { thumbIO.unobserve(e.target); const id = e.target.dataset.lazy, d = DRAW.get(id); if (d) e.target.innerHTML = axoFrame(d.body, d.box); else { e.target.dataset.draw = id; wantDraw([id]); } } }, { rootMargin: '300px' });
+    const thumbIO = new IntersectionObserver(es => { if (screenPending || screenError) return; for (const e of es) if (e.isIntersecting) { thumbIO.unobserve(e.target); const id = e.target.dataset.lazy, d = DRAW.get(id); if (d) e.target.innerHTML = axoFrame(d.body, d.box); else { e.target.dataset.draw = id; wantDraw([id]); } } }, { rootMargin: '300px' });
     function syncInputs() {
         for (const k in FIELDS) {
             if (document.activeElement !== $(k)) $(k).value = S[k];
@@ -5189,6 +5375,7 @@
 
     // the five at the top of the current ranking, skipping systems outside Engel's range
     function suggest() {
+        if (typeof screenPending !== 'undefined' && (screenPending || screenError)) return;
         if (needCeil() && !allCeil()) { afterCeil = suggest; wantCeil(SYS.map(s_ => s_.id)); $('suggest').textContent = 'Measuring ceilings…'; return; }
         setFold('cmp', false);   // show what was suggested
         const fitsSpace = typeof projFails === 'function' ? r => !projFails(r).length : () => true;   // your space's requirements too
@@ -5206,14 +5393,16 @@
     }
 
     function drawModal() {
-        const r = byId(modalId);
+        const r = modelById(modalId);
         $('mName').textContent = r.sys.name;
         $('mSub').textContent = r.sys.ref ? `Engel reference: ${codeLabel(r.sys)}${pageLabel(r.sys)} · reference only — the author’s drawing of Engel’s spatial form, not fitted to the hall` : `Engel reference: ${codeLabel(r.sys)}${pageLabel(r.sys)} · parametric adaptation · ${FAM[r.sys.fam]} · ${materialLabel(r.sys, r.m)}`;
         drawBig(); drawEye();
         $('mSec').innerHTML = cutSVG(r, 'A');
+        for(const [axis,id] of [['A','mSecInfo'],['B','mSecBInfo']]) { const loc=sectionLocation(r,axis); $(id).textContent=`${loc.label} · ${axis==='A'?'Y':'X'} = ${f1(loc.plane)} m`; }
         $('mSecB').innerHTML = cutSVG(r, 'B');
         $('mStatus').innerHTML = `<p class="eligibility ${eligible(r) ? '' : 'fail'}">${eligible(r) ? (S.lite ? 'Matches support and reference-span screening checks' : 'Matches support, material and reference-span screening checks') : esc(exclusionReasons(r).join('; '))}</p><span class="st ${r.st}">${CHIP[r.st]}</span> · zone ${f2(r.zone)} m · total ${f2(r.top)} m · ${r.cols ? r.cols + ' columns' : 'no columns'}${S.lite ? '' : ` · q ${qTxt(r)} kN/m²`}`;
         $('mPlan').innerHTML = planSVG(r);
+        $('mPlanInfo').textContent=r.sys.ref?'● ground contact · ○ elevated support position; support detail not modeled.':'';
         $('mStatus').insertAdjacentHTML('beforeend', hallRead(r));
         const tn = timberNote(r), cn = coverNote(r);
         if (S.lite) { $('mNotes').innerHTML = liteNotes(r); $('mVar').innerHTML = MODES[r.sys.id] ? modeVariants(r.sys.id) : ''; return; }
@@ -5265,7 +5454,7 @@
         const stat = /kN|kNm|N\/mm|from statics|middle third|resultant|Heyman|qL|q·|\bH = |\bT = |EN 1995|estimate/i;
         return envNote(r) + `<li><b>How the load travels:</b> ${esc(loadStory(r))}</li>`
             + r.notes.filter(n => !stat.test(n)).map(n => `<li>${esc(n)}</li>`).join('')
-            + `<li><b>Span basis:</b> ${esc(liteSpan(r))}</li><li><b>Reading:</b> Lite — Engel’s mechanism, form and space; estimated loads, forces and sizes are in Full.</li>`;
+            + `<li><b>Span basis:</b> ${esc(liteSpan(r))}</li>`;
     }
     // the load path in one paragraph, for students: the members the load passes through, then what happens sideways
     function loadStory(r) {
@@ -5422,7 +5611,7 @@
     // ---- enlarged view ----
     let mdrag = null, bigFrame = 0;
     const MV = { rot: AXO.rot, elev: AXO.elev };   // the enlarged view's own angle
-    function openModal(id) { track('enlarge', id); modalId = id; MV.rot = axoRot(); MV.elev = AXO.elev; bigFit = null; EYE.yaw = eyeYaw0(); EYE.pitch = EYE0.pitch; $('modal').classList.add('show'); drawModal(); }
+    function openModal(id) { if (screenPending || screenError) return; focusSections(false); track('enlarge', id); modalId = id; MV.rot = axoRot(); MV.elev = AXO.elev; bigFit = null; EYE.yaw = eyeYaw0(); EYE.pitch = EYE0.pitch; $('modal').classList.add('show'); drawModal(); }
     // the view from inside: standing still at eye height a quarter of the way along the hall, looking down its length and a little up;
     // dragging only turns the head (the scene follows the hand), 90° across the width of the view
     const EYE0 = { yaw: 0, pitch: 20 * Math.PI / 180 }, EYE = { ...EYE0 }; let edrag = null, eyeFrame = 0;
@@ -5434,7 +5623,8 @@
         const beyond = (o, [k, v, s_]) => o.pts.every(p => s_ * (p[k] - v) >= -t) && o.pts.some(p => s_ * (p[k] - v) > t);
         return sc.filter(o => !sides.some(sd => beyond(o, P[sd]))); };
     function drawEye() {
-        const r = byId(modalId); if (!r) return;
+        if (screenPending || screenError) return;
+        const r = modelById(modalId); if (!r) return;
         const el = $('mEye'), a = (el.clientHeight || 300) / (el.clientWidth || 480);
         const sc = r._sc || (r._sc = scene3D(r)), cam = { ...eyeAt(r, sc), yaw: EYE.yaw, pitch: EYE.pitch, ay: a };
         const P = eyeScene(r._scIn || (r._scIn = inside(r, sc).filter(o => o.c !== 'hatch')), cam);
@@ -5463,7 +5653,8 @@
     // follows the model's centre — so turning never rescales it
     let bigFit = null;
     function drawBig(refit = false) {
-        const r = byId(modalId); if (!r) return;
+        if (screenPending || screenError) return;
+        const r = modelById(modalId); if (!r) return;
         const pr = projector(MV.rot, MV.elev), P3 = projectScene(r._sc || (r._sc = scene3D(r)), pr);
         if (!r._c) { const P = P3.length ? scene3D(r).flatMap(o => o.pts) : [[0, 0, 0]]; const lo = [0, 1, 2].map(k => Math.min(...P.map(p => p[k]))), hi = [0, 1, 2].map(k => Math.max(...P.map(p => p[k]))); r._c = lo.map((v, k) => (v + hi[k]) / 2); }
         const pc = pr(r._c);
@@ -5472,6 +5663,8 @@
         $('mBig').innerHTML = axoFrame(axoBody(P3, !!mdrag), { x0: cx - bigFit.w / 2, x1: cx + bigFit.w / 2, y0: cy - bigFit.h / 2, y1: cy + bigFit.h / 2 }, forceMarks(r, pr, Math.max(bigFit.w, bigFit.h)));
     }
     // closing the enlarged view always brings the drawings back to the standard axonometric angle
+    const focusSections = on => { $('modal').classList.toggle('sections-focus',on); $('mSections').setAttribute('aria-pressed',String(on)); $('mSections').textContent=on?'all views':'expand sections'; };
+    $('mSections').addEventListener('click',()=>focusSections(!$('modal').classList.contains('sections-focus')));
     const closeModal = () => { if (!$('modal').classList.contains('show')) return; modalId = null; $('modal').classList.remove('show'); mdrag = null; };
     $('mClose').addEventListener('click', closeModal);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
