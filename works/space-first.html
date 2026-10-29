@@ -218,16 +218,16 @@
     body.page-space-first .workspace-main .workspace-count { border:0; padding:0; font-size:10.5px; font-weight:400; color:#666; }
     body.page-space-first .workspace-main .thead, body.page-space-first .workspace-main .lead { margin:0 0 12px; }
     body.page-space-first .workspace-main .thead>span, body.page-space-first .workspace-main .fopen { font-size:10.5px; line-height:1.45; color:#666; }
-    body.page-space-first .modesw button, body.page-space-first #views button, body.page-space-first #treeView button, body.page-space-first #hbTog, body.page-space-first .vnav .step,
+    body.page-space-first .modesw button, body.page-space-first #views button, body.page-space-first #hbTog, body.page-space-first #treeTog, body.page-space-first .vnav .step,
     body.page-space-first .cpick .btn, body.page-space-first .slot-h .x {
         font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; border:1px solid var(--line); background:#fff; color:var(--ink);
         border-radius:0; padding:3px 9px; min-height:24px; cursor:pointer; font-family:inherit; }
     body.page-space-first .modesw { border:0; }
-    body.page-space-first .modesw button + button, body.page-space-first #views button + button, body.page-space-first #treeView button + button { border-left:0; }
-    body.page-space-first .modesw button[aria-pressed="true"], body.page-space-first #views button.on, body.page-space-first #treeView button.on, body.page-space-first .hallbar[data-open="true"] #hbTog { background:var(--ink); color:#fff; border-color:var(--ink); }
+    body.page-space-first .modesw button + button, body.page-space-first #views button + button { border-left:0; }
+    body.page-space-first .modesw button[aria-pressed="true"], body.page-space-first #views button.on, body.page-space-first .hallbar[data-open="true"] #hbTog, body.page-space-first #panel-tree[data-open="true"] #treeTog { background:var(--ink); color:#fff; border-color:var(--ink); }
     body.page-space-first .slot-h .x { align-self:flex-start; padding:1px 6px; min-height:20px; color:#666; }
-    body.page-space-first .slot-h .x:hover, body.page-space-first .vnav .step:not(:disabled):hover, body.page-space-first #hbTog:hover { border-color:var(--ink); text-decoration:none; }
-    @media(pointer:coarse) { body.page-space-first .vnav .step, body.page-space-first #hbTog, body.page-space-first #views button { min-height:44px; min-width:44px; } }
+    body.page-space-first .slot-h .x:hover, body.page-space-first .vnav .step:not(:disabled):hover, body.page-space-first #hbTog:hover, body.page-space-first #treeTog:hover { border-color:var(--ink); text-decoration:none; }
+    @media(pointer:coarse) { body.page-space-first .vnav .step, body.page-space-first #hbTog, body.page-space-first #treeTog, body.page-space-first #views button { min-height:44px; min-width:44px; } }
 
     /* your space: one line of size and summary, the building types and requirements fold under it */
     .hallbar { margin:14px 0 24px; padding:0 0 10px; border-bottom:1px solid var(--line); }
@@ -268,7 +268,8 @@
     @media(max-width:420px) { .gtree { grid-template-columns:1fr; } .gcol + .gcol { border-left:0; border-top:1px solid var(--line); } }
 
     /* Drawings: every variant drawn under its type, two to a column */
-    #treeView { margin-left:auto; }
+    #treeTog { margin-left:auto; }
+    #panel-tree[data-open="false"] #types { display:none; }
     .tvnote { font-size:10.5px; line-height:1.45; color:#767676; margin:0 0 8px; }
     .vthumbs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; margin:5px 0 12px; }
     .vt { position:relative; margin:0; border:1px solid var(--line); background:#fff; padding:3px 4px 4px; min-width:0; }
@@ -399,7 +400,7 @@
     </div>
 
     <section class="tree fsec step" data-sec="tree" id="panel-tree">
-        <div class="thead"><h2>2. Systems to explore</h2><b class="workspace-count" id="fitCount"></b><div class="seg" id="treeView" role="group" aria-label="Show the types as"><button type="button" data-tv="types">Types</button><button type="button" data-tv="drawings">Drawings</button></div><span>Engel’s families and types (pp.44–53), read against your space. Click a type to add a Compare column with a variant that fits; click it again for another. Faint types have no variant that fits.</span></div>
+        <div class="thead"><h2>2. Systems to explore</h2><b class="workspace-count" id="fitCount"></b><button type="button" class="hb-tog" id="treeTog" aria-expanded="true" aria-controls="types">Hide ▾</button><span>Engel’s families and types (pp.44–53), every variant drawn, read against your space. Click a type name to add a variant that fits to Compare; click a drawing to enlarge it, + to add or remove that variant. Faint drawings do not fit.</span></div>
         <div id="types" class="fbody"></div>
         <p id="cmpNote" class="cmp-note" role="status" aria-live="polite"></p>
         <div id="cmpPick"></div>
@@ -437,7 +438,7 @@
         <p><b>Loads and forces:</b> roof load combines estimated self-weight and covering, services (usually 0.10 kN/m²), and the existing live-load assumptions attributed to Thai Ministerial Regulation No.6 (B.E.2527): 0.30 kN/m², or 1.0 for the concrete-roof cases in this model. These assumptions are separate from Engel and are not a check of current regulatory compliance. Individual force estimates name their statics model and sources. Wind, asymmetric loading, buckling, connection design and prestress losses are not checked. Prestressed concrete span references do not make the displayed dimensions a prestress design.</p>
         <p><b>Measurements:</b> clear-section ratio = L×H divided by the modeled enclosing section area, not usable floor area or volume. Overall footprint width is a transverse distance, not a site area. Interior support counts use modeled support locations inside 0&lt;x&lt;L and 0&lt;y&lt;W; boundary supports and continuous walls are described separately. Visible line density is projected visible structural line length per floor area, not a validated measure of visual calmness.</p>
         <p><b>Lite and Full:</b> Lite keeps Engel’s reading — mechanism, form and space, design potential: no estimated loads, force figures, roof coverings, timber products, ceiling measures or weighted scores; a material shows its span ranges but does not exclude a system; thrust is given in words, H/V being the horizontal force over the vertical load at the same support (thresholds 0.3 / 0.8 are the author’s). Full shows everything.</p>
-        <p><b>Building types and shaped spaces:</b> sizes follow Neufert, <i>Architects’ Data</i>, 4th ed., where it gives them — sports hall 27 × 45 × 7 m, the triple multi-functional hall (p.350); workshop sheds 3–6 m high, more with an overhead crane (p.265); a hangar sized for a B747-400, 64.9 m span, 70.7 m long, 19.6 m to the tail (p.423); museum at least 4 m clear (p.208); swimming pool 25 × 16.66 m with 2–4.5 m round it and at least 4.0 m clear over the water (pp.362–365); lecture theatre with 0.90 m rows and 2.30 m clear over the back rows (pp.198–201) — and are the author’s elsewhere (market hall / station concourse, exhibition hall, assembly hall); a seating bowl stops at one 30-row block (p.319): by Neufert’s sightlines more rows, or an upper tier, would rise past 45°; the starting requirements are the author’s. The requirements “daylight”, “hung loads” and “extendable” are the author’s readings of each system; “low” means a total height of at most 1.5 × the clear height. Depths of beams, frames, trusses, Vierendeel girders, steel space trusses and concrete grids follow the span/depth ratios for preliminary design of the <i>Metric Handbook</i>, 3rd ed., ch. 36 Structure — the middle of each range: beams Tables VII, XVIII, XXXVI, XLIV; frames XX, XXXIV, XLVI (single-storey frames: steel L/d 35–40, glulam 30–50, precast concrete 22–30, the knee twice the rafter); trusses XVIII, XLV, XLVIII; space frames XLV; waffle and skew grids XXXIII. Each enlarged drawing names its table and page under Depth. Where the Handbook has no row (other materials, curved and cantilever forms), the ratio is the author’s. Engel gives the forms, not depth ratios. Hybrid systems follow Engel pp.320–327: not a family of their own but two systems linked by superposition, coupling or both; all fifteen of Engel’s are modeled; their depths, sags, mast heights and spans are the author’s first estimates, as Engel gives no span chart for hybrids. Straight-edged hypars follow Engel pp.257–265: umbrellas on centre columns, units on buttresses, conoids with window strips and four hypars on four points are fitted to the hall (unit sizes, rises and edge heights are the author’s reading); the other compositions of pp.260–263 are drawn for reference only — the author’s reading of Engel’s spatial forms, sized to the hall but not fitted to it — and never enter Compare or the suggestions. Folded-plate beams (pp.53, 221): end diaphragms and edge beams h/6 deep are the author’s sizes. Linear shells follow Engel pp.242–244, “folded cylindrical surfaces”: troughs side by side, each a half-cylinder open outward, its depth half its width (the author’s reading of his drawings), folded at the knees and narrowing at the hinges; shell girders stand on end columns (p.53) or cantilever from central supports (p.244).The indoor stadium is a seating bowl round a basketball court (FIBA Venue Guide: 28 × 15 m court in a 2.0 m boundary area, at least 7.0 m free height); the theatre is a raked auditorium with a separate stage house (commonly 1.5–2.5 × the proscenium opening high; 2 × used). The rows follow Neufert, <i>Architects’ Data</i>, 4th ed.: in a sports hall up to 10 rows rise linearly by 0.28–0.32 m a row (0.30 used) and more rows rise parabolically by sightlines — eye 1.25 m, 0.15 m above the eye in front, rows 0.80–0.85 m (0.85 used; FIBA asks for at least 0.865 m), origin 0.5 m over the boundary line (p.354); in a theatre the sightlines run to the O-point at the stage edge at forestage height (0.9 m used), eye 1.10 m, 12 cm every second row with staggered seats (6 cm a row used), rows 0.90 m, and a floor steeper than 10° is stepped (pp.211–212). A step higher than 50 cm needs a guard at least 0.9 m high (p.319); the front barrier is 1.0 m (p.354). Seats come in blocks of at most 30 rows with a cross-aisle of at least 1.20 m behind and between them (p.319); the rows behind an aisle start their sightlines 1.20 m further out. The museum follows Neufert pp.207–208: at least 4 m clear, no direct daylight on the works — light from north-facing or filtered rooflights — and flexible lighting hung from the roof; 20 × 40 × 6 m is the author’s, twice the 10 m gallery Neufert shows (p.207, figs 6–7). The sections draw the seating as a stepped concrete slab (about 0.25 m, the author’s) with a few sightlines. Author assumptions: 3.0 m clear above every row, 2.0 m behind the last row; first theatre row 3.0 m from the stage edge. Each system is raised until its modeled underside clears this space (from its 3D surfaces where they are plain modules, otherwise from its section); systems whose roof can slope along the hall follow the rake instead (a shear: the least front height and rise), by the author’s reading of which forms can slope. Daylight and hung-load judgements in “Your space” are the author’s, not Engel’s.</p>
+        <p><b>Building types and shaped spaces:</b> sizes follow Neufert, <i>Architects’ Data</i>, 4th ed., where it gives them — sports hall 27 × 45 × 7 m, the triple multi-functional hall (p.350); workshop sheds 3–6 m high, more with an overhead crane (p.265); a hangar sized for a B747-400, 64.9 m span, 70.7 m long, 19.6 m to the tail (p.423); museum at least 4 m clear (p.208); swimming pool 25 × 16.66 m with 2–4.5 m round it and at least 4.0 m clear over the water (pp.362–365); lecture theatre with 0.90 m rows and 2.30 m clear over the back rows (pp.198–201) — and are the author’s elsewhere (market hall / station concourse, exhibition hall, assembly hall); a seating bowl stops at one 30-row block (p.319): by Neufert’s sightlines more rows, or an upper tier, would rise past 45°; the starting requirements are the author’s. The requirements “daylight”, “hung loads” and “extendable” are the author’s readings of each system; “low” means a total height of at most 1.5 × the clear height. Depths of beams, frames, trusses, Vierendeel girders, steel space trusses and concrete grids follow the span/depth ratios for preliminary design of the <i>Metric Handbook</i>, 3rd ed., ch. 36 Structure — the middle of each range: beams Tables VII, XVIII, XXXVI, XLIV; frames XX, XXXIV, XLVI (single-storey frames: steel L/d 35–40, glulam 30–50, precast concrete 22–30, the knee twice the rafter); trusses XVIII, XLV, XLVIII; space frames XLV; waffle and skew grids XXXIII. Each enlarged drawing names its table and page under Depth. Where the Handbook has no row (other materials, curved and cantilever forms), the ratio is the author’s. Engel gives the forms, not depth ratios. Hybrid systems follow Engel pp.320–327: not a family of their own but two systems linked by superposition, coupling or both; all fifteen of Engel’s are modeled; their depths, sags, mast heights and spans are the author’s first estimates, as Engel gives no span chart for hybrids. Straight-edged hypars follow Engel pp.257–265: umbrellas on centre columns, units on buttresses, conoids with window strips and four hypars on four points are fitted to the hall (unit sizes, rises and edge heights are the author’s reading); the other compositions of pp.260–263 are drawn for reference only — the author’s reading of Engel’s spatial forms, sized by the span L but not fitted to the hall — and never enter Compare or the suggestions. Folded-plate beams (pp.53, 221): end diaphragms and edge beams h/6 deep are the author’s sizes. Linear shells follow Engel pp.242–244, “folded cylindrical surfaces”: troughs side by side, each a half-cylinder open outward, its depth half its width (the author’s reading of his drawings), folded at the knees and narrowing at the hinges; shell girders stand on end columns (p.53) or cantilever from central supports (p.244).The indoor stadium is a seating bowl round a basketball court (FIBA Venue Guide: 28 × 15 m court in a 2.0 m boundary area, at least 7.0 m free height); the theatre is a raked auditorium with a separate stage house (commonly 1.5–2.5 × the proscenium opening high; 2 × used). The rows follow Neufert, <i>Architects’ Data</i>, 4th ed.: in a sports hall up to 10 rows rise linearly by 0.28–0.32 m a row (0.30 used) and more rows rise parabolically by sightlines — eye 1.25 m, 0.15 m above the eye in front, rows 0.80–0.85 m (0.85 used; FIBA asks for at least 0.865 m), origin 0.5 m over the boundary line (p.354); in a theatre the sightlines run to the O-point at the stage edge at forestage height (0.9 m used), eye 1.10 m, 12 cm every second row with staggered seats (6 cm a row used), rows 0.90 m, and a floor steeper than 10° is stepped (pp.211–212). A step higher than 50 cm needs a guard at least 0.9 m high (p.319); the front barrier is 1.0 m (p.354). Seats come in blocks of at most 30 rows with a cross-aisle of at least 1.20 m behind and between them (p.319); the rows behind an aisle start their sightlines 1.20 m further out. The museum follows Neufert pp.207–208: at least 4 m clear, no direct daylight on the works — light from north-facing or filtered rooflights — and flexible lighting hung from the roof; 20 × 40 × 6 m is the author’s, twice the 10 m gallery Neufert shows (p.207, figs 6–7). The sections draw the seating as a stepped concrete slab (about 0.25 m, the author’s) with a few sightlines. Author assumptions: 3.0 m clear above every row, 2.0 m behind the last row; first theatre row 3.0 m from the stage edge. Each system is raised until its modeled underside clears this space (from its 3D surfaces where they are plain modules, otherwise from its section); systems whose roof can slope along the hall follow the rake instead (a shear: the least front height and rise), by the author’s reading of which forms can slope. Daylight and hung-load judgements in “Your space” are the author’s, not Engel’s.</p>
         <p><b>Ranking:</b> only matching options enter suggestions and combined scores. Single criteria retain equal values; ties are ordered alphabetically, not by an undisclosed depth preference. Combined scores use average ranks for ties, normalized to 0–1 and weighted 50/30/20 (one criterion: 100%; two: 62.5/37.5%). Displayed score = 100×(1−weighted rank); higher is preferred. Scores are relative to the current matching set and are not engineering performance ratings.</p>
     </details>
 </div>
@@ -2840,64 +2841,64 @@
         // --- reference only: Engel's spatial compositions of hypars (pp.260–263), not fitted to a rectangular hall ---
         { id: 'hpr_2', fam: 4, name: 'Two hypars (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.260', timber: 'reference only · p.260' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 3, cx = L / 2, cy = W / 2, a = s * 0.6, g = s * 0.06;
+              const s = L, h = s / 3, cx = L / 2, cy = W / 2, a = s * 0.6, g = s * 0.06;
               const S1 = [cx, cy - a, 0], S2 = [cx, cy + a, 0], E = [cx + a, cy, h], Wv = [cx - a, cy, h], Pr = [cx + g, cy, 1.1 * h], Pl = [cx - g, cy, 1.1 * h];
               return refHall(L, H, W, { quads: [[S1, E, S2, Pr], [S2, Wv, S1, Pl]], glass: [[S1, Pr, Pl], [S2, Pl, Pr]], anchors: [[cx, cy - a, 0], [cx, cy + a, 0]],
-                  notes: ['Two hypars on two points on the ground, their inner edges rising to a glazed slot along the middle (Engel p.260).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'two points on the ground');
+                  notes: ['Two hypars on two points on the ground, their inner edges rising to a glazed slot along the middle (Engel p.260).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'two points on the ground');
           } },
         { id: 'hpr_3', fam: 4, name: 'Three hypars round a lantern (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.260', timber: 'reference only · p.260' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 3, cx = L / 2, cy = W / 2, R = s * 0.62, V = [0, 1, 2].map(i => { const t = Math.PI / 2 + i * 2 * Math.PI / 3; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
+              const s = L, h = s / 3, cx = L / 2, cy = W / 2, R = s * 0.62, V = [0, 1, 2].map(i => { const t = Math.PI / 2 + i * 2 * Math.PI / 3; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
               const K = kites(V, cx, cy, 0.8 * h, 0.15 * h, 1.3 * h, 0.22);
               return refHall(L, H, W, { quads: K.quads, glass: K.glass, posts: K.M.map(p => [p[0], p[1], 0.15 * h]),
-                  notes: ['Three hypars over a triangle, each a kite from a flaring corner to the low mid-sides and a raised lantern, glazed between them (Engel p.260).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'three low points at the mid-sides');
+                  notes: ['Three hypars over a triangle, each a kite from a flaring corner to the low mid-sides and a raised lantern, glazed between them (Engel p.260).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'three low points at the mid-sides');
           } },
         { id: 'hpr_tri', fam: 4, name: 'Three hypars over a triangle (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.261', timber: 'reference only · p.261' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 5, cx = L / 2, cy = W / 2, R = s * 0.65, V = [0, 1, 2].map(i => { const t = -Math.PI / 2 + i * 2 * Math.PI / 3; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
+              const s = L, h = s / 5, cx = L / 2, cy = W / 2, R = s * 0.65, V = [0, 1, 2].map(i => { const t = -Math.PI / 2 + i * 2 * Math.PI / 3; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
               const z0 = H, K = kites(V, cx, cy, z0 + h, z0, z0 + h);
               return refHall(L, H, W, { quads: K.quads, posts: K.M.map(p => [p[0], p[1], z0]),
-                  notes: ['Three hypars over a triangular plan: the centre and the corners high, supports at the three mid-sides (Engel p.261).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'three supports at the mid-sides');
+                  notes: ['Three hypars over a triangular plan: the centre and the corners high, supports at the three mid-sides (Engel p.261).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'three supports at the mid-sides');
           } },
         { id: 'hpr_hex', fam: 4, name: 'Six hypars over a hexagon (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.261', timber: 'reference only · p.261' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 6, cx = L / 2, cy = W / 2, R = s * 0.6, V = Array.from({ length: 6 }, (_, i) => { const t = i * Math.PI / 3; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
+              const s = L, h = s / 6, cx = L / 2, cy = W / 2, R = s * 0.6, V = Array.from({ length: 6 }, (_, i) => { const t = i * Math.PI / 3; return [cx + R * Math.cos(t), cy + R * Math.sin(t)]; });
               const K = kites(V, cx, cy, H, H + h, H + 0.8 * h);
               return refHall(L, H, W, { quads: K.quads, posts: V.map(p => [p[0], p[1], H]),
-                  notes: ['Six hypars over a hexagon, each a kite round a corner: the corners are the six low supports, the mid-sides flare up (Engel p.261).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'six supports at the corners');
+                  notes: ['Six hypars over a hexagon, each a kite round a corner: the corners are the six low supports, the mid-sides flare up (Engel p.261).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'six supports at the corners');
           } },
         { id: 'hpr_5a', fam: 4, name: 'Five hypars, a diamond in the middle (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.262', timber: 'reference only · p.262' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 5, A = s * 0.55, B = A * 0.62, cx = L / 2, cy = W / 2, xl = cx - A * 0.55, xr = cx + A * 0.55;
+              const s = L, h = s / 5, A = s * 0.55, B = A * 0.62, cx = L / 2, cy = W / 2, xl = cx - A * 0.55, xr = cx + A * 0.55;
               const p = (x, y, z) => [x, y, z], lo = H, hi = H + h, gab = H + 0.7 * h;
               const quads = [[p(cx, cy - B, lo), p(xr, cy, hi), p(cx, cy + B, lo), p(xl, cy, hi)],
                   [p(cx - A, cy - B, lo), p(cx, cy - B, lo), p(xl, cy, hi), p(cx - A, cy, gab)], [p(cx - A, cy + B, lo), p(cx, cy + B, lo), p(xl, cy, hi), p(cx - A, cy, gab)],
                   [p(cx + A, cy - B, lo), p(cx, cy - B, lo), p(xr, cy, hi), p(cx + A, cy, gab)], [p(cx + A, cy + B, lo), p(cx, cy + B, lo), p(xr, cy, hi), p(cx + A, cy, gab)]];
               return refHall(L, H, W, { quads, posts: [[cx - A, cy - B, lo], [cx + A, cy - B, lo], [cx + A, cy + B, lo], [cx - A, cy + B, lo]],
-                  notes: ['Five hypars over a rectangle: a saddle-shaped diamond in the middle, high at its ends and low at the long sides, and four hypars to the corners, where it stands (Engel p.262, top).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'four corner supports');
+                  notes: ['Five hypars over a rectangle: a saddle-shaped diamond in the middle, high at its ends and low at the long sides, and four hypars to the corners, where it stands (Engel p.262, top).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'four corner supports');
           } },
         { id: 'hpr_5b', fam: 4, name: 'Five hypars round a square (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.262', timber: 'reference only · p.262' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 4, cx = L / 2, cy = W / 2, O = sq(cx, cy, s * 0.55), I = sq(cx, cy, s * 0.25), zI = [H, H + h, H, H + h], zO = H + 0.6 * h;
+              const s = L, h = s / 4, cx = L / 2, cy = W / 2, O = sq(cx, cy, s * 0.55), I = sq(cx, cy, s * 0.25), zI = [H, H + h, H, H + h], zO = H + 0.6 * h;
               const quads = [[[I[0][0], I[0][1], zI[0]], [I[1][0], I[1][1], zI[1]], [I[2][0], I[2][1], zI[2]], [I[3][0], I[3][1], zI[3]]]];
               for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; quads.push([[O[i][0], O[i][1], zO], [O[j][0], O[j][1], zO], [I[j][0], I[j][1], zI[j]], [I[i][0], I[i][1], zI[i]]]); }
               return refHall(L, H, W, { quads, posts: [...I.filter((_, i) => i % 2 === 0).map(p => [p[0], p[1], H]), ...O.map(p => [p[0], p[1], zO])],
-                  notes: ['Five hypars: a saddle over the inner square — two corners high, two low on supports — and four around it to the outer corners (Engel p.262, middle).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'supports at two inner corners and the four outer corners');
+                  notes: ['Five hypars: a saddle over the inner square — two corners high, two low on supports — and four around it to the outer corners (Engel p.262, middle).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'supports at two inner corners and the four outer corners');
           } },
         { id: 'hpr_8', fam: 4, name: 'Eight hypars, a star (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.262', timber: 'reference only · p.262' },
           build(L, H, W, m, q) {
-              const s = Math.max(L, W), h = s / 4, cx = L / 2, cy = W / 2, r = s * 0.55, C = [cx, cy, H + h], quads = [], posts = [];
+              const s = L, h = s / 4, cx = L / 2, cy = W / 2, r = s * 0.55, C = [cx, cy, H + h], quads = [], posts = [];
               for (let k = 0; k < 4; k++) { const t = Math.PI / 4 + k * Math.PI / 2, K = [cx + r * Math.SQRT2 * Math.cos(t), cy + r * Math.SQRT2 * Math.sin(t), H + 0.75 * h], D = [cx + 0.5 * r * Math.SQRT2 * Math.cos(t), cy + 0.5 * r * Math.SQRT2 * Math.sin(t), H];
                   posts.push(D);
                   for (const d of [-1, 1]) { const tm = t + d * Math.PI / 4, M = [cx + r * Math.cos(tm), cy + r * Math.sin(tm), H + 0.5 * h]; quads.push([C, M, K, D]); } }
               return refHall(L, H, W, { quads, posts,
-                  notes: ['Eight hypars over a square, two to each quarter: a high centre, valleys down the diagonals to four supports, the corners flaring up again (Engel p.262, bottom).', 'Reference only: the author’s reading of Engel’s drawing, sized to the hall; not fitted to it.'] }, 'four supports on the diagonals');
+                  notes: ['Eight hypars over a square, two to each quarter: a high centre, valleys down the diagonals to four supports, the corners flaring up again (Engel p.262, bottom).', 'Reference only: the author’s reading of Engel’s drawing, sized by the span L; not fitted to the hall.'] }, 'four supports on the diagonals');
           } },
         { id: 'hpr_16', fam: 4, name: 'Sixteen hypars round a lantern (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.263', timber: 'reference only · p.263' },
           build(L, H, W, m, q) {
               // heights read off Engel's elevation (p.263, top) as fractions of the plan side s: apex 0.62, inner corners 0.52, outer rim
               // 0.14, the four supports at the inner mid-sides 0.07
-              const s = Math.max(L, W), cx = L / 2, cy = W / 2, O = sq(cx, cy, s / 2), I = sq(cx, cy, s * 0.27), quads = [], posts = [];
+              const s = L, cx = L / 2, cy = W / 2, O = sq(cx, cy, s / 2), I = sq(cx, cy, s * 0.27), quads = [], posts = [];
               const zA = 0.62 * s, zI = 0.52 * s, zR = 0.14 * s, zS = 0.07 * s, C = [cx, cy, zA];
               const mid = (P, i, z) => { const a = P[i], b = P[(i + 1) % 4]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z]; };
               for (let i = 0; i < 4; i++) { const j = (i + 1) % 4, Mi = mid(I, i, zS), Mo = mid(O, i, zR), Ii = [...I[i], zI], Ij = [...I[j], zI], Oi = [...O[i], zR], Oj = [...O[j], zR];
@@ -2905,18 +2906,18 @@
                   quads.push([C, Ii, Mi, [(cx + Mi[0]) / 2, (cy + Mi[1]) / 2, (zA + zS) / 2 + 0.1 * s]], [C, [(cx + Mi[0]) / 2, (cy + Mi[1]) / 2, (zA + zS) / 2 + 0.1 * s], Mi, Ij]);
                   quads.push([Ii, Mi, Mo, Oi], [Mi, Ij, Oj, Mo]); }
               return refHall(L, H, W, { quads, posts,
-                  notes: ['Sixteen hypars: eight rising steeply to a tall lantern over the middle, eight in a ring falling to a low outer rim; four supports at the inner mid-sides (Engel p.263, top).', 'Reference only: heights read off Engel’s elevation, sized to the hall; not fitted to it.'] }, 'four supports round the lantern');
+                  notes: ['Sixteen hypars: eight rising steeply to a tall lantern over the middle, eight in a ring falling to a low outer rim; four supports at the inner mid-sides (Engel p.263, top).', 'Reference only: heights read off Engel’s elevation, sized by the span L; not fitted to the hall.'] }, 'four supports round the lantern');
           } },
         { id: 'hpr_12', fam: 4, name: 'Twelve hypars round a bowl (reference)', ref: true, mats: MAT4, spans: SP4.shell4, roofType: 'shell', rule: { concrete: 'reference only · p.263', timber: 'reference only · p.263' },
           build(L, H, W, m, q) {
               // heights read off Engel's elevation (p.263, bottom), fractions of s: the outer rim level at 0.24, inner corners 0.17, the
               // supports at the inner mid-sides 0.05, the bowl's centre 0.03 on a central support
-              const s = Math.max(L, W), cx = L / 2, cy = W / 2, O = sq(cx, cy, s / 2), I = sq(cx, cy, s * 0.27), quads = [], zR = 0.24 * s, zI = 0.17 * s, zS = 0.05 * s, zC = 0.03 * s, posts = [[cx, cy, zC]];
+              const s = L, cx = L / 2, cy = W / 2, O = sq(cx, cy, s / 2), I = sq(cx, cy, s * 0.27), quads = [], zR = 0.24 * s, zI = 0.17 * s, zS = 0.05 * s, zC = 0.03 * s, posts = [[cx, cy, zC]];
               const K = kites(I, cx, cy, zI, zS, zC); quads.push(...K.quads);
               for (let i = 0; i < 4; i++) { const j = (i + 1) % 4, Mi = [...K.M[i], zS], Mo = [(O[i][0] + O[j][0]) / 2, (O[i][1] + O[j][1]) / 2, zR], Ii = [...I[i], zI], Ij = [...I[j], zI], Oi = [...O[i], zR], Oj = [...O[j], zR];
                   posts.push(Mi); quads.push([Ii, Mi, Mo, Oi], [Mi, Ij, Oj, Mo]); }
               return refHall(L, H, W, { quads, posts,
-                  notes: ['Twelve hypars: four dipping to a bowl over a central support, eight in a ring rising to a level outer rim; supports also at the inner mid-sides (Engel p.263, bottom).', 'Reference only: heights read off Engel’s elevation, sized to the hall; not fitted to it.'] }, 'a central support and four round it');
+                  notes: ['Twelve hypars: four dipping to a bowl over a central support, eight in a ring rising to a level outer rim; supports also at the inner mid-sides (Engel p.263, bottom).', 'Reference only: heights read off Engel’s elevation, sized by the span L; not fitted to the hall.'] }, 'a central support and four round it');
           } }
     ];
     for (const s of FAM4) SYS.push(Object.assign({ code: /^hpr?_/.test(s.id) ? '4.3.3.3' : '' }, s));
@@ -4909,7 +4910,7 @@
             + `${hy ? '' : `<span class="code">${t}</span>`}<span class="nm">${esc(typeName(t))}</span><small>${esc(note)}</small></button>`;
     }
     // the tree as names (Types) or with every variant drawn (Drawings), remembered on this device
-    let treeView = 'types'; try { treeView = localStorage.getItem('space-first-tree') || 'types'; } catch (_) {}
+
     // a type's variants in Engel's order with their names: modeled ones drawn, the rest as dashed frames
     function typeList(t) {
         if (HYB[t]) return HYB[t][2].map(([v, id]) => [id && byId(id) ? sysName(id) : v, id && byId(id) ? id : null]);
@@ -4945,15 +4946,14 @@
             const ok = fitsHall(id), on = slots.includes(id), zoom = ok || byId(id).sys.ref;   // a reference form can be enlarged, not compared
             return `<figure class="vt ${ok ? '' : 'off'} ${on ? 'in' : ''}"><div class="vd" data-lazy="${id}" ${zoom ? `data-zoom="${id}" role="button" tabindex="0" aria-label="Enlarge ${esc(name)}"` : ''}></div>`
                 + `<figcaption>${esc(name)}${ok ? '' : `<small>${esc(projFails(byId(id)).map(k => FAILTXT[k]).join(' · '))}</small>`}</figcaption>`
-                + (ok ? `<button type="button" class="vadd" data-pick="${id}" aria-pressed="${on}" title="${on ? 'In Compare' : 'Put this variant in Compare'}">${on ? '✓' : '+'}</button>` : '') + '</figure>';
+                + (ok ? `<button type="button" class="vadd" data-pick="${id}" aria-pressed="${on}" title="${on ? 'In Compare — click to take it out' : 'Put this variant in Compare'}">${on ? '✓' : '+'}</button>` : '') + '</figure>';
         }).join('');
         return `<div class="vthumbs">${figs}</div>`;
     }
     function drawTree() {
         resAll();
-        const dw = treeView === 'drawings', block = t => typeButton(t) + (dw ? typeDrawings(t) : '');
-        document.querySelectorAll('#treeView button').forEach(b => b.classList.toggle('on', b.dataset.tv === treeView));
-        let h = `${dw ? '<p class="tvnote">Every variant Engel lists, in his order; each drawing at its own scale. Click a drawing to enlarge it, + to add that variant as a Compare column (several of one type can stand side by side).</p>' : ''}<div class="gtree ${dw ? 'drawings' : ''}">`;
+        const dw = true, block = t => typeButton(t) + typeDrawings(t);
+        let h = `${dw ? '<p class="tvnote" hidden>Every variant Engel lists, in his order; each drawing at its own scale. Click a drawing to enlarge it, + to add that variant as a Compare column (several of one type can stand side by side).</p>' : ''}<div class="gtree ${dw ? 'drawings' : ''}">`;
         for (const f of [1, 2, 3, 4]) h += `<div class="gcol"><div class="gfam"><span class="code">${f}</span>${FAMILY[f]}<small>${esc(FAMSUB[f] || '')}</small></div>${Object.keys(TREE).filter(t => t[0] === String(f)).map(block).join('')}</div>`;
         h += '</div>';
         const list = Object.keys(HYB).map(k => `<li><b>${HYB[k][0]}</b> — ${esc(HYB[k][1])}: ${HYB[k][2].map(([v, id]) => id ? `<u>${esc(v)}</u>` : esc(v)).join(' · ')}</li>`).join('');
@@ -4966,7 +4966,7 @@
     // a drawn variant into Compare as a column of its own, so variants of one type can stand side by side (or the replace prompt)
     function pickVariant(id) {
         const r = byId(id); if (!r) return; cmpPick = null;
-        if (slots.includes(id)) { cmpNote = `${sysName(id)} is in Compare.`; return; }
+        if (slots.includes(id)) { slots = slots.filter(x => x !== id); cmpNote = `Took ${sysName(id)} out of Compare.`; return; }
         if (slots.length >= 5) { cmpPick = id; cmpNote = ''; return; }
         slots.push(id); cmpNote = `Added ${sysName(id)}.`;
     }
@@ -5031,7 +5031,7 @@
     const spaceNow = () => ({ type: ptype || 'own', L: S.L, W: S.W, H: S.H, req: PREQS.filter(q => S.req[q.k]).map(q => q.k).join(' ') });
     let spaceJob = 0;
     const trackSpace = (wait = 0) => { clearTimeout(spaceJob); spaceJob = setTimeout(() => track('space', spaceNow()), wait); };
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') track('leave', { seconds: Math.round((Date.now() - T0) / 1000), compare: slots.join(' '), view: S.view, tree: treeView }); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') track('leave', { seconds: Math.round((Date.now() - T0) / 1000), compare: slots.join(' '), view: S.view, tree: $('panel-tree').dataset.open === 'false' ? 'hidden' : 'drawings' }); });
     // your space (the bar at the top): open on a first visit, folded only with Done (choosing a building type keeps it open); remembered on this device
     const HB_KEY = 'space-first-hallbar';
     function setHallbar(open) {
@@ -5040,12 +5040,19 @@
     }
     { let v = null; try { v = localStorage.getItem(HB_KEY); } catch (_) {} setHallbar(v !== 'folded'); }
     $('hbTog').addEventListener('click', () => setHallbar($('hallbar').dataset.open !== 'true'));
+    // 2. Systems to explore folds like Your space: the drawings hide, the heading and the count stay
+    const TREE_KEY = 'space-first-tree-open';
+    function setTree(open) {
+        $('panel-tree').dataset.open = open; $('treeTog').setAttribute('aria-expanded', open); $('treeTog').textContent = open ? 'Hide ▾' : 'Show ▴';
+        try { localStorage.setItem(TREE_KEY, open ? 'open' : 'folded'); } catch (_) {}
+    }
+    { let v = null; try { v = localStorage.getItem(TREE_KEY); } catch (_) {} setTree(v !== 'folded'); }
+    $('treeTog').addEventListener('click', () => { setTree($('panel-tree').dataset.open === 'false'); track('view', 'tree ' + ($('panel-tree').dataset.open === 'false' ? 'hidden' : 'shown')); });
     document.querySelector('.workspace-main').addEventListener('click', e => {
         const t = e.target.closest('[data-ptype]'); if (t) { const p = PTYPES.find(x => x.id === t.dataset.ptype); ptype = p.id; Object.assign(S, { L: p.L, W: p.W, H: p.H, env: p.env ? { kind: p.env } : null }); S.req = { ...REQ0, ...p.req }; S.rot = axoRot(); render(); trackSpace(); return; }
         const q = e.target.closest('[data-preq]'); if (q) { S.req[q.dataset.preq] = !S.req[q.dataset.preq]; render(); trackSpace(); return; }
         const rl = e.target.closest('[data-relax]'); if (rl) { if (rl.dataset.relax === 'material') S.mat = 'auto'; else S.req[rl.dataset.relax] = false; render(); track('relax', rl.dataset.relax); trackSpace(); return; }
         if (e.target.closest('[data-go-cmp]')) { setFold('cmp'); return; }
-        const tv = e.target.closest('[data-tv]'); if (tv) { treeView = tv.dataset.tv; try { localStorage.setItem('space-first-tree', treeView); } catch (_) {} render(); track('view', 'tree ' + treeView); return; }
         const zm = e.target.closest('#types [data-zoom]'); if (zm) { openModal(zm.dataset.zoom); return; }
         const pk = e.target.closest('#types [data-pick]'); if (pk) { pickVariant(pk.dataset.pick); render(); track('variant', { pick: pk.dataset.pick, compare: slots.join(' ') }); return; }
         const ty = e.target.closest('#types [data-type]'); if (ty) { toggleType(ty.dataset.type); render(); track('type', { type: ty.dataset.type, compare: slots.join(' ') }); return; }
@@ -5706,7 +5713,7 @@
     $('mBig').addEventListener('pointerup', () => { if (mdrag) { mdrag = null; drawBig(); } });   // full drawing on release
 
     render();
-    track('open', { width: innerWidth, tree: treeView });
+    track('open', { width: innerWidth, tree: $('panel-tree').dataset.open === 'false' ? 'hidden' : 'drawings' });
 })();
 </script>
 </body>
