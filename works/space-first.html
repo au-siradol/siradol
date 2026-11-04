@@ -1308,30 +1308,61 @@
                   thrust: q * R ** 3 / (4 * f), thrustNote: 'compression in the outer ring: C = qR³/4f (radial cables, uniform load)', thrustIsRing: true,
                   notes: ['Cables run from an outer compression ring to a central tension ring; a heavy deck keeps the dish from lifting (Engel 1.1.2.1).', 'The lowest point is the centre, so it sets the clear height.'] });
           } },
-        { id: 'r_iso', fam: 1, name: 'Radial double-cable roof (bicycle wheel)', ...M(SP.cableRad, ['cable']), rule: { cable: 'Ø = hall diagonal · upper sag Ø/15, lower hog Ø/25, hub strut' },
+        { id: 'r_iso', fam: 1, name: 'Radial double-cable roof (bicycle wheel)', ...M(SP.cableRad, ['cable']), rule: { cable: 'Ø = hall diagonal · carrying sag Ø/15, stabilizing camber Ø/25 · hangers between, hub cylinder (Engel p.72)' },
           own: (m, L) => 0.06 + 0.0008 * L,
           build(L, H, W, m, q) {
-              const d = hallDisk(L, W), R = d[2], D = 2 * R, f1 = D / 15, f2 = D / 25, dd = f1 + f2 + 0.4;
-              const o = { kind: 'membrane', mods: [{ disk: d, z: (x, y) => H + dd - f1 * (1 - RHO(x, y, d)[0] ** 2), nj: 36 }], posts: ringPosts(d, H + dd),
-                  lines3: [...radial(d, s => H + f2 * (1 - s * s), 36, 'cable'), ringLine(d, H + dd), ringLine(d, H), { c: 'post', pts: [[d[0], d[1], H + f2], [d[0], d[1], H + dd - f1]] }],
-                  sec: diam(d, s => H + dd - f1 * (1 - s * s)), extra2d: [line(diam(d, s => H + f2 * (1 - s * s)), 'cable'), line([[d[0], H + f2], [d[0], H + dd - f1]], 'member'), line([[d[0] - R, H], [d[0] - R, H + dd]], 'member'), line([[d[0] + R, H], [d[0] + R, H + dd]], 'member')] };
+              // p.72: radial cable pairs in vertical planes, joined by vertical hangers, meeting a hub cylinder. Below (lower drawing):
+              // two rings, the carrying cable sags from the upper one, the stabilizing cable cambers up from the lower one.
+              // Above (upper drawing): one ring, the carrying cable sags below it, the stabilizing cable cambers above it.
+              const d = hallDisk(L, W), R = d[2], D = 2 * R, f1 = D / 15, f2 = D / 25, N = 24, s0 = Math.max(0.6, D / 40) / R, above = modeOf('r_iso', 'below') === 'above';
+              const Hr = H + f1 + 0.3, dd = f1 + f2 + 0.4;
+              const upZ = above ? (s => Hr + f2 * (1 - s * s)) : (s => H + dd - f1 * (1 - s * s)), loZ = above ? (s => Hr - f1 * (1 - s * s)) : (s => H + f2 * (1 - s * s));
+              const rings = above ? [Hr] : [H + dd, H], top = rings[0], P = (s, a, z) => [d[0] + R * s * Math.cos(a), d[1] + R * s * Math.sin(a), z];
+              const lines3 = [];
+              for (let k = 0; k < N; k++) { const a = 2 * Math.PI * k / N, ss = Array.from({ length: 17 }, (_, i) => s0 + (1 - s0) * i / 16);
+                  lines3.push({ c: 'cable', pts: ss.map(s => P(s, a, upZ(s))) }, { c: 'cable', pts: ss.map(s => P(s, a, loZ(s))) });
+                  for (let i = 1; i <= 7; i++) { const s = s0 + (1 - s0) * i / 8; lines3.push({ c: 'thin', pts: [P(s, a, upZ(s)), P(s, a, loZ(s))] }); } }
+              const hub = [d[0], d[1], R * s0];
+              lines3.push(...rings.map(z => ringLine(d, z)), ringLine(hub, upZ(s0)), ringLine(hub, loZ(s0)));
+              for (let k = 0; k < 8; k++) { const a = Math.PI * k / 4; lines3.push({ c: 'member', pts: [P(s0, a, upZ(s0)), P(s0, a, loZ(s0))] }); }
+              const o = { kind: 'none', mods: [{ disk: d, z: (x, y) => loZ(RHO(x, y, d)[0]), ni: 1, nj: 8 }], posts: ringPosts(d, top), lines3,
+                  sec: diam(d, upZ), secParts: [line(diam(d, loZ), 'cable'), line([[d[0] - R, 0], [d[0] - R, top]], 'member'), line([[d[0] + R, 0], [d[0] + R, top]], 'member'),
+                      line([[d[0] - R * s0, loZ(s0)], [d[0] - R * s0, upZ(s0)]], 'member'), line([[d[0] + R * s0, loZ(s0)], [d[0] + R * s0, upZ(s0)]], 'member')] };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: dd, spanUsed: D, cols: o.posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the ${f1_(L)} × ${f1_(W)} m hall — a radial system needs a circular plan`,
-                  thrust: q * R ** 3 / (4 * f1), thrustNote: 'compression in the upper ring from the carrying cables: C = qR³/4f', thrustIsRing: true,
-                  notes: ['Two layers of radial cables in one vertical plane, curved against each other and joined at a hub — the bicycle wheel (Engel 1.1.2.2).'] });
+              return Object.assign(r, { zone: Math.max(top, upZ(s0)) - H, spanUsed: D, cols: o.posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the ${f1_(L)} × ${f1_(W)} m hall — a radial system needs a circular plan`,
+                  thrust: q * R ** 3 / (4 * f1), thrustNote: `compression in the ${above ? '' : 'upper '}ring from the carrying cables: C = qR³/4f`, thrustIsRing: true,
+                  notes: [`Pairs of radial cables in vertical planes, joined by hangers and meeting a hub cylinder — the bicycle wheel (Engel 1.1.2.2, p.72). ${above ? 'Stabilizing cable above: one ring; the carrying cable sags below it, the stabilizing cable cambers above it.' : 'Stabilizing cable below: two rings; the carrying cable sags from the upper ring, the stabilizing cable cambers up from the lower ring.'}`,
+                      'Engel draws the cables only, not the roof skin they carry. Sag Ø/15, camber Ø/25 and the hub size are the author’s proportions.'] });
           } },
-        { id: 'r_stag', fam: 1, name: 'Radial staggered cable roof', ...M(SP.cableRad, ['cable']), rule: { cable: 'Ø = hall diagonal · carrying sag Ø/15, stabilizing hog Ø/25, alternating' },
+        { id: 'r_stag', fam: 1, name: 'Radial staggered cable roof', ...M(SP.cableRad, ['cable']), rule: { cable: 'Ø = hall diagonal · one ring · central spreader ±Ø/12 · tie bars between the cables (Engel p.73)' },
           own: (m, L) => 0.06 + 0.0008 * L,
           build(L, H, W, m, q) {
-              const d = hallDisk(L, W), R = d[2], D = 2 * R, f1 = D / 15, f2 = D / 25, N = 12;
-              const zf = (x, y) => { const [s, a] = RHO(x, y, d), w = 0.5 - 0.5 * Math.cos(N * a); return (H + f1 + f2 - f1 * (1 - s * s)) * (1 - w) + (H + f2 * (1 - s * s)) * w; };
-              const posts = ringPosts(d, 0, 6).map(p => [p[0], p[1], zf(p[0], p[1])]);
-              const rim = { c: 'member', pts: Array.from({ length: 97 }, (_, i) => { const a = 2 * Math.PI * i / 96, x = d[0] + R * Math.cos(a), y = d[1] + R * Math.sin(a); return [x, y, zf(x, y)]; }) };
-              const o = { kind: 'membrane', mods: [{ disk: d, z: zf, nj: 96, cables: true, dir: 'x', lj: 2 * N }], posts, lines3: [rim, ringLine([d[0], d[1], 0.5], H + f2, 'member')] };
+              // p.73: from each point of a level ring, two cables run to the top and the bottom of a central spreader; tie bars pull
+              // them together, the spreader pushes them apart. Triple: a second spreader halfway in every plane, the cables crossing inside it.
+              const d = hallDisk(L, W), R = d[2], D = 2 * R, t = D / 12, N = 24, triple = modeOf('r_stag', 'central') === 'triple';
+              const zr = H + t + 0.3, sm = 0.45, tm = 0.55 * t, P = (s, a, z) => [d[0] + R * s * Math.cos(a), d[1] + R * s * Math.sin(a), z];
+              // the cables bow towards each other, as the tie bars draw them in
+              const bow = (z0, z1, u) => z0 + (z1 - z0) * Math.pow(Math.max(0, u), 1.6);
+              const prof = triple ? (s, sg) => s >= sm ? bow(zr, zr + sg * tm, (1 - s) / (1 - sm)) : zr + sg * tm + (-sg * t - sg * tm) * (sm - s) / sm
+                  : (s, sg) => bow(zr, zr + sg * t, 1 - s);
+              const lines3 = [ringLine(d, zr)];
+              for (let k = 0; k < N; k++) { const a = 2 * Math.PI * k / N, ss = Array.from({ length: 25 }, (_, i) => i / 24);
+                  for (const sg of [1, -1]) lines3.push({ c: 'cable', pts: ss.map(s => P(s, a, prof(s, sg))) });
+                  if (triple) for (const sg of [1, -1]) lines3.push({ c: 'cable', pts: [P(sm, a, zr + sg * tm), P(0, a, zr + sg * t)] });
+                  for (let i = 1; i <= 6; i++) { const s = (triple ? sm : 0.1) + (1 - (triple ? sm : 0.1)) * i / 7; lines3.push({ c: 'thin', pts: [P(s, a, prof(s, 1)), P(s, a, prof(s, -1))] }); }
+                  if (triple) lines3.push({ c: 'member', pts: [P(sm, a, zr + tm), P(sm, a, zr - tm)] }); }
+              lines3.push({ c: 'member', pts: [[d[0], d[1], zr - t], [d[0], d[1], zr + t]] });
+              const low = s => Math.min(prof(s, 1), prof(s, -1), triple && s < sm ? zr - t + (t - tm) * s / sm : Infinity);
+              const o = { kind: 'none', mods: [{ disk: d, z: (x, y) => low(RHO(x, y, d)[0]), ni: 1, nj: 8 }], posts: ringPosts(d, zr), lines3,
+                  sec: diam(d, s => prof(s, 1)), secParts: [line(diam(d, s => prof(s, -1)), 'cable'), line([[d[0], zr - t], [d[0], zr + t]], 'member'),
+                      line([[d[0] - R, 0], [d[0] - R, zr]], 'member'), line([[d[0] + R, 0], [d[0] + R, zr]], 'member'),
+                      ...(triple ? [-1, 1].map(e => line([[d[0] + e * R * sm, zr - tm], [d[0] + e * R * sm, zr + tm]], 'member')) : [])] };
               const r = surfaceHall(o);
-              return Object.assign(r, { zone: f1 + f2, spanUsed: D, cols: posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the ${f1_(L)} × ${f1_(W)} m hall — a radial system needs a circular plan`,
-                  thrust: q * R ** 3 / (4 * f1), thrustNote: 'compression in the wavy outer ring: C = qR³/4f', thrustIsRing: true,
-                  notes: ['Radial carrying and stabilizing cables alternate round the ring, so the ring itself waves up and down (Engel 1.1.2.3).'] });
+              return Object.assign(r, { zone: zr + t - H, spanUsed: D, cols: o.posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the ${f1_(L)} × ${f1_(W)} m hall — a radial system needs a circular plan`,
+                  thrust: q * R ** 3 / (4 * t), thrustNote: 'compression in the level outer ring: C = qR³/4f, f the cable rise at the spreader', thrustIsRing: true,
+                  notes: [`From each point of a level ring two cables run to the ${triple ? 'spreaders' : 'top and bottom of a central spreader'}; tie bars pull them together, the spreader${triple ? 's push' : ' pushes'} them apart — so neither is only a carrying or only a stabilizing cable: both act under every load (Engel 1.1.2.3, p.73).`,
+                      triple ? 'Triple spreader: a second spreader halfway along every plane; inside it the cables cross to the central spreader.' : 'Central spreader with tie-bar fastenings.',
+                      'Spreader height Ø/6 and the cable bow are the author’s reading of p.73; Engel draws the cables only, not the roof skin.'] });
           } },
         { id: 'n_arch', fam: 1, name: 'Cable net between boundary arches', ...M(SP.cableNet, ['cable']), rule: { cable: 'arch rise L/5 · net sag 0.45 × rise' },
           own: (m, L) => 0.05 + 0.0008 * L,
@@ -1527,12 +1558,12 @@
           build(L, H, W, m, q) {
               const d = hallDisk(L, W), R = d[2], D = 2 * R, f = D / 16, dd = 2 * f + 0.4, sP = cushionP(q);
               const Nu = (q + sP) * R * R / (4 * f), Nl = sP * R * R / (4 * f);
-              const o = { kind: 'membrane', mods: [{ disk: d, z: (x, y) => H + dd - f * (1 - RHO(x, y, d)[0] ** 2), nj: 36 }], posts: ringPosts(d, H + dd),
-                  lines3: [...radial(d, s => H + f * (1 - s * s), 36, 'thin'), ringLine(d, H + dd), ringLine(d, H)], extra2d: [line(diam(d, s => H + f * (1 - s * s)), 'thin')] };
+              const o = { kind: 'membrane', mods: [{ disk: d, z: (x, y) => H + dd - f * (1 - RHO(x, y, d)[0] ** 2), nj: 36 }, { disk: d, z: (x, y) => H + f * (1 - RHO(x, y, d)[0] ** 2), nj: 36 }], posts: ringPosts(d, H + dd),
+                  lines3: [ringLine(d, H + dd), ringLine(d, H)], extra2d: [line(diam(d, s => H + f * (1 - s * s)), 'member')] };
               const r = surfaceHall(o);
               return Object.assign(r, { zone: dd, spanUsed: D, cols: o.posts.length, colNote: `one circle Ø${f1_(2 * R)} m contains the ${f1_(L)} × ${f1_(W)} m hall — a radial system needs a circular plan`,
                   thrust: Nu * R, thrustNote: `upper ring C = Nu·R with suction s = q + 0.3 = ${f2(sP)} kN/m²; lower ring ${Math.round(Nl * R)} kN`, thrustIsRing: true,
-                  notes: ['Air drawn out between the skins pulls them towards each other: a concave lens (Engel 1.3.2.2).'] });
+                  notes: ['Air drawn out between the skins pulls them towards each other: the upper skin sags, the lower one cambers up — a concave lens (Engel 1.3.2.2, p.102).', 'Engel (p.102): negative-pressure systems are not a type of their own but devices for stabilizing suspended membranes.'] });
           } },
         { id: 'cu_pn', fam: 1, name: 'Three-skin cushion', ...M(SP.cushion, ['membrane']), rule: { membrane: 'Ø = hall diagonal · overpressure lens above, underpressure chamber below' }, roofType: 'membrane', own: () => 0.05,
           build(L, H, W, m, q) {
@@ -5539,10 +5570,12 @@
         hyparT: [['columns', 'On side columns + tie'], ['ground', 'On two points on the ground']],
         fl_arch: [['top', 'Arch with a top hinge'], ['three', 'Three-hinged arch']],
         barrel: [['long', 'Long barrel shell'], ['short', 'Short barrel shell']],
+        r_iso: [['below', 'Stabilizing cable below'], ['above', 'Stabilizing cable above']],
+        r_stag: [['central', 'Central spreader'], ['triple', 'Triple spreader']],
         ls_frame: [['two', 'Two-hinged frame'], ['a', 'Two-hinged A-frame']],
         ls_arch: [['top', 'Arch with top hinge'], ['two', 'Two-hinged arch']]
     };
-    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel pp.53, 264', fl_arch: 'Form · Engel p.227', barrel: 'Form · Engel pp.236–237', ls_frame: 'Form · Engel pp.242, 244', ls_arch: 'Form · Engel p.243' };
+    const MODE_T = { dome: 'Supports · Engel p.53', ss_rot: 'Supports · Engel p.53', hyparT: 'Supports · Engel pp.53, 264', fl_arch: 'Form · Engel p.227', barrel: 'Form · Engel pp.236–237', r_iso: 'Stabilizing cable · Engel p.72', r_stag: 'Spreaders · Engel p.73', ls_frame: 'Form · Engel pp.242, 244', ls_arch: 'Form · Engel p.243' };
     function modeVariants(id) {
         const keep = S.tm, sys = SYS.find(x => x.id === id), pr = projector(), cur = (keep && keep[id]) || MODES[id][0][0];
         const V = MODES[id].map(([mode, name]) => { S.tm = Object.assign({}, keep, { [id]: mode }); const r = evaluate(sys); r.P3 = projectScene(scene3D(r), pr); return { r, mode, name }; });
