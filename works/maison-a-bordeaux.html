@@ -213,14 +213,7 @@
         .mode-btn.active { background: #111; border-color: #111; color: #fff; }
         .mode-btn .mode-ico { width: 34px; height: 34px; flex: none; stroke: currentColor; stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <link rel="preload" href="./bordeaux-runtime.min.js" as="script">
 <link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
 </head>
 <body class="study-page page-maison-a-bordeaux viewport-study">
@@ -256,8 +249,8 @@
         <div class="column column-view">
             <h3>View</h3>
             <div class="viewmode">
-                <label><input type="radio" name="viewMode" id="vmPlain"> Solid (plain &mdash; no force lines)</label>
-                <label><input type="radio" name="viewMode" id="vmLoad" checked> Load path (colour by force)</label>
+                <label><input type="radio" name="viewMode" id="vmPlain" checked> Solid (plain &mdash; no force lines)</label>
+                <label><input type="radio" name="viewMode" id="vmLoad"> Load path (colour by force)</label>
                 <label><input type="radio" name="viewMode" id="vmStress"> Stress field (&sigma;&#8321;/&sigma;&#8323; + strut-and-tie)</label>
             </div>
             <div id="feaColorBar" class="fea-colorbar">
@@ -322,11 +315,15 @@
 
     </div>
 
+    <script src="./bordeaux-runtime.min.js"></script>
+    <script src="./bordeaux-geometry.js"></script>
     <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-        import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+        const loading = document.getElementById('loading');
+        window.addEventListener('error', () => {
+            if (!loading.hidden) loading.textContent = 'The model could not start. Check the model files and WebGL support.';
+        });
+        const { THREE, OrbitControls, OBJLoader, BufferGeometryUtils } = window.BordeauxRuntime;
+        const survey = window.BordeauxSurvey;
 
         const objData = `
 # Alias OBJ Model File
@@ -1570,7 +1567,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        document.getElementById('loading').style.display = 'none';
+
 
         const modelGroup = new THREE.Group();
         scene.add(modelGroup);
@@ -1593,6 +1590,25 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         const loader = new OBJLoader();
         const object = loader.parse(objData);
 
+        function measuredGeometry(data) {
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(data.positions, 3));
+            geometry.setIndex(data.indices);
+            return geometry;
+        }
+
+        const contextGroup = new THREE.Group();
+        function addContextPart(data, color, opacity) {
+            const geometry = measuredGeometry(data);
+            const part = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+                color, opacity, transparent: true, depthWrite: false, side: THREE.DoubleSide
+            }));
+            part.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 28),
+                new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55 })));
+            contextGroup.add(part);
+            return part;
+        }
+
         object.traverse(function (child) {
             if (child.isMesh) {
                 child.material.visible = false;
@@ -1600,19 +1616,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 let geometry = child.geometry;
                 let posAttr = geometry.attributes.position;
 
-                // Concrete box: drop the horizontal top (y≈5.65) and bottom (y≈2.45) slabs
-                // so it reads as a HOLLOW deep-beam tube — the four perimeter walls only.
                 if (child.name.includes('Mesh6')) {
-                    const src = posAttr.array, keep = [];
-                    for (let t = 0; t + 8 < src.length; t += 9) {
-                        const ylo = src[t + 1] < 2.55 && src[t + 4] < 2.55 && src[t + 7] < 2.55;
-                        const yhi = src[t + 1] > 5.55 && src[t + 4] > 5.55 && src[t + 7] > 5.55;
-                        if (ylo || yhi) continue;
-                        for (let j = 0; j < 9; j++) keep.push(src[t + j]);
-                    }
-                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(keep, 3));
-                    geometry.deleteAttribute('normal');
-                    geometry.deleteAttribute('uv');
+                    geometry = child.geometry = measuredGeometry(survey.shell).toNonIndexed();
                     posAttr = geometry.attributes.position;
                 }
 
@@ -1656,6 +1661,39 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         });
 
         // Hide flat default ground plane (Mesh4) to replace with true stepped site
+        // Bordeaux_2.skp, Group#20: twenty instances of the same spiral stair tread.
+        // Coordinates in metres, registered to the courtyard frame (Group#27).
+        const treadIndices = [9,7,8,7,9,10,7,10,11,7,11,0,7,0,1,7,1,2,7,2,6,6,2,5,5,2,4,4,2,3,18,16,17,16,18,15,15,18,14,14,18,13,13,18,12,12,18,23,23,18,19,23,19,20,23,20,21,23,21,22,0,12,1,12,0,13,11,13,0,13,11,14,10,14,11,14,10,15,9,15,10,15,9,16,8,16,9,16,8,17,8,18,17,18,8,7,18,6,19,6,18,7,19,5,20,5,19,6,20,4,21,4,20,5,21,3,22,3,21,4,22,2,23,2,22,3,2,12,23,12,2,1];
+        const stairTreads = [
+            [11.378,-2.64,-20.188,11.367,-2.64,-20.188,11.367,-2.64,-21.188,11.482,-2.64,-21.182,11.596,-2.64,-21.164,11.707,-2.64,-21.135,11.815,-2.64,-21.093,11.917,-2.64,-21.041,11.417,-2.64,-20.175,11.408,-2.64,-20.18,11.398,-2.64,-20.183,11.388,-2.64,-20.186,11.367,-2.726,-20.188,11.378,-2.726,-20.188,11.388,-2.726,-20.186,11.398,-2.726,-20.183,11.408,-2.726,-20.18,11.417,-2.726,-20.175,11.917,-2.726,-21.041,11.815,-2.726,-21.093,11.707,-2.726,-21.135,11.596,-2.726,-21.164,11.482,-2.726,-21.182,11.367,-2.726,-21.188],
+            [11.426,-2.341,-20.169,11.417,-2.341,-20.175,11.917,-2.341,-21.041,12.014,-2.341,-20.978,12.104,-2.341,-20.906,12.185,-2.341,-20.824,12.257,-2.341,-20.735,12.32,-2.341,-20.638,11.454,-2.341,-20.138,11.448,-2.341,-20.147,11.442,-2.341,-20.155,11.434,-2.341,-20.163,11.417,-2.428,-20.175,11.426,-2.428,-20.169,11.434,-2.428,-20.163,11.442,-2.428,-20.155,11.448,-2.428,-20.147,11.454,-2.428,-20.138,12.32,-2.428,-20.638,12.257,-2.428,-20.735,12.185,-2.428,-20.824,12.104,-2.428,-20.906,12.014,-2.428,-20.978,11.917,-2.428,-21.041],
+            [11.459,-2.043,-20.129,11.454,-2.043,-20.138,12.32,-2.043,-20.638,12.372,-2.043,-20.536,12.414,-2.043,-20.428,12.443,-2.043,-20.317,12.461,-2.043,-20.203,12.467,-2.043,-20.088,11.467,-2.043,-20.088,11.467,-2.043,-20.099,11.465,-2.043,-20.109,11.463,-2.043,-20.119,11.454,-2.129,-20.138,11.459,-2.129,-20.129,11.463,-2.129,-20.119,11.465,-2.129,-20.109,11.467,-2.129,-20.099,11.467,-2.129,-20.088,12.467,-2.129,-20.088,12.461,-2.129,-20.203,12.443,-2.129,-20.317,12.414,-2.129,-20.428,12.372,-2.129,-20.536,12.32,-2.129,-20.638],
+            [11.467,-1.745,-20.078,11.467,-1.745,-20.088,12.467,-1.745,-20.088,12.461,-1.745,-19.973,12.443,-1.745,-19.86,12.414,-1.745,-19.748,12.372,-1.745,-19.641,12.32,-1.745,-19.538,11.454,-1.745,-20.038,11.459,-1.745,-20.048,11.463,-1.745,-20.057,11.465,-1.745,-20.068,11.467,-1.831,-20.088,11.467,-1.831,-20.078,11.465,-1.831,-20.068,11.463,-1.831,-20.057,11.459,-1.831,-20.048,11.454,-1.831,-20.038,12.32,-1.831,-19.538,12.372,-1.831,-19.641,12.414,-1.831,-19.748,12.443,-1.831,-19.86,12.461,-1.831,-19.973,12.467,-1.831,-20.088],
+            [11.448,-1.446,-20.03,11.454,-1.446,-20.038,12.32,-1.446,-19.538,12.257,-1.446,-19.442,12.185,-1.446,-19.352,12.104,-1.446,-19.271,12.014,-1.446,-19.198,11.917,-1.446,-19.136,11.417,-1.446,-20.002,11.426,-1.446,-20.007,11.434,-1.446,-20.014,11.442,-1.446,-20.021,11.454,-1.533,-20.038,11.448,-1.533,-20.03,11.442,-1.533,-20.021,11.434,-1.533,-20.014,11.426,-1.533,-20.007,11.417,-1.533,-20.002,11.917,-1.533,-19.136,12.014,-1.533,-19.198,12.104,-1.533,-19.271,12.185,-1.533,-19.352,12.257,-1.533,-19.442,12.32,-1.533,-19.538],
+            [11.408,-1.148,-19.997,11.417,-1.148,-20.002,11.917,-1.148,-19.136,11.815,-1.148,-19.083,11.707,-1.148,-19.042,11.596,-1.148,-19.012,11.482,-1.148,-18.994,11.367,-1.148,-18.988,11.367,-1.148,-19.988,11.378,-1.148,-19.989,11.388,-1.148,-19.991,11.398,-1.148,-19.993,11.417,-1.234,-20.002,11.408,-1.234,-19.997,11.398,-1.234,-19.993,11.388,-1.234,-19.991,11.378,-1.234,-19.989,11.367,-1.234,-19.988,11.367,-1.234,-18.988,11.482,-1.234,-18.994,11.596,-1.234,-19.012,11.707,-1.234,-19.042,11.815,-1.234,-19.083,11.917,-1.234,-19.136],
+            [11.357,-0.85,-19.989,11.367,-0.85,-19.988,11.367,-0.85,-18.988,11.252,-0.85,-18.994,11.139,-0.85,-19.012,11.028,-0.85,-19.042,10.92,-0.85,-19.083,10.817,-0.85,-19.136,11.317,-0.85,-20.002,11.327,-0.85,-19.997,11.337,-0.85,-19.993,11.347,-0.85,-19.991,11.367,-0.936,-19.988,11.357,-0.936,-19.989,11.347,-0.936,-19.991,11.337,-0.936,-19.993,11.327,-0.936,-19.997,11.317,-0.936,-20.002,10.817,-0.936,-19.136,10.92,-0.936,-19.083,11.028,-0.936,-19.042,11.139,-0.936,-19.012,11.252,-0.936,-18.994,11.367,-0.936,-18.988],
+            [11.309,-0.551,-20.007,11.317,-0.551,-20.002,10.817,-0.551,-19.136,10.721,-0.551,-19.198,10.631,-0.551,-19.271,10.55,-0.551,-19.352,10.478,-0.551,-19.442,10.415,-0.551,-19.538,11.281,-0.551,-20.038,11.287,-0.551,-20.03,11.293,-0.551,-20.021,11.301,-0.551,-20.014,11.317,-0.637,-20.002,11.309,-0.637,-20.007,11.301,-0.637,-20.014,11.293,-0.637,-20.021,11.287,-0.637,-20.03,11.281,-0.637,-20.038,10.415,-0.637,-19.538,10.478,-0.637,-19.442,10.55,-0.637,-19.352,10.631,-0.637,-19.271,10.721,-0.637,-19.198,10.817,-0.637,-19.136],
+            [11.276,-0.253,-20.048,11.281,-0.253,-20.038,10.415,-0.253,-19.538,10.363,-0.253,-19.641,10.321,-0.253,-19.748,10.292,-0.253,-19.86,10.273,-0.253,-19.973,10.267,-0.253,-20.088,11.267,-0.253,-20.088,11.268,-0.253,-20.078,11.27,-0.253,-20.068,11.272,-0.253,-20.057,11.281,-0.339,-20.038,11.276,-0.339,-20.048,11.272,-0.339,-20.057,11.27,-0.339,-20.068,11.268,-0.339,-20.078,11.267,-0.339,-20.088,10.267,-0.339,-20.088,10.273,-0.339,-19.973,10.292,-0.339,-19.86,10.321,-0.339,-19.748,10.363,-0.339,-19.641,10.415,-0.339,-19.538],
+            [11.268,0.046,-20.099,11.267,0.046,-20.088,10.267,0.046,-20.088,10.273,0.046,-20.203,10.292,0.046,-20.317,10.321,0.046,-20.428,10.363,0.046,-20.536,10.415,0.046,-20.638,11.281,0.046,-20.138,11.276,0.046,-20.129,11.272,0.046,-20.119,11.27,0.046,-20.109,11.267,-0.041,-20.088,11.268,-0.041,-20.099,11.27,-0.041,-20.109,11.272,-0.041,-20.119,11.276,-0.041,-20.129,11.281,-0.041,-20.138,10.415,-0.041,-20.638,10.363,-0.041,-20.536,10.321,-0.041,-20.428,10.292,-0.041,-20.317,10.273,-0.041,-20.203,10.267,-0.041,-20.088],
+            [11.287,0.344,-20.147,11.281,0.344,-20.138,10.415,0.344,-20.638,10.478,0.344,-20.735,10.55,0.344,-20.824,10.631,0.344,-20.906,10.721,0.344,-20.978,10.817,0.344,-21.041,11.317,0.344,-20.175,11.309,0.344,-20.169,11.301,0.344,-20.163,11.293,0.344,-20.155,11.281,0.258,-20.138,11.287,0.258,-20.147,11.293,0.258,-20.155,11.301,0.258,-20.163,11.309,0.258,-20.169,11.317,0.258,-20.175,10.817,0.258,-21.041,10.721,0.258,-20.978,10.631,0.258,-20.906,10.55,0.258,-20.824,10.478,0.258,-20.735,10.415,0.258,-20.638],
+            [11.327,0.642,-20.18,11.317,0.642,-20.175,10.817,0.642,-21.041,10.92,0.642,-21.093,11.028,0.642,-21.135,11.139,0.642,-21.164,11.252,0.642,-21.182,11.367,0.642,-21.188,11.367,0.642,-20.188,11.357,0.642,-20.188,11.347,0.642,-20.186,11.337,0.642,-20.183,11.317,0.556,-20.175,11.327,0.556,-20.18,11.337,0.556,-20.183,11.347,0.556,-20.186,11.357,0.556,-20.188,11.367,0.556,-20.188,11.367,0.556,-21.188,11.252,0.556,-21.182,11.139,0.556,-21.164,11.028,0.556,-21.135,10.92,0.556,-21.093,10.817,0.556,-21.041],
+            [11.378,0.941,-20.188,11.367,0.941,-20.188,11.367,0.941,-21.188,11.482,0.941,-21.182,11.596,0.941,-21.164,11.707,0.941,-21.135,11.815,0.941,-21.093,11.917,0.941,-21.041,11.417,0.941,-20.175,11.408,0.941,-20.18,11.398,0.941,-20.183,11.388,0.941,-20.186,11.367,0.855,-20.188,11.378,0.855,-20.188,11.388,0.855,-20.186,11.398,0.855,-20.183,11.408,0.855,-20.18,11.417,0.855,-20.175,11.917,0.855,-21.041,11.815,0.855,-21.093,11.707,0.855,-21.135,11.596,0.855,-21.164,11.482,0.855,-21.182,11.367,0.855,-21.188],
+            [11.426,1.239,-20.169,11.417,1.239,-20.175,11.917,1.239,-21.041,12.014,1.239,-20.978,12.104,1.239,-20.906,12.185,1.239,-20.824,12.257,1.239,-20.735,12.32,1.239,-20.638,11.454,1.239,-20.138,11.448,1.239,-20.147,11.442,1.239,-20.155,11.434,1.239,-20.163,11.417,1.153,-20.175,11.426,1.153,-20.169,11.434,1.153,-20.163,11.442,1.153,-20.155,11.448,1.153,-20.147,11.454,1.153,-20.138,12.32,1.153,-20.638,12.257,1.153,-20.735,12.185,1.153,-20.824,12.104,1.153,-20.906,12.014,1.153,-20.978,11.917,1.153,-21.041],
+            [11.459,1.538,-20.129,11.454,1.538,-20.138,12.32,1.538,-20.638,12.372,1.538,-20.536,12.414,1.538,-20.428,12.443,1.538,-20.317,12.461,1.538,-20.203,12.467,1.538,-20.088,11.467,1.538,-20.088,11.467,1.538,-20.099,11.465,1.538,-20.109,11.463,1.538,-20.119,11.454,1.451,-20.138,11.459,1.451,-20.129,11.463,1.451,-20.119,11.465,1.451,-20.109,11.467,1.451,-20.099,11.467,1.451,-20.088,12.467,1.451,-20.088,12.461,1.451,-20.203,12.443,1.451,-20.317,12.414,1.451,-20.428,12.372,1.451,-20.536,12.32,1.451,-20.638],
+            [11.467,1.836,-20.078,11.467,1.836,-20.088,12.467,1.836,-20.088,12.461,1.836,-19.973,12.443,1.836,-19.86,12.414,1.836,-19.748,12.372,1.836,-19.641,12.32,1.836,-19.538,11.454,1.836,-20.038,11.459,1.836,-20.048,11.463,1.836,-20.057,11.465,1.836,-20.068,11.467,1.75,-20.088,11.467,1.75,-20.078,11.465,1.75,-20.068,11.463,1.75,-20.057,11.459,1.75,-20.048,11.454,1.75,-20.038,12.32,1.75,-19.538,12.372,1.75,-19.641,12.414,1.75,-19.748,12.443,1.75,-19.86,12.461,1.75,-19.973,12.467,1.75,-20.088],
+            [11.448,2.134,-20.03,11.454,2.134,-20.038,12.32,2.134,-19.538,12.257,2.134,-19.442,12.185,2.134,-19.352,12.104,2.134,-19.271,12.014,2.134,-19.198,11.917,2.134,-19.136,11.417,2.134,-20.002,11.426,2.134,-20.007,11.434,2.134,-20.014,11.442,2.134,-20.021,11.454,2.048,-20.038,11.448,2.048,-20.03,11.442,2.048,-20.021,11.434,2.048,-20.014,11.426,2.048,-20.007,11.417,2.048,-20.002,11.917,2.048,-19.136,12.014,2.048,-19.198,12.104,2.048,-19.271,12.185,2.048,-19.352,12.257,2.048,-19.442,12.32,2.048,-19.538],
+            [11.408,2.433,-19.997,11.417,2.433,-20.002,11.917,2.433,-19.136,11.815,2.433,-19.083,11.707,2.433,-19.042,11.596,2.433,-19.012,11.482,2.433,-18.994,11.367,2.433,-18.988,11.367,2.433,-19.988,11.378,2.433,-19.989,11.388,2.433,-19.991,11.398,2.433,-19.993,11.417,2.346,-20.002,11.408,2.346,-19.997,11.398,2.346,-19.993,11.388,2.346,-19.991,11.378,2.346,-19.989,11.367,2.346,-19.988,11.367,2.346,-18.988,11.482,2.346,-18.994,11.596,2.346,-19.012,11.707,2.346,-19.042,11.815,2.346,-19.083,11.917,2.346,-19.136],
+            [11.357,2.731,-19.989,11.367,2.731,-19.988,11.367,2.731,-18.988,11.252,2.731,-18.994,11.139,2.731,-19.012,11.028,2.731,-19.042,10.92,2.731,-19.083,10.817,2.731,-19.136,11.317,2.731,-20.002,11.327,2.731,-19.997,11.337,2.731,-19.993,11.347,2.731,-19.991,11.367,2.645,-19.988,11.357,2.645,-19.989,11.347,2.645,-19.991,11.337,2.645,-19.993,11.327,2.645,-19.997,11.317,2.645,-20.002,10.817,2.645,-19.136,10.92,2.645,-19.083,11.028,2.645,-19.042,11.139,2.645,-19.012,11.252,2.645,-18.994,11.367,2.645,-18.988],
+            [11.309,3.029,-20.007,11.317,3.029,-20.002,10.817,3.029,-19.136,10.721,3.029,-19.198,10.631,3.029,-19.271,10.55,3.029,-19.352,10.478,3.029,-19.442,10.415,3.029,-19.538,11.281,3.029,-20.038,11.287,3.029,-20.03,11.293,3.029,-20.021,11.301,3.029,-20.014,11.317,2.943,-20.002,11.309,2.943,-20.007,11.301,2.943,-20.014,11.293,2.943,-20.021,11.287,2.943,-20.03,11.281,2.943,-20.038,10.415,2.943,-19.538,10.478,2.943,-19.442,10.55,2.943,-19.352,10.631,2.943,-19.271,10.721,2.943,-19.198,10.817,2.943,-19.136],
+        ];
+        const stairGeometry = new THREE.BufferGeometry();
+        stairGeometry.setAttribute('position', new THREE.Float32BufferAttribute(stairTreads.flat(), 3));
+        stairGeometry.setIndex(stairTreads.flatMap((tread, i) =>
+            treadIndices.map(index => index + i * tread.length / 3)));
+        const spiralStair = new THREE.Mesh(stairGeometry,
+            new THREE.MeshBasicMaterial({ color: 0x90969a, side: THREE.DoubleSide }));
+        meshObjects.Mesh5.add(spiralStair);
+
         if (meshWireframes['Mesh4']) {
             meshWireframes['Mesh4'].visible = false;
         }
@@ -1790,12 +1828,55 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         steppedSiteGroup.add(new THREE.Mesh(stepFaceGeo, siteFloorMat));
 
         object.add(steppedSiteGroup);
+        object.add(contextGroup);
+        const measuredCourt = addContextPart(survey.court, 0x999995, 0.12);
+        const lowerGlazing = addContextPart(survey.glass, 0x98a0a2, 0.09);
+        const lowerWalls = addContextPart(survey.lower, 0x85807a, 0.22);
+        const livingWalls = addContextPart(survey.middle, 0x9a9690, 0.20);
+        const bedroomWalls = addContextPart(survey.upper, 0x98938a, 0.23);
+
+        // Illustrative lift fitted within the Group#26 slab opening, clear of the shelf face.
+        const lift = new THREE.Group();
+        lift.position.set(24.51, 0, -19.17);
+        object.add(lift);
+        const deckGeometry = new THREE.BoxGeometry(3.28, 0.14, 2.93);
+        const deck = new THREE.Mesh(deckGeometry, new THREE.MeshBasicMaterial({ color: 0xb19270 }));
+        deck.add(new THREE.LineSegments(new THREE.EdgesGeometry(deckGeometry),
+            new THREE.LineBasicMaterial({ color: 0x544b40 })));
+        const ram = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 20),
+            new THREE.MeshBasicMaterial({ color: 0x787f84 }));
+        lift.add(deck, ram);
+        let liftPhase = Math.acos((0.05 + 0.125) / 2.575);
+        function placeLift(height) {
+            deck.position.y = height - 0.07;
+            const base = -3.8;
+            ram.scale.y = height - 0.14 - base;
+            ram.position.y = base + ram.scale.y / 2;
+        }
+        placeLift(0.05);
+        addContextPart(survey.shelves, 0x705c4b, 0.70);
+        const books = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 1, 0.055),
+            new THREE.MeshBasicMaterial(), survey.cells.length * 6);
+        const bookPose = new THREE.Object3D();
+        const jackets = [0x744d44, 0x516566, 0xc0ab83, 0x575961];
+        survey.cells.forEach(([x, y, z], cell) => {
+            for (let i = 0; i < 6; i++) {
+                const height = 0.19 + 0.023 * ((cell + i) % 5);
+                bookPose.position.set(x, y + height / 2, z + (i - 2.5) * 0.06);
+                bookPose.scale.set(1, height, 1);
+                bookPose.updateMatrix();
+                books.setMatrixAt(cell * 6 + i, bookPose.matrix);
+                books.setColorAt(cell * 6 + i, new THREE.Color(jackets[(cell+i) % jackets.length]));
+            }
+        });
+        contextGroup.add(books);
+
 
         // --- Seesaw Pivot Assembly for Overturning Simulation ---
-        // Fulcrum is at the top of the central cylinder: x = 11.55, y = 5.65, z = -19.5
-        const PIVOT_X = 11.55;
+        // Idealized bearing at the girder centreline over the stair-cylinder centre.
+        const PIVOT_X = 11.5657;
         const PIVOT_Y = 5.65;
-        const PIVOT_Z = -19.5;
+        const PIVOT_Z = -20.075;
 
         const seesawGroup = new THREE.Group();
         seesawGroup.position.set(PIVOT_X, PIVOT_Y, PIVOT_Z);
@@ -1810,6 +1891,9 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             seesawGroup.add(meshObjects['Mesh3']);
             meshObjects['Mesh3'].position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
         }
+
+        seesawGroup.add(bedroomWalls);
+        bedroomWalls.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
 
         const boxLoadsGroup = new THREE.Group();
         boxLoadsGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
@@ -1929,12 +2013,15 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         const matVox = new THREE.MeshLambertMaterial({ vertexColors: true });
         const NB = SHIRTS_A.length;
         const crowd = [];          // crowd[v*NB + s] = one InstancedMesh (archetype x shirt colour)
-        for (let v = 0; v < 2; v++) {
-            const base = v ? PAL_B : PAL_A, shirts = v ? SHIRTS_B : SHIRTS_A;
-            for (let s = 0; s < NB; s++) {
-                const im = new THREE.InstancedMesh(buildTourist(Object.assign({}, base, { torso: shirts[s] })), matVox, CROWD_MAX);
-                im.count = 0; im.frustumCulled = false;
-                crowdGroup.add(im); crowd.push(im);
+        function prepareCrowd() {
+            if (crowd.length) return;
+            for (let v = 0; v < 2; v++) {
+                const base = v ? PAL_B : PAL_A, shirts = v ? SHIRTS_B : SHIRTS_A;
+                for (let s = 0; s < NB; s++) {
+                    const im = new THREE.InstancedMesh(buildTourist(Object.assign({}, base, { torso: shirts[s] })), matVox, CROWD_MAX);
+                    im.count = 0; im.frustumCulled = false;
+                    crowdGroup.add(im); crowd.push(im);
+                }
             }
         }
 
@@ -1981,7 +2068,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 [ 0.0, 0.02, 0.47, 0.22, 0.06, 0.17, M.mop]
             ];
         }
-        const maidMesh = new THREE.Mesh(voxelizeMerge(voxelMaidParts(), 0.070), matVox);
+        const maidMesh = new THREE.Mesh(new THREE.BufferGeometry(), matVox);
         maidMesh.scale.set(1.12 * CS, 1.06 * CS, 1.12 * CS);
         maidMesh.frustumCulled = false;
         maidMesh.visible = false;
@@ -1994,6 +2081,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             const show = MD.on && loadMode === 'crowd' && crowdCount > 0;
             maidMesh.visible = show;
             if (!show) return;
+            if (!maidMesh.geometry.attributes.position) maidMesh.geometry = voxelizeMerge(voxelMaidParts(), 0.070);
             const cx = crowdCentroid.x, cz = crowdCentroid.y;
             const vx0 = cx - maidPos.x, vz0 = cz - maidPos.y;
             const d0 = Math.hypot(vx0, vz0) || 1e-4;
@@ -2038,6 +2126,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         function stepCrowd(dt) {
             const n = Math.min(CROWD_MAX, Math.round(crowdCount));
             if (!n) { crowd.forEach(im => im.count = 0); crowdCentroid.set(crowdTarget.x, crowdTarget.y); return; }
+            prepareCrowd();
             _bcount.fill(0);
             const R = 0.7 + Math.sqrt(n) * 0.20;
             const stride = n > 50 ? 3 : 1;
@@ -2113,12 +2202,13 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         let _downX = 0, _downY = 0, _downT = 0;
         renderer.domElement.addEventListener('pointerdown', (e) => { _downX = e.clientX; _downY = e.clientY; _downT = performance.now(); });
         renderer.domElement.addEventListener('pointerup', (e) => {
-            if (loadMode !== 'crowd') return;
+            if (e.button !== 0) return;
             if (Math.hypot(e.clientX - _downX, e.clientY - _downY) > 5) return;   // it was an orbit drag
             if (performance.now() - _downT > 600) return;                        // long press — ignore
             const rect = renderer.domElement.getBoundingClientRect();
             _ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
             _rayc.setFromCamera(_ndc, camera);
+            if (loadMode !== 'crowd') return;
             const hit = _rayc.intersectObject(roofPlane, false)[0];
             if (!hit) return;
             const lp = crowdGroup.worldToLocal(hit.point.clone());
@@ -2470,11 +2560,11 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         // 1. Upward reaction arrows (compression at the supports) — on the support axes.
         //    cylinder: Mesh5 centre ~(11.30, -20.08).  courtyard wall: Mesh1 at x~26.40,
-        //    split into a NORTH-edge and a SOUTH-edge reaction (z = -24.77 / -13.92).
+        //    with arrows anchored to the two feet at their respective foundation levels.
         const upDir = new THREE.Vector3(0, 1, 0);
-        cylinderArrow = createNumberedArrow(upDir, new THREE.Vector3(11.30, -1.8, -20.08), ARROW_BASE.cyl, compColor, 1.2, 0.75, "1");
-        lframeArrowN  = createNumberedArrow(upDir, new THREE.Vector3(26.40, -1.0, -24.77), ARROW_BASE.lfN, compColor, 1.1, 0.65, "2");
-        lframeArrowS  = createNumberedArrow(upDir, new THREE.Vector3(26.40, -3.2, -13.92), ARROW_BASE.lfS, compColor, 1.1, 0.65, "3");
+        cylinderArrow = createNumberedArrow(upDir, new THREE.Vector3(11.3059, -2.7 - ARROW_BASE.cyl, -20.075), ARROW_BASE.cyl, compColor, 1.2, 0.75, "1");
+        lframeArrowN  = createNumberedArrow(upDir, new THREE.Vector3(26.395, -2.7 - ARROW_BASE.lfN, -23.0622), ARROW_BASE.lfN, compColor, 1.1, 0.65, "2");
+        lframeArrowS  = createNumberedArrow(upDir, new THREE.Vector3(26.395, -ARROW_BASE.lfS, -11.3501), ARROW_BASE.lfS, compColor, 1.1, 0.65, "3");
 
         // 2. Downward tension pull of the tie — on the tie member (Mesh2 ~ x 11.6, z -28),
         //    running down toward the buried counterweight.
@@ -2494,49 +2584,12 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         // Authentic Rem Koolhaas Openings for Maison à Bordeaux Upper Concrete Box
         // Extracted directly from uploaded SketchUp 3D model (Bordeaux.dae / group_5):
-        // 1. South Facade (Z ≈ -13.92): 19 precise circular portholes (r = 0.162m, diameter = 0.324m)
+        // 1. South Facade (Z ≈ -13.92): 20 exterior circular portholes (r = 0.162m, diameter = 0.324m)
         // 2. North Facade (Z ≈ -24.77): 16 precise circular portholes (r = 0.162m, diameter = 0.324m)
         // 3. West Cantilever End Wall (X = 5.05): ONE iconic giant circular oculus (y = 4.22, z = -21.06, r = 1.024m)
-        const southPortholes = [
-            { x: 6.229, y: 4.611, r: 0.162 }, // ID221
-            { x: 6.945, y: 3.637, r: 0.162 }, // ID229
-            { x: 7.542, y: 3.257, r: 0.162 }, // ID237
-            { x: 9.908, y: 4.021, r: 0.162 }, // ID245
-            { x: 11.673, y: 3.250, r: 0.162 }, // ID253
-            { x: 12.704, y: 3.250, r: 0.162 }, // ID261
-            { x: 12.865, y: 4.610, r: 0.162 }, // ID269
-            { x: 15.861, y: 4.610, r: 0.162 }, // ID277
-            { x: 16.017, y: 3.260, r: 0.162 }, // ID285
-            { x: 16.740, y: 3.260, r: 0.162 }, // ID293
-            { x: 18.416, y: 4.609, r: 0.162 }, // ID301
-            { x: 19.100, y: 3.460, r: 0.162 }, // ID317
-            { x: 19.260, y: 4.609, r: 0.162 }, // ID309
-            { x: 22.091, y: 3.463, r: 0.162 }, // ID325
-            { x: 23.155, y: 4.618, r: 0.162 }, // ID333
-            { x: 24.044, y: 4.020, r: 0.162 }, // ID341
-            { x: 25.102, y: 3.252, r: 0.162 }, // ID349
-            { x: 25.687, y: 4.026, r: 0.162 }, // ID357
-            { x: 28.453, y: 4.026, r: 0.162 }  // ID365
-        ];
+        const southPortholes = survey.south;
 
-        const northPortholes = [
-            { x: 6.625, y: 4.024, r: 0.162 }, // ID205
-            { x: 6.625, y: 3.193, r: 0.162 }, // ID213
-            { x: 7.854, y: 3.882, r: 0.162 }, // ID197
-            { x: 8.784, y: 4.543, r: 0.162 }, // ID181
-            { x: 8.930, y: 3.884, r: 0.162 }, // ID189
-            { x: 9.882, y: 4.540, r: 0.162 }, // ID173
-            { x: 11.534, y: 3.878, r: 0.162 }, // ID165
-            { x: 12.851, y: 3.878, r: 0.162 }, // ID157
-            { x: 13.943, y: 4.400, r: 0.162 }, // ID149
-            { x: 16.919, y: 3.885, r: 0.162 }, // ID141
-            { x: 17.648, y: 4.541, r: 0.162 }, // ID133
-            { x: 18.427, y: 3.884, r: 0.162 }, // ID125
-            { x: 21.272, y: 3.884, r: 0.162 }, // ID117
-            { x: 23.759, y: 3.521, r: 0.162 }, // ID101
-            { x: 23.759, y: 4.238, r: 0.162 }, // ID109
-            { x: 28.616, y: 3.881, r: 0.162 }  // ID93
-        ];
+        const northPortholes = survey.north;
 
         // West Cantilever End: Giant iconic round oculus window (Bordeaux.dae / group_5 ID77 & ID85)
         const westPortholes = [
@@ -2962,7 +3015,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         // Add South, North, and West FEA Wall Membranes (Concrete Deep Beam Box with Window Openings)
         // Note: East end (X = 29.59) is glass, not structural concrete, so it has no FEA stress membrane
-        const feaSouth = createFEAMembrane(-13.918); // South facade (Z = -13.92) with 19 portholes
+        const feaSouth = createFEAMembrane(-13.918); // South facade (Z = -13.92) with 20 exterior portholes
         const feaNorth = createFEAMembrane(-24.767); // North facade (Z = -24.77) with 16 portholes
         const feaWest = createFEAEndMembrane(5.054);  // West cantilever concrete end wall with Giant Oculus
 
@@ -3127,18 +3180,23 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             el.innerHTML = s;
         }
 
+        function setBearingArrow(arrow, length, bearingY, reaction) {
+            arrow.visible = reaction > 0;
+            arrow.position.y = bearingY - length;
+            arrow.setLength(length, Math.min(1.1, length * 0.4), Math.min(0.68, length * 0.25));
+        }
         function updateForceArrowsDynamic() {
             const { RL, RC } = shareReactions(liveLoadX);
             // a support that has lifted off (reaction <= 0) collapses its up-arrows
             const kC = RC <= 0 ? 0.04 : THREE.MathUtils.clamp(RC / REACT_BASE.RC, 0.30, 2.2);
             const kL = RL <= 0 ? 0.04 : THREE.MathUtils.clamp(RL / REACT_BASE.RL, 0.30, 2.2);
-            if (cylinderArrow) cylinderArrow.setLength(ARROW_BASE.cyl * kC, 1.2, 0.75);
+            setBearingArrow(cylinderArrow, ARROW_BASE.cyl * kC, -2.7, RC);
 
             // split the courtyard-wall reaction between its two ends by the load's Z eccentricity
             const ecc = THREE.MathUtils.clamp((liveLoadZ - (-19.345)) / 5.4, -1, 1); // + = south
             const fS = 1.0 + 0.7 * ecc, fN = 1.0 - 0.7 * ecc;
-            if (lframeArrowN) lframeArrowN.setLength(ARROW_BASE.lfN * kL * fN, 1.1, 0.65);
-            if (lframeArrowS) lframeArrowS.setLength(ARROW_BASE.lfS * kL * fS, 1.1, 0.65);
+            setBearingArrow(lframeArrowN, ARROW_BASE.lfN * kL * fN, -2.7, RL);
+            setBearingArrow(lframeArrowS, ARROW_BASE.lfS * kL * fS, 0, RL);
 
             // the tie carries the box's Z-eccentric (torsional) demand — not the west lever
             const kT = THREE.MathUtils.clamp(1.0 + Math.abs(boxTorque()) * 0.5, 0.3, 2.6);
@@ -3386,6 +3444,12 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             // decoration that is not a list element: show it only when nothing is
             // isolated (portholes belong to the box, so keep them for element 1)
             const inStress = (mode === 'stress');
+            contextGroup.visible = !keep && mode === 'plain';
+            lowerWalls.visible = livingWalls.visible = mode === 'plain';
+            bedroomWalls.visible = lift.visible = !keep && mode === 'plain';
+            measuredCourt.visible = mode === 'plain';
+            lowerGlazing.visible = mode === 'plain';
+            spiralStair.visible = (!keep && mode === 'plain') || isolated === '3';
             portholeGroup.visible = !inStress && (!keep || isolated === '1');
             glassGroup.visible = !keep;
             steppedSiteGroup.visible = !keep;
@@ -3444,6 +3508,9 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             requestAnimationFrame(animate);
             controls.update();
             const dt = Math.min(_clock.getDelta(), 0.05);
+            // Smooth round trip between the lower and bedroom levels, passing the living floor.
+            liftPhase = (liftPhase + dt * Math.PI / 10) % (2 * Math.PI);
+            placeLift(-0.125 + 2.575 * Math.cos(liftPhase));
 
             // crowd: walk toward the pointer target (fleeing the maid), feed the moving centroid to the model
             if (loadMode === 'crowd') {
@@ -3505,6 +3572,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         updateForceArrowsDynamic();
 
         animate();
+        loading.hidden = true;
     </script>
 </body>
 </html>
