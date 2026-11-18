@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architecture Office — A Misleading Load Path</title>
+    <title>The Gravity Paradox</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -57,6 +57,19 @@
         .cluster:last-child { border-right: none; padding-right: 0; margin-right: 0; }
         .cluster-fields { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
 
+        .gravity-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; max-width: 420px; }
+        .gravity-row .grav-lbl { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; flex: none; }
+        #gravitySlider {
+            flex: 1; -webkit-appearance: none; appearance: none; height: 1px;
+            background: #999; outline: none; cursor: pointer;
+        }
+        #gravitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
+            background: #111; cursor: pointer;
+        }
+        #gravitySlider::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #111; border: none; cursor: pointer; }
+        #gravitySlider::-moz-range-track { height: 1px; background: #999; }
+
         .reading-switch button svg { width: 12px; height: 12px; vertical-align: -2px; margin-right: 5px; }
         button.glass {
             display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
@@ -79,7 +92,7 @@
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
             <span class="idx">02</span>
-            <span class="titleline"><b>Architecture Office</b><span class="sep">&mdash;</span><span class="sub">Pascal Flammer &middot; measured off the 1:200 set</span></span>
+            <span class="titleline"><b>The Gravity Paradox</b><span class="sep">&mdash;</span><span class="sub">Architecture Office, Pascal Flammer &middot; measured off the 1:200 set</span></span>
         </span>
     </div>
 
@@ -108,6 +121,11 @@
                             <span class="lbl bot">Dom-ino</span>
                         </button>
                     </div>
+                </div>
+                <div class="gravity-row">
+                    <span class="grav-lbl">Invert</span>
+                    <input type="range" id="gravitySlider" min="-1" max="1" step="0.01" value="0">
+                    <span class="grav-lbl">Increase</span>
                 </div>
             </div>
         </div>
@@ -192,6 +210,38 @@
                 quad(A,H,J,E,r,tint); quad(B,G,I,F,r,tint); quad(A,B,F,E,r,tint);
                 quad(H,G,I,J,r,tint); quad(E,F,I,J,r,tint); quad(A,B,G,H,r,tint);
             }
+            // a box whose two ends can sit at different (x,z) — same six quads as
+            // box(), just with the top and bottom cross-sections centred separately
+            // capB/capT let a chain of these share one continuous skin: the internal
+            // joints get no end caps, so the merged mesh has no buried faces for
+            // EdgesGeometry to ring the shaft with
+            function leanSeg(x0, y0, z0, x1, y1, z1, w, d, tint, capB = true, capT = true) {
+                const r = { x:(x0+x1)/2, y:(y0+y1)/2, z:(z0+z1)/2 };
+                const A={x:x0-w/2,y:y0,z:z0-d/2}, B={x:x0+w/2,y:y0,z:z0-d/2},
+                      G={x:x0+w/2,y:y0,z:z0+d/2}, H={x:x0-w/2,y:y0,z:z0+d/2},
+                      E={x:x1-w/2,y:y1,z:z1-d/2}, F={x:x1+w/2,y:y1,z:z1-d/2},
+                      I={x:x1+w/2,y:y1,z:z1+d/2}, J={x:x1-w/2,y:y1,z:z1+d/2};
+                quad(A,H,J,E,r,tint); quad(B,G,I,F,r,tint); quad(A,B,F,E,r,tint);
+                quad(H,G,I,J,r,tint);
+                if (capT) quad(E,F,I,J,r,tint);
+                if (capB) quad(A,B,G,H,r,tint);
+            }
+            // A post bowing between two plates. Both ends are cast into concrete,
+            // so the member's tangent stays vertical there and it takes the
+            // fixed–fixed buckling mode: a smooth (1 - cos) bulge with inflection
+            // points a quarter of the way in from each end. Built as a chain of
+            // short leanSegs, so the silhouette is a curve — not the single kink
+            // at mid-height this used to draw, which no real member does.
+            function bentPost(cx, cz, pB, pT, w, d, bx, bz, tint) {
+                const N = 10, H = pT - pB;
+                const off = t => (1 - Math.cos(2 * Math.PI * t)) / 2;
+                let y0 = pB, o0 = 0;
+                for (let i = 1; i <= N; i++) {
+                    const t = i / N, y1 = pB + H * t, o1 = off(t);
+                    leanSeg(cx + bx*o0, y0, cz + bz*o0, cx + bx*o1, y1, cz + bz*o1, w, d, tint, i === 1, i === N);
+                    y0 = y1; o0 = o1;
+                }
+            }
             function wall(x1, z1, x2, z2, y0, y1, t, tint) {
                 const dx = x2-x1, dz = z2-z1, L = Math.hypot(dx, dz) || 1;
                 const nx = -dz/L*t/2, nz = dx/L*t/2;
@@ -205,15 +255,74 @@
             }
             const line = (a,b,color,w,arrow,dashed) => lines.push({a,b,color,w,arrow:!!arrow,dashed:!!dashed});
 
+            // The Gravity Paradox — melting slabs. p.gravity away from 0 (either
+            // direction) softens the floor plates. Each plate is zero-deflection
+            // exactly at its own four real posts (which migrate — corner or
+            // mid-side — so the shape genuinely differs floor to floor) and grows
+            // smoothly (a plate's bending curve, not a pointed dimple) away from
+            // them, largest at whichever corner/edge that floor's posts don't
+            // reach. The bottom face and a fascia skirt are flat CPU triangles
+            // (built here, same shape as the roof's soffit trick); the smooth
+            // warped top face is built separately in three.js (see "slab tops" in
+            // renderScene) and collected into slabTops, one sag function each.
+            const meltAmt = Math.min(1, Math.abs(p.gravity || 0));
+            const SAG_MAX = 0.52, SAG_REACH = Math.max(W, D) * 0.45;
+            const floorBend = (p.gravity || 0) * 0.1;            // a slight lean, same idea as the roof's
+            function supportSag(supports) {
+                if (!supports) return (x, z) => floorBend * (z / (D/2));   // ground/basement: no posts below, no dish
+                return (x, z) => {
+                    let dmin = Infinity;
+                    for (const s of supports) {
+                        const d = Math.hypot(x - s.x, z - s.z);
+                        if (d < dmin) dmin = d;
+                    }
+                    // a cantilever's curve: flat where it leaves the post (the
+                    // plate is continuous there, so zero slope) and steepening all
+                    // the way out. It must NOT level off at the reach radius the
+                    // way a smoothstep does — a free edge keeps turning, and that
+                    // last bit of turn is what makes the tip read as lifted.
+                    const u = Math.min(1.35, dmin / SAG_REACH);
+                    const curve = u * u * (3 - u) / 2;                     // f(0)=0, f'(0)=0, still climbing at u=1
+                    return -meltAmt * SAG_MAX * curve + floorBend * (z / (D/2));
+                };
+            }
+            const slabTops = [];
+            function sagStrip(x0, x1, z0, z1, yBot, thick, tint, sagFn) {
+                // both faces follow the same sag, so the plate keeps its measured
+                // thickness and genuinely bends — rather than a melted top sitting
+                // on a flat soffit, which read as a dark stain where it got exposed
+                const mid = { x:(x0+x1)/2, y: yBot + thick/2, z:(z0+z1)/2 };
+                const B0 = (x,z) => ({ x, y: yBot + sagFn(x,z), z });
+                const T0 = (x,z) => ({ x, y: yBot + thick + sagFn(x,z), z });
+                const NX = Math.max(2, Math.round((x1-x0)/1.4)), NZ = Math.max(2, Math.round((z1-z0)/1.4));
+                for (let i = 0; i < NX; i++) {          // only the fascia ring; both faces are smooth meshes
+                    const xa = x0 + i*(x1-x0)/NX, xb = x0 + (i+1)*(x1-x0)/NX;
+                    for (let j = 0; j < NZ; j++) {
+                        const za = z0 + j*(z1-z0)/NZ, zb = z0 + (j+1)*(z1-z0)/NZ;
+                        if (j === 0)      quad(B0(xa,za), B0(xb,za), T0(xb,za), T0(xa,za), mid, tint);
+                        if (j === NZ-1)   quad(T0(xa,zb), T0(xb,zb), B0(xb,zb), B0(xa,zb), mid, tint);
+                        if (i === 0)      quad(B0(xa,zb), B0(xa,za), T0(xa,za), T0(xa,zb), mid, tint);
+                        if (i === NX-1)   quad(T0(xb,zb), T0(xb,za), B0(xb,za), B0(xb,zb), mid, tint);
+                    }
+                }
+                slabTops.push({ x0, x1, z0, z1, y: yBot + thick, sagAt: sagFn });
+                slabTops.push({ x0, x1, z0, z1, y: yBot, sagAt: sagFn, down: true });
+            }
+
             // slabs, cut open over the core on every level - except the middle of the
             // second floor, where the landing between the two stair flights stays solid
             const flight0 = Math.min((risers - 1) * REAL.going, cl/2 - 0.05);
             const hz = cd/2 - cwall;                     // clear between the core walls
             function slab(y, cut) {
                 const yb = y - p.slabThick;
+                // the posts of the floor below (if any) are this slab's real supports
+                const floorIdx = Math.round(y / fh) - 1;
+                const floorBelow = (floorIdx >= 0 && floorIdx < p.floors.length) ? p.floors[floorIdx] : null;
+                const sagFn = supportSag(floorBelow ? postsAt(floorBelow.pos, p) : null);
                 const strip = (x0,x1,z0,z1) => {
                     if (x1 - x0 < 1e-3 || z1 - z0 < 1e-3) return;
-                    box((x0+x1)/2, yb, (z0+z1)/2, x1-x0, p.slabThick, z1-z0, 'slab');
+                    if (meltAmt < 1e-4) { box((x0+x1)/2, yb, (z0+z1)/2, x1-x0, p.slabThick, z1-z0, 'slab'); return; }
+                    sagStrip(x0, x1, z0, z1, yb, p.slabThick, 'slab', sagFn);
                 };
                 if (!cut) { strip(-W/2, W/2, -D/2, D/2); return; }     // solid plate
                 strip(-W/2, W/2, -D/2, -hz);
@@ -292,7 +401,11 @@
             // the measured wedge - the soffit and fascia are solid here, the top
             // surface is built in three.js as a smooth mesh.
             const soff = topY - p.roofEdge;
-            const lift = (x, z) => topY + p.roofRise * (1 - Math.abs(2*x/W) * Math.abs(2*z/D));
+            // a gentle overall lean, not a droop — the roof keeps its measured
+            // tent shape but tilts a little along its depth as gravity is pulled
+            // either way (the "bending, not sagging" the core and roof get)
+            const roofBend = (p.gravity || 0) * 0.16;
+            const lift = (x, z) => topY + p.roofRise * (1 - Math.abs(2*x/W) * Math.abs(2*z/D)) + roofBend * (z / (D/2));
             {
                 const above = { x:0, y:topY + 60, z:0 };
                 const midpt = { x:0, y:soff + p.roofEdge/2, z:0 };
@@ -330,28 +443,102 @@
                 });
             }
 
-            // four posts a floor
+            // four posts a floor — The Gravity Paradox: p.gravity -1..0..+1 (invert
+            // .. normal .. heavier) opens a gap or stretches each post according to
+            // its real, hidden role. A strut only ever pushes, so inverting gravity
+            // un-seats it at the top; a tie only ever pulls, so inverting slackens
+            // it at the bottom. Heavier gravity does the opposite: struts crush a
+            // little shorter, ties stretch a little longer — the same organs, load
+            // amplified instead of reversed.
+            const Gv = p.gravity || 0;
+            const G_GAP = 0.30, G_STRETCH = 0.22;
+            // Bending, done the way members actually behave: only a member in
+            // COMPRESSION bows — that is buckling, and it needs an axial push to
+            // happen. A member in TENSION is pulled dead straight; it cannot bow,
+            // it can only neck. So the two swap roles as the slider crosses
+            // weightless, and that swap is the honest tell:
+            //   right of centre  → struts are pushed harder and bow; ties pull straight
+            //   left of centre   → ties go slack, then get pushed, and curl; struts straighten
+            // (gEff below is the slider read as a real gravity vector: -1 .. 1 .. 2,
+            //  so dLoad is the change from the as-built 1 g — zero at the centre,
+            //  which is why nothing bends at all in the as-built state.)
+            const G_BUCKLE = 0.30;      // a real 20x20 post is stiff, but it is only 20x20
+            const G_CURL   = 0.22;      // a slack rod curls more easily than a post buckles
+            const gEffG = Gv < 0 ? 1 + 2*Gv : 1 + Gv;
+            const dLoad = gEffG - 1;    // 0 at as-built, +1 fully heavy, -2 fully inverted
+            // "increase" alone barely reads on its own — a tie also visibly necks
+            // down the way a stretched rod does, in both directions of pull; a
+            // strut keeps its true cross-section, since it really is that solid
+            const G_THIN_TIE = 0.6;
             p.floors.forEach((f, idx) => {
-                const y1 = (idx+1)*fh;
                 postsAt(f.pos, p).forEach(q => {
                     const role = realRole(f, q);
                     // sits between the plate below and the one above, buried 20 mm into
                     // each so its outline stays in the open storey, not on the plates
                     // top-floor posts stop at the roof soffit, not one storey up
-                    const pB = idx*fh - 0.02;
-                    const pT = (idx === p.numFloors - 1 ? soff : (idx+1)*fh - p.slabThick) + 0.02;
-                    box(q.x, pB, q.z, S, pT - pB, S,
-                        !xray ? 'post' : (role === 'strut' ? 'strut' : 'tieghost'));
-                    if (!xray) return;
+                    const pBOrig = idx*fh - 0.02;
+                    let pB = pBOrig;
+                    let pT = (idx === p.numFloors - 1 ? soff : (idx+1)*fh - p.slabThick) + 0.02;
                     if (role === 'strut') {
-                        line({x:q.x,y:y1,z:q.z}, {x:q.x,y:y1-fh*0.55,z:q.z}, 'rgba(211,47,47,0.95)', 2, true);
+                        // a strut only ever pushes — it never leaves the floor it's
+                        // seated on, invert or not. It only crushes a little under
+                        // heavier load, still fully seated.
+                        pT -= Gv > 0 ? Gv * G_STRETCH * 0.5 : 0;
                     } else {
+                        pB += Gv < 0 ? -Gv * G_GAP : -Gv * G_STRETCH;        // slackens / stretches
+                    }
+                    if (pT - pB < 0.05) pT = pB + 0.05;
+                    const tint = !xray ? 'post' : (role === 'strut' ? 'strut' : 'tieghost');
+                    // how hard is THIS member being squashed right now?
+                    const squash = role === 'strut'
+                        ? Math.max(0, dLoad)                        // heavier gravity pushes the strut
+                        : Math.min(1.4, Math.max(0, -dLoad));       // invert unloads, then pushes, the tie
+                    const amp = (role === 'strut' ? G_BUCKLE : G_CURL) * squash;
+                    // it buckles away from the plan centre — the direction the
+                    // building as a whole is being spread
+                    const rl = Math.hypot(q.x, q.z) || 1;
+                    const bendX = amp * (q.x / rl), bendZ = amp * (q.z / rl);
+                    const Sr = role === 'strut' ? S : S * (1 - Math.abs(Gv) * G_THIN_TIE);
+                    if (amp < 1e-3) {
+                        box(q.x, pB, q.z, Sr, pT - pB, Sr, tint);   // straight: in tension, or as-built
+                    } else {
+                        bentPost(q.x, q.z, pB, pT, Sr, Sr, bendX, bendZ, tint);
+                    }
+                    // a tie's disguise only ever pulls back, never grows a void —
+                    // what it's hiding stays right there, now visible as a bare
+                    // cable through the gap it just opened
+                    if (role !== 'strut' && pB > pBOrig + 1e-4)
+                        line({x:q.x, y:pBOrig, z:q.z}, {x:q.x, y:pB, z:q.z}, 'rgba(20,20,20,0.85)', 1.5);
+                    if (!xray) return;
+                    // the force diagram reads off the post as it actually stands now,
+                    // not off the nominal floor line — so the arrows travel with the
+                    // gap, the stretch and the bow as the gravity slider moves
+                    // roughly on the bowed shaft (it bulges to bendX/bendZ at mid-height)
+                    const mx = q.x + bendX / 2, mz = q.z + bendZ / 2;
+                    // ...and it points where gravity actually points. The slider is a
+                    // gravity vector: centre is 1 g, right is heavier, left passes
+                    // through weightless at half travel and comes out inverted — so
+                    // the arrows shrink to nothing at gEff = 0 and then flip.
+                    const dir = gEffG < 0 ? -1 : 1, mag = Math.abs(gEffG);
+                    if (mag > 0.04) {
+                        const L = (pT - pB) * 0.55 * Math.min(1, mag);
+                        if (role === 'strut') {
+                            const a = dir > 0 ? pT : pB;
+                            line({x:mx,y:a,z:mz}, {x:mx,y:a - dir*L,z:mz}, 'rgba(211,47,47,0.95)', 2, true);
+                        } else {
+                            const a = dir > 0 ? pB : pT, b = dir > 0 ? pT : pB;
+                            line({x:mx,y:a,z:mz}, {x:mx,y:b,z:mz}, 'rgba(25,118,210,0.95)', 2, true);
+                        }
+                    }
+                    if (role !== 'strut') {
                         const head = topY - (idx === p.floors.length - 1 ? p.slabThick/2 : p.slabThick);
-                        if (head > y1 + 1e-6) line({x:q.x,y:y1,z:q.z}, {x:q.x,y:head,z:q.z}, 'rgba(13,71,161,0.9)', 1.6, false, true);
-                        line({x:q.x,y:y1-fh*0.5,z:q.z}, {x:q.x,y:y1,z:q.z}, 'rgba(25,118,210,0.95)', 2, true);
+                        if (head > pT + 1e-6) line({x:q.x,y:pT,z:q.z}, {x:q.x,y:head,z:q.z}, 'rgba(13,71,161,0.9)', 1.6, false, true);
                         const ax = q.x < -0.01 ? -cl/2 : (q.x > 0.01 ? cl/2 : 0);
                         const az = q.z < -0.01 ? -cd/2 : (q.z > 0.01 ? cd/2 : 0);
-                        line({x:q.x,y:head,z:q.z}, {x:ax,y:head,z:az}, 'rgba(230,81,0,0.95)', 2, true);
+                        if (mag > 0.04) {
+                            const h0 = dir > 0 ? {x:q.x,z:q.z} : {x:ax,z:az}, h1 = dir > 0 ? {x:ax,z:az} : {x:q.x,z:q.z};
+                            line({x:h0.x,y:head,z:h0.z}, {x:h1.x,y:head,z:h1.z}, 'rgba(230,81,0,0.95)', 2, true);
+                        }
                     }
                 });
             });
@@ -372,7 +559,7 @@
                 });
             }
 
-            return { tris, lines, topY, W, D, cl, cd, lift };
+            return { tris, lines, topY, W, D, cl, cd, lift, slabTops };
         }
 
         /* ============================================================
@@ -415,7 +602,7 @@
             ghostS:new THREE.MeshLambertMaterial({ color: 0xef9a9a, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }),
             edge:  new THREE.LineBasicMaterial({ color: 0x1c1c1c }),
             edgeX: new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.4 }),
-            ground:new THREE.MeshStandardMaterial({ color: 0xc4c4c4, roughness: 0.98, metalness: 0, side: THREE.DoubleSide })
+            ground:new THREE.MeshStandardMaterial({ color: 0xc4c4c4, roughness: 0.98, metalness: 0, side: THREE.DoubleSide, transparent: true })
         };
 
         let modelG = new THREE.Group();
@@ -447,12 +634,15 @@
         }
         const V3 = o => new THREE.Vector3(o.x, o.y, o.z);
 
-        const EDGE_THR = { slab: 1, core: 1, post: 1, stair: 1, wall: 1, strut: 1, tieghost: 1, roof: 26 };
+        // posts get a loose threshold so a bowed shaft reads as one smooth member —
+        // its real 90 deg arrises still draw, the small kinks along the curve don't
+        const EDGE_THR = { slab: 1, core: 1, post: 26, stair: 1, wall: 1, strut: 26, tieghost: 26, roof: 26 };
 
         function renderScene(p, risers) {
             clearGroup(modelG);
             const B = build(p, risers);
             const xray = C.mode === 'xray';
+            const meltAmt = Math.min(1, Math.abs(p.gravity || 0));
 
             // ---- solids, grouped by tint, each with its crease outline
             const byTint = {};
@@ -476,8 +666,10 @@
                 modelG.add(el);
             }
 
-            // ---- slab outlines: the outer rectangle only, no core-hole rim
-            {
+            // ---- slab outlines: the outer rectangle only, no core-hole rim.
+            // Skipped once the plates start melting — losing the crisp edge
+            // reads as more dissolved, not as a bug.
+            if (meltAmt < 0.02) {
                 const em = xray ? MAT.edgeX : MAT.edge;
                 for (let i = -p.numBelow; i < p.numFloors; i++) {
                     const y = i * p.floorHeight;
@@ -515,6 +707,25 @@
                     seg(new THREE.Vector3(0, yc, 0), new THREE.Vector3(c[0]*W/2, B.topY, c[1]*D/2), vm));
             }
 
+            // ---- slab faces: the smooth warped skins of a melting floor, top and
+            // soffit both (build() leaves only the fascia ring as CPU triangles).
+            // `down` entries are wound the other way so the soffit faces down.
+            if (B.slabTops && B.slabTops.length) {
+                const mat = xray ? MAT.ghost : MAT.card;
+                for (const s of B.slabTops) {
+                    const w = s.x1 - s.x0, d = s.z1 - s.z0;
+                    const nx = Math.max(2, Math.round(w / 1.4)), nz = Math.max(2, Math.round(d / 1.4));
+                    const g = new THREE.PlaneGeometry(w, d, nx, nz);
+                    g.rotateX(s.down ? Math.PI / 2 : -Math.PI / 2);
+                    g.translate((s.x0 + s.x1) / 2, 0, (s.z0 + s.z1) / 2);
+                    const pos = g.attributes.position;
+                    for (let i = 0; i < pos.count; i++) pos.setY(i, s.y + s.sagAt(pos.getX(i), pos.getZ(i)));
+                    pos.needsUpdate = true;
+                    g.computeVertexNormals();
+                    if (mat) modelG.add(new THREE.Mesh(g, mat));
+                }
+            }
+
             // ---- annotation lines (force diagram, reveal, reading overlays)
             const groups = {};
             for (const l of B.lines) {
@@ -539,15 +750,29 @@
             // (the temple / Dom-ino readings are no longer drawn as lines on the
             // building — the hourglass throws them as tree shadows instead)
 
-            // ---- ground (as-built only) - a real shadow-catching disc
+            // ---- ground (as-built only) - a real shadow-catching disc. Under
+            // inverted gravity it has no reason to stay: it thins to a bare rim
+            // and drifts up and away, the way Magritte lets the ground go.
             if (!xray) {
                 const gr = Math.max(B.W, B.D) * 0.85;
                 // sit the ground plane a clear step below the lowest floor plate
                 const gy = -p.numBelow * p.floorHeight - p.slabThick + 0.002;   // flush under the lowest plate
-                const gm = new THREE.Mesh(new THREE.CircleGeometry(gr, 72), MAT.ground);
-                gm.rotation.x = -Math.PI / 2;
-                gm.position.y = gy;
-                modelG.add(gm);
+                const inv = Math.max(0, -(p.gravity || 0));       // 0..1 toward inverted
+                MAT.ground.opacity = Math.max(0, 1 - inv * 1.15);
+                if (MAT.ground.opacity > 0.01) {
+                    const gm = new THREE.Mesh(new THREE.CircleGeometry(gr, 72), MAT.ground);
+                    gm.rotation.x = -Math.PI / 2;
+                    gm.position.y = gy + inv * 8;
+                    modelG.add(gm);
+                }
+                if (inv > 0.02) {
+                    const rim = new THREE.LineSegments(
+                        new THREE.EdgesGeometry(new THREE.CircleGeometry(gr, 72)),
+                        new THREE.LineBasicMaterial({ color: 0x9c9c9c, transparent: true, opacity: Math.min(1, inv * 1.4) }));
+                    rim.rotation.x = -Math.PI / 2;
+                    rim.position.y = gy + inv * 8;
+                    modelG.add(rim);
+                }
             }
 
             // ---- camera fit from the model's own bounds (rotation invariant)
@@ -687,6 +912,7 @@
         // the whole model is locked to the measured drawings; the reading is
         // whatever the hourglass is currently showing (see the glass handler)
         let reading = 'none';
+        let gravity = 0;   // -1 inverted .. 0 normal .. +1 heavier — The Gravity Paradox
 
         function readParams() {
             const p = {};
@@ -694,6 +920,7 @@
              'postSize','roofEdge','roofRise','coreLen','coreDep','coreWall'].forEach(k => p[k] = REAL[k]);
             p.reveal = false;
             p.showStairs = true;
+            p.gravity = gravity;
             p.floors = floorsFor(p.numFloors);
             return p;
         }
@@ -924,6 +1151,14 @@
             growDir = awake ? 1 : -1;
             if (!awake) legActive = false;
             runGrove();
+        });
+
+        // The Gravity Paradox: the slider drives itself, live — no tween needed,
+        // dragging it is the animation.
+        const gravitySlider = document.getElementById('gravitySlider');
+        gravitySlider.addEventListener('input', () => {
+            gravity = +gravitySlider.value;
+            update();
         });
 
         function update() {
