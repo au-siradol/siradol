@@ -116,6 +116,23 @@
     .bird-icon-btn svg { pointer-events: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; flex-shrink: 0; }
     .bird-icon-label { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;}
 
+    /* ---- give the 3D view the height: controls sit low, the page never scrolls ----
+       (same as Maison à Bordeaux; the shared sheet's 32 px foot and 55vh canvas stay for others) */
+    body.study-page.page-snowdon-aviary-tensegrity { padding-bottom: 12px; }
+    body.page-snowdon-aviary-tensegrity .canvas-container { padding-bottom: 6px; }
+    body.page-snowdon-aviary-tensegrity .controls-container { margin-top: 6px; }
+    /* short desktop screens: fill the remaining height instead of the shared 55vh
+       (selectors one class stronger than the shared sheet, which loads after this) */
+    @media (max-height: 800px) and (min-width: 761px) {
+        html:has(body.study-page.page-snowdon-aviary-tensegrity), body.study-page.page-snowdon-aviary-tensegrity { height: 100%; overflow: hidden; }
+        body.study-page.page-snowdon-aviary-tensegrity .canvas-container { flex: 1 1 auto; height: auto; min-height: 300px; }
+        body.study-page.page-snowdon-aviary-tensegrity .controls-container { flex-wrap: nowrap; }
+    }
+    /* below ~520 px tall even 300 px of canvas will not fit: let the page scroll */
+    @media (max-height: 520px) and (min-width: 761px) {
+        html:has(body.study-page.page-snowdon-aviary-tensegrity), body.study-page.page-snowdon-aviary-tensegrity { height: auto; overflow: auto; }
+    }
+
 </style>
 <link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
 </head>
