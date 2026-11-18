@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axonometric Structural System (Accurate Forces & Clean Wireframe)</title>
+    <title>Maison à Bordeaux — The Balanced Box</title>
     <style>
         * { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important; box-sizing: border-box; }
         [hidden] { display: none !important; }
@@ -78,15 +78,6 @@
         }
         .column:first-child { border-left: none; padding-left: 0; }
         .column-sim .sim-section { margin-top: 0; padding-top: 0; border-top: none; }
-        /* live support-share readout — shown only in the Load-path view, but its row
-           height is always reserved (visibility toggle, not display) so switching the
-           view never resizes the 3D canvas. */
-        .sim-readout {
-            font-size: 9px; color: #555; line-height: 1.4; min-height: 2.4em;
-            margin: 9px 0 3px; padding: 5px 8px;
-            background: #f5f5f2; border-left: 2px solid #bbb;
-        }
-        .sim-readout b, .sim-readout .ro-warn { color: #c0392b; font-weight: 700; }
 
         .column h3 {
             margin: 0 0 6px 0;
@@ -155,9 +146,7 @@
             height: 9px;
             border: 1px solid #888;
             /* compression (blue) left -> ~0 (white, ~83%) -> tension (red) right */
-            background: linear-gradient(to right,
-                #2166ac 0%, #3f76b3 20%, #6f9bc9 42%, #b0c6e0 66%, #e2e9f2 79%,
-                #f7f7f7 83%, #fae6e2 85%, #f2c9c2 88%, #e79c92 92%, #d25b4e 96%, #b2182b 100%);
+            background: linear-gradient(to right, #2166ac 0%, #92c5de 25%, #f7f7f7 50%, #f4a582 75%, #b2182b 100%);
         }
 
         .sim-section { margin-top: 0; padding-top: 0; border-top: none; }
@@ -199,7 +188,7 @@
         .element-list li:hover .li-head .li-role { color: #7ba7dd; }
 
         .viewmode { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 12px; }
-        .viewmode label { display: flex; align-items: center; gap: 7px; font-size: 9.5px; color: #333; cursor: pointer; }
+        .viewmode label { display: flex; align-items: center; gap: 7px; color: #333; cursor: pointer; }
 
         /* load-mode icon buttons (no radios) */
         .mode-btns { display: flex; gap: 6px; margin: 0 0 10px; }
@@ -212,6 +201,71 @@
         .mode-btn:hover { background: #f2f2f2; border-color: #888; }
         .mode-btn.active { background: #111; border-color: #111; color: #fff; }
         .mode-btn .mode-ico { width: 34px; height: 34px; flex: none; stroke: currentColor; stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        .column-explore { flex: 1; }
+        .viewmode { flex-direction: row; gap: 0; margin-bottom: 10px; }
+        .viewmode label { position: relative; flex: 1; }
+        .viewmode input { position: absolute; opacity: 0; }
+        .viewmode span { width: 100%; text-align: center; padding: 7px 5px; border: 1px solid #b5b5b5;
+            text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+        .viewmode input:checked + span { background: #111; color: #fff; border-color: #111; }
+        .viewmode input:focus-visible + span, .focus-options button:focus-visible { outline: 2px solid #1976d2; outline-offset: 2px; }
+        .focus-options { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; }
+        .focus-options button { background: transparent; border: 1px solid #b5b5b5; cursor: pointer;
+            text-transform: uppercase; letter-spacing: .5px; color: #333; }
+        .focus-options button[aria-pressed="true"] { background: #111; color: #fff; border-color: #111; }
+        /* one line always reserved, and the crowd / wine panels share one height, so
+           picking a focus or a load type never resizes the 3D canvas */
+        #focusDescription { font-size: 10.5px; margin: 5px 0 0; min-height: 1.25em; }
+        .mode-btn { flex-direction: row; justify-content: center; padding: 4px; }
+        .mode-btn .mode-ico { width: 24px; height: 24px; }
+        .sim-readout { font-size: 11px; font-weight: bold; text-align: center; margin: 8px 0 0;
+            text-transform: uppercase; letter-spacing: 1px; color: #555; flex-shrink: 0;
+            min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sim-readout.danger { color: #d32f2f; }
+        .mode-btns { margin-bottom: 5px; }
+        .analysis-note { font-size: 9px; line-height: 1.35; color: #666; margin: 0 0 5px; }
+
+        /* ---- compact three-column panel (Snowdon / Bruder Klaus metrics: 26 px controls) ---- */
+        .controls-container { gap: 0; }
+        .column-explore, .column-sim { flex: 1.2; }
+        .column-scenario { flex: 0.8; }
+        .column h3 { margin-bottom: 6px; }
+        .viewmode { margin: 0 0 6px; }
+        .viewmode span { padding: 4px 5px; min-height: 26px; display: flex; align-items: center; justify-content: center; }
+        .mode-btns { margin: 0 0 6px; gap: 4px; }
+        .mode-btn { gap: 6px; white-space: nowrap; letter-spacing: .2px; }
+        .mode-btn .mode-ico { width: 16px; height: 16px; stroke-width: 4; }
+        .sim-btn { margin-bottom: 4px; }
+        .slider-row { margin-bottom: 0; }
+        .slider-note { margin-top: 0; }
+        /* crowd and wine panels share one height so switching never resizes the canvas */
+        #crowdCtl, #wineCtl { min-height: 40px; }
+        .wine-row { display: flex; align-items: flex-end; gap: 8px; }
+        .wine-row .sim-btn { width: auto; flex: none; margin: 0; }
+        .wine-row .slider-row { flex: 1; min-width: 0; }
+        .fea-colorbar { min-height: 0; margin: 2px 0 4px; flex-wrap: nowrap; }
+        .fea-colorbar .fea-gradient-bar { flex: 1; min-width: 40px; }
+        .analysis-note { margin: 0; }
+        /* ---- give the 3D view the height: buttons sit low, the page never scrolls ----
+           (this page only; the shared sheet's 32 px foot and 55vh canvas stay for others) */
+        body.study-page.page-maison-a-bordeaux { padding-bottom: 12px; }
+        body.page-maison-a-bordeaux .canvas-container { padding-bottom: 6px; }
+        body.page-maison-a-bordeaux .sim-readout { margin-top: 6px; }
+        body.page-maison-a-bordeaux .controls-container { margin-top: 6px; }
+        /* short desktop screens: fill the remaining height instead of the shared 55vh
+           (selectors one class stronger than the shared sheet, which loads after this) */
+        @media (max-height: 800px) and (min-width: 761px) {
+            html:has(body.study-page.page-maison-a-bordeaux), body.study-page.page-maison-a-bordeaux { height: 100%; overflow: hidden; }
+            body.study-page.page-maison-a-bordeaux .canvas-container { flex: 1 1 auto; height: auto; min-height: 300px; }
+            body.study-page.page-maison-a-bordeaux .controls-container { flex-wrap: nowrap; }
+        }
+        /* below ~520 px tall even 300 px of canvas will not fit: let the page scroll */
+        @media (max-height: 520px) and (min-width: 761px) {
+            html:has(body.study-page.page-maison-a-bordeaux), body.study-page.page-maison-a-bordeaux { height: auto; overflow: auto; }
+        }
+        /* Stress view hides the steel members' chips; keep both chip rows reserved */
+        .focus-options { min-height: calc(2 * var(--control-height, 26px) + 4px); }
     </style>
     <link rel="preload" href="./bordeaux-runtime.min.js" as="script">
 <link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
@@ -230,44 +284,33 @@
         <div id="simContainer">
             <div id="loading">Loading True 3D Geometry...</div>
         </div>
+        <p id="simReadout" class="sim-readout" aria-live="polite"></p>
     </div>
 
     <div class="controls-container">
-        <!-- Column 1: Structural elements (click to expand + isolate in 3D) -->
-        <div class="column column-elements">
-            <h3>Structural Elements &mdash; click to inspect</h3>
-            <ul class="element-list">
-                <li data-el="1"><span class="li-head">1 &nbsp; Concrete box &nbsp;<span class="li-role">four walls acting as one deep beam</span></span></li>
-                <li data-el="2"><span class="li-head">2 &nbsp; Steel I-beam &nbsp;<span class="li-role">roof beam over the cylinder; the cable ties its far end down</span></span></li>
-                <li data-el="3"><span class="li-head">3 &nbsp; Stair cylinder &nbsp;<span class="li-role">off-centre compression support; the pivot</span></span></li>
-                <li data-el="4"><span class="li-head">4 &nbsp; Tension cable &amp; counterweight &nbsp;<span class="li-role">pretensioned tie to a buried weight; stops the beam end lifting</span></span></li>
-                <li data-el="5"><span class="li-head">5 &nbsp; L-shaped brace &nbsp;<span class="li-role">the courtyard gravity support; also braces against roll</span></span></li>
-            </ul>
+        <!-- Column 1: what to look at -->
+        <div class="column column-explore">
+            <h3>Explore model</h3>
+            <div class="viewmode" role="radiogroup" aria-label="View">
+                <label><input type="radio" name="viewMode" id="vmPlain" checked><span>Solid</span></label>
+                <label><input type="radio" name="viewMode" id="vmLoad"><span>Load path</span></label>
+                <label><input type="radio" name="viewMode" id="vmStress"><span>Stress</span></label>
+            </div>
+            <div class="focus-options" aria-label="Focus">
+                <button type="button" data-el="" aria-pressed="true">All</button>
+                <button type="button" data-el="1" aria-pressed="false">Concrete box</button>
+                <button type="button" data-el="2" aria-pressed="false">I-beam</button>
+                <button type="button" data-el="3" aria-pressed="false">Cylinder</button>
+                <button type="button" data-el="4" aria-pressed="false">Cable</button>
+                <button type="button" data-el="5" aria-pressed="false">L-brace</button>
+            </div>
+            <p id="focusDescription" aria-live="polite"></p>
         </div>
 
-        <!-- Column 2: View mode -->
-        <div class="column column-view">
-            <h3>View</h3>
-            <div class="viewmode">
-                <label><input type="radio" name="viewMode" id="vmPlain" checked> Solid (plain &mdash; no force lines)</label>
-                <label><input type="radio" name="viewMode" id="vmLoad"> Load path (colour by force)</label>
-                <label><input type="radio" name="viewMode" id="vmStress"> Stress field (&sigma;&#8321;/&sigma;&#8323; + strut-and-tie)</label>
-            </div>
-            <div id="feaColorBar" class="fea-colorbar">
-                <span class="fea-title">&sigma; (MPa)</span>
-                <span class="fea-end">&minus;30 comp.</span>
-                <div class="fea-gradient-bar"></div>
-                <span class="fea-end">+6 tens.</span>
-                <span class="fea-note">non-linear &middot; f<sub>ctm</sub>&asymp;3 crack / f'<sub>c</sub>&asymp;30 crush</span>
-            </div>
-        </div>
-
-        <!-- Column 3: Equilibrium Simulator -->
+        <!-- Column 2: the live load -->
         <div class="column column-sim">
             <h3>Equilibrium Simulator</h3>
             <div id="simSection" class="sim-section">
-                <button id="resetSimBtn" class="sim-btn"><span>&#8635; Normal day &mdash; reset</span></button>
-
                 <div class="mode-btns">
                     <button id="lmCrowdBtn" class="mode-btn active" type="button">
                         <svg class="mode-ico" viewBox="0 0 64 64" aria-hidden="true">
@@ -291,8 +334,6 @@
                     </button>
                 </div>
 
-                <p id="simReadout" class="sim-readout">Cylinder 61% &middot; courtyard wall 39% &middot; tie pretensioned</p>
-
                 <div id="crowdCtl">
                     <div class="slider-row">
                         <div class="slabel"><span>Crowd size</span><span class="val" id="crowdNLabel">0 people</span></div>
@@ -302,21 +343,45 @@
                 </div>
 
                 <div id="wineCtl" hidden>
-                    <button id="winePlayBtn" class="sim-btn"><span>Pour the wine</span></button>
-                    <div class="slider-row">
-                        <div class="slabel"><span>Fill level</span><span class="val" id="wineLabel">0%</span></div>
-                        <input type="range" id="wineSlider" min="0" max="100" step="1" value="0">
+                    <div class="wine-row">
+                        <button id="winePlayBtn" class="sim-btn"><span>Pour the wine</span></button>
+                        <div class="slider-row">
+                            <div class="slabel"><span>Fill level</span><span class="val" id="wineLabel">0%</span></div>
+                            <input type="range" id="wineSlider" min="0" max="100" step="1" value="0">
+                        </div>
                     </div>
                 </div>
-
-                <button id="cutCableBtn" class="sim-btn"><svg class="btn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg><span>Cut tension cable</span></button>
             </div>
+        </div>
+
+        <!-- Column 3: scenario actions, stress key, assumptions -->
+        <div class="column column-scenario">
+            <h3>Scenario</h3>
+            <button id="resetSimBtn" class="sim-btn"><span>&#8635; Normal day &mdash; reset</span></button>
+            <button id="cutCableBtn" class="sim-btn"><svg class="btn-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg><span>Cut tension cable</span></button>
+            <div id="feaColorBar" class="fea-colorbar">
+                <span class="fea-title">Relative &sigma; on walls</span>
+                <span class="fea-end">Comp.</span>
+                <div class="fea-gradient-bar"></div>
+                <span class="fea-end">Tens.</span>
+            </div>
+            <details class="analysis-note"><summary>Model assumptions</summary>Assumed elastic grillage · deformation relative to Normal day, display scale fitted automatically (real mm in the readout) · 80 kg/person · wine 1,000 kg/m³.
+            Effective concrete E = 30 GPa, walls 0.33 m, hidden floor/roof diaphragms 0.20 m.
+            Box torsion uses the cellular-deck constant (Hambly) for the walls + slabs as a closed tube.
+            Relative wall stress is in-plane bending + beam shear only: it excludes torsional shear flow,
+            bearing compression, local opening effects and cracking.
+            Steel E = 200 GPa, effective I = 0.018 m⁴, tie A = 2,800 mm², pretensioned to 500 kN on a Normal day
+            (lock-off ≈ 1,385 kN before the beam end and box deflect);
+            bearing stiffness 1,000,000 kN/m. These are study assumptions, not surveyed properties.
+            Stress colours: Normal-day peak = 40% of the scale.
+            Lift motion is an architectural animation.</details>
         </div>
 
     </div>
 
     <script src="./bordeaux-runtime.min.js"></script>
     <script src="./bordeaux-geometry.js"></script>
+    <script src="./bordeaux-analysis.js?v=20261118-4"></script>
     <script type="module">
         const loading = document.getElementById('loading');
         window.addEventListener('error', () => {
@@ -344,7 +409,7 @@ v 26.1927 1.59266 -23.2622
 vt 0 451.989
 v 26.1927 2.45 -24.7674
 vt 0 520.188
-f 1/1/1 2/2/1 3/3/1 4/4/1 
+f 1/1/1 2/2/1 3/3/1 4/4/1
 
 v 26.5974 1.59266 -11.7714
 vt 33.1778 60.7345
@@ -378,7 +443,7 @@ v 26.1927 1.59266 -22.8622
 vt 0 469.824
 vt -15.9336 469.824
 vt -15.9336 33.1778
-f 12/14/3 13/15/3 6/16/3 5/17/3 
+f 12/14/3 13/15/3 6/16/3 5/17/3
 
 vt -544.832 94.4882
 vn -1 0 -0
@@ -399,40 +464,40 @@ v 26.1927 -2.7 -22.8622
 vt -469.824 -108.268
 v 26.1927 -2.7 -23.2622
 vt -485.572 -108.268
-f 17/23/4 13/20/4 3/19/4 18/24/4 
+f 17/23/4 13/20/4 3/19/4 18/24/4
 
 vt 15.9336 60.7345
 vn 0 0 1
 vt 0 60.7345
 vt 0 -108.268
 vt 15.9336 -108.268
-f 6/25/5 13/26/5 17/27/5 7/28/5 
+f 6/25/5 13/26/5 17/27/5 7/28/5
 
 vt -15.9336 485.572
 vt 0 485.572
-f 8/29/3 7/16/3 17/15/3 18/30/3 
+f 8/29/3 7/16/3 17/15/3 18/30/3
 
 vn 0 0 -1
 vt -15.9336 60.7345
 vt -15.9336 -108.268
-f 3/26/6 2/31/6 8/32/6 18/27/6 
+f 3/26/6 2/31/6 8/32/6 18/27/6
 
 vt -15.9336 -1.9685
-f 14/12/6 12/26/6 5/31/6 11/33/6 
+f 14/12/6 12/26/6 5/31/6 11/33/6
 
 vt -15.9336 0
 vt 0 0
-f 14/14/3 11/17/3 10/34/3 15/35/3 
+f 14/14/3 11/17/3 10/34/3 15/35/3
 
 vt 15.9336 -1.9685
 vt 15.9336 94.4882
-f 15/12/5 10/36/5 9/37/5 16/11/5 
+f 15/12/5 10/36/5 9/37/5 16/11/5
 
 vt 15.9336 0
 vn 0 1 -0
 vt 15.9336 544.832
 vt 0 544.832
-f 9/38/7 1/39/7 4/40/7 16/35/7 
+f 9/38/7 1/39/7 4/40/7 16/35/7
 
 g Mesh2 Group2 Model
 
@@ -445,7 +510,7 @@ v 11.5956 -2.8616 -28.0786
 vt 62.644 75.9094
 v 11.5946 -2.8616 -28.0863
 vt 62.9513 75.9094
-f 19/41/8 20/42/8 21/43/8 22/44/8 
+f 19/41/8 20/42/8 21/43/8 22/44/8
 
 v 11.5657 5.65 -28.0487
 vt 43.6022 67.9027
@@ -493,7 +558,7 @@ v 11.5508 5.65 -28.0527
 vt 43.0136 68.0604
 v 11.558 5.65 -28.0497
 vt 43.2976 67.9428
-f 23/45/7 24/46/7 25/47/7 26/48/7 27/49/7 28/50/7 20/51/7 19/52/7 29/53/7 30/54/7 31/55/7 32/56/7 33/57/7 34/58/7 35/59/7 36/60/7 37/61/7 38/62/7 39/63/7 40/64/7 41/65/7 42/66/7 43/67/7 44/68/7 
+f 23/45/7 24/46/7 25/47/7 26/48/7 27/49/7 28/50/7 20/51/7 19/52/7 29/53/7 30/54/7 31/55/7 32/56/7 33/57/7 34/58/7 35/59/7 36/60/7 37/61/7 38/62/7 39/63/7 40/64/7 41/65/7 42/66/7 43/67/7 44/68/7
 
 vt 52.3996 411.012
 vn 0.130526 0 0.991445
@@ -502,7 +567,7 @@ v 11.5657 -2.8616 -28.0487
 vt 52.0923 75.9094
 v 11.5735 -2.8616 -28.0497
 vt 52.3996 75.9094
-f 24/69/9 23/70/9 45/71/9 46/72/9 
+f 24/69/9 23/70/9 45/71/9 46/72/9
 
 vt 34.3661 411.012
 vn -0.130526 0 0.991445
@@ -510,7 +575,7 @@ vt 34.0588 411.012
 v 11.558 -2.8616 -28.0497
 vt 34.0588 75.9094
 vt 34.3661 75.9094
-f 23/73/10 44/74/10 47/75/10 45/76/10 
+f 23/73/10 44/74/10 47/75/10 45/76/10
 
 vt 14.0011 411.012
 vn -0.382683 0 0.92388
@@ -518,7 +583,7 @@ vt 13.6938 411.012
 v 11.5508 -2.8616 -28.0527
 vt 13.6938 75.9094
 vt 14.0011 75.9094
-f 44/77/11 43/78/11 48/79/11 47/80/11 
+f 44/77/11 43/78/11 48/79/11 47/80/11
 
 vt -7.30755 411.012
 vn -0.608761 0 0.793353
@@ -526,7 +591,7 @@ vt -7.61485 411.012
 v 11.5446 -2.8616 -28.0574
 vt -7.61485 75.9094
 vt -7.30755 75.9094
-f 43/81/12 42/82/12 49/83/12 48/84/12 
+f 43/81/12 42/82/12 49/83/12 48/84/12
 
 vt -28.1078 411.012
 vn -0.793353 0 0.608761
@@ -534,7 +599,7 @@ vt -28.4151 411.012
 v 11.5398 -2.8616 -28.0636
 vt -28.4151 75.9094
 vt -28.1078 75.9094
-f 42/85/13 41/86/13 50/87/13 49/88/13 
+f 42/85/13 41/86/13 50/87/13 49/88/13
 
 vt -46.982 411.012
 vn -0.92388 0 0.382683
@@ -542,7 +607,7 @@ vt -47.2893 411.012
 v 11.5368 -2.8616 -28.0708
 vt -47.2893 75.9094
 vt -46.982 75.9094
-f 41/89/14 40/90/14 51/91/14 50/92/14 
+f 41/89/14 40/90/14 51/91/14 50/92/14
 
 vt -62.644 411.012
 vn -0.991445 0 0.130526
@@ -550,7 +615,7 @@ vt -62.9513 411.012
 v 11.5358 -2.8616 -28.0786
 vt -62.9513 75.9094
 vt -62.644 75.9094
-f 40/93/15 39/94/15 52/95/15 51/96/15 
+f 40/93/15 39/94/15 52/95/15 51/96/15
 
 vt -74.0265 411.012
 vn -0.991445 0 -0.130526
@@ -558,7 +623,7 @@ vt -74.3338 411.012
 v 11.5368 -2.8616 -28.0863
 vt -74.3338 75.9094
 vt -74.0265 75.9094
-f 39/97/16 38/98/16 53/99/16 52/100/16 
+f 39/97/16 38/98/16 53/99/16 52/100/16
 
 vt -80.3537 411.012
 vn -0.92388 0 -0.382683
@@ -566,7 +631,7 @@ vt -80.661 411.012
 v 11.5398 -2.8616 -28.0935
 vt -80.661 75.9094
 vt -80.3537 75.9094
-f 38/101/17 37/102/17 54/103/17 53/104/17 
+f 38/101/17 37/102/17 54/103/17 53/104/17
 
 vt -81.1945 411.012
 vn -0.793353 0 -0.608761
@@ -574,7 +639,7 @@ vt -81.5018 411.012
 v 11.5446 -2.8616 -28.0997
 vt -81.5018 75.9094
 vt -81.1945 75.9094
-f 37/105/18 36/106/18 55/107/18 54/108/18 
+f 37/105/18 36/106/18 55/107/18 54/108/18
 
 vt -76.4915 411.012
 vn -0.608761 0 -0.793353
@@ -582,7 +647,7 @@ vt -76.7988 411.012
 v 11.5508 -2.8616 -28.1044
 vt -76.7988 75.9094
 vt -76.4915 75.9094
-f 36/109/19 35/110/19 56/111/19 55/112/19 
+f 36/109/19 35/110/19 56/111/19 55/112/19
 
 vt -66.5653 411.012
 vn -0.382683 0 -0.92388
@@ -590,7 +655,7 @@ vt -66.8726 411.012
 v 11.558 -2.8616 -28.1074
 vt -66.8726 75.9094
 vt -66.5653 75.9094
-f 35/113/20 34/114/20 57/115/20 56/116/20 
+f 35/113/20 34/114/20 57/115/20 56/116/20
 
 vt -52.0923 411.012
 vn -0.130526 0 -0.991445
@@ -598,7 +663,7 @@ vt -52.3996 411.012
 v 11.5657 -2.8616 -28.1085
 vt -52.3996 75.9094
 vt -52.0923 75.9094
-f 34/117/21 33/118/21 58/119/21 57/120/21 
+f 34/117/21 33/118/21 58/119/21 57/120/21
 
 vt -34.0588 411.012
 vn 0.130526 0 -0.991445
@@ -606,7 +671,7 @@ vt -34.3661 411.012
 v 11.5735 -2.8616 -28.1074
 vt -34.3661 75.9094
 vt -34.0588 75.9094
-f 33/121/22 32/122/22 59/123/22 58/124/22 
+f 33/121/22 32/122/22 59/123/22 58/124/22
 
 vt -13.6938 411.012
 vn 0.382683 0 -0.92388
@@ -614,7 +679,7 @@ vt -14.0011 411.012
 v 11.5807 -2.8616 -28.1044
 vt -14.0011 75.9094
 vt -13.6938 75.9094
-f 32/125/23 31/126/23 60/127/23 59/128/23 
+f 32/125/23 31/126/23 60/127/23 59/128/23
 
 vt 7.61485 411.012
 vn 0.608761 0 -0.793353
@@ -622,7 +687,7 @@ vt 7.30755 411.012
 v 11.5869 -2.8616 -28.0997
 vt 7.30755 75.9094
 vt 7.61485 75.9094
-f 31/129/24 30/130/24 61/131/24 60/132/24 
+f 31/129/24 30/130/24 61/131/24 60/132/24
 
 vt 28.4151 411.012
 vn 0.793353 0 -0.608761
@@ -630,20 +695,20 @@ vt 28.1078 411.012
 v 11.5916 -2.8616 -28.0935
 vt 28.1078 75.9094
 vt 28.4151 75.9094
-f 30/133/25 29/134/25 62/135/25 61/136/25 
+f 30/133/25 29/134/25 62/135/25 61/136/25
 
 vt 47.2893 411.012
 vn 0.92388 0 -0.382683
 vt 46.982 411.012
 vt 46.982 75.9094
 vt 47.2893 75.9094
-f 29/137/26 19/138/26 22/139/26 62/140/26 
+f 29/137/26 19/138/26 22/139/26 62/140/26
 
 v 11.5807 -2.8616 -28.0527
 v 11.5869 -2.8616 -28.0574
 v 11.5916 -2.8616 -28.0636
 v 11.5946 -2.8616 -28.0708
-f 45/45/7 46/46/7 63/47/7 64/48/7 65/49/7 66/50/7 21/51/7 22/52/7 62/53/7 61/54/7 60/55/7 59/56/7 58/57/7 57/58/7 56/59/7 55/60/7 54/61/7 53/62/7 52/63/7 51/64/7 50/65/7 49/66/7 48/67/7 47/68/7 
+f 45/45/7 46/46/7 63/47/7 64/48/7 65/49/7 66/50/7 21/51/7 22/52/7 62/53/7 61/54/7 60/55/7 59/56/7 58/57/7 57/58/7 56/59/7 55/60/7 54/61/7 53/62/7 52/63/7 51/64/7 50/65/7 49/66/7 48/67/7 47/68/7
 
 v 12.7181 -2.8616 -26.3239
 vt 88.9724 0
@@ -670,13 +735,13 @@ v 10.4582 -4.7897 -29.6082
 vt -129.303 3.12639e-13
 v 10.4582 -4.7897 -26.3239
 vt 0 3.12639e-13
-f 69/143/4 68/144/4 70/145/4 71/146/4 
+f 69/143/4 68/144/4 70/145/4 71/146/4
 
 v 12.7181 -2.8616 -29.6082
 vt -88.9724 75.9094
 v 12.7181 -4.7897 -29.6082
 vt -88.9724 3.12639e-13
-f 68/143/6 72/147/6 73/148/6 70/146/6 
+f 68/143/6 72/147/6 73/148/6 70/146/6
 
 vt 88.9724 129.303
 f 68/142/7 55/60/7 72/149/7
@@ -695,44 +760,44 @@ v 11.5398 -4.7897 -28.0636
 vt 46.982 0
 v 11.5368 -4.7897 -28.0708
 vt 47.2893 0
-f 51/140/26 50/139/26 74/150/26 75/151/26 
+f 51/140/26 50/139/26 74/150/26 75/151/26
 
 v 11.5446 -4.7897 -28.0574
 vt 28.1078 0
 vt 28.4151 0
-f 50/136/25 49/135/25 76/152/25 74/153/25 
+f 50/136/25 49/135/25 76/152/25 74/153/25
 
 v 11.5508 -4.7897 -28.0527
 vt 7.30755 0
 vt 7.61485 0
-f 49/132/24 48/131/24 77/154/24 76/155/24 
+f 49/132/24 48/131/24 77/154/24 76/155/24
 
 v 11.558 -4.7897 -28.0497
 vt -14.0011 0
 vt -13.6938 0
-f 48/128/23 47/127/23 78/156/23 77/157/23 
+f 48/128/23 47/127/23 78/156/23 77/157/23
 
 v 11.5657 -4.7897 -28.0487
 vt -34.3661 0
 vt -34.0588 0
-f 47/124/22 45/123/22 79/158/22 78/159/22 
+f 47/124/22 45/123/22 79/158/22 78/159/22
 
 v 11.5735 -4.7897 -28.0497
 vt -52.3996 0
 vt -52.0923 0
-f 45/120/21 46/119/21 80/160/21 79/161/21 
+f 45/120/21 46/119/21 80/160/21 79/161/21
 
 v 11.5807 -4.7897 -28.0527
 vt -66.8726 0
 vt -66.5653 0
-f 46/116/20 63/115/20 81/162/20 80/163/20 
+f 46/116/20 63/115/20 81/162/20 80/163/20
 
 vt 66.8726 411.012
 vn 0.382683 0 0.92388
 vt 66.5653 411.012
 vt 66.5653 75.9094
 vt 66.8726 75.9094
-f 25/164/27 24/165/27 46/166/27 63/167/27 
+f 25/164/27 24/165/27 46/166/27 63/167/27
 
 f 46/46/7 67/141/7 63/47/7
 
@@ -771,7 +836,7 @@ v 11.5446 -4.7897 -28.0997
 vt 76.4915 0
 v 11.5508 -4.7897 -28.1044
 vt 76.7988 0
-f 56/168/28 55/169/28 82/170/28 83/171/28 
+f 56/168/28 55/169/28 82/170/28 83/171/28
 
 vt 81.5018 75.9094
 vn 0.793353 0 0.608761
@@ -779,7 +844,7 @@ vt 81.1945 75.9094
 v 11.5398 -4.7897 -28.0935
 vt 81.1945 0
 vt 81.5018 0
-f 55/172/29 54/173/29 84/174/29 82/175/29 
+f 55/172/29 54/173/29 84/174/29 82/175/29
 
 vt 80.661 75.9094
 vn 0.92388 0 0.382683
@@ -787,7 +852,7 @@ vt 80.3537 75.9094
 v 11.5368 -4.7897 -28.0863
 vt 80.3537 0
 vt 80.661 0
-f 54/176/30 53/177/30 85/178/30 84/179/30 
+f 54/176/30 53/177/30 85/178/30 84/179/30
 
 vt 74.3338 75.9094
 vn 0.991445 0 0.130526
@@ -795,11 +860,11 @@ vt 74.0265 75.9094
 v 11.5358 -4.7897 -28.0786
 vt 74.0265 0
 vt 74.3338 0
-f 53/180/31 52/181/31 86/182/31 85/183/31 
+f 53/180/31 52/181/31 86/182/31 85/183/31
 
 vt 62.644 0
 vt 62.9513 0
-f 52/44/8 51/43/8 75/184/8 86/185/8 
+f 52/44/8 51/43/8 75/184/8 86/185/8
 
 vt -42.4652 68.7752
 vt -42.4251 69.0799
@@ -836,77 +901,77 @@ f 87/189/3 81/195/3 88/196/3
 
 vt -76.7988 0
 vt -76.4915 0
-f 63/112/19 64/111/19 88/197/19 81/198/19 
+f 63/112/19 64/111/19 88/197/19 81/198/19
 
 vt 76.7988 411.012
 vt 76.4915 411.012
-f 26/199/28 25/200/28 63/169/28 64/168/28 
+f 26/199/28 25/200/28 63/169/28 64/168/28
 
 vt 81.5018 411.012
 vt 81.1945 411.012
-f 27/201/29 26/202/29 64/173/29 65/172/29 
+f 27/201/29 26/202/29 64/173/29 65/172/29
 
 v 11.5916 -4.7897 -28.0636
 vt -81.5018 0
 vt -81.1945 0
-f 64/108/18 65/107/18 89/203/18 88/204/18 
+f 64/108/18 65/107/18 89/203/18 88/204/18
 
 v 11.5946 -4.7897 -28.0708
 vt -80.661 0
 vt -80.3537 0
-f 65/104/17 66/103/17 90/205/17 89/206/17 
+f 65/104/17 66/103/17 90/205/17 89/206/17
 
 vt 80.661 411.012
 vt 80.3537 411.012
-f 28/207/30 27/208/30 65/177/30 66/176/30 
+f 28/207/30 27/208/30 65/177/30 66/176/30
 
 vt 74.3338 411.012
 vt 74.0265 411.012
-f 20/209/31 28/210/31 66/181/31 21/180/31 
+f 20/209/31 28/210/31 66/181/31 21/180/31
 
 v 11.5956 -4.7897 -28.0786
 vt -74.3338 0
 vt -74.0265 0
-f 66/100/16 21/99/16 91/211/16 90/212/16 
+f 66/100/16 21/99/16 91/211/16 90/212/16
 
 v 11.5946 -4.7897 -28.0863
 vt -62.9513 0
 vt -62.644 0
-f 21/96/15 22/95/15 92/213/15 91/214/15 
+f 21/96/15 22/95/15 92/213/15 91/214/15
 
 v 11.5916 -4.7897 -28.0935
 vt -47.2893 0
 vt -46.982 0
-f 22/92/14 62/91/14 93/215/14 92/216/14 
+f 22/92/14 62/91/14 93/215/14 92/216/14
 
 v 11.5869 -4.7897 -28.0997
 vt -28.4151 0
 vt -28.1078 0
-f 62/88/13 61/87/13 94/217/13 93/218/13 
+f 62/88/13 61/87/13 94/217/13 93/218/13
 
 v 11.5807 -4.7897 -28.1044
 vt -7.61485 0
 vt -7.30755 0
-f 61/84/12 60/83/12 95/219/12 94/220/12 
+f 61/84/12 60/83/12 95/219/12 94/220/12
 
 v 11.5735 -4.7897 -28.1074
 vt 13.6938 0
 vt 14.0011 0
-f 60/80/11 59/79/11 96/221/11 95/222/11 
+f 60/80/11 59/79/11 96/221/11 95/222/11
 
 v 11.5657 -4.7897 -28.1085
 vt 34.0588 0
 vt 34.3661 0
-f 59/76/10 58/75/10 97/223/10 96/224/10 
+f 59/76/10 58/75/10 97/223/10 96/224/10
 
 v 11.558 -4.7897 -28.1074
 vt 52.0923 0
 vt 52.3996 0
-f 58/72/9 57/71/9 98/225/9 97/226/9 
+f 58/72/9 57/71/9 98/225/9 97/226/9
 
 vt 66.5653 0
 vt 66.8726 0
-f 57/167/27 56/166/27 83/227/27 98/228/27 
+f 57/167/27 56/166/27 83/227/27 98/228/27
 
 vt -43.0136 70.0993
 vt -88.9724 129.303
@@ -961,11 +1026,11 @@ f 87/189/3 88/196/3 89/243/3
 
 vt 129.303 75.9094
 vt 129.303 3.12639e-13
-f 72/244/2 67/143/2 87/146/2 73/245/2 
+f 72/244/2 67/143/2 87/146/2 73/245/2
 
 vt 88.9724 75.9094
 vt 88.9724 3.12639e-13
-f 67/246/5 69/143/5 71/146/5 87/247/5 
+f 67/246/5 69/143/5 71/146/5 87/247/5
 
 g Mesh3 Group3 Model
 
@@ -977,7 +1042,7 @@ v 11.7756 5.65 -13.9184
 vt -16.5275 -427.126
 v 11.3558 5.65 -13.9184
 vt 0 -427.126
-f 99/248/3 100/249/3 101/250/3 102/251/3 
+f 99/248/3 100/249/3 101/250/3 102/251/3
 
 v 11.3558 5.69 -28.3046
 vt 0 1.5748
@@ -988,19 +1053,19 @@ vt -9.44092 1.5748
 v 11.7756 5.69 -28.3046
 vt -16.5275 1.5748
 vt -16.5275 0
-f 103/252/6 104/253/6 105/254/6 106/255/6 100/256/6 99/35/6 
+f 103/252/6 104/253/6 105/254/6 106/255/6 100/256/6 99/35/6
 
 v 11.3558 5.69 -13.9184
 v 11.5358 5.69 -13.9184
 vt 7.08661 -427.126
 vt 7.08661 139.26
-f 103/248/7 107/251/7 108/257/7 104/258/7 
+f 103/248/7 107/251/7 108/257/7 104/258/7
 
 vt 427.126 0
 vt 427.126 1.5748
 vt -139.26 1.5748
 vt -139.26 0
-f 102/259/4 107/260/4 103/261/4 99/262/4 
+f 102/259/4 107/260/4 103/261/4 99/262/4
 
 vt 16.5275 0
 v 11.7756 5.69 -13.9184
@@ -1035,23 +1100,23 @@ vt 139.26 0
 vt 139.26 1.5748
 vt -427.126 1.5748
 vt -427.126 0
-f 100/273/2 106/274/2 109/275/2 101/276/2 
+f 100/273/2 106/274/2 109/275/2 101/276/2
 
 vt 16.5275 -427.126
 vt 16.5275 139.26
 vt 9.44092 139.26
 vt 9.44092 -427.126
-f 109/277/7 106/278/7 105/279/7 110/280/7 
+f 109/277/7 106/278/7 105/279/7 110/280/7
 
 vt -427.126 45.6693
 v 11.5956 6.81 -28.3046
 vt 139.26 45.6693
-f 111/281/2 110/275/2 105/274/2 117/282/2 
+f 111/281/2 110/275/2 105/274/2 117/282/2
 
 v 11.5358 6.81 -28.3046
 vt -7.08661 45.6693
 vt -9.44092 45.6693
-f 118/283/6 117/284/6 105/254/6 104/253/6 
+f 118/283/6 117/284/6 105/254/6 104/253/6
 
 v 11.7756 6.85 -28.3046
 vt -16.5275 47.2441
@@ -1059,29 +1124,29 @@ v 11.7756 6.81 -28.3046
 vt -16.5275 45.6693
 v 11.3558 6.81 -28.3046
 v 11.3558 6.85 -28.3046
-f 119/285/6 120/286/6 117/284/6 118/283/6 121/270/6 122/269/6 
+f 119/285/6 120/286/6 117/284/6 118/283/6 121/270/6 122/269/6
 
 vt -427.126 47.2441
 vt 139.26 47.2441
-f 113/287/2 112/281/2 120/282/2 119/288/2 
+f 113/287/2 112/281/2 120/282/2 119/288/2
 
 vt -9.44092 -427.126
 vt -9.44092 139.26
-f 120/249/3 112/250/3 111/289/3 117/290/3 
+f 120/249/3 112/250/3 111/289/3 117/290/3
 
-f 119/278/7 122/248/7 114/251/7 113/277/7 
+f 119/278/7 122/248/7 114/251/7 113/277/7
 
 vt -139.26 47.2441
 vt -139.26 45.6693
 vt 427.126 45.6693
 vt 427.126 47.2441
-f 122/291/4 121/292/4 115/293/4 114/294/4 
+f 122/291/4 121/292/4 115/293/4 114/294/4
 
 vt -7.08661 139.26
 vt -7.08661 -427.126
-f 115/251/3 121/248/3 118/295/3 116/296/3 
+f 115/251/3 121/248/3 118/295/3 116/296/3
 
-f 118/292/4 104/261/4 108/260/4 116/293/4 
+f 118/292/4 104/261/4 108/260/4 116/293/4
 
 g Mesh4 Group4 Model
 
@@ -1093,7 +1158,7 @@ v 34.8236 0 -50.0348
 vt 1371.01 1969.87
 v 0 0 -50.0348
 vt 0 1969.87
-f 123/35/7 124/297/7 125/298/7 126/299/7 
+f 123/35/7 124/297/7 125/298/7 126/299/7
 
 g Mesh5 Group5 Model
 
@@ -1107,7 +1172,7 @@ v 10.5267 5.65 -19.0287
 vt 6.90909 224.016
 v 10.2758 5.65 -19.2612
 vt -3.89992 224.016
-f 127/300/32 128/301/33 129/302/33 130/303/32 
+f 127/300/32 128/301/33 129/302/33 130/303/32
 
 vt 11.1157 0
 v 10.8306 0.01 -18.8675
@@ -1116,7 +1181,7 @@ vn -0.366272 0 0.930508
 v 10.8306 5.65 -18.8675
 vt 21.9247 224.016
 vt 11.1157 224.016
-f 128/304/33 131/305/34 132/306/34 129/307/33 
+f 128/304/33 131/305/34 132/306/34 129/307/33
 
 vt 25.0055 0
 v 11.167 0.01 -18.7885
@@ -1125,7 +1190,7 @@ vn -0.107395 0 0.994216
 v 11.167 5.65 -18.7885
 vt 35.8145 224.016
 vt 25.0055 224.016
-f 131/308/34 133/309/35 134/310/35 132/311/34 
+f 131/308/34 133/309/35 134/310/35 132/311/34
 
 vt 36.8229 0
 v 11.5128 0.01 -18.7972
@@ -1134,7 +1199,7 @@ vn 0.15981 0 0.987148
 v 11.5128 5.65 -18.7972
 vt 47.6319 224.016
 vt 36.8229 224.016
-f 133/312/35 135/313/36 136/314/36 134/315/35 
+f 133/312/35 135/313/36 136/314/36 134/315/35
 
 vt 45.7625 0
 v 11.8445 0.01 -18.893
@@ -1143,7 +1208,7 @@ vn 0.414651 0 0.90998
 v 11.8445 5.65 -18.893
 vt 56.5715 224.016
 vt 45.7625 224.016
-f 135/316/36 137/317/37 138/318/37 136/319/36 
+f 135/316/36 137/317/37 138/318/37 136/319/36
 
 vt 51.2153 0
 v 12.1395 0.01 -19.0694
@@ -1152,7 +1217,7 @@ vn 0.638194 0 0.769875
 v 12.1395 5.65 -19.0694
 vt 62.0243 224.016
 vt 51.2153 224.016
-f 137/320/37 139/321/38 140/322/38 138/323/37 
+f 137/320/37 139/321/38 140/322/38 138/323/37
 
 vt 52.8094 0
 v 12.3777 0.01 -19.3143
@@ -1161,7 +1226,7 @@ vn 0.815479 0 0.578787
 v 12.3777 5.65 -19.3143
 vt 63.6184 224.016
 vt 52.8094 224.016
-f 139/324/38 141/325/39 142/326/39 140/327/38 
+f 139/324/38 141/325/39 142/326/39 140/327/38
 
 vt 50.4364 0
 v 12.5429 0.01 -19.611
@@ -1170,7 +1235,7 @@ vn 0.936297 0 0.35121
 v 12.5429 5.65 -19.611
 vt 61.2454 224.016
 vt 50.4364 224.016
-f 141/328/39 143/329/40 144/330/40 142/331/39 
+f 141/328/39 143/329/40 144/330/40 142/331/39
 
 vt 44.258 0
 v 12.6238 0.01 -19.9393
@@ -1179,7 +1244,7 @@ vn 0.994744 0 0.102396
 v 12.6238 5.65 -19.9393
 vt 55.067 224.016
 vt 44.258 224.016
-f 143/332/40 145/333/41 146/334/41 144/335/40 
+f 143/332/40 145/333/41 146/334/41 144/335/40
 
 vt 34.6951 0
 v 12.6148 0.01 -20.2769
@@ -1188,7 +1253,7 @@ vn 0.988308 0 -0.152469
 v 12.6148 5.65 -20.2769
 vt 45.5041 224.016
 vt 34.6951 224.016
-f 145/336/41 147/337/42 148/338/42 146/339/41 
+f 145/336/41 147/337/42 148/338/42 146/339/41
 
 vt 22.3995 0
 v 12.5167 0.01 -20.6007
@@ -1197,7 +1262,7 @@ vn 0.917255 0 -0.3983
 v 12.5167 5.65 -20.6007
 vt 33.2085 224.016
 vt 22.3995 224.016
-f 147/340/42 149/341/43 150/342/43 148/343/42 
+f 147/340/42 149/341/43 150/342/43 148/343/42
 
 vt 8.20906 0
 v 12.3361 0.01 -20.8887
@@ -1206,7 +1271,7 @@ vn 0.784699 0 -0.619877
 v 12.3361 5.65 -20.8887
 vt 19.0181 224.016
 vt 8.20906 224.016
-f 149/344/43 151/345/44 152/346/44 150/347/43 
+f 149/344/43 151/345/44 152/346/44 150/347/43
 
 vt -6.90909 0
 v 12.0852 0.01 -21.1213
@@ -1215,7 +1280,7 @@ vn 0.597325 0 -0.801999
 v 12.0852 5.65 -21.1213
 vt 3.89992 224.016
 vt -6.90909 224.016
-f 151/348/44 153/349/45 154/350/45 152/351/44 
+f 151/348/44 153/349/45 154/350/45 152/351/44
 
 vt -21.9247 0
 v 11.7813 0.01 -21.2825
@@ -1224,7 +1289,7 @@ vn 0.366272 0 -0.930508
 v 11.7813 5.65 -21.2825
 vt -11.1157 224.016
 vt -21.9247 224.016
-f 153/352/45 155/353/46 156/354/46 154/355/45 
+f 153/352/45 155/353/46 156/354/46 154/355/45
 
 vt -35.8145 0
 v 11.4449 0.01 -21.3614
@@ -1233,7 +1298,7 @@ vn 0.107395 0 -0.994216
 v 11.4449 5.65 -21.3614
 vt -25.0055 224.016
 vt -35.8145 224.016
-f 155/356/46 157/357/47 158/358/47 156/359/46 
+f 155/356/46 157/357/47 158/358/47 156/359/46
 
 vt -47.6319 0
 v 11.0991 0.01 -21.3527
@@ -1242,7 +1307,7 @@ vn -0.15981 0 -0.987148
 v 11.0991 5.65 -21.3527
 vt -36.8229 224.016
 vt -47.6319 224.016
-f 157/360/47 159/361/48 160/362/48 158/363/47 
+f 157/360/47 159/361/48 160/362/48 158/363/47
 
 vt -56.5715 0
 v 10.7674 0.01 -21.2569
@@ -1251,7 +1316,7 @@ vn -0.414651 0 -0.90998
 v 10.7674 5.65 -21.2569
 vt -45.7625 224.016
 vt -56.5715 224.016
-f 159/364/48 161/365/49 162/366/49 160/367/48 
+f 159/364/48 161/365/49 162/366/49 160/367/48
 
 vt -62.0243 0
 v 10.4724 0.01 -21.0806
@@ -1260,7 +1325,7 @@ vn -0.638194 0 -0.769875
 v 10.4724 5.65 -21.0806
 vt -51.2153 224.016
 vt -62.0243 224.016
-f 161/368/49 163/369/50 164/370/50 162/371/49 
+f 161/368/49 163/369/50 164/370/50 162/371/49
 
 vt -63.6184 0
 v 10.2341 0.01 -20.8357
@@ -1269,7 +1334,7 @@ vn -0.815479 0 -0.578787
 v 10.2341 5.65 -20.8357
 vt -52.8094 224.016
 vt -63.6184 224.016
-f 163/372/50 165/373/51 166/374/51 164/375/50 
+f 163/372/50 165/373/51 166/374/51 164/375/50
 
 vt -61.2454 0
 v 10.069 0.01 -20.539
@@ -1278,7 +1343,7 @@ vn -0.936297 0 -0.35121
 v 10.069 5.65 -20.539
 vt -50.4364 224.016
 vt -61.2454 224.016
-f 165/376/51 167/377/52 168/378/52 166/379/51 
+f 165/376/51 167/377/52 168/378/52 166/379/51
 
 vt -55.067 0
 v 9.98811 0.01 -20.2106
@@ -1287,7 +1352,7 @@ vn -0.994744 0 -0.102396
 v 9.98811 5.65 -20.2106
 vt -44.258 224.016
 vt -55.067 224.016
-f 167/380/52 169/381/53 170/382/53 168/383/52 
+f 167/380/52 169/381/53 170/382/53 168/383/52
 
 vt -45.5041 0
 v 9.99705 0.01 -19.873
@@ -1296,7 +1361,7 @@ vn -0.988308 0 0.152469
 v 9.99705 5.65 -19.873
 vt -34.6951 224.016
 vt -45.5041 224.016
-f 169/384/53 171/385/54 172/386/54 170/387/53 
+f 169/384/53 171/385/54 172/386/54 170/387/53
 
 vt -33.2085 0
 v 10.0952 0.01 -19.5492
@@ -1305,13 +1370,13 @@ vn -0.917255 0 0.3983
 v 10.0952 5.65 -19.5492
 vt -22.3995 224.016
 vt -33.2085 224.016
-f 171/388/54 173/389/55 174/390/55 172/391/54 
+f 171/388/54 173/389/55 174/390/55 172/391/54
 
 vt -19.0181 0
 vt -8.20906 0
 vt -8.20906 224.016
 vt -19.0181 224.016
-f 173/392/55 127/393/32 130/394/32 174/395/55 
+f 173/392/55 127/393/32 130/394/32 174/395/55
 
 v 10.2376 5.65 -20.075
 vt 7.79666 41.1772
@@ -1498,45 +1563,45 @@ vt -965.981 0
 v 5.05438 2.45 -13.9184
 v 5.05438 2.45 -24.7674
 vt 0 427.126
-f 199/444/3 200/445/3 201/446/3 202/447/3 203/448/3 204/449/3 205/35/3 206/450/3 
+f 199/444/3 200/445/3 201/446/3 202/447/3 203/448/3 204/449/3 205/35/3 206/450/3
 
 vt 412.931 0
 v 29.5903 5.65 -24.7674
 vt 427.126 125.984
 v 29.5903 5.65 -24.4069
 vt 412.931 125.984
-f 200/451/2 199/259/2 207/452/2 208/453/2 
+f 200/451/2 199/259/2 207/452/2 208/453/2
 
 v 5.05438 5.65 -24.7674
 vt 0 125.984
 vt -965.981 125.984
-f 199/449/6 206/35/6 209/454/6 207/455/6 
+f 199/449/6 206/35/6 209/454/6 207/455/6
 
 v 5.05438 5.65 -13.9184
 vt -427.126 125.984
-f 206/276/4 205/35/4 210/454/4 209/456/4 
+f 206/276/4 205/35/4 210/454/4 209/456/4
 
 vt 965.981 0
 v 29.5903 5.65 -13.9184
 vt 965.981 125.984
-f 205/35/5 204/457/5 211/458/5 210/454/5 
+f 205/35/5 204/457/5 211/458/5 210/454/5
 
 vt 11.7213 0
 v 29.5903 5.65 -14.2161
 vt 11.7213 125.984
-f 204/35/2 203/459/2 212/460/2 211/454/2 
+f 204/35/2 203/459/2 212/460/2 211/454/2
 
 vt -14.8151 0
 v 5.43069 5.65 -14.2161
 vt -14.8151 125.984
-f 203/449/6 202/461/6 213/462/6 212/455/6 
+f 203/449/6 202/461/6 213/462/6 212/455/6
 
 v 5.43069 5.65 -24.4069
-f 202/459/2 201/451/2 214/453/2 213/460/2 
+f 202/459/2 201/451/2 214/453/2 213/460/2
 
 vt 14.8151 0
 vt 14.8151 125.984
-f 201/463/5 200/457/5 208/458/5 214/464/5 
+f 201/463/5 200/457/5 208/458/5 214/464/5
 
 vt 965.981 412.931
 vn -2.02786e-16 1 3.50031e-15
@@ -1547,7 +1612,7 @@ vt 965.981 4.40984e-13
 vt 965.981 11.7213
 vt 14.8151 11.7213
 vt 14.8151 412.931
-f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 214/472/56 
+f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 214/472/56
         `;
         const scene = new THREE.Scene();
         const container = document.getElementById('simContainer');
@@ -1830,12 +1895,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         object.add(steppedSiteGroup);
         object.add(contextGroup);
         const measuredCourt = addContextPart(survey.court, 0x999995, 0.12);
-        const lowerGlazing = addContextPart(survey.glass, 0x98a0a2, 0.09);
-        const lowerWalls = addContextPart(survey.lower, 0x85807a, 0.22);
-        const livingWalls = addContextPart(survey.middle, 0x9a9690, 0.20);
-        const bedroomWalls = addContextPart(survey.upper, 0x98938a, 0.23);
 
-        // Illustrative lift fitted within the Group#26 slab opening, clear of the shelf face.
+        // Illustrative lift fitted within the Group#26 slab opening.
         const lift = new THREE.Group();
         lift.position.set(24.51, 0, -19.17);
         object.add(lift);
@@ -1854,22 +1915,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             ram.position.y = base + ram.scale.y / 2;
         }
         placeLift(0.05);
-        addContextPart(survey.shelves, 0x705c4b, 0.70);
-        const books = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 1, 0.055),
-            new THREE.MeshBasicMaterial(), survey.cells.length * 6);
-        const bookPose = new THREE.Object3D();
-        const jackets = [0x744d44, 0x516566, 0xc0ab83, 0x575961];
-        survey.cells.forEach(([x, y, z], cell) => {
-            for (let i = 0; i < 6; i++) {
-                const height = 0.19 + 0.023 * ((cell + i) % 5);
-                bookPose.position.set(x, y + height / 2, z + (i - 2.5) * 0.06);
-                bookPose.scale.set(1, height, 1);
-                bookPose.updateMatrix();
-                books.setMatrixAt(cell * 6 + i, bookPose.matrix);
-                books.setColorAt(cell * 6 + i, new THREE.Color(jackets[(cell+i) % jackets.length]));
-            }
-        });
-        contextGroup.add(books);
+
 
 
         // --- Seesaw Pivot Assembly for Overturning Simulation ---
@@ -1892,15 +1938,13 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             meshObjects['Mesh3'].position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
         }
 
-        seesawGroup.add(bedroomWalls);
-        bedroomWalls.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
 
         const boxLoadsGroup = new THREE.Group();
         boxLoadsGroup.position.set(-PIVOT_X, -PIVOT_Y, -PIVOT_Z);
         seesawGroup.add(boxLoadsGroup);
 
-        // generalised live load: liveLoadX/Z = plan centroid, liveLoadP = magnitude (P_LIVE_REF units)
-        const P_LIVE_REF = 0.55;
+        // generalised live load: liveLoadX/Z = plan centroid, liveLoadP = magnitude in kN
+        const PERSON_WEIGHT_KN = 0.785;
         let liveLoadP = 0.0;
         let loadMode = 'crowd';                 // 'crowd' | 'wine'
         let crowdCount = 0;
@@ -1908,7 +1952,6 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         // --- Crowd: a flock of tourists that walk (steering) toward wherever the mouse
         //     points on the box roof. Count is the only slider; position is the pointer. ---
-        const CROWD_REF = 70;      // people that equal one P_LIVE_REF (a full 240 ≈ 3.4x)
         const CROWD_MAX = 240;
         const ROOF_Y = 5.65;       // top of the concrete box
         const BOX_X0 = 5.4, BOX_X1 = 29.3, BOX_Z0 = -24.5, BOX_Z1 = -14.2;
@@ -2100,7 +2143,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             maidPos.y = THREE.MathUtils.clamp(maidPos.y + maidVel.y * dt, BOX_Z0, BOX_Z1);
             MD.hd = Math.atan2(cx - maidPos.x, cz - maidPos.y);   // face the crowd, watching them
             MD.ph += (1 + sp * 3) * dt;
-            maidMesh.position.set(maidPos.x, ROOF_Y + 0.03 + Math.abs(Math.sin(MD.ph)) * 0.04, maidPos.y);
+            maidMesh.position.set(maidPos.x, ROOF_Y + 0.03 + surfaceOffset(maidPos.x,maidPos.y) + Math.abs(Math.sin(MD.ph)) * 0.04, maidPos.y);
             maidMesh.rotation.y = MD.hd + Math.sin(MD.ph * 0.5) * 0.08;
         }
 
@@ -2182,7 +2225,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 const hopY = p.hop > 0 ? Math.sin(Math.PI * (1 - p.hop)) * 1.2 : 0;
 
                 const bob = Math.abs(Math.sin(p.ph)) * 0.10 * Math.min(1, sp * 2);
-                _pp.set(p.x, ROOF_Y + 0.03 + (bob + hopY) * CS, p.z);
+                _pp.set(p.x, ROOF_Y + 0.03 + surfaceOffset(p.x,p.z) + (bob + hopY) * CS, p.z);
                 _pq.setFromAxisAngle(YAXIS, p.hd);
                 _pv.set(p.g * CS, p.h * CS, p.g * CS);
                 _pm.compose(_pp, _pq, _pv);
@@ -2221,15 +2264,14 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         //     The mesh stays axis-aligned; the box tilt enters the sim as a floor slope,
         //     so the fluid genuinely runs downhill and its moving centroid drives the
         //     overturning feedback. ---
-        const WINE_GAIN = 4.2;                      // a full box of wine vs P_LIVE_REF
         const WINE_MAXD = 3.0;                      // max fluid depth (box interior ~3.2)
-        const WX0 = 5.054, WX1 = 29.59, WZ0 = -24.767, WZ1 = -13.918;
+        const WX0 = 5.431, WX1 = 29.59, WZ0 = -24.4069, WZ1 = -14.2161;
         const WNX = 48, WNZ = 22;
         const wh = new Float32Array(WNX * WNZ);     // surface height above the floor
         const wv = new Float32Array(WNX * WNZ);     // vertical velocity
         const wcx = [], wcz = [];
-        for (let ix = 0; ix < WNX; ix++) wcx.push(WX0 + (ix + 0.5) / WNX * (WX1 - WX0));
-        for (let iz = 0; iz < WNZ; iz++) wcz.push(WZ0 + (iz + 0.5) / WNZ * (WZ1 - WZ0));
+        for (let ix = 0; ix < WNX; ix++) wcx.push(WX0 + ix / (WNX - 1) * (WX1 - WX0));
+        for (let iz = 0; iz < WNZ; iz++) wcz.push(WZ0 + iz / (WNZ - 1) * (WZ1 - WZ0));
 
         const wineGeo = new THREE.PlaneGeometry(WX1 - WX0, WZ1 - WZ0, WNX - 1, WNZ - 1);
         wineGeo.rotateX(-Math.PI / 2);
@@ -2352,7 +2394,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 s.vz = (s.vz - gz * 11 * dt + sepz * 2.0 * dt) * Math.exp(-1.7 * dt);
                 s.x = THREE.MathUtils.clamp(s.x + s.vx * dt, WX0 + 0.8, WX1 - 0.8);
                 s.z = THREE.MathUtils.clamp(s.z + s.vz * dt, WZ0 + 0.9, WZ1 - 0.9);
-                b.position.set(s.x, 2.45 + h + 0.12, s.z);   // ~60% submerged
+                b.position.set(s.x, 2.45 + h + surfaceOffset(s.x,s.z) + 0.12, s.z);   // ~60% submerged
                 b.rotation.z = THREE.MathUtils.clamp(-gx * 2.4, -0.45, 0.45);
                 b.rotation.x = THREE.MathUtils.clamp(gz * 2.4, -0.45, 0.45);
                 s.spin += s.vx * 0.4 * dt;
@@ -2401,16 +2443,9 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         function stepWine(dt) {
             const step = Math.min(dt, 0.033);
             const targetSum = wineLevel * WINE_MAXD * WNX * WNZ;
-            // floor slope from the box tilt (exaggerated), plus a small constant west bias:
-            // the deep beam already deflects downward at the unsupported rocker end under the
-            // fluid weight, so the pool creeps west and the slosh feedback can build.
-            const tlt = (typeof currentTilt !== 'undefined' ? currentTilt : 0);
-            // the wine mesh already tilts with the box (it's parented to the seesaw), so
-            // this is only the EXTRA downhill pooling of the fluid relative to the shell.
-            // once the cable is cut the pool runs west harder → centroid crosses the
-            // fulcrum → the overturn goes runaway (still clamped inside the parapet).
-            const slopeX = -tlt * (isCableCut ? 2.6 : 1.3);
-            const rockX = (typeof seesawGroup !== 'undefined' ? seesawGroup.rotation.x : 0) * 1.5;
+            // Free surface remains level in world coordinates as its container rotates.
+            const slopeX = -Math.tan(currentTilt);
+            const rockX = Math.tan(currentTwist);
             const xc = (WX0 + WX1) / 2, zc = (WZ0 + WZ1) / 2;
             const meanLvl = wineLevel * WINE_MAXD;
             const C2 = 26.0, RELAX = 3.2, DAMP = Math.exp(-1.4 * step);
@@ -2421,7 +2456,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                     const l = wh[ix > 0 ? i - 1 : i], r = wh[ix < WNX - 1 ? i + 1 : i];
                     const u = wh[iz > 0 ? i - WNX : i], d = wh[iz < WNZ - 1 ? i + WNX : i];
                     const lap = l + r + u + d - 4 * wh[i];
-                    let tgt = meanLvl + slopeX * (wcx[ix] - xc) + rockX * (wcz[iz] - zc);   // tilted equilibrium surface
+                    let tgt = meanLvl + slopeX * (wcx[ix] - xc) + rockX * (wcz[iz] - zc) - surfaceOffset(wcx[ix],wcz[iz]);   // tilted equilibrium surface
                     tgt = tgt < 0 ? 0 : (tgt > WINE_MAXD ? WINE_MAXD : tgt);
                     wv[i] += (C2 * lap - RELAX * (wh[i] - tgt)) * step;
                     wv[i] *= DAMP;
@@ -2435,20 +2470,27 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             }
             // conserve volume toward the target fill
             const corr = (targetSum - sum) / (WNX * WNZ);
-            for (let i = 0; i < wh.length; i++) { wh[i] = Math.max(0, wh[i] + corr); }
+            for (let i = 0; i < wh.length; i++) {
+                wh[i] = wineLevel === 0 ? 0 : THREE.MathUtils.clamp(wh[i]+corr,0,WINE_MAXD);
+            }
 
             // update the surface mesh
             const pos = wineGeo.attributes.position;
             for (let iz = 0; iz < WNZ; iz++)
                 for (let ix = 0; ix < WNX; ix++)
-                    pos.setY(iz * WNX + ix, 2.45 + wh[iz * WNX + ix]);
+                    pos.setY(iz * WNX + ix, 2.45 + wh[iz * WNX + ix] + surfaceOffset(wcx[ix],wcz[iz]));
             pos.needsUpdate = true;
             wineGeo.computeVertexNormals();
             wineSurf.visible = wineLevel > 0.003 || sum > 1;
 
             // drag the side-wall tops up to the same wavy surface
             const wp = wineWallGeo.attributes.position;
-            for (let k = 0; k < PC; k++) wp.setY(k * 2 + 1, 2.45 + wh[perim[k]]);
+            for (let k = 0; k < PC; k++) {
+                const i=perim[k], x=wcx[i%WNX], z=wcz[Math.floor(i/WNX)];
+                const floor=2.45+surfaceOffset(x,z);
+                wp.setY(k*2,floor);
+                wp.setY(k*2+1,floor+wh[i]);
+            }
             wp.needsUpdate = true;
             wineWall.visible = wineSurf.visible;
 
@@ -2456,7 +2498,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
             // feed the structural model: real fluid mass + centroid
             if (sum > 1e-3) {
-                liveLoadP = P_LIVE_REF * (sum / (WINE_MAXD * WNX * WNZ)) * WINE_GAIN;
+                liveLoadP = 9.81 * sum * (wcx[WNX-1]-wcx[0]) * (wcz[WNZ-1]-wcz[0]) / (WNX * WNZ);
                 liveLoadX = mx / sum;
                 liveLoadZ = mz / sum;
             } else {
@@ -2474,7 +2516,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 maidMesh.visible = false;
                 // liveLoadP/X/Z are set by stepWine() each frame
             } else {
-                liveLoadP = P_LIVE_REF * (crowdCount / CROWD_REF);
+                liveLoadP = PERSON_WEIGHT_KN * crowdCount;
                 liveLoadX = crowdCentroid.x;      // centroid of the walking flock
                 liveLoadZ = crowdCentroid.y;
                 wineSurf.visible = false;
@@ -2489,32 +2531,49 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         object.position.set(-center.x, -center.y, -center.z);
         modelGroup.add(object);
 
-        // (item 1: floating 3D number badges removed — the accordion list carries the numbers)
-
-        // Each row in the Structural Elements list just isolates one member in 3D.
         const elMap = {
-            "1": { meshes: ["Mesh6"] },
-            "2": { meshes: ["Mesh3"] },
-            "3": { meshes: ["Mesh5"] },
-            "4": { meshes: ["Mesh2"] },
-            "5": { meshes: ["Mesh1"] }
+            "1": { meshes: ["Mesh6"], description: "Concrete box · Perimeter walls act together as deep beams." },
+            "2": { meshes: ["Mesh3"], description: "Steel I-beam · Bears on the cylinder and connects to the tie-down." },
+            "3": { meshes: ["Mesh5"], description: "Stair cylinder · Off-centre compression support." },
+            "4": { meshes: ["Mesh2"], description: "Tension cable and counterweight · Hold down the beam end." },
+            "5": { meshes: ["Mesh1"], description: "L-shaped brace · Supports the courtyard end of the box." }
         };
-        const faintMat = new THREE.LineBasicMaterial({ color: 0xd7dbe0, transparent: true, opacity: 0.14 });
+        const faintMat = new THREE.LineBasicMaterial({ color: 0x87939f, transparent: true, opacity: 0.40 });
         let isolated = null;
-
-        function isolateElement(id) { isolated = id; applyMemberStyle(); }
-        function clearIsolate() { isolated = null; applyMemberStyle(); }
-
-        const listItems = document.querySelectorAll('.element-list li[data-el]');
-        listItems.forEach(li => {
-            const id = li.dataset.el;
-            li.querySelector('.li-head').addEventListener('click', () => {
-                const wasOpen = li.classList.contains('open');
-                listItems.forEach(o => o.classList.remove('open'));
-                if (wasOpen) { clearIsolate(); }
-                else { li.classList.add('open'); isolateElement(id); }
+        const focusButtons = document.querySelectorAll('.focus-options button');
+        focusButtons.forEach(button => button.addEventListener('click', () => {
+            isolated = button.dataset.el || null;
+            focusMemory[currentMode()] = isolated;
+            applyMemberStyle();
+        }));
+        const focusMemory = { plain: null, load: null, stress: null };
+        let previousView = 'plain';
+        function syncFocus() {
+            const stress = currentMode() === 'stress';
+            focusButtons.forEach(button => {
+                const id = button.dataset.el || null;
+                button.hidden = stress && id !== null && id !== '1';
+                button.setAttribute('aria-pressed', String(id === isolated));
             });
-        });
+            document.getElementById('focusDescription').textContent = isolated ? elMap[isolated].description : '';
+        }
+        function focusForceArrows() {
+            const related = {
+                "1": boxLoadsGroup.children,
+                "2": [cylinderArrow, tensionArrow],
+                "3": [cylinderArrow],
+                "4": [tensionArrow],
+                "5": [lframeArrowN, lframeArrowS]
+            };
+            for (const arrow of [...forceGroup.children, ...boxLoadsGroup.children]) {
+                const opacity = !isolated || related[isolated].includes(arrow) ? 1 : 0.30;
+                arrow.traverse(part => {
+                    if (!part.material) return;
+                    part.material.transparent = true;
+                    part.material.opacity = opacity;
+                });
+            }
+        }
 
         // --- Force Arrows & Load Groups ---
         object.add(forceGroup);
@@ -2523,6 +2582,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         const deadLoadColor = 0xe67e22;
 
         const boxLoadArrows = [];
+        const boxLoadLines = [];
         let cylinderArrow = null;
         let tensionArrow = null;
         let lframeArrowN = null;
@@ -2544,7 +2604,9 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
             const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
             const line = new THREE.Line(lineGeo, lineMaterial);
+            line.userData.y = y;          // built height; moved to the arrow tails as they rescale
             boxLoadsGroup.add(line);
+            boxLoadLines.push(line);
 
             const dir = new THREE.Vector3(0, -1, 0);
             const step = (endX - startX) / (numArrows - 1);
@@ -2648,7 +2710,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         seesawGroup.add(portholeGroup);
 
         // ------------------------------------------------------------------
-        // item 6: PRINCIPAL-STRESS field for the RC deep-beam box (plane stress, MPa)
+        // Relative principal stress recovered from the elastic grillage
         // von Mises is a ductile-metal yield check and is the wrong criterion for
         // reinforced concrete, which is governed by tension cracking / compression
         // crushing. We build the in-plane stress tensor (sigma_a along the wall axis,
@@ -2657,157 +2719,100 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         //   avg = (sa+sb)/2 ; R = hypot((sa-sb)/2, tau)
         //   s1 = avg + R (max, tension +)   s3 = avg - R (min, compression -)
         //   theta = 0.5*atan2(2*tau, sa-sb)  (angle of s1 from the wall axis)
-        // Magnitudes are illustrative, scaled to a plausible RC service range.
+        // Values are relative stresses recovered from the assumed elastic grillage.
         // ------------------------------------------------------------------
         const clamp01 = v => Math.max(0, Math.min(1, v));
-        const SIGMA_SCALE = 0.42;      // "visual units" -> ~MPa
-        const SIG_MIN = -30;           // compression end of the colour scale (f'c)
-        const SIG_MAX = 6;             // tension end (well past f_ctm ~ 3)
-
-        // Live-load moment/shear increment on the deep beam at station x, scaled by the
-        // current live-load magnitude (crowd size or wine level).
-        function liveLoadMoment(x) {
-            let dM = 0, dV = 0;
-            if (typeof liveLoadX === 'undefined') return { dM, dV };
-            if (liveLoadX <= 11.55) {
-                if (x >= liveLoadX && x <= 11.55) { dM = -120.0 * (x - liveLoadX) / 6.5; dV = -25.0; }
-                else if (x > 11.55 && x <= 26.40) { dM = -120.0 * (11.55 - liveLoadX) / 6.5 * (26.40 - x) / (26.40 - 11.55); }
-            } else if (liveLoadX <= 26.40 && x > 11.55 && x <= 26.40) {
-                const L = 26.40 - 11.55, a = liveLoadX - 11.55, b = 26.40 - liveLoadX;
-                dM = (x <= liveLoadX) ? 80.0 * (b / L) * (x - 11.55) / L : 80.0 * (a / L) * (26.40 - x) / L;
+        // stresses come back normalised to the Normal-day peak (= 1). Put that peak at 40 %
+        // of the colour scale so heavier loads keep darkening instead of clipping.
+        const SIG_MIN = -2.5;
+        const SIG_MAX = 2.5;
+        const structuralModel = window.BordeauxAnalysis;
+        let isCableCut = false;
+        const restingStructure = structuralModel.solve();
+        const ARROW_FORCE_SCALE = 4 / Math.max(
+            ...Object.values(restingStructure.reactions).map(Math.abs),
+            structuralModel.deadWeight / boxLoadArrows.length);
+        let structuralState = restingStructure;
+        // The bearing springs (1,000,000 kN/m) are a modelling stiffness, not a property of
+        // the house. Their settlement - a few mm under the wine - is a rigid shift on three
+        // points, so subtract the plane through the three bearings and draw the box as if it
+        // sat on rigid supports. Without this the exaggerated view sank the box into the
+        // L-brace, or lifted it off a cylinder that was still carrying 2,800 kN.
+        function settlementPlane(state) {
+            if (state._settlement) return state._settlement;
+            const [p1, p2, p3] = state.bearings.map((b, i) => ({ x: b.x, z: b.z, w: b.w - restingStructure.bearings[i].w }));
+            const det = (p2.x-p1.x)*(p3.z-p1.z) - (p3.x-p1.x)*(p2.z-p1.z);
+            const bx = ((p2.w-p1.w)*(p3.z-p1.z) - (p3.w-p1.w)*(p2.z-p1.z)) / det;
+            const cz = ((p2.x-p1.x)*(p3.w-p1.w) - (p3.x-p1.x)*(p2.w-p1.w)) / det;
+            return (state._settlement = (x, z) => p1.w + bx*(x-p1.x) + cz*(z-p1.z));
+        }
+        function relativeDeflection(state, x, z) {
+            return state.deflection(x,z) - restingStructure.deflection(x,z) - settlementPlane(state)(x,z);
+        }
+        function displayDeflection(x,z) { return relativeDeflection(structuralState, x, z); }
+        let lastStructuralTime = -Infinity;
+        // Real changes are millimetres (a crowd 1-3 mm, a full wine flood ~35 mm), so the
+        // display scale fits itself: the largest change from Normal day is drawn ~0.6 m,
+        // and the readout always states the real millimetres and the factor used.
+        const DEFORM_TARGET = 0.6;        // m drawn for the largest change
+        const DEFORM_FLOOR = 0.0002;      // m; below 0.2 mm the factor stops growing (max ×3000)
+        const DEFORM_POINTS = [];
+        for (const x of [5.06, 8.3, 11.57, 15.3, 19.3, 23, 26.4, 29.58])
+            for (const z of [-24.58, -14.07]) DEFORM_POINTS.push([x, z]);
+        let DISPLAY_DEFORMATION = 20;
+        let maxDeflectionChange = 0;
+        let lastStableStructure = restingStructure;
+        function fitDeformationScale() {
+            maxDeflectionChange = Math.max(...DEFORM_POINTS.map(([x, z]) => Math.abs(displayDeflection(x, z))));
+            const target = DEFORM_TARGET / Math.max(maxDeflectionChange, DEFORM_FLOOR);
+            // shrink at once (never draw a change larger than the target); grow gently in
+            // log space so the picture eases rather than jumps as the crowd walks
+            DISPLAY_DEFORMATION = target < DISPLAY_DEFORMATION
+                ? target : DISPLAY_DEFORMATION * Math.pow(target / DISPLAY_DEFORMATION, 0.35);
+            shownSolution = null;      // the status line under the canvas reports the mm and factor
+        }
+        function surfaceOffset(x,z) {
+            const state = structuralState.stable ? structuralState : lastStableStructure;
+            const f = (px,pz) => relativeDeflection(state, px, pz);
+            const centre = f(PIVOT_X,PIVOT_Z);
+            const dx=(f(PIVOT_X+0.1,PIVOT_Z)-f(PIVOT_X-0.1,PIVOT_Z))/0.2;
+            const dz=(f(PIVOT_X,PIVOT_Z+0.1)-f(PIVOT_X,PIVOT_Z-0.1))/0.2;
+            return DISPLAY_DEFORMATION*(f(x,z)-centre-dx*(x-PIVOT_X)-dz*(z-PIVOT_Z));
+        }
+        function structuralLoads() {
+            if (loadMode === 'crowd') {
+                return people.slice(0, crowdCount).map(person => ({ x: person.x, z: person.z, force: 0.785 }));
             }
-            const s = (typeof liveLoadP !== 'undefined') ? liveLoadP / P_LIVE_REF : 1;
-            return { dM: dM * s, dV: dV * s };
+            const loads = [];
+            const dx = (wcx[WNX-1]-wcx[0])/(WNX-1);
+            const dz = (wcz[WNZ-1]-wcz[0])/(WNZ-1);
+            for (let j=0;j<WNZ;j++) for (let i=0;i<WNX;i++) {
+                const edge = (i===0||i===WNX-1 ? 0.5 : 1)*(j===0||j===WNZ-1 ? 0.5 : 1);
+                const force = Math.max(0, wh[j*WNX+i])*dx*dz*9.81*edge;
+                if (force) loads.push({x:wcx[i],z:wcz[j],force});
+            }
+            return loads;
         }
-
-        // Kirsch: tangential-stress multiplier around a circular hole in a uniaxial field.
-        //   k(r/dist -> 1 at the edge)  = 1 - 2*cos(2*theta)   ->  +3 at theta=90deg (spring line),
-        //                                                          -1 at theta=0    (poles, compression relief)
-        //   k(dist -> infinity)         = 1
-        // Blends the edge ratio to 1 with (r/dist)^2 so it decays away from the hole.
-        function kirsch(r, dist, th) {
-            const ratio = Math.min(1, Math.pow(r / dist, 2));
-            return 1.0 - 2.0 * Math.cos(2.0 * th) * ratio;
+        function solveStructure(force = false) {
+            const now = performance.now();
+            if (!force && now-lastStructuralTime < 100) return;
+            structuralState = structuralModel.solve(structuralLoads(), isCableCut);
+            if (structuralState.stable) { lastStableStructure = structuralState; fitDeformationScale(); }
+            lastStructuralTime = now;
         }
-
-        // Bredt closed-tube torsion: a circulating shear flow  q = T / (2*A0)  driven by
-        // the same net torque that rolls the box (boxTorque()). BUT the box is a tube
-        // CLOSED at the west transverse diaphragm and OPEN (glazed) at the courtyard end,
-        // so the circulating flow can only develop toward the closed end — it tapers to a
-        // small residual (C-section frame action) approaching the open east end.
-        const TBOX_A0 = 3.2 * 10.85;     // wall height x box z-depth  (enclosed area, m^2)
-        const TBOX_Q0 = 1.7;             // dead-load torsion-box baseline (asymmetric supports)
-        const TBOX_GAIN = 165;           // live torque -> visual shear units
-        function bredtShear(x) {
-            const T = (typeof boxTorque === 'function') ? boxTorque() : 0;
-            const q = TBOX_Q0 + (T / (2.0 * TBOX_A0)) * TBOX_GAIN;
-            const closed = (typeof x === 'number')
-                ? THREE.MathUtils.clamp((29.0 - x) / (29.0 - 20.0), 0.15, 1.0)   // 1 near the west diaphragm -> 0.15 at the open east end
-                : 1.0;
-            return q * closed;
-        }
-
         function calcPrincipal(x, y, z) {
-            let sa, sb, tau; // sa: wall-axis normal, sb: vertical normal, tau: in-plane shear
-
-            if (Math.abs(x - 5.054) < 0.20) {
-                // West end transverse diaphragm (z-y plane; axis = z)
-                const dZ = (z - (-19.345)) / 5.425;
-                sa = 5.0 * dZ;
-                sb = -1.2;
-                // parabolic diaphragm shear + circulating torsion-box shear (this end IS the closure)
-                tau = 4.0 * Math.max(0.0, 1.0 - dZ * dZ) + bredtShear(5.054);
-                for (const h of westPortholes) {
-                    const dist = Math.hypot(z - h.z, y - h.y);
-                    if (dist >= h.r && dist < h.r * 2.4) {
-                        const th = Math.atan2(y - h.y, z - h.z);
-                        sa *= kirsch(h.r, dist, th);   // -1..+3 : shows the compressive relief lobe too
-                        tau *= 1.0 + 0.6 * Math.pow(h.r / dist, 2);
-                    }
-                }
-            } else {
-                const isSouthWall = (z > -19.0);
-                const eta = (y - 4.05) / 1.60;
-
-                let M = 0, V = 0;
-                if (x <= 11.55) {
-                    const u = clamp01((x - 5.054) / 6.50);
-                    M = -32.0 * u * u; V = -16.0 * u;
-                } else if (x <= 26.40) {
-                    const s = (x - 11.55) / 14.85;
-                    M = -32.0 * Math.pow(1.0 - s, 2) - 8.0 * s * s + 24.0 * Math.sin(s * Math.PI);
-                    V = 20.0 * (1.0 - 2.0 * s);
-                } else {
-                    const w = clamp01((x - 26.40) / 3.19);
-                    M = -8.0 * Math.pow(1.0 - w, 2); V = -8.0 * (1.0 - w);
-                }
-                const ll = liveLoadMoment(x);
-                M += ll.dM; V += ll.dV;
-
-                const deepFiber = Math.sign(eta) * Math.pow(Math.abs(eta), 1.3);
-                sa = -M * deepFiber;
-
-                // keep the hole factor whose deviation from 1 is largest (can be < 0: relief lobe)
-                let kHole = 1.0;
-                for (const h of (isSouthWall ? southPortholes : northPortholes)) {
-                    const dist = Math.hypot(x - h.x, y - h.y);
-                    if (dist >= h.r && dist < h.r * 2.4) {
-                        const th = Math.atan2(y - h.y, x - h.x);
-                        const k = kirsch(h.r, dist, th);
-                        if (Math.abs(k - 1) > Math.abs(kHole - 1)) kHole = k;
-                    }
-                }
-                sa *= kHole;
-
-                sb = -1.2;
-                // vertical COMPRESSION fans up from each bearing — the box sits ON the
-                // cylinder (a column) and ON the courtyard wall; both are in compression.
-                const dPost = Math.hypot(x - 11.55, y - 2.45);
-                sb -= (isSouthWall ? 20.0 : 26.0) * Math.exp(-Math.pow(dPost / 1.35, 2));
-                const dShelf = Math.hypot(x - 26.40, y - 2.45);
-                sb -= 24.0 * Math.exp(-Math.pow(dShelf / 1.15, 2));
-
-                const shearDepth = Math.max(0.0, 1.0 - eta * eta);
-                // beam shear (from V) + circulating torsion-box shear, opposite sign on
-                // the two longitudinal walls so the flow circulates around the section;
-                // bredtShear(x) tapers it toward the open (glazed) east end
-                const circSign = isSouthWall ? 1.0 : -1.0;
-                tau = 1.5 * (V / 1.60) * shearDepth * Math.min(1.5, Math.abs(kHole)) + circSign * bredtShear(x);
-
-                if (x > 11.55 && x < 16.5) {
-                    const strutDist = Math.abs((5.2 - 2.45) * x - (16.0 - 11.55) * y + (16.0 * 2.45 - 5.2 * 11.55)) / Math.hypot(5.2 - 2.45, 16.0 - 11.55);
-                    if (strutDist < 1.0) {
-                        const sf = (1.0 - strutDist) * 6.0;
-                        sa -= sf * 0.6; sb -= sf * 0.8;
-                    }
-                }
-            }
-
-            sa *= SIGMA_SCALE; sb *= SIGMA_SCALE; tau *= SIGMA_SCALE;
-
-            const avg = 0.5 * (sa + sb);
-            const R = Math.hypot(0.5 * (sa - sb), tau);
-            const s1 = avg + R;
-            const s3 = avg - R;
-            const theta = 0.5 * Math.atan2(2.0 * tau, sa - sb);
-            const gov = (Math.abs(s3) >= Math.abs(s1)) ? s3 : s1;
-            return { s1, s3, theta, gov };
+            return structuralState.stable ? structuralState.sample(x,y,z) : {s1:0,s3:0,theta:0,gov:0};
         }
+        function relativePrincipalStress(x,y,z) { return calcPrincipal(x,y,z).gov; }
 
-        // Back-compat shim for the membrane builders: signed governing principal stress (MPa)
-        function calculateVonMisesStress(x, y, z) {
-            return calcPrincipal(x, y, z).gov;
-        }
-
-        // item 3: vivid diverging map — thin white at 0, saturated red (tension) / blue
-        // (compression) ends. Non-linear (^0.6) so small stresses still tint, then
-        // quantised into bands like a standard FEA contour plot. Physics unchanged.
-        const SIG_GAMMA = 0.6;
-        const SIG_BANDS = 10;
+        // item 3: diverging map — white at 0, red (tension) / blue (compression) ends,
+        // linear and quantised into 20 bands like a standard FEA contour plot.
+        const SIG_GAMMA = 1.0;   // linear: equal stress steps read as equal colour steps
+        const SIG_BANDS = 20;
         const SIG_END_T = [0.792, 0.094, 0.169];   // #b2182b  tension
         const SIG_END_C = [0.129, 0.400, 0.674];   // #2166ac  compression
         const SIG_WHITE = [0.969, 0.969, 0.969];
-        function getFEAvonMisesColor(sigma) {
+        function principalStressColor(sigma) {
             const c = new THREE.Color();
             const neg = sigma < 0;
             const raw = clamp01(Math.abs(sigma) / (neg ? -SIG_MIN : SIG_MAX));
@@ -2822,7 +2827,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             return c;
         }
 
-        // Create FEA Membrane with triangular finite element mesh overlay & window openings
+        // Render sampled grillage stress on the architectural wall surface
         function createFEAMembrane(zPos) {
             const group = new THREE.Group();
             const isSouth = (zPos > -19.0);
@@ -2844,8 +2849,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 for (let i = 0; i <= nx; i++) {
                     const x = xMin + (i / nx) * (xMax - xMin);
 
-                    const vM = calculateVonMisesStress(x, y, zPos);
-                    const col = getFEAvonMisesColor(vM);
+                    const vM = relativePrincipalStress(x, y, zPos);
+                    const col = principalStressColor(vM);
 
                     positions.push(x, y, zPos);
                     colors.push(col.r, col.g, col.b);
@@ -2908,7 +2913,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             const wireMat = new THREE.LineBasicMaterial({
                 color: 0x0a1420,
                 transparent: true,
-                opacity: 0.28,
+                opacity: 0.07,
                 depthWrite: false
             });
             group.add(new THREE.LineSegments(wireGeo, wireMat));
@@ -2940,8 +2945,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 for (let k = 0; k <= nz; k++) {
                     const z = zMin + (k / nz) * (zMax - zMin);
 
-                    const vM = calculateVonMisesStress(xPos, y, z);
-                    const col = getFEAvonMisesColor(vM);
+                    const vM = relativePrincipalStress(xPos, y, z);
+                    const col = principalStressColor(vM);
 
                     positions.push(xPos, y, z);
                     colors.push(col.r, col.g, col.b);
@@ -3000,7 +3005,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             const wireMat = new THREE.LineBasicMaterial({
                 color: 0x0a1420,
                 transparent: true,
-                opacity: 0.28,
+                opacity: 0.07,
                 depthWrite: false
             });
             group.add(new THREE.LineSegments(wireGeo, wireMat));
@@ -3025,7 +3030,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         const feaMembranes = [feaSouth, feaNorth, feaWest];
 
-        // item 6: principal-direction trajectory overlay (strut-and-tie picture).
+        // item 6: principal-direction trajectory overlay (principal directions picture).
         // Two families of short bars: tension ties (red, along s1) and compression
         // struts (blue, along s3). Rebuilt whenever the load moves.
         const trajTension = new THREE.LineSegments(new THREE.BufferGeometry(),
@@ -3055,13 +3060,13 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                         const y = 2.80 + iy * (5.30 - 2.80) / 4;
                         if (holeAt(x, y, holes)) continue;
                         const p = calcPrincipal(x, y, zPos);
-                        if (p.s1 > 0.4) {
-                            const h = THREE.MathUtils.clamp(p.s1 * 0.05, 0.12, 0.60);
+                        if (p.s1 > 0.04) {
+                            const h = THREE.MathUtils.clamp(p.s1 * 0.6, 0.12, 0.60);
                             seg(tP, x, y, zPos, Math.cos(p.theta), Math.sin(p.theta), 0, h);
                         }
-                        if (p.s3 < -0.4) {
+                        if (p.s3 < -0.04) {
                             const a = p.theta + Math.PI / 2;
-                            const h = THREE.MathUtils.clamp(-p.s3 * 0.04, 0.12, 0.60);
+                            const h = THREE.MathUtils.clamp(-p.s3 * 0.6, 0.12, 0.60);
                             seg(cP, x, y, zPos, Math.cos(a), Math.sin(a), 0, h);
                         }
                     }
@@ -3074,13 +3079,13 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 for (let iy = 0; iy <= 4; iy++) {
                     const y = 2.80 + iy * (5.30 - 2.80) / 4;
                     const p = calcPrincipal(xW, y, z);
-                    if (p.s1 > 0.4) {
-                        const h = THREE.MathUtils.clamp(p.s1 * 0.05, 0.12, 0.60);
+                    if (p.s1 > 0.04) {
+                        const h = THREE.MathUtils.clamp(p.s1 * 0.6, 0.12, 0.60);
                         seg(tP, xW, y, z, 0, Math.sin(p.theta), Math.cos(p.theta), h);
                     }
-                    if (p.s3 < -0.4) {
+                    if (p.s3 < -0.04) {
                         const a = p.theta + Math.PI / 2;
-                        const h = THREE.MathUtils.clamp(-p.s3 * 0.04, 0.12, 0.60);
+                        const h = THREE.MathUtils.clamp(-p.s3 * 0.6, 0.12, 0.60);
                         seg(cP, xW, y, z, 0, Math.sin(a), Math.cos(a), h);
                     }
                 }
@@ -3103,8 +3108,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                         const y = fea.yMin + (j / fea.ny) * (fea.yMax - fea.yMin);
                         for (let k = 0; k <= fea.nz; k++) {
                             const z = fea.zMin + (k / fea.nz) * (fea.zMax - fea.zMin);
-                            const vM = calculateVonMisesStress(fea.xPos, y, z);
-                            const col = getFEAvonMisesColor(vM);
+                            const vM = relativePrincipalStress(fea.xPos, y, z);
+                            const col = principalStressColor(vM);
                             colors[idx++] = col.r;
                             colors[idx++] = col.g;
                             colors[idx++] = col.b;
@@ -3115,8 +3120,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                         const y = fea.yMin + (j / fea.ny) * (fea.yMax - fea.yMin);
                         for (let i = 0; i <= fea.nx; i++) {
                             const x = fea.xMin + (i / fea.nx) * (fea.xMax - fea.xMin);
-                            const vM = calculateVonMisesStress(x, y, fea.zPos);
-                            const col = getFEAvonMisesColor(vM);
+                            const vM = relativePrincipalStress(x, y, fea.zPos);
+                            const col = principalStressColor(vM);
                             colors[idx++] = col.r;
                             colors[idx++] = col.g;
                             colors[idx++] = col.b;
@@ -3128,85 +3133,50 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             rebuildTrajectories();
         }
 
-        // The box is a deep beam on TWO gravity supports: the stair cylinder (x = X_S1)
-        // and the courtyard support wall (x = X_S2); self-weight W at X_CG, live load P
-        // at px. shareReactions returns the SIGNED support reactions — a negative value
-        // means that support has lifted off (a bearing can't pull down).
-        const W_BOX = 1.0, X_CG = 17.3, X_S1 = 11.55, X_S2 = 26.40;
-        function shareReactions(px) {
-            const P = (typeof liveLoadP !== 'undefined') ? liveLoadP : 0;
-            const RL = (W_BOX * (X_CG - X_S1) + P * (px - X_S1)) / (X_S2 - X_S1);   // courtyard wall
-            const RC = W_BOX + P - RL;                                             // cylinder
-            return { RL, RC };
-        }
-        const REACT_BASE = shareReactions(20.0);   // empty-building baseline (both positive)
-
-        // PITCH about the long axis: the box stays level while BOTH supports push up.
-        // When a support's reaction runs toward zero the box see-saws about the OTHER
-        // one. Signed: + = west end drops (courtyard wall RL lost), - = east end drops
-        // (cylinder RC lost, e.g. a load out on the glazed east overhang). The tie-down
-        // does NOT act on this axis — only the deep-beam back-span does.
-        let lastNet = 0;
-        function momentBalance() {
-            const { RL, RC } = shareReactions(liveLoadX);
-            const span = X_S2 - X_S1;
-            const pitchW = Math.max(0, 0.18 - RL) * span;         // courtyard wall unloading -> pitch WEST (+)
-            const pitchE = Math.max(0, 0.18 - RC) * span * 0.6;   // cylinder unloading -> pitch EAST (-)
-            return { RL, RC, net: pitchW - pitchE };
-        }
-
-        // one-line support-share readout under the simulator controls (Load-path view)
-        function writeReadout(RL, RC) {
-            const el = document.getElementById('simReadout');
-            if (!el) return;
-            if (isCableCut) {
-                el.innerHTML = '<b>Tension cable cut</b> &mdash; the beam end and box roll are unrestrained';
-                return;
-            }
-            let s;
-            if (RL <= 0)      s = '<b>Courtyard wall lifted off</b> &mdash; box pitching west';
-            else if (RC <= 0) s = '<b>Cylinder lifted off</b> &mdash; box pitching east';
-            else {
-                // vertical share is carried by the two gravity supports...
-                const pC = Math.round(100 * RC / (RL + RC));
-                s = `Cylinder ${pC}% &middot; courtyard wall ${100 - pC}%`;
-                // ...and the pretensioned tie always holds the roof beam's far end down;
-                // its pull rises with the load's Z-eccentricity (torsion on the box).
-                const kT = 1.0 + Math.abs(boxTorque()) * 0.5;
-                s += (kT > 1.08)
-                    ? ` &middot; tie pull &times;${Math.min(kT, 2.6).toFixed(1)}`
-                    : ' &middot; tie pretensioned';
-            }
-            el.innerHTML = s;
-        }
-
+        // All forces share one kN-to-metre arrow scale for each solved load case.
         function setBearingArrow(arrow, length, bearingY, reaction) {
-            arrow.visible = reaction > 0;
+            arrow.visible = reaction > 1e-5;
             arrow.position.y = bearingY - length;
-            arrow.setLength(length, Math.min(1.1, length * 0.4), Math.min(0.68, length * 0.25));
+            arrow.setLength(length, Math.min(0.7, length * 0.3), Math.min(0.45, length * 0.2));
         }
         function updateForceArrowsDynamic() {
-            const { RL, RC } = shareReactions(liveLoadX);
-            // a support that has lifted off (reaction <= 0) collapses its up-arrows
-            const kC = RC <= 0 ? 0.04 : THREE.MathUtils.clamp(RC / REACT_BASE.RC, 0.30, 2.2);
-            const kL = RL <= 0 ? 0.04 : THREE.MathUtils.clamp(RL / REACT_BASE.RL, 0.30, 2.2);
-            setBearingArrow(cylinderArrow, ARROW_BASE.cyl * kC, -2.7, RC);
-
-            // split the courtyard-wall reaction between its two ends by the load's Z eccentricity
-            const ecc = THREE.MathUtils.clamp((liveLoadZ - (-19.345)) / 5.4, -1, 1); // + = south
-            const fS = 1.0 + 0.7 * ecc, fN = 1.0 - 0.7 * ecc;
-            setBearingArrow(lframeArrowN, ARROW_BASE.lfN * kL * fN, -2.7, RL);
-            setBearingArrow(lframeArrowS, ARROW_BASE.lfS * kL * fS, 0, RL);
-
-            // the tie carries the box's Z-eccentric (torsional) demand — not the west lever
-            const kT = THREE.MathUtils.clamp(1.0 + Math.abs(boxTorque()) * 0.5, 0.3, 2.6);
-            if (tensionArrow) {
-                tensionArrow.setLength(ARROW_BASE.cable * kT, 1.2 * Math.min(kT, 1.4), 0.3 * Math.min(kT, 1.4));
-                tensionArrow.setColor(new THREE.Color(kT > 1.4 ? 0xff2a2a : 0xe74c3c));
+            solveStructure();
+            const readout = document.getElementById('simReadout');
+            deepBeamStressGroup.visible = structuralState.stable && currentMode() === 'stress';
+            if (!structuralState.stable) {
+                forceGroup.visible = false;
+                boxLoadsGroup.visible = false;
+                readout.classList.add('danger');
+                readout.textContent = isCableCut
+                    ? 'No equilibrium on the bearings alone — without the tie the box would overturn'
+                    : 'No equilibrium — a bearing has lifted and the box would overturn';
+                return;
             }
-
-            lastNet = momentBalance().net;   // drives the pitch in animate()
-            writeReadout(RL, RC);
+            forceGroup.visible = boxLoadsGroup.visible = currentMode() === 'load';
+            const r = structuralState.reactions;
+            const weight = structuralModel.deadWeight / boxLoadArrows.length;
+            // one fixed force scale (set by the unloaded building): self-weight arrows stay
+            // constant and reaction arrows grow or shrink with the live load
+            const scale = ARROW_FORCE_SCALE;
+            setBearingArrow(cylinderArrow,r.cylinder*scale,-2.7,r.cylinder);
+            setBearingArrow(lframeArrowN,r.north*scale,-2.7,r.north);
+            setBearingArrow(lframeArrowS,r.south*scale,0,r.south);
+            tensionArrow.visible = -r.tie>1e-5;
+            tensionArrow.setLength(Math.max(0.001,-r.tie*scale),Math.min(0.7,-r.tie*scale*0.3),Math.min(0.45,-r.tie*scale*0.2));
+            const length=weight*scale;
+            boxLoadArrows.forEach(arrow => {
+                arrow.position.y=5.65+length;
+                arrow.setLength(length,length*0.3,length*0.2);
+            });
+            // the line that ties each row of self-weight arrows sits on their tails
+            boxLoadLines.forEach(line => { line.position.y = 5.65 + length - line.userData.y; });
+            // no force numbers here: the arrows carry them. Only say how much the shape is
+            // exaggerated, and warn in red when the tie is cut.
+            const exaggeration = maxDeflectionChange < 5e-5 ? '' : `Deformation ×${Math.round(DISPLAY_DEFORMATION)}`;
+            readout.classList.toggle('danger', isCableCut);
+            readout.textContent = isCableCut
+                ? ['Tension cable cut', exaggeration].filter(Boolean).join(' · ')
+                : exaggeration;
         }
 
         // East courtyard facade: glass window wall (the courtyard end is glazed, not concrete)
@@ -3265,24 +3235,17 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         function setDeepBeamVisibility(visible) {
             deepBeamStressGroup.visible = visible;
             portholeGroup.visible = !visible;   // FEA membranes carry the portholes in Stress view
-            if (feaColorBar) feaColorBar.style.display = visible ? 'flex' : 'none';
+            if (feaColorBar) {
+                feaColorBar.style.display = 'flex';
+                feaColorBar.style.visibility = visible ? 'visible' : 'hidden';
+            }
         }
 
         // --- Interactive Simulation: Cable Cut & Equilibrium ---
-        let isCableCut = false;
         let currentTilt = 0.0;
         let currentTwist = 0.0;   // torsional roll about the box's long (X) axis
 
-        // Torsional moment on the box from the live load's Z-eccentricity off the spine.
-        // Weighted by X-position: strongest near the free cantilever, resisted near the
-        // L-frame (which provides the torsional restraint). Illustrative units.
-        function boxTorque() {
-            if (typeof liveLoadP === 'undefined' || !liveLoadP) return 0;
-            const eccZ = liveLoadZ - (-19.345);                       // m off the spine
-            const w = THREE.MathUtils.clamp((26.40 - liveLoadX) / 20.0, 0.15, 1.35);
-            return liveLoadP * eccZ * w;
-        }
-
+        const cutCableMaterial = new THREE.LineDashedMaterial({color:0xc0392b,dashSize:0.6,gapSize:0.4});
         const cutCableBtn = document.getElementById('cutCableBtn');
 
         // View radio — Solid (plain) / Load path / Stress field
@@ -3292,6 +3255,9 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         function currentMode() { return vmStress.checked ? 'stress' : (vmPlain.checked ? 'plain' : 'load'); }
         function applyViewMode() {
             const m = currentMode();
+            focusMemory[previousView] = isolated;
+            isolated = focusMemory[m];
+            previousView = m;
             const showForces = (m === 'load');
             // "Solid (plain — no force lines)" means exactly that: every force graphic
             // (reaction arrows, self-weight rain, tie pull, the live readout) lives in
@@ -3299,7 +3265,6 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             forceGroup.visible = showForces;
             boxLoadsGroup.visible = showForces;
             if (tensionArrow) tensionArrow.visible = showForces && !isCableCut;
-            document.getElementById('simReadout').style.visibility = showForces ? '' : 'hidden';
             setDeepBeamVisibility(m === 'stress');
             applyMemberStyle();
         }
@@ -3318,6 +3283,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         function pushLoad(rebuildFEA) {
             refreshLoad();
+            solveStructure(true);
             if (rebuildFEA && currentMode() === 'stress') updateFEAMembranes();
             updateForceArrowsDynamic();
             reallocParticles();
@@ -3358,16 +3324,14 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         cutCableBtn.addEventListener('click', () => {
             isCableCut = !isCableCut;
+            solveStructure(true);
             if (isCableCut) {
                 cutCableBtn.querySelector('span').textContent = 'Restore tension cable';
                 cutCableBtn.classList.add('restored');
                 if (tensionArrow) tensionArrow.visible = false;
                 if (meshWireframes['Mesh2']) {
-                    meshWireframes['Mesh2'].material = new THREE.LineDashedMaterial({
-                        color: 0xff3333,
-                        dashSize: 0.6,
-                        gapSize: 0.4
-                    });
+                    meshWireframes['Mesh2'].material = cutCableMaterial;
+                    meshObjects.Mesh2.material.visible = false;
                     meshWireframes['Mesh2'].computeLineDistances();
                 }
             } else {
@@ -3382,20 +3346,44 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
 
         // Reset — clear the whole simulation back to the plain, unloaded building
         function resetSimulator() {
-            if (isCableCut) cutCableBtn.click();          // restore the cable
+            isCableCut = false;
+            cutCableBtn.querySelector('span').textContent = 'Cut tension cable';
+            cutCableBtn.classList.remove('restored');
             crowdNSlider.value = 0;
             crowdCount = 0;
             crowdNLabel.textContent = '0 people';
+            crowd.forEach(mesh => mesh.count = 0);
+            maidMesh.visible = false;
             targetRing.visible = false;
             wineRunning = false;
             winePlayBtn.innerHTML = '<span>Pour the wine</span>';
             wineSlider.value = 0;
             wineLevel = 0;
             wineLabel.textContent = '0%';
-            if (loadMode === 'wine') initWine();
+            wh.fill(0);
+            wv.fill(0);
+            wineVol = 0;
             resetBarrels();
             liveLoadP = 0;
-            pushLoad(true);
+            loadMode = 'crowd';
+            currentTilt = 0;
+            currentTwist = 0;
+            seesawGroup.rotation.set(0, 0, 0);
+            seesawGroup.position.set(PIVOT_X, PIVOT_Y, PIVOT_Z);
+            for (const mesh of [...deformationMeshes, ...tieParts]) {
+                mesh.geometry.attributes.position.array.set(mesh.rest);
+                mesh.geometry.attributes.position.needsUpdate = true;
+                mesh.geometry.computeBoundingSphere();
+            }
+            structuralState = restingStructure;
+            lastStableStructure = restingStructure;
+            shownSolution = restingStructure;
+            fitDeformationScale();
+            lastStructuralTime = performance.now();
+            applyLoadMode();
+            updateForceArrowsDynamic();
+            if (currentMode() === 'stress') updateFEAMembranes();
+            renderer.render(scene, camera);
         }
         document.getElementById('resetSimBtn').addEventListener('click', resetSimulator);
 
@@ -3406,7 +3394,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             Mesh1: { color: 0x9aa2ab, opacity: 0.95 }, // L-frame — steel grey
             Mesh3: { color: 0xd93025, opacity: 0.98 }, // I-beam — red
             Mesh5: { color: 0x9aa2ab, opacity: 0.95 }, // cylinder — steel grey
-            Mesh6: { color: 0xded9cf, opacity: 0.30 }  // concrete box — translucent, core reads through
+            Mesh6: { color: 0xded9cf, opacity: 0.65 }  // concrete box — translucent, core reads through
         };
         const SOLID_KEYS = ['Mesh1', 'Mesh3', 'Mesh5', 'Mesh6'];
         const solidEdgeMat = new THREE.LineBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.5 });
@@ -3416,7 +3404,13 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             // kind: 'solid' | 'wire' | 'faint'
             const mesh = meshObjects[k], wf = meshWireframes[k];
             if (!mesh || !wf) return;
-            if (isCableCut && k === 'Mesh2') return; // keep the cut-cable dashed look
+            if (isCableCut && k === 'Mesh2') {
+                mesh.material.visible = false;
+                wf.visible = true;
+                wf.material = cutCableMaterial;
+                wf.computeLineDistances();
+                return;
+            }
             if (kind === 'solid' && SOLID_KEYS.includes(k)) {
                 if (!mesh.material.isMeshBasicMaterial) {
                     mesh.material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
@@ -3437,6 +3431,8 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         }
 
         function applyMemberStyle() {
+            syncFocus();
+            focusForceArrows();
             const mode = currentMode();
             const byForce = (mode === 'load');   // Load-path view = colour members by force type
             const keep = isolated ? new Set(elMap[isolated].meshes) : null;
@@ -3445,20 +3441,18 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             // isolated (portholes belong to the box, so keep them for element 1)
             const inStress = (mode === 'stress');
             contextGroup.visible = !keep && mode === 'plain';
-            lowerWalls.visible = livingWalls.visible = mode === 'plain';
-            bedroomWalls.visible = lift.visible = !keep && mode === 'plain';
+            lift.visible = !keep && mode === 'plain';
             measuredCourt.visible = mode === 'plain';
-            lowerGlazing.visible = mode === 'plain';
             spiralStair.visible = (!keep && mode === 'plain') || isolated === '3';
             portholeGroup.visible = !inStress && (!keep || isolated === '1');
             glassGroup.visible = !keep;
-            steppedSiteGroup.visible = !keep;
+            steppedSiteGroup.visible = true;
 
             Object.keys(meshWireframes).forEach(k => {
                 if (k === 'Mesh4') return;
                 if (keep) {
-                    styleOne(k, keep.has(k) ? 'solid' : 'faint');
-                    if (keep.has(k)) meshWireframes[k].material = isolateEdgeMat;
+                    styleOne(k, keep.has(k) ? (byForce ? 'wire' : (inStress ? 'faint' : 'solid')) : 'faint');
+                    if (keep.has(k) && mode === 'plain') meshWireframes[k].material = isolateEdgeMat;
                     return;
                 }
                 let kind = 'solid';
@@ -3502,6 +3496,81 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
         requestAnimationFrame(resizeRenderer);
         new ResizeObserver(resizeRenderer).observe(container);
 
+        const deformationMeshes = [];
+        object.updateMatrixWorld(true);
+        const modelInverse = object.matrixWorld.clone().invert();
+        const deformationRoots = [meshObjects.Mesh6, meshObjects.Mesh3, deepBeamStressGroup, portholeGroup, glassGroup];
+        const visitedGeometry = new Set();
+        function collectParts(root, list, extra = {}) {
+            root.traverse(part => {
+                if (!part.geometry || !part.geometry.attributes.position || visitedGeometry.has(part.geometry)) return;
+                // Arrow helpers represent loads; their geometry is shared and remains rigid.
+                if (part.parent && part.parent.type === 'ArrowHelper') return;
+                visitedGeometry.add(part.geometry);
+                const transform = modelInverse.clone().multiply(part.matrixWorld);
+                list.push({
+                    geometry:part.geometry,
+                    rest:Float32Array.from(part.geometry.attributes.position.array),
+                    transform, inverse:transform.clone().invert(), ...extra
+                });
+            });
+        }
+        // the I-beam is flagged: its cantilever past the north wall follows its own element
+        for (const root of deformationRoots) collectParts(root, deformationMeshes, { beam: root === meshObjects.Mesh3 });
+        // The tie hangs from the I-beam tip to the buried counterweight. While it is intact
+        // its top follows the beam tip and its anchor stays put; once cut it is left as is.
+        const tieParts = [];
+        collectParts(meshObjects.Mesh2, tieParts);
+        let tieBottom = Infinity, tieTop = -Infinity;
+        for (const part of tieParts) for (let i = 0; i < part.rest.length; i += 3) {
+            const y = new THREE.Vector3().fromArray(part.rest, i).applyMatrix4(part.transform).y;
+            tieBottom = Math.min(tieBottom, y); tieTop = Math.max(tieTop, y);
+        }
+        function beamRelative(z) {
+            const x = structuralModel.nodes[7].x;   // the I-beam line
+            return structuralState.beamDeflection(z) - restingStructure.beamDeflection(z)
+                - settlementPlane(structuralState)(x, z);
+        }
+        function updateTieDeformation(tipLift) {
+            for (const part of tieParts) {
+                const position = part.geometry.attributes.position;
+                for (let i = 0; i < position.count; i++) {
+                    deformationPoint.fromArray(part.rest, i*3).applyMatrix4(part.transform);
+                    deformationPoint.y += tipLift * (deformationPoint.y - tieBottom) / (tieTop - tieBottom);
+                    deformationPoint.applyMatrix4(part.inverse);
+                    position.setXYZ(i, deformationPoint.x, deformationPoint.y, deformationPoint.z);
+                }
+                position.needsUpdate = true;
+                part.geometry.computeBoundingSphere();
+            }
+        }
+        let shownSolution = null;
+        const deformationPoint = new THREE.Vector3();
+        function updateDeformation() {
+            if (!structuralState.stable || shownSolution === structuralState) return;
+            shownSolution = structuralState;
+            const deflect = displayDeflection;
+            const centre = deflect(PIVOT_X,PIVOT_Z);
+            const dx=(deflect(PIVOT_X+0.1,PIVOT_Z)-deflect(PIVOT_X-0.1,PIVOT_Z))/0.2;
+            const dz=(deflect(PIVOT_X,PIVOT_Z+0.1)-deflect(PIVOT_X,PIVOT_Z-0.1))/0.2;
+            for (const mesh of deformationMeshes) {
+                const position=mesh.geometry.attributes.position;
+                for (let i=0;i<position.count;i++) {
+                    deformationPoint.fromArray(mesh.rest,i*3).applyMatrix4(mesh.transform);
+                    const {x,z}=deformationPoint;
+                    const plane=centre+dx*(x-PIVOT_X)+dz*(z-PIVOT_Z);
+                    const w = mesh.beam && z < structuralModel.northWallZ ? beamRelative(z) : deflect(x,z);
+                    deformationPoint.y += DISPLAY_DEFORMATION*(w-plane);
+                    deformationPoint.applyMatrix4(mesh.inverse);
+                    position.setXYZ(i,deformationPoint.x,deformationPoint.y,deformationPoint.z);
+                }
+                position.needsUpdate=true;
+                mesh.geometry.computeBoundingSphere();
+            }
+            updateTieDeformation(isCableCut ? 0 : DISPLAY_DEFORMATION * beamRelative(structuralModel.beamTipZ));
+            if (currentMode()==='stress') updateFEAMembranes();
+        }
+
         const _clock = new THREE.Clock();
 
         function animate() {
@@ -3518,7 +3587,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 stepCrowd(dt);
                 refreshLoad();
                 updateForceArrowsDynamic();
-                if (currentMode() === 'stress' && (crowdFrame++ & 7) === 0) updateFEAMembranes();
+
                 reallocParticles();
             }
 
@@ -3526,7 +3595,7 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
             // so the fluid runs downhill and its moving centroid drives the overturn feedback.
             if (loadMode === 'wine') {
                 if (wineRunning && wineLevel < 1) {
-                    wineLevel = Math.min(1, wineLevel + 0.0012);
+                    wineLevel = Math.min(1, wineLevel + 0.072 * dt);
                     wineSlider.value = Math.round(wineLevel * 100);
                     wineLabel.textContent = `${Math.round(wineLevel * 100)}%`;
                     if (wineLevel >= 1) { wineRunning = false; winePlayBtn.innerHTML = '<span>Pour the wine</span>'; }
@@ -3534,32 +3603,32 @@ f 208/465/56 207/466/56 209/467/56 210/468/56 211/469/56 212/470/56 213/471/56 2
                 stepWine(dt);
                 stepBarrels(dt);
                 updateForceArrowsDynamic();
-                if ((wineFrame++ & 7) === 0 && currentMode() === 'stress') updateFEAMembranes();
+
                 reallocParticles();
             }
 
-            // PITCH about the long axis — signed: + west end down, - east end down.
-            // Only once a gravity support unloads (momentBalance.net). Tie-independent.
-            const targetTilt = THREE.MathUtils.clamp(0.11 * lastNet, -0.40, 0.40)
-                // wine mode: the deep beam visibly sags under the fluid weight FIRST,
-                // so the pool follows the box down (surface never leads the tilt).
-                + (loadMode === 'wine' ? THREE.MathUtils.clamp(0.10 * wineLevel * wineLevel, 0, 0.14) : 0);
-            currentTilt += (targetTilt - currentTilt) * 0.06;
+            if (structuralState.stable) {
+                const deflect = displayDeflection;
+                const targetTilt = (deflect(PIVOT_X+0.1,PIVOT_Z)-deflect(PIVOT_X-0.1,PIVOT_Z))/0.2*DISPLAY_DEFORMATION;
+                const targetTwist = -(deflect(PIVOT_X,PIVOT_Z+0.1)-deflect(PIVOT_X,PIVOT_Z-0.1))/0.2*DISPLAY_DEFORMATION;
+                const blend = 1-Math.exp(-6*dt);
+                currentTilt += (targetTilt-currentTilt)*blend;
+                currentTwist += (targetTwist-currentTwist)*blend;
+                seesawGroup.rotation.z = currentTilt;
+                seesawGroup.rotation.x = currentTwist;
+                seesawGroup.position.y = PIVOT_Y + DISPLAY_DEFORMATION*deflect(PIVOT_X,PIVOT_Z);
+            }
 
-            // ROLL about the long axis. Intact, the pretensioned tie + the full-depth
-            // courtyard wall make the box torsionally stiff — a Z-eccentric crowd barely
-            // leans it (gain 0.004, cap ~1.1 deg). Cut the tie and that restraint is gone
-            // at the west end (only the cylinder point there): the gain jumps ~14x and the
-            // box keels hard toward the loaded edge.
-            const rollGain = isCableCut ? 0.055 : 0.004;
-            const rollCap  = isCableCut ? 0.45  : 0.02;
-            const targetTwist = THREE.MathUtils.clamp(boxTorque() * rollGain, -rollCap, rollCap);
-            currentTwist += (targetTwist - currentTwist) * 0.06;
-
-            seesawGroup.rotation.z = currentTilt;                     // pitch (+ west end down, - east end down)
-            seesawGroup.rotation.x = currentTwist;                    // roll about the long axis
-            seesawGroup.position.y = PIVOT_Y - Math.abs(currentTilt) * 1.5 + Math.abs(currentTwist) * 0.6;  // pitch sinks / roll lifts
-
+            updateDeformation();
+            if (loadMode === 'wine') {
+                stepWine(0);
+                stepBarrels(0);
+            }
+            targetRing.position.y = ROOF_Y+0.9+surfaceOffset(crowdTarget.x,crowdTarget.y);
+            // Gravity stays vertical even when the displayed structure bends.
+            for (const arrow of boxLoadArrows) {
+                arrow.setDirection(new THREE.Vector3(0,-1,0).applyQuaternion(seesawGroup.quaternion.clone().invert()));
+            }
             updateRoute();
             updateParticles();
 
