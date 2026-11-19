@@ -82,7 +82,7 @@
             slabThick: 0.237, postSize: 0.22,
             roofEdge: 0.423, roofRise: 0.720,
             coreLen: 12.21, coreDep: 1.744, coreWall: 0.271,
-            going: 0.279, riser: 0.179, wallThick: 0.227, wallRun: 4.06
+            going: 0.279, riser: 0.179, wallThick: 0.227, wallRun: 5.63, wallDoor: 0.90
         };
         // Ground posts mid-side, first floor at the corners, top floor mid-side
         // again, so no post lands on the one below it. (Which of them push and
@@ -291,8 +291,15 @@
                 // top-floor partitions, 45 deg in from each corner. They run all the way
                 // to the core (no gap, no vertical seam); a 1.0 m wide x 2.0 m tall door
                 // is cut just short of the core end.
-                const wr = Math.min(REAL.wallRun, W/2 - 0.6, D/2 - 0.6);
-                const baseY = topY - fh - p.slabThick, headY = topY - fh + 2.0, dW = 1.0;
+                // Measured on plan 2 at the +x +z corner: the solid wall runs 5.63 m
+                // from the mitre to a jamb at (7.04, 1.76); a 0.90 m opening (two
+                // jambs 0.222 and 0.216 long — the wall's own thickness — with the
+                // THIN layer's door leaf drawn across it); then a 0.54 m stub to the
+                // corner of the core at x 6.100, which is the measured coreLen/2.
+                // 5.63 + 0.90 + 0.54 = 7.07 against a computed reach of 7.00.
+                // The old 4.06 / 1.00 put the door a metre and a half too far out.
+                const wr = REAL.wallRun;          // no clamp: the plate is locked to REAL
+                const baseY = topY - fh - p.slabThick, headY = topY - fh + 2.0, dW = REAL.wallDoor;
                 // The wall is MITRED to the building line: in plan 2 its two faces
                 // start on the two plate edges, 0.227/sqrt2 = 0.161 m either side of
                 // the corner, measured at (-10.937, -5.824) and (-11.098, -5.672)
@@ -311,7 +318,7 @@
                     const bdx = Bx + ux*dW, bdz = Bz + uz*dW;
                     const Cx = Ax + ux*reach, Cz = Az + uz*reach;
                     wall(Ax, Az, Bx, Bz, baseY, soff, REAL.wallThick, 'wall');       // measured wall
-                    wall(Bx, Bz, bdx, bdz, headY, soff, REAL.wallThick, 'wall');     // lintel over the 1 m door
+                    wall(Bx, Bz, bdx, bdz, headY, soff, REAL.wallThick, 'wall');     // lintel over the door
                     if (wr + dW < reach - 0.05)
                         wall(bdx, bdz, Cx, Cz, baseY, soff, REAL.wallThick, 'wall'); // door -> core, full height
                 });
