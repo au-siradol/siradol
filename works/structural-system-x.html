@@ -29,14 +29,34 @@
                be the thing it reads against. The renderer clears to transparent;
                this is what you actually see. */
             background: #ffffff; border: 1px solid #ececec;
-            cursor: grab; touch-action: none;
         }
-        canvas#simCanvas.dragging { cursor: grabbing; }
         canvas.scalebar { position: absolute; right: 10px; bottom: 24px; pointer-events: none; }
         .view-hint {
             position: absolute; bottom: 22px; left: 10px;
             font-size: 9px; color: #bbb; letter-spacing: 0.4px;
         }
+
+        /* the walk: one slider, three stations */
+        .walk {
+            max-width: 1100px; margin: 14px auto 0; padding-top: 12px;
+            border-top: 1px dashed #aaa;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .walk .end {
+            font-size: 8px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1px; color: #999; flex: none; width: 54px;
+        }
+        .walk .end.near { text-align: right; }
+        #walkSlider {
+            flex: 1; -webkit-appearance: none; appearance: none; height: 1px;
+            background: #999; outline: none; cursor: pointer;
+        }
+        #walkSlider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
+            background: #111; cursor: pointer;
+        }
+        #walkSlider::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: #111; border: none; cursor: pointer; }
+        #walkSlider::-moz-range-track { height: 1px; background: #999; }
     </style>
 <link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
 </head>
@@ -52,7 +72,13 @@
 
     <div class="canvas-container">
         <canvas id="simCanvas" width="1100" height="620"></canvas>
-        <div class="view-hint">drag to orbit &middot; wheel to zoom &middot; shift-drag to pan &middot; double-click to recentre</div>
+        <div class="view-hint">the slider walks you in</div>
+    </div>
+
+    <div class="walk">
+        <span class="end">Far</span>
+        <input type="range" id="walkSlider" min="0" max="1" step="0.002" value="0">
+        <span class="end near">Near</span>
     </div>
 
     <script type="importmap">
@@ -367,11 +393,19 @@
         wrap.appendChild(scaleCv);
         const sctx = scaleCv.getContext('2d');
 
-        const VIEW0 = { yaw: -32, pitch: 26, zoom: 1 };
-        const panW = new THREE.Vector3();                 // pan as a world offset, not screen px
-        const panBasisR = new THREE.Vector3(1, 0, 0), panBasisU = new THREE.Vector3(0, 1, 0);
-        let panWpp = 0.05;
-        const V = Object.assign({}, VIEW0);
+        // The camera is not free: it walks a fixed path. Three stations — seen from
+        // across the garden, from the near corner, and from under the eaves — with
+        // the eye dropping as you come in, the way it does when a building stops
+        // being an object in a field and becomes something you stand under.
+        const STATIONS = [
+            // zooms set by matching the building's height against the frame in the
+            // three reference frames: about 22%, 33% and 73%
+            { yaw: -32, pitch: 27, zoom: 0.42 },   // far
+            { yaw: -32, pitch: 24, zoom: 0.62 },   // middle
+            { yaw: -32, pitch: 17, zoom: 1.36 },   // near
+        ];
+        const panW = new THREE.Vector3();                 // kept at zero; applyCam still reads it
+        const V = Object.assign({}, STATIONS[0]);
         let cw = 1100, ch = 620, dpr = 1;
 
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -496,8 +530,6 @@
             const asp = cw / Math.max(ch, 1);
             const ya = V.yaw * Math.PI/180, pa = V.pitch * Math.PI/180;
             const dir = new THREE.Vector3(Math.cos(pa)*Math.sin(ya), Math.sin(pa), Math.cos(pa)*Math.cos(ya));
-            const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize();
-            const up = new THREE.Vector3().crossVectors(right, dir).normalize();
 
             // Perspective: back the camera off until the model's bounding sphere
             // just fills the NARROWER of the two half-angles, so the fit is the same
@@ -507,13 +539,11 @@
             const hHalf = Math.atan(Math.tan(vHalf) * asp);
             const D = R / Math.tan(Math.min(vHalf, hHalf));
 
-            // Unlike the old parallel projection, world-per-pixel is no longer one
-            // number for the whole view — near things are bigger. Both the scale bar
-            // and the pan drag are therefore measured ON THE PLANE THROUGH THE MODEL
-            // CENTRE, which is where the eye reads the building anyway.
-            const wpp = (2 * D * Math.tan(vHalf)) / Math.max(ch, 1);
-            scalePxPerM = 1 / wpp;
-            panBasisR.copy(right); panBasisU.copy(up); panWpp = wpp;
+            // In perspective, world-per-pixel is not one number for the whole view —
+            // near things are bigger. The scale bar is therefore measured ON THE
+            // PLANE THROUGH THE MODEL CENTRE, which is where the eye reads the
+            // building anyway.
+            scalePxPerM = Math.max(ch, 1) / (2 * D * Math.tan(vHalf));
 
             camera.fov = FOV; camera.aspect = asp;
 
@@ -564,35 +594,25 @@
         if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
         else window.addEventListener('resize', resize);
 
-        // ---- orbit / zoom / pan
-        let drag = null;
-        canvas.addEventListener('pointerdown', e => {
-            canvas.setPointerCapture(e.pointerId);
-            drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 1 || e.button === 2 };
-            canvas.classList.add('dragging');
-        });
-        canvas.addEventListener('pointermove', e => {
-            if (!drag) return;
-            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-            drag.x = e.clientX; drag.y = e.clientY;
-            if (drag.pan) {
-                panW.addScaledVector(panBasisR, dx * panWpp).addScaledVector(panBasisU, dy * panWpp);
-            } else {
-                V.yaw = (V.yaw + dx * 0.45) % 360;
-                V.pitch = Math.max(-89, Math.min(89, V.pitch + dy * 0.35));
-            }
+        // ---- the walk. The camera is locked to the path: no orbit, no wheel zoom,
+        // no pan. The slider is the only way the view moves.
+        const walkSlider = document.getElementById('walkSlider');
+        function walkTo(t) {
+            t = Math.max(0, Math.min(1, t));
+            const seg = STATIONS.length - 1;          // two legs across three stations
+            const u = t * seg;
+            const i = Math.min(seg - 1, Math.floor(u));
+            const f = u - i;
+            const e = f * f * (3 - 2 * f);            // ease at each station, not a hard corner
+            const A = STATIONS[i], B = STATIONS[i + 1];
+            V.yaw   = A.yaw   + (B.yaw   - A.yaw)   * e;
+            V.pitch = A.pitch + (B.pitch - A.pitch) * e;
+            // zoom moves geometrically: "closer" is a ratio, not a difference, so a
+            // linear ramp would crawl at the far end and rush at the near one
+            V.zoom  = Math.exp(Math.log(A.zoom) + (Math.log(B.zoom) - Math.log(A.zoom)) * e);
             applyCam(); render();
-        });
-        const endDrag = () => { if (drag) { drag = null; canvas.classList.remove('dragging'); } };
-        canvas.addEventListener('pointerup', endDrag);
-        canvas.addEventListener('pointercancel', endDrag);
-        canvas.addEventListener('contextmenu', e => e.preventDefault());
-        canvas.addEventListener('wheel', e => {
-            e.preventDefault();
-            V.zoom = Math.max(0.25, Math.min(9, V.zoom * Math.exp(-e.deltaY * 0.0016)));
-            applyCam(); render();
-        }, { passive: false });
-        canvas.addEventListener('dblclick', () => { Object.assign(V, VIEW0); panW.set(0, 0, 0); applyCam(); render(); });
+        }
+        walkSlider.addEventListener('input', () => walkTo(+walkSlider.value));
 
         function readParams() {
             const p = {};
@@ -612,9 +632,10 @@
         }
 
         // The model is built once. Nothing animates: from here on the page only
-        // redraws when the camera moves.
+        // redraws when the slider moves it.
         update();
         resize();
+        walkTo(+walkSlider.value);
     </script>
 </body>
 </html>
