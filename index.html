@@ -22,7 +22,8 @@ a { color: inherit; text-decoration: none; text-underline-offset: 3px; }
 a:hover, a:focus-visible { text-decoration: underline; }
 a:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
 small { font-size: 11px; }
-.preview { position: absolute; top: 10px; left: 650px; width: min(420px, calc(100vw - 770px)); margin: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease, visibility .18s; }
+/* Study preview shares the reader pane's frame: same left edge, top and width, fixed to the screen. */
+.preview { position: fixed; z-index: 2; top: 38px; left: 620px; width: min(560px, calc(100vw - 662px), calc((100vh - 110px) * 1100 / 820)); margin: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease, visibility .18s; }
 .preview.is-visible { visibility: visible; opacity: 1; }
 .preview-window { position: relative; width: 100%; aspect-ratio: 1100 / 820; overflow: hidden; background: #fff; box-shadow: 0 5px 25px #00000012; }
 .preview iframe { width: 1100px; height: 820px; border: 0; transform-origin: top left; pointer-events: none; }
@@ -52,7 +53,6 @@ small { font-size: 11px; }
   .reader-nav button:hover, .reader-nav button:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
   .reader-nav .reader-next { margin-left: auto; text-align: right; }
   .reader-nav button[hidden] { display: none; }
-  body.is-reading main > section { max-width: 538px; }
   .reader { position: fixed; z-index: 1; top: 38px; bottom: 38px; left: 620px; width: min(560px, calc(100vw - 662px)); overflow-y: auto; overscroll-behavior: contain; background: #fff; padding-right: 8px; }
   .reader.is-open { display: block; }
   .reader-head { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 14px; background: #fff; }
@@ -63,6 +63,7 @@ small { font-size: 11px; }
 /* Reader with a following figure: text left, one photo pinned on the right (screens 1300px and up). */
 @media (min-width: 1300px) {
   .reader.is-split { width: min(860px, calc(100vw - 662px)); }
+  .preview { width: min(860px, calc(100vw - 662px), calc((100vh - 110px) * 1100 / 820)); }
   .reader-split { display: grid; grid-template-columns: minmax(0, 420px) minmax(240px, 1fr); gap: 28px; align-items: start; }
   .reader-figure { position: sticky; top: 44px; }
   .reader-figure-main { display: block; width: 100%; height: auto; max-height: calc(100vh - 220px); object-fit: contain; object-position: left top; cursor: zoom-in; }
@@ -86,7 +87,7 @@ small { font-size: 11px; }
 .lightbox-stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
 figcaption { font-size: 11px; margin-top: 10px; }
 footer { font-size: 11px; margin-top: 56px; }
-@media (min-width: 1100px) { main > section { max-width: 610px; } }
+@media (min-width: 1100px) { main > section { max-width: 538px; } }
 @media (max-width: 1099px) { .preview { display: none; } }
 @media (max-width: 600px) { body { padding: 25px 22px 45px; font-size: 14px; } header { margin-bottom: 38px; } section { margin-bottom: 32px; } li { margin-bottom: 7px; } }
 @media (prefers-reduced-motion: reduce) { .preview { transition: none; } }
