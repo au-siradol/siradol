@@ -412,15 +412,16 @@
             // The other two zooms match the building's height against the frame in
             // the reference frames: about 33% and 73%.
             { yaw: -32, pitch:  -5, zoom: 0.26, panR:  17, panU: -20 },  // far
-            // The middle station is framed after the Maison Dom-ino drawing: the
-            // corner view from above the top slab, where you read the stack of
-            // horizontal planes and the thin posts between them. Turned further
-            // round (-55 was tried) the plan's 22 x 12 reads end-on and squat, and
-            // the stacked-slab quality — the whole point of the Dom-ino reading —
-            // goes with it. Our roof is a wedge, not Le Corbusier's flat deck, so
-            // the topmost plate stays hidden under it; that is the building, not a
-            // mismatch to fix.
-            { yaw: -45, pitch:  26, zoom: 0.62, panR:   0, panU:  0 },   // middle
+            // The middle station is framed after the Maison Dom-ino drawing: a
+            // corner view in which the stack of horizontal planes, and the thin
+            // posts between them, is what you read. The eye stays LOW. Dom-ino has
+            // a flat deck and can be looked down on; this building has a wedge of a
+            // roof, and every degree of extra tilt hands more of the picture to that
+            // roof and takes it from the open storeys underneath — the first try at
+            // pitch 26 buried the thing the station exists to show. Turned further
+            // round (-55 was tried) the 22 x 12 plan reads end-on and squat, and the
+            // stacked-slab quality goes with it.
+            { yaw: -45, pitch:  10, zoom: 0.62, panR:   0, panU:  0 },   // middle
             { yaw: -32, pitch:  17, zoom: 1.36, panR:   0, panU:  0 },   // near
         ];
         const panW = new THREE.Vector3();                 // kept at zero; applyCam still reads it
