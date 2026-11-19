@@ -59,6 +59,11 @@
 
         .gravity-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; max-width: 420px; }
         .gravity-row .grav-lbl { font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; flex: none; }
+        .gravity-row .grav-val {
+            font-size: 10px; letter-spacing: 0.5px; color: #111; flex: none;
+            width: 46px; text-align: right; font-variant-numeric: tabular-nums;
+        }
+        .gravity-row .grav-val.at0 { color: #bbb; }
         #gravitySlider {
             flex: 1; -webkit-appearance: none; appearance: none; height: 1px;
             background: #999; outline: none; cursor: pointer;
@@ -71,18 +76,14 @@
         #gravitySlider::-moz-range-track { height: 1px; background: #999; }
 
         .reading-switch button svg { width: 12px; height: 12px; vertical-align: -2px; margin-right: 5px; }
-        button.glass {
-            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 4px; width: 78px; min-height: 53px; padding: 4px 0; border: 1px solid #111;
-            box-sizing: border-box; background: #fff; color: #111; cursor: pointer; font: inherit; line-height: 1;
+        .reading-switch button:hover { background: #fafafa; }
+        .reading-switch button.active:hover { background: #111; }
+        button.resetview {
+            border: 1px solid #ddd; background: #fff; cursor: pointer; box-sizing: border-box;
+            width: 78px; min-height: 53px; padding: 0; font: inherit;
+            font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #999;
         }
-        button.glass .lbl {
-            font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.2px;
-            color: #c4c4c4; transition: color .35s ease;
-        }
-        button.glass .lbl.on { color: #111; }
-        button.glass .hg { width: 15px; height: 15px; display: block; }
-        button.glass:hover { background: #fafafa; }
+        button.resetview:hover { border-color: #111; color: #111; }
     </style>
 <link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
 </head>
@@ -98,7 +99,7 @@
 
     <div class="canvas-container">
         <canvas id="simCanvas" width="1100" height="620"></canvas>
-        <div class="view-hint">drag to orbit &middot; wheel to zoom &middot; shift-drag to pan &middot; double-click to reset</div>
+        <div class="view-hint">drag to orbit &middot; wheel to zoom &middot; shift-drag to pan &middot; double-click, or Reset view, to recentre</div>
     </div>
 
     <div class="controls-strip">
@@ -107,25 +108,19 @@
                 <div class="cluster-fields">
                     <div class="field" style="width:auto;">
                         <div class="reading-switch" id="mode">
-                            <button data-m="asbuilt" class="active" type="button">As built</button>
-                            <button data-m="xray" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="14" r="3.5"/><circle cx="17.5" cy="14" r="3.5"/><path d="M10 13.5c1-1 3-1 4 0M3 11l2.5-4.5h2M21 11l-2.5-4.5h-2"/></svg>X-ray</button>
+                            <button data-r="temple" type="button" title="read the front as a Greek peristyle — the trees throw an uneven colonnade onto the wall">Greek</button>
+                            <button data-r="domino" type="button" title="read it as Dom-ino — only the shadows that land on a real post stand up">Dom-ino</button>
                         </div>
                     </div>
                     <div class="field" style="width:auto;">
-                        <button class="glass" id="glassBtn" type="button" title="the shadow keeps turning from one reading to the other — click to hold it" aria-label="pause or resume the shadow">
-                            <span class="lbl top">Greek</span>
-                            <svg class="hg" viewBox="0 0 24 24">
-                                <path d="M6 3h12M6 21h12M6 3 12 12 6 21M18 3 12 12 18 21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-                                <path class="sand" d="M8.5 6h7L12 11.5z" fill="currentColor"/>
-                            </svg>
-                            <span class="lbl bot">Dom-ino</span>
-                        </button>
+                        <button class="resetview" id="resetBtn" type="button" title="back to the opening view">Reset<br>view</button>
                     </div>
                 </div>
                 <div class="gravity-row">
-                    <span class="grav-lbl">Invert</span>
-                    <input type="range" id="gravitySlider" min="-1" max="1" step="0.01" value="0">
-                    <span class="grav-lbl">Increase</span>
+                    <span class="grav-lbl">Gravity</span>
+                    <input type="range" id="gravitySlider" min="-1" max="1" step="0.01" value="0"
+                           title="drag away from 1.0 g and the structure admits what each post really is">
+                    <span class="grav-val at0" id="gravVal">1.0 g</span>
                 </div>
             </div>
         </div>
@@ -191,14 +186,15 @@
         }
 
         /* ============================================================
-           GEOMETRY  — unchanged: produces flat triangles with a face
-           normal, plus annotation lines for the X-ray force diagram.
+           GEOMETRY  — produces flat triangles with a face normal, plus
+           the annotation lines of the force diagram. There is only ONE
+           reading of the building now: the as-built one. The forces are
+           no longer revealed by a mode switch but by the gravity slider,
+           which is the honest way round — you learn what a post is by
+           changing what is asked of it, not by turning the walls to glass.
            ============================================================ */
-        const C = { mode: 'asbuilt' };
-
         function build(p, risers) {
             const tris = [], lines = [];
-            const xray = C.mode === 'xray';
             const W = p.plateWidth, D = p.plateDepth, fh = p.floorHeight, S = p.postSize;
             const cl = Math.min(p.coreLen, W - 1), cd = Math.min(p.coreDep, D - 1);
             const cwall = Math.min(p.coreWall, cd/2 - 0.05);
@@ -263,7 +259,13 @@
                 quad(A,B,F,E,r,tint); quad(B,Cq,G,F,r,tint); quad(Cq,Dq,H,G,r,tint);
                 quad(Dq,A,E,H,r,tint); quad(E,F,G,H,r,tint); quad(A,B,Cq,Dq,r,tint);
             }
-            const line = (a,b,color,w,arrow,dashed) => lines.push({a,b,color,w,arrow:!!arrow,dashed:!!dashed});
+            // `front` marks a diagram line: it is drawn over the solids instead of
+            // inside them. Without it the force arrows sit buried in the posts and
+            // plates they describe — which is exactly what the X-ray mode used to
+            // solve by turning the whole building to glass. The furniture is NOT a
+            // diagram; it stays where it lies, under the floor above.
+            const line = (a,b,color,w,arrow,dashed,front) =>
+                lines.push({a,b,color,w,arrow:!!arrow,dashed:!!dashed,front:!!front});
 
             // The Gravity Paradox — melting slabs. p.gravity away from 0 (either
             // direction) softens the floor plates. Each plate is zero-deflection
@@ -497,6 +499,11 @@
             // down the way a stretched rod does, in both directions of pull; a
             // strut keeps its true cross-section, since it really is that solid
             const G_THIN_TIE = 0.6;
+            // The force diagram used to belong to an X-ray mode. It now belongs to
+            // the slider: standing still at 1 g the building keeps its secret (that
+            // is the whole point of Flammer's equal-looking columns), and the arrows
+            // only appear once you ask gravity to be something else.
+            const showForce = Math.abs(dLoad) > 0.02;
             p.floors.forEach((f, idx) => {
                 postsAt(f.pos, p).forEach(q => {
                     const role = realRole(f, q);
@@ -515,7 +522,7 @@
                         pB += Gv < 0 ? -Gv * G_GAP : -Gv * G_STRETCH;        // slackens / stretches
                     }
                     if (pT - pB < 0.05) pT = pB + 0.05;
-                    const tint = !xray ? 'post' : (role === 'strut' ? 'strut' : 'tieghost');
+                    const tint = 'post';
                     // how hard is THIS member being squashed right now?
                     const squash = role === 'strut'
                         ? Math.max(0, dLoad)                        // heavier gravity pushes the strut
@@ -535,8 +542,8 @@
                     // what it's hiding stays right there, now visible as a bare
                     // cable through the gap it just opened
                     if (role !== 'strut' && pB > pBOrig + 1e-4)
-                        line({x:q.x, y:pBOrig, z:q.z}, {x:q.x, y:pB, z:q.z}, 'rgba(20,20,20,0.85)', 1.5);
-                    if (!xray) return;
+                        line({x:q.x, y:pBOrig, z:q.z}, {x:q.x, y:pB, z:q.z}, 'rgba(20,20,20,0.85)', 1.5, false, false, true);
+                    if (!showForce) return;
                     // the force diagram reads off the post as it actually stands now,
                     // not off the nominal floor line — so the arrows travel with the
                     // gap, the stretch and the bow as the gravity slider moves
@@ -559,7 +566,7 @@
                     }
                     if (role !== 'strut') {
                         const head = topY - (idx === p.floors.length - 1 ? p.slabThick/2 : p.slabThick);
-                        if (head > pT + 1e-6) line({x:q.x,y:pT,z:q.z}, {x:q.x,y:head,z:q.z}, 'rgba(13,71,161,0.9)', 1.6, false, true);
+                        if (head > pT + 1e-6) line({x:q.x,y:pT,z:q.z}, {x:q.x,y:head,z:q.z}, 'rgba(13,71,161,0.9)', 1.6, false, true, true);
                         const ax = q.x < -0.01 ? -cl/2 : (q.x > 0.01 ? cl/2 : 0);
                         const az = q.z < -0.01 ? -cd/2 : (q.z > 0.01 ? cd/2 : 0);
                         if (mag > 0.04) {
@@ -570,28 +577,11 @@
                 });
             });
 
-            if (p.reveal) {
-                const seen = {};
-                p.floors.forEach(f => postsAt(f.pos, p).forEach(q => { seen[q.x.toFixed(3)+','+q.z.toFixed(3)] = q; }));
-                Object.values(seen).forEach(q => {
-                    line({x:q.x,y:0,z:q.z}, {x:q.x,y:topY,z:q.z}, 'rgba(0,0,0,0.22)', 1, false, true);
-                    p.floors.forEach((f, idx) => {
-                        const here = postsAt(f.pos, p).some(o => Math.abs(o.x-q.x)<1e-6 && Math.abs(o.z-q.z)<1e-6);
-                        const y0 = idx*fh, y1 = (idx+1)*fh, o = S*1.6;
-                        if (here) line({x:q.x+o,y:y0,z:q.z}, {x:q.x+o,y:y1,z:q.z},
-                                       realRole(f,q)==='strut' ? 'rgba(20,120,40,0.95)' : 'rgba(20,90,180,0.95)', 2.6);
-                        else line({x:q.x+o-0.4,y:(y0+y1)/2,z:q.z}, {x:q.x+o+0.4,y:(y0+y1)/2,z:q.z},
-                                  'rgba(211,47,47,0.98)', 2.2);
-                    });
-                });
-            }
-
             // Furniture, drawn flat on each plate from the plans' own FURN layer.
             // Lines only — it is plan information lying on the floor, not objects.
-            // Hidden in X-ray (that mode is about structure) and hidden the moment
-            // the plates start to melt, since these sit at a fixed height and would
-            // float off a bending floor.
-            if (!xray && meltAmt < 0.02) {
+            // Hidden the moment the plates start to melt, since these sit at a
+            // fixed height and would float off a bending floor.
+            if (meltAmt < 0.02) {
                 for (let fi = 0; fi < FURN.length && fi < p.numFloors; fi++) {
                     const fy = fi * fh + 0.012;
                     for (const q of FURN[fi])
@@ -641,10 +631,7 @@
         const MAT = {
             card:  new THREE.MeshLambertMaterial({ color: 0xf8f8f6, side: THREE.DoubleSide }),
             cardD: new THREE.MeshLambertMaterial({ color: 0xf5f5f2, side: THREE.DoubleSide }),
-            ghost: new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.10, side: THREE.DoubleSide, depthWrite: false }),
-            ghostS:new THREE.MeshLambertMaterial({ color: 0xef9a9a, transparent: true, opacity: 0.30, side: THREE.DoubleSide, depthWrite: false }),
             edge:  new THREE.LineBasicMaterial({ color: 0x1c1c1c }),
-            edgeX: new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.4 }),
             ground:new THREE.MeshStandardMaterial({ color: 0xc4c4c4, roughness: 0.98, metalness: 0, side: THREE.DoubleSide, transparent: true })
         };
 
@@ -679,12 +666,11 @@
 
         // posts get a loose threshold so a bowed shaft reads as one smooth member —
         // its real 90 deg arrises still draw, the small kinks along the curve don't
-        const EDGE_THR = { slab: 1, core: 1, post: 26, stair: 1, wall: 1, strut: 26, tieghost: 26, roof: 26 };
+        const EDGE_THR = { slab: 1, core: 1, post: 26, stair: 1, wall: 1, roof: 26 };
 
         function renderScene(p, risers) {
             clearGroup(modelG);
             const B = build(p, risers);
-            const xray = C.mode === 'xray';
             const meltAmt = Math.min(1, Math.abs(p.gravity || 0));
 
             // ---- solids, grouped by tint, each with its crease outline
@@ -692,28 +678,18 @@
             for (const t of B.tris) (byTint[t.tint] || (byTint[t.tint] = [])).push(t);
             for (const tint in byTint) {
                 const geom = triGeom(byTint[tint]);
-                let mat = null;
-                if (!xray)                 mat = (tint === 'roof' || tint === 'wall') ? MAT.cardD : MAT.card;
-                else if (tint === 'strut') mat = MAT.ghostS;
-                else if (tint === 'tieghost') mat = null;              // envelope shown as outline only
-                else                       mat = MAT.ghost;
-                if (mat) {
-                    const mesh = new THREE.Mesh(geom, mat);
-                    mesh.material.shadowSide = THREE.BackSide;
-                    modelG.add(mesh);
-                }
+                const mesh = new THREE.Mesh(geom, (tint === 'roof' || tint === 'wall') ? MAT.cardD : MAT.card);
+                mesh.material.shadowSide = THREE.BackSide;
+                modelG.add(mesh);
                 if (tint === 'slab' || tint === 'core' || tint === 'wall') continue;   // no outline on plates, core or partitions
-                const el = new THREE.LineSegments(
-                    new THREE.EdgesGeometry(geom, EDGE_THR[tint] || 1),
-                    xray ? MAT.edgeX : MAT.edge);
-                modelG.add(el);
+                modelG.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom, EDGE_THR[tint] || 1), MAT.edge));
             }
 
             // ---- slab outlines: the outer rectangle only, no core-hole rim.
             // Skipped once the plates start melting — losing the crisp edge
             // reads as more dissolved, not as a bug.
             if (meltAmt < 0.02) {
-                const em = xray ? MAT.edgeX : MAT.edge;
+                const em = MAT.edge;
                 for (let i = -p.numBelow; i < p.numFloors; i++) {
                     const y = i * p.floorHeight;
                     const c = [[-B.W/2,-B.D/2],[B.W/2,-B.D/2],[B.W/2,B.D/2],[-B.W/2,B.D/2]];
@@ -736,12 +712,12 @@
                 for (let i = 0; i < pos.count; i++) pos.setY(i, B.lift(pos.getX(i), pos.getZ(i)));
                 pos.needsUpdate = true;
                 g.computeVertexNormals();
-                const mesh = new THREE.Mesh(g, xray ? MAT.ghost : MAT.cardD);
+                const mesh = new THREE.Mesh(g, MAT.cardD);
                 modelG.add(mesh);
-                modelG.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 44), xray ? MAT.edgeX : MAT.edge));
+                modelG.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 44), MAT.edge));
 
                 const yc = B.topY + p.roofRise, W = B.W, D = B.D;
-                const cm = new THREE.LineBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: xray ? 0.55 : 0.9 });
+                const cm = new THREE.LineBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: 0.9 });
                 const vm = new THREE.LineBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: 0.20 });
                 const seg = (a, b, m) => modelG.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([a, b]), m));
                 seg(new THREE.Vector3(-W/2, yc, 0), new THREE.Vector3(W/2, yc, 0), cm);
@@ -754,7 +730,7 @@
             // soffit both (build() leaves only the fascia ring as CPU triangles).
             // `down` entries are wound the other way so the soffit faces down.
             if (B.slabTops && B.slabTops.length) {
-                const mat = xray ? MAT.ghost : MAT.card;
+                const mat = MAT.card;
                 for (const s of B.slabTops) {
                     const w = s.x1 - s.x0, d = s.z1 - s.z0;
                     const nx = Math.max(2, Math.round(w / 1.4)), nz = Math.max(2, Math.round(d / 1.4));
@@ -769,34 +745,36 @@
                 }
             }
 
-            // ---- annotation lines (force diagram, reveal, reading overlays)
+            // ---- annotation lines (the force diagram and the slack-tie cables)
             const groups = {};
             for (const l of B.lines) {
                 if (l.arrow) { addArrow(l); continue; }
                 const { hex, a } = parseCol(l.color);
-                const key = hex + '|' + (l.dashed ? 1 : 0) + '|' + a.toFixed(2);
-                (groups[key] || (groups[key] = { hex, a, dashed: l.dashed, pts: [] })).pts
+                const key = hex + '|' + (l.dashed ? 1 : 0) + '|' + a.toFixed(2) + '|' + (l.front ? 1 : 0);
+                (groups[key] || (groups[key] = { hex, a, dashed: l.dashed, front: l.front, pts: [] })).pts
                     .push(l.a.x, l.a.y, l.a.z, l.b.x, l.b.y, l.b.z);
             }
             for (const key in groups) {
                 const gr = groups[key];
                 const geo = new THREE.BufferGeometry();
                 geo.setAttribute('position', new THREE.Float32BufferAttribute(gr.pts, 3));
+                const spec = { color: gr.hex, transparent: true, opacity: gr.a, depthTest: !gr.front };
                 const mat = gr.dashed
-                    ? new THREE.LineDashedMaterial({ color: gr.hex, transparent: true, opacity: gr.a, dashSize: 0.3, gapSize: 0.22 })
-                    : new THREE.LineBasicMaterial({ color: gr.hex, transparent: true, opacity: gr.a });
+                    ? new THREE.LineDashedMaterial({ ...spec, dashSize: 0.3, gapSize: 0.22 })
+                    : new THREE.LineBasicMaterial(spec);
                 const ls = new THREE.LineSegments(geo, mat);
                 if (gr.dashed) ls.computeLineDistances();
+                if (gr.front) ls.renderOrder = 9;
                 modelG.add(ls);
             }
 
-            // (the temple / Dom-ino readings are no longer drawn as lines on the
-            // building — the hourglass throws them as tree shadows instead)
+            // (the Greek / Dom-ino readings are not drawn as lines on the building
+            // — the switch throws them as tree shadows instead)
 
-            // ---- ground (as-built only) - a real shadow-catching disc. Under
-            // inverted gravity it has no reason to stay: it thins to a bare rim
-            // and drifts up and away, the way Magritte lets the ground go.
-            if (!xray) {
+            // ---- ground - a real shadow-catching disc. Under inverted gravity it
+            // has no reason to stay: it thins to a bare rim and drifts up and away,
+            // the way Magritte lets the ground go.
+            {
                 const gr = Math.max(B.W, B.D) * 0.85;
                 // Grade, not "under the lowest plate". The lowest of Flammer's four
                 // floors is below ground (the +-0.00 tick in the cross-section sits
@@ -841,8 +819,12 @@
             d.normalize();
             const head = Math.min(0.55, len * 0.42);
             const ah = new THREE.ArrowHelper(d, from, len, hex, head, head * 0.55);
-            ah.line.material.transparent = true; ah.line.material.opacity = a;
-            ah.cone.material.transparent = true; ah.cone.material.opacity = a;
+            // over the solids, not inside them — see the `front` note in build()
+            for (const m of [ah.line.material, ah.cone.material]) {
+                m.transparent = true; m.opacity = a; m.depthTest = false;
+            }
+            ah.renderOrder = 10;
+            ah.line.renderOrder = 10; ah.cone.renderOrder = 10;
             modelG.add(ah);
         }
 
@@ -951,20 +933,13 @@
         }, { passive: false });
         canvas.addEventListener('dblclick', () => { Object.assign(V, VIEW0); panW.set(0, 0, 0); applyCam(); render(); });
 
-        // ---- mode switch. "As built" doubles as the recentre — it also snaps the
-        // orbit / zoom / pan back to the default view. The trees and whatever the
-        // hourglass is showing are left alone.
-        const modeSwitch = document.getElementById('mode');
-        modeSwitch.querySelectorAll('button').forEach(b =>
-            b.addEventListener('click', () => {
-                C.mode = b.dataset.m;
-                modeSwitch.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
-                if (b.dataset.m === 'asbuilt') { Object.assign(V, VIEW0); panW.set(0, 0, 0); }
-                update();
-            }));
+        // ---- recentre
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            Object.assign(V, VIEW0); panW.set(0, 0, 0); applyCam(); render();
+        });
 
         // the whole model is locked to the measured drawings; the reading is
-        // whatever the hourglass is currently showing (see the glass handler)
+        // whichever of the two the switch is holding (see setReading below)
         let reading = 'none';
         let gravity = 0;   // -1 inverted .. 0 normal .. +1 heavier — The Gravity Paradox
 
@@ -972,7 +947,6 @@
             const p = {};
             ['numFloors','numBelow','floorHeight','plateWidth','plateDepth','slabThick',
              'postSize','roofEdge','roofRise','coreLen','coreDep','coreWall'].forEach(k => p[k] = REAL[k]);
-            p.reveal = false;
             p.showStairs = true;
             p.gravity = gravity;
             p.floors = floorsFor(p.numFloors);
@@ -1079,7 +1053,7 @@
         // draws whatever those currently are — the tween below moves them.
         function buildGroveShadows() {
             clearGroup(shadowG);
-            if (C.mode === 'xray' || grown <= 0.001) return;   // no garden in X-ray / while asleep
+            if (grown <= 0.001) return;                        // no garden while it sleeps
             const mat = SHADOW_MAT;
             const H0 = REAL.numFloors * REAL.floorHeight;        // up to the third floor
 
@@ -1114,10 +1088,11 @@
             });
         }
 
-        // The hourglass is a toggle. 1st press wakes the garden: the trees grow
-        // out of the ground, then the shadow reading begins and the two readings
-        // (Greek / Dom-ino) cross-fade back and forth on their own for ever.
-        // Press again to cancel: the trees shrink back into the ground and vanish.
+        // The switch holds a reading. Pressing Greek or Dom-ino wakes the garden —
+        // the trees grow out of the ground, then the shadows move to that reading
+        // and STAY there. Pressing the one already held puts the garden back to
+        // sleep. Nothing cycles on its own any more: the reading is the viewer's,
+        // not the clock's.
         const easeIO = x => x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
         const STUB = 0.14;                                 // shadow left lying on the ground
         function targetFor(state, t) {
@@ -1126,11 +1101,11 @@
             return { raise: 0, x: t.x };
         }
 
-        const LEG_S = 6, HOLD_S = 2.6, GROW_S = 2.2, RETRACT_S = 1.5;
-        let legU = 0, legActive = false, holdUntil = 0;
+        const LEG_S = 6, GROW_S = 2.2, RETRACT_S = 1.5;
+        let legU = 0, legActive = false;
         let awake = false, grown = 0, growDir = 0;         // grown 0 = underground, 1 = full grove
         let groveRAF = 0, groveLast = 0;
-        let hgRot = 0, hgFrom = 0, hgTo = 0;
+        let pending = 'temple';                            // the reading to take up once grown
         const froms = [], tgts = [];
 
         function applyGrowth() {
@@ -1138,19 +1113,13 @@
                 const t = TREES[i], g = groveG.children[i];
                 const eg = easeIO(Math.max(0, Math.min(1, (grown - t.goff) / (1 - t.goff))));
                 g.scale.set(1, eg, 1);
-                g.visible = eg > 0.001 && C.mode !== 'xray';
+                g.visible = eg > 0.001;
             }
         }
         function beginLeg(state) {
             TREES.forEach((t, i) => { froms[i] = { raise: t.cur.raise, x: t.cur.x }; tgts[i] = targetFor(state, t); });
-            reading = state; syncGlass();
-            hgFrom = hgRot; hgTo = (state === 'domino') ? 180 : 0;
+            reading = state; syncSwitch();
             legU = 0; legActive = true;
-        }
-        function nextReading() {
-            return reading === 'temple' ? 'domino'
-                 : reading === 'domino' ? 'temple'
-                 : (Math.random() < 0.5 ? 'temple' : 'domino');
         }
 
         function groveTick(now) {
@@ -1160,60 +1129,66 @@
             if (growDir !== 0) {
                 grown = Math.max(0, Math.min(1, grown + growDir * dt / (growDir > 0 ? GROW_S : RETRACT_S)));
                 applyGrowth();
-                if (growDir > 0 && grown >= 1) { growDir = 0; if (awake) beginLeg(nextReading()); }
+                if (growDir > 0 && grown >= 1) { growDir = 0; if (awake) beginLeg(pending); }
                 if (growDir < 0 && grown <= 0) {
-                    growDir = 0; legActive = false; reading = 'none'; syncGlass();
+                    growDir = 0; legActive = false; reading = 'none'; syncSwitch();
                     TREES.forEach(t => { t.cur.raise = 0; t.cur.x = t.x; });
-                    hgRot = 0; hg.style.transform = 'rotate(0deg)';
                 }
             }
 
-            if (awake && grown >= 0.999) {
-                if (legActive) {
-                    legU = Math.min(1, legU + dt / LEG_S);
-                    const e = easeIO(legU);
-                    TREES.forEach((t, i) => {
-                        const f = froms[i], g = tgts[i];
-                        const uu = easeIO(Math.max(0, Math.min(1, (legU - t.uoff) / (1 - t.uoff))));
-                        t.cur.raise = f.raise + (g.raise - f.raise) * uu;
-                        t.cur.x     = f.x     + (g.x     - f.x)     * uu;
-                    });
-                    hgRot = hgFrom + (hgTo - hgFrom) * e;      // the glass turns in step with the shadow
-                    hg.style.transform = `rotate(${hgRot}deg)`;
-                    if (legU >= 1) { legActive = false; holdUntil = now + HOLD_S * 1000; }
-                } else if (now >= holdUntil) {
-                    beginLeg(nextReading());
-                }
+            if (legActive && grown >= 0.999) {
+                legU = Math.min(1, legU + dt / LEG_S);
+                TREES.forEach((t, i) => {
+                    const f = froms[i], g = tgts[i];
+                    const uu = easeIO(Math.max(0, Math.min(1, (legU - t.uoff) / (1 - t.uoff))));
+                    t.cur.raise = f.raise + (g.raise - f.raise) * uu;
+                    t.cur.x     = f.x     + (g.x     - f.x)     * uu;
+                });
+                if (legU >= 1) legActive = false;             // and it stays where it was put
             }
 
             buildGroveShadows();
             render();
-            if (growDir !== 0 || (awake && grown >= 0.999)) groveRAF = requestAnimationFrame(groveTick);
+            if (growDir !== 0 || legActive) groveRAF = requestAnimationFrame(groveTick);
         }
         function runGrove() { if (!groveRAF) { groveLast = performance.now(); groveRAF = requestAnimationFrame(groveTick); } }
 
-        const glassBtn = document.getElementById('glassBtn');
-        const hg = glassBtn.querySelector('.hg');
-        const lblTop = glassBtn.querySelector('.lbl.top');
-        const lblBot = glassBtn.querySelector('.lbl.bot');
-        function syncGlass() {
-            lblTop.classList.toggle('on', reading === 'temple');
-            lblBot.classList.toggle('on', reading === 'domino');
+        // ---- the reading switch
+        const readSwitch = document.getElementById('mode');
+        function syncSwitch() {
+            readSwitch.querySelectorAll('button').forEach(b =>
+                b.classList.toggle('active', b.dataset.r === reading));
         }
-        glassBtn.addEventListener('click', () => {
-            awake = !awake;
-            growDir = awake ? 1 : -1;
-            if (!awake) legActive = false;
+        function setReading(next) {
+            if (awake && next === pending) {        // pressing the held reading sends it back to sleep
+                awake = false; legActive = false; growDir = -1;
+            } else {
+                pending = next;
+                if (!awake) { awake = true; growDir = 1; reading = next; syncSwitch(); }
+                else if (grown >= 0.999) beginLeg(next);     // already up: just walk the shadows across
+                else { reading = next; syncSwitch(); }       // still growing: it will take this up on arrival
+            }
             runGrove();
-        });
+        }
+        readSwitch.querySelectorAll('button').forEach(b =>
+            b.addEventListener('click', () => setReading(b.dataset.r)));
 
         // The Gravity Paradox: the slider drives itself, live — no tween needed,
-        // dragging it is the animation.
+        // dragging it is the animation. The readout is the real gravity vector the
+        // model is being built with (gEff in build()): 1.0 g as built, 2.0 g at the
+        // right stop, through weightless at half travel to -1.0 g at the left.
         const gravitySlider = document.getElementById('gravitySlider');
-        gravitySlider.addEventListener('input', () => {
-            gravity = +gravitySlider.value;
+        const gravVal = document.getElementById('gravVal');
+        const SNAP = 0.04;                      // a dead zone, so as-built is reachable by hand
+        function applyGravity(v) {
+            gravity = Math.abs(v) < SNAP ? 0 : v;
+            const gEff = gravity < 0 ? 1 + 2*gravity : 1 + gravity;
+            gravVal.textContent = (gEff < 0 ? '−' : '') + Math.abs(gEff).toFixed(1) + ' g';
+            gravVal.classList.toggle('at0', gravity === 0);
             update();
-        });
+        }
+        gravitySlider.addEventListener('input', () => applyGravity(+gravitySlider.value));
+        gravitySlider.addEventListener('dblclick', () => { gravitySlider.value = 0; applyGravity(0); });
 
         function update() {
             const p = readParams();
@@ -1225,9 +1200,10 @@
             render();
         }
 
+        syncSwitch();
         update();
         resize();
-        // the garden starts asleep — the hourglass wakes it
+        // the garden starts asleep — either button of the switch wakes it
     </script>
 </body>
 </html>
