@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Gravity Paradox</title>
     <style>
+        /* The page is one screenful, like study 04: nothing scrolls, and the canvas
+           takes whatever height is left over once the bar and the controls have
+           had theirs — rather than fixing its own height from its width and
+           pushing the controls off the bottom. */
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #f4f4f4; color: #111; margin: 0; padding: 0 24px 24px;
+            background-color: #f4f4f4; color: #111;
+            padding: 0 24px 12px; box-sizing: border-box;
+            display: flex; flex-direction: column;
         }
     .study-bar { max-width: 1100px; width: 100%; margin: 0 auto; padding: 14px 0 8px; border-bottom: 1px solid #111; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; box-sizing: border-box; flex-shrink: 0; }
     .study-bar a { color: #111; text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; flex: none; }
@@ -20,37 +27,63 @@
     .study-bar .titleline .sub { color: #666; font-weight: normal; }
 
         .canvas-container {
-            max-width: 1100px; margin: 16px auto 0;
-            border-bottom: 1px dashed #aaa; padding-bottom: 15px; position: relative;
+            max-width: 1100px; width: 100%; margin: 16px auto 0;
+            position: relative;
+            /* min-height:0 is not optional: without it a flex item refuses to
+               shrink below its content and the canvas pushes the page over */
+            flex: 1 1 auto; min-height: 0;
+            display: flex; flex-direction: column;
         }
         canvas#simCanvas {
-            display: block; width: 100%; aspect-ratio: 110 / 62; height: auto;
+            display: block; width: 100%; flex: 1 1 auto; min-height: 0;
             /* the model is white and has no outlines, so the field behind it has to
                be the thing it reads against. The renderer clears to transparent;
                this is what you actually see. */
             background: #ffffff; border: 1px solid #ececec;
         }
-        canvas.scalebar { position: absolute; right: 10px; bottom: 24px; pointer-events: none; }
+        canvas.scalebar { position: absolute; right: 10px; bottom: 9px; pointer-events: none; }
         .view-hint {
-            position: absolute; bottom: 22px; left: 10px;
+            position: absolute; bottom: 7px; left: 10px;
             font-size: 9px; color: #bbb; letter-spacing: 0.4px;
         }
 
+        /* The legend keeps its space whether or not it is showing. If it came and
+           went the page height would change with it, the canvas would be resized,
+           and the view would jump every time the spectacles are pressed. */
+        .force-controls {
+            max-width: 1100px; width: 100%; margin: 10px auto 0; text-align: center;
+            flex-shrink: 0; visibility: visible;
+        }
+        .force-controls[hidden] { display: block; visibility: hidden; }
+        .force-key { margin:0; font-size:10px; color:#888; }
+        .force-key .compression { color:#bb5544; }
+        .force-key .tension { color:#377ca6; }
         /* the walk: one slider, three stations */
         .walk {
-            max-width: 1100px; margin: 14px auto 0; padding-top: 12px;
-            border-top: 1px dashed #aaa;
-            display: flex; align-items: center; gap: 14px;
+            max-width: 1100px; width: 100%; margin: 14px auto 0;
+            display: flex; align-items: center; gap: 14px; flex-shrink: 0;
         }
-        .walk .end {
-            font-size: 8px; font-weight: bold; text-transform: uppercase;
-            letter-spacing: 1px; color: #999; flex: none; width: 54px;
+        /* The icons sit under the ends and the middle of the TRACK, so each one
+           is centred on the station it stands for. The row therefore carries the
+           slider's own side margins rather than the page's. */
+        .stations {
+            max-width: 1100px; width: 100%; margin: 6px auto 0;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            flex-shrink: 0;
         }
-        .walk .end.near { text-align: right; }
+        .station {
+            border: 0; background: none; padding: 4px 6px; cursor: pointer;
+            color: #c4c4c4; line-height: 0; transition: color .25s ease;
+        }
+        .station svg { width: 19px; height: 19px; display: block; }
+        .station:hover { color: #777; }
+        .station.on { color: #111; }
+        .station:focus-visible { outline: 2px solid #888; outline-offset: 3px; }
         #walkSlider {
             flex: 1; -webkit-appearance: none; appearance: none; height: 1px;
-            background: #999; outline: none; cursor: pointer;
+            background: #999; outline: none; cursor: ew-resize; touch-action: none;
         }
+        #walkSlider:focus-visible { outline:2px solid #888; outline-offset:7px; }
         #walkSlider::-webkit-slider-thumb {
             -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
             background: #111; cursor: pointer;
@@ -76,9 +109,39 @@
     </div>
 
     <div class="walk">
-        <span class="end">Far</span>
-        <input type="range" id="walkSlider" min="0" max="1" step="0.002" value="0">
-        <span class="end near">Near</span>
+        <input type="range" id="walkSlider" min="0" max="1" step="0.002" value="0" aria-label="Camera distance">
+    </div>
+
+    <!-- The three stations, named by what each distance lets you mistake the
+         building for: a temple, a Dom-ino frame, and — close enough to look
+         through it — neither. The spectacles are the icon the deleted X-ray
+         button used to carry. -->
+    <div class="stations" id="stations">
+        <button type="button" class="station" data-station="0" aria-label="Far: the temple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 7 12 2.6 22 7"/><path d="M3.2 9.4h17.6"/>
+                <path d="M5.4 9.4v9.2M9 9.4v9.2M12.6 9.4v9.2M16.2 9.4v9.2M19.8 9.4v9.2"/>
+                <path d="M2.6 21.4h18.8"/>
+            </svg>
+        </button>
+        <button type="button" class="station" data-station="1" aria-label="Middle: the Dom-ino frame">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2.6 5.4h18.8M2.6 12h18.8M2.6 18.6h18.8"/>
+                <path d="M5.6 5.4v6.6M18.4 5.4v6.6M5.6 12v6.6M18.4 12v6.6"/>
+            </svg>
+        </button>
+        <button type="button" class="station" data-station="2" aria-label="Near: look through it">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6.5" cy="14" r="3.5"/><circle cx="17.5" cy="14" r="3.5"/>
+                <path d="M10 13.5c1-1 3-1 4 0M3 11l2.5-4.5h2M21 11l-2.5-4.5h-2"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- no toggle: this legend simply comes with the spectacles station -->
+    <div class="force-controls" id="forceControls" hidden>
+        <p class="force-key"><span class="compression">Compression</span>
+            &nbsp;·&nbsp; <span class="tension">Tension</span> &nbsp;·&nbsp; <span style="color:#b18b45">Roof / cantilever walls → core</span><br>Arrows show load transfer · grey = gravity · conceptual, not calculated</p>
     </div>
 
     <script type="importmap">
@@ -199,7 +262,7 @@
                 const yb = y - p.slabThick;
                 const strip = (x0,x1,z0,z1) => {
                     if (x1 - x0 < 1e-3 || z1 - z0 < 1e-3) return;
-                    box((x0+x1)/2, yb, (z0+z1)/2, x1-x0, p.slabThick, z1-z0, 'slab');
+                    box((x0+x1)/2, yb, (z0+z1)/2, x1-x0, p.slabThick, z1-z0, y > 0 ? 'upperSlab' : 'slab');
                 };
                 if (!cut) { strip(-W/2, W/2, -D/2, D/2); return; }     // solid plate
                 strip(-W/2, W/2, -D/2, -hz);
@@ -300,7 +363,7 @@
                 const above = { x:0, y:topY + 60, z:0 };
                 const midpt = { x:0, y:soff + p.roofEdge/2, z:0 };
                 const S0 = (x,z) => ({ x, y:soff, z });
-                quad(S0(-W/2,-D/2), S0(W/2,-D/2), S0(W/2,D/2), S0(-W/2,D/2), above, 'roof');   // soffit
+                quad(S0(-W/2,-D/2), S0(W/2,-D/2), S0(W/2,D/2), S0(-W/2,D/2), above, 'soffit');   // soffit
                 const NX = 16, NZ = 10;
                 for (let i = 0; i < NX; i++) {
                     const xa = -W/2 + i*W/NX, xb = -W/2 + (i+1)*W/NX;
@@ -393,39 +456,28 @@
         wrap.appendChild(scaleCv);
         const sctx = scaleCv.getContext('2d');
 
-        // The camera is not free: it walks a fixed path. Three stations — seen from
-        // across the garden, from the near corner, and from under the eaves — with
-        // the eye dropping as you come in, the way it does when a building stops
-        // being an object in a field and becomes something you stand under.
+        // Reference-led approach: distant Acropolis, low Dom-ino corner,
+        // then a close view with user-controlled orbit. Geometry stays unchanged.
         const STATIONS = [
-            // The far station is framed after the photograph of the Acropolis seen
-            // from Philopappos: the eye is BELOW the building and looking slightly
-            // up, so the colonnade and the architrave are what you get and the roof
-            // is not in the picture at all; and the thing sits small, high and to
-            // the right of the frame, the way something far away sits in a view
-            // rather than being presented for inspection.
-            // panR / panU shift the camera's aim, in metres. Watch the signs: `dir`
-            // runs from the model TO the camera, so the `right` built from it is
-            // screen LEFT, and the aim moving one way sends the model the other.
-            // Measured on screen at this zoom, 1 m is about 4.3 px: positive panR
-            // carries the model right, negative panU carries it up.
-            // The other two zooms match the building's height against the frame in
-            // the reference frames: about 33% and 73%.
-            { yaw: -32, pitch:  -5, zoom: 0.26, panR:  17, panU: -20 },  // far
-            // The middle station is framed after the Maison Dom-ino drawing: a
-            // corner view in which the stack of horizontal planes, and the thin
-            // posts between them, is what you read. The eye stays LOW. Dom-ino has
-            // a flat deck and can be looked down on; this building has a wedge of a
-            // roof, and every degree of extra tilt hands more of the picture to that
-            // roof and takes it from the open storeys underneath — the first try at
-            // pitch 26 buried the thing the station exists to show. Turned further
-            // round (-55 was tried) the 22 x 12 plan reads end-on and squat, and the
-            // stacked-slab quality goes with it.
-            { yaw: -45, pitch:  10, zoom: 0.62, panR:   0, panU:  0 },   // middle
-            { yaw: -32, pitch:  17, zoom: 1.36, panR:   0, panU:  0 },   // near
+            { yaw: -70, pitch: 3, zoom: 0.33, panR: 18, panU: -19 },
+            // Exactly t=0.5: level camera between the slabs, like the reference.
+            // Perspective reveals roof soffits above and floor surfaces below.
+            { yaw: -40, pitch: 0, zoom: 1.4, panR: 0, panU: 0 },
+            { yaw: -40, pitch: 0, zoom: 1.65, panR: 0, panU: 0 },
         ];
-        const panW = new THREE.Vector3();                 // kept at zero; applyCam still reads it
+        const panW = new THREE.Vector3();
         const V = Object.assign({}, STATIONS[0]);
+        // what the viewer has done on top of the path, once past the fixed views.
+        // zoomMul must start at 1: it is used as an exponent base, and an undefined
+        // one would make the camera distance NaN and empty the frame.
+        const orbit = { yaw: 0, pitch: 0, zoomMul: 1 };
+        const ZOOM_MIN = 0.35, ZOOM_MAX = 5;
+        // Free orbit begins as soon as you leave the Dom-ino station: the two
+        // reference views are fixed because each one IS a particular way of
+        // looking; past them there is nothing left to compose, so the building
+        // becomes a thing you can turn in your hands.
+        const FREE_AT = 0.52;
+        let walkPosition = 0;
         let cw = 1100, ch = 620, dpr = 1;
 
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -437,37 +489,204 @@
         const camera = new THREE.PerspectiveCamera(FOV, 1, 0.01, 8000);
         camera.up.set(0, 1, 0);
 
-        // No outlines anywhere, so light alone has to carry the form.
-        // The key light rides the CAMERA, so the building is lit the same from
-        // every orbit position — turn all the way round and no side falls into
-        // the dark. It sits off the viewer's left shoulder and a little above.
-        const key = new THREE.DirectionalLight(0xffffff, 0.80);
-        key.position.set(-0.35, 0.75, 0.55);       // in the camera's own space
-        camera.add(key);
-        scene.add(camera);                          // children of the camera only
-                                                    // render if the camera is in the scene
-        // The hemisphere does the real drawing: white overhead, grey underfoot, so
-        // a face that looks up goes near-white and a soffit falls to mid grey. That
-        // fall is the ONLY reason a white building reads against a white page —
-        // there are no outlines and no coloured field to help. It is also a cheap
-        // stand-in for the ambient occlusion a render would give the deep recesses.
-        // The intensity and the ground colour have to move in opposite directions:
-        // raising the intensity alone lifts the soffits as much as the roof and
-        // nothing separates. Bright enough to clip the up-facing surfaces to white,
-        // dark enough underneath that the underside of every plate stays grey.
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x858585, 1.80));
-        scene.add(new THREE.AmbientLight(0xffffff, 0.03));
+        // Fixed late-afternoon direction: warm outer faces, cooler diffuse fill.
+        // Lighting stays in world space so orbiting reveals the light/shade contrast.
+        const key = new THREE.DirectionalLight(0xfff4e4, 1.65);
+        key.position.set(-38, 32, 24);
+        key.target.position.set(0, 4, 0);
+        scene.add(key, key.target, camera);
+        scene.add(new THREE.HemisphereLight(0xf4f7ff, 0xa4a199, 0.82));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+        const fill = new THREE.DirectionalLight(0xe9efff, 0.28);
+        fill.position.set(25, 12, -32);
+        scene.add(fill);
 
-        // one white for the whole building. No emissive: a self-lit floor would
-        // raise the soffits and flatten exactly the gradient being relied on here.
+        // Keep the white building, with a restrained brightness lift under the roof.
         const MAT = {
             card: new THREE.MeshLambertMaterial({
                 color: 0xffffff, side: THREE.DoubleSide, shadowSide: THREE.BackSide
+            }),
+            // Local bounce-light approximation for the roof underside only.
+            soffit: new THREE.MeshLambertMaterial({
+                color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.22,
+                side: THREE.DoubleSide
+            }),
+            slabReading: new THREE.MeshLambertMaterial({
+                color: 0xffffff, side: THREE.DoubleSide,
+                transparent: true, opacity: 0.18, depthWrite: false
+            }),
+            wallReading: new THREE.MeshLambertMaterial({
+                color: 0xffffff, side: THREE.DoubleSide,
+                transparent: true, opacity: 0.18, depthWrite: false
             })
         };
 
         let modelG = new THREE.Group();
         scene.add(modelG);
+        const forceG = new THREE.Group();
+        forceG.visible = false;
+        scene.add(forceG);
+        let forceMode = false;
+        const forceEdgeMat = new THREE.LineBasicMaterial({color:0x969696, transparent:true, opacity:0.45});
+        function buildForceView(p) {
+            clearGroup(forceG);
+            modelG.traverse(object => {
+                if (object.isMesh) forceG.add(new THREE.LineSegments(
+                    new THREE.EdgesGeometry(object.geometry,25), forceEdgeMat));
+            });
+            // Arrows consistently mean LOAD TRANSFER, not force vectors on a
+            // free-body cut. Colours identify the receiving structural mechanism.
+            // Source: Flammer's lecture, 4:41–5:52 (user-supplied transcript).
+            // Qualitative topology only: no stiffness, reinforcement or force solver.
+            const compression = 0xbb5544, tension = 0x377ca6, transfer = 0xb18b45;
+            const fh = p.floorHeight, roofY = p.numFloors*fh-p.roofEdge;
+            const wallY = 2*fh+0.45;
+            const vec = (x,y,z) => new THREE.Vector3(x,y,z);
+            function route(a,b,color) {
+                const delta = b.clone().sub(a), length = delta.length();
+                if (length < 0.01) return;
+                forceG.add(new THREE.ArrowHelper(delta.normalize(),a,length,color,
+                    Math.min(0.3,length*0.2),Math.min(0.15,length*0.1)));
+            }
+            const corners = postsAt('corner',p);
+            // Four cantilever-wall routes, from each outer corner to the core.
+            // Keep the trace in the solid upper portion above the door openings.
+            const wallTraceY = roofY-0.35;
+            corners.forEach(q => {
+                const sx = Math.sign(q.x), sz = Math.sign(q.z);
+                const end = vec(sx*p.coreLen/2,wallTraceY,sz*p.coreDep/2);
+                const outer = vec(q.x,wallTraceY,q.z);
+                route(vec(q.x,wallY,q.z),outer,transfer);
+                route(outer,end,transfer);
+                // Resultant descends in the core to its base. Foundations are not modelled.
+                route(end,vec(end.x,-p.slabThick,end.z),compression);
+            });
+            p.floors.forEach((floor,index) => postsAt(floor.pos,p).forEach(q => {
+                const bottom = index*fh;
+                if (index === 0) {
+                    // Ground-storey props deliver load from the slab above to base.
+                    route(vec(q.x,fh-p.slabThick,q.z),vec(q.x,0,q.z),compression);
+                } else if (index === 1) {
+                    // Corner hangers terminate at the diagonal cantilever walls,
+                    // not at invented continuous cables passing through the roof.
+                    route(vec(q.x,bottom,q.z),vec(q.x,wallY,q.z),tension);
+                } else {
+                    // Upper slab's mid-side hangers deliver load into the roof edge.
+                    const head = vec(q.x,roofY,q.z);
+                    route(vec(q.x,bottom,q.z),head,tension);
+                    // Roof-edge bending/shear transfers toward both adjacent wall tips.
+                    const adjacent = corners.filter(c => q.k === 'long'
+                        ? Math.sign(c.z) === Math.sign(q.z)
+                        : Math.sign(c.x) === Math.sign(q.x));
+                    adjacent.forEach(c => {
+                        const corner = vec(c.x,roofY,c.z);
+                        route(head,corner,transfer);
+                        route(corner,vec(c.x,wallTraceY,c.z),transfer);
+                    });
+                }
+            }));
+            // Applied gravity is separate from the coloured transmission paths.
+            for (let i = 1; i < p.numFloors; i++)
+                for (const x of [-p.plateWidth*0.25,p.plateWidth*0.25])
+                    route(vec(x,i*fh+0.8,p.plateDepth*0.3),
+                        vec(x,i*fh+0.06,p.plateDepth*0.3),0x555555);
+        }
+        // Acropolis-inspired contour model, traced approximately from the supplied
+        // plan. Heights are illustrative: the reference supplies no elevation data.
+        const hillG = new THREE.Group();
+        scene.add(hillG);
+        const hillInk = new THREE.LineBasicMaterial({
+            color: 0xaaaaa5, transparent: true, opacity: 0.35, depthWrite: false
+        });
+        const hillSurface = new THREE.MeshBasicMaterial({
+            color: 0xe5e5df, side: THREE.DoubleSide,
+            transparent: true, opacity: 1, depthWrite: true,
+            polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
+        });
+        // The plateau stays quiet; directional shading describes the sloping faces.
+        // The pale horizontal ground remains unlit, so it reads as a separate plane.
+        const hillSlope = new THREE.MeshLambertMaterial({
+            color: 0xbdbdb6, side: THREE.DoubleSide,
+            transparent: true, opacity: 1, depthWrite: true,
+            polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
+        });
+        // Summit boundary in plan-image pixels; the temple centre becomes (0,0).
+        // Rotate the plan to align its temple's long axis with the model's x axis.
+        const summitPlan = [[53,245],[105,222],[117,187],[172,167],[218,147],
+            [269,126],[274,105],[349,99],[426,83],[450,105],[510,94],
+            [539,92],[554,113],[594,141],[645,146],[667,167],[695,176],
+            [728,180],[748,192],[764,227],[785,270],[817,329],
+            [733,346],[650,360],[559,376],[450,388],[375,366],
+            [309,345],[246,326],[204,307],[144,293],[91,276],[53,269]];
+        const planAngle = 12 * Math.PI / 180;
+        const summit = summitPlan.map(([px,py]) => {
+            const x = (px - 485) * 0.14, z = (py - 285) * 0.14;
+            return new THREE.Vector2(x * Math.cos(planAngle) - z * Math.sin(planAngle),
+                x * Math.sin(planAngle) + z * Math.cos(planAngle));
+        });
+        const terrainTop = -REAL.slabThick - 0.015;
+        const centre = new THREE.Vector2(-8,-7);
+        const rings = [];
+        for (let level = 0; level <= 10; level++) {
+            const t = level / 10;
+            rings.push(summit.map(p => {
+                const radial = p.clone().sub(centre);
+                // Western approach spreads gently; the eastern escarpment is steep.
+                const west = Math.max(0, Math.min(1, (-p.x + 5) / 55));
+                const spread = (5 + 12 * west) * Math.pow(t, 1.25);
+                const q = p.clone().add(radial.normalize().multiplyScalar(spread));
+                return new THREE.Vector3(q.x, terrainTop - level * 1.1, q.y);
+            }));
+        }
+        const topShape = new THREE.Shape(summit.map(p => new THREE.Vector2(p.x, -p.y)));
+        const cap = new THREE.ShapeGeometry(topShape);
+        cap.rotateX(-Math.PI / 2); cap.translate(0,terrainTop,0);
+        hillG.add(new THREE.Mesh(cap,hillSurface));
+        const positions = [];
+        for (let j = 0; j < rings.length - 1; j++) {
+            for (let i = 0; i < summit.length; i++) {
+                const next = (i + 1) % summit.length;
+                const a = rings[j][i], b = rings[j][next];
+                const c = rings[j+1][next], d = rings[j+1][i];
+                for (const v of [a,b,d,b,c,d]) positions.push(v.x,v.y,v.z);
+            }
+        }
+        const slope = new THREE.BufferGeometry();
+        slope.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+        slope.computeVertexNormals();
+        hillG.add(new THREE.Mesh(slope,hillSlope));
+        rings.forEach(ring => {
+            const contour = new THREE.BufferGeometry().setFromPoints(
+                ring.map(p => p.clone().add(new THREE.Vector3(0,0.012,0))));
+            hillG.add(new THREE.LineLoop(contour,hillInk));
+        });
+        // A horizontal ground plane at the lowest contour, with a feathered edge.
+        // It is a surface, not a painted contact shadow; it shares the terrain fade.
+        const groundMask = document.createElement('canvas');
+        groundMask.width = groundMask.height = 256;
+        const groundCtx = groundMask.getContext('2d');
+        const groundGradient = groundCtx.createRadialGradient(128,128,0,128,128,128);
+        groundGradient.addColorStop(0, 'rgba(255,255,255,1)');
+        groundGradient.addColorStop(0.55, 'rgba(255,255,255,1)');
+        groundGradient.addColorStop(0.8, 'rgba(255,255,255,0.4)');
+        groundGradient.addColorStop(1, 'rgba(255,255,255,0)');
+        groundCtx.fillStyle = groundGradient;
+        groundCtx.fillRect(0,0,256,256);
+        const groundTexture = new THREE.CanvasTexture(groundMask);
+        groundTexture.colorSpace = THREE.SRGBColorSpace;
+        const groundMaterial = new THREE.MeshBasicMaterial({
+            map: groundTexture, transparent: true, depthWrite: false, side: THREE.DoubleSide
+        });
+        // Extend beyond the camera's foreground so the ground reaches the bottom
+        // of the frame; the feathered boundary stays outside the distant view.
+        const groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),groundMaterial);
+        groundPlane.rotation.x = -Math.PI / 2;
+        groundPlane.position.set(centre.x, rings[rings.length-1][0].y - 0.03, centre.y);
+        groundPlane.renderOrder = -1;
+        hillG.add(groundPlane);
+        // Selected medium tone, shared by the mountain and ground.
+        for (const material of [hillSurface, hillSlope, groundMaterial])
+            material.color.setHex(0xe6e6e0);
         let fitR = 20;
         const fitC = new THREE.Vector3();
 
@@ -503,7 +722,10 @@
             const byTint = {};
             for (const t of B.tris) (byTint[t.tint] || (byTint[t.tint] = [])).push(t);
             for (const tint in byTint) {
-                modelG.add(new THREE.Mesh(triGeom(byTint[tint]), MAT.card));
+                const material = tint === 'upperSlab' ? MAT.slabReading
+                    : tint === 'core' || tint === 'wall' || tint === 'stair' ? MAT.wallReading
+                    : tint === 'soffit' ? MAT.soffit : MAT.card;
+                modelG.add(new THREE.Mesh(triGeom(byTint[tint]), material));
             }
 
             // ---- roof top: a smooth mesh so the wedge is not faceted
@@ -578,8 +800,7 @@
             camera.far = D + fitR * 12;
             camera.lookAt(tgt);
             camera.updateProjectionMatrix();
-            // the key light is a child of the camera, so it has just followed it —
-            // nothing to place here any more
+            // World-space lighting remains fixed while the camera moves.
         }
 
         function drawScaleBar() {
@@ -602,6 +823,25 @@
         }
 
         function render() {
+            modelG.visible = !forceMode;
+            forceG.visible = forceMode;
+            const slabT = Math.max(0, Math.min(1, (walkPosition - 0.2) / 0.3));
+            MAT.slabReading.opacity = 0.18 + 0.82 * slabT * slabT * (3 - 2 * slabT);
+            MAT.slabReading.depthWrite = slabT >= 1;
+            // Reveal the column/slab reading from afar, restore the solid walls
+            // before the close-view orbit unlocks.
+            const wallT = Math.max(0, Math.min(1, (walkPosition - 0.5) / 0.25));
+            MAT.wallReading.opacity = 0.18 + 0.82 * wallT * wallT * (3 - 2 * wallT);
+            MAT.wallReading.depthWrite = wallT >= 1;
+            const hillFade = Math.max(0, Math.min(1, 1 - walkPosition / 0.42));
+            const hillOpacity = hillFade * hillFade * (3 - 2 * hillFade);
+            hillG.visible = hillOpacity > 0.001;
+            hillSurface.opacity = hillOpacity;
+            hillSlope.opacity = hillOpacity;
+            hillSlope.depthWrite = hillOpacity > 0.99;
+            groundMaterial.opacity = hillOpacity;
+            hillSurface.depthWrite = hillOpacity > 0.99;
+            hillInk.opacity = 0.35 * hillOpacity;
             renderer.render(scene, camera);
             drawScaleBar();
         }
@@ -618,27 +858,168 @@
         if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
         else window.addEventListener('resize', resize);
 
-        // ---- the walk. The camera is locked to the path: no orbit, no wheel zoom,
-        // no pan. The slider is the only way the view moves.
+        // The first half follows the references. The last quarter unlocks orbit.
+        // User offsets fade out on retreat, so rejoining the path never snaps.
         const walkSlider = document.getElementById('walkSlider');
+        const forceControls = document.getElementById('forceControls');
+        const viewHint = document.querySelector('.view-hint');
+        const stationBtns = [...document.querySelectorAll('#stations .station')];
+        const ease = t => t * t * (3 - 2 * t);
         function walkTo(t) {
-            t = Math.max(0, Math.min(1, t));
-            const seg = STATIONS.length - 1;          // two legs across three stations
-            const u = t * seg;
-            const i = Math.min(seg - 1, Math.floor(u));
-            const f = u - i;
-            const e = f * f * (3 - 2 * f);            // ease at each station, not a hard corner
+            walkPosition = Math.max(0, Math.min(1, t));
+            walkSlider.value = String(walkPosition);
+            // Wireframe lives at the spectacles station and nowhere else: arriving
+            // does not switch it on — pressing the icon again, once you are there,
+            // does. Leaving always puts it away.
+            const atEnd = walkPosition >= 0.98;
+            if (!atEnd) forceMode = false;
+            forceControls.hidden = !forceMode;
+            stationBtns[2].setAttribute('aria-pressed', String(forceMode));
+            const u = walkPosition * (STATIONS.length - 1);
+            const i = Math.min(STATIONS.length - 2, Math.floor(u));
+            const e = ease(u - i);
             const A = STATIONS[i], B = STATIONS[i + 1];
-            V.yaw   = A.yaw   + (B.yaw   - A.yaw)   * e;
-            V.pitch = A.pitch + (B.pitch - A.pitch) * e;
-            V.panR  = A.panR  + (B.panR  - A.panR)  * e;   // the aim slides back to
-            V.panU  = A.panU  + (B.panU  - A.panU)  * e;   // centre as you walk in
-            // zoom moves geometrically: "closer" is a ratio, not a difference, so a
-            // linear ramp would crawl at the far end and rush at the near one
-            V.zoom  = Math.exp(Math.log(A.zoom) + (Math.log(B.zoom) - Math.log(A.zoom)) * e);
+            const freedom = ease(Math.max(0, Math.min(1, (walkPosition - 0.5) / (FREE_AT - 0.5))));
+            V.yaw = A.yaw + (B.yaw - A.yaw) * e + orbit.yaw * freedom;
+            V.pitch = Math.max(-85, Math.min(85, A.pitch + (B.pitch - A.pitch) * e + orbit.pitch * freedom));
+            V.panR = A.panR + (B.panR - A.panR) * e;
+            V.panU = A.panU + (B.panU - A.panU) * e;
+            // the viewer's own zoom rides on top as a RATIO, and fades out with the
+            // same freedom ramp as yaw and pitch, so returning to a fixed view
+            // restores its framing exactly
+            V.zoom = Math.exp(Math.log(A.zoom) + (Math.log(B.zoom) - Math.log(A.zoom)) * e)
+                   * Math.pow(orbit.zoomMul, freedom);
+            const free = walkPosition >= FREE_AT;
+            canvas.style.cursor = free ? (drag ? 'grabbing' : 'grab') : 'default';
+            canvas.style.touchAction = free ? 'none' : 'pan-y';
+            viewHint.textContent = free ? 'drag to look around · wheel to zoom · slide left to return'
+                                        : 'nudge the circle left or right';
+            walkSlider.setAttribute('aria-valuetext', walkPosition < 0.25 ? 'Far view' : free ? 'Near view — free orbit' : 'Middle view');
+            // light the icon of the station you are nearest to, so the row reads as
+            // where you ARE and not only as somewhere you can go
+            const nearest = Math.round(walkPosition * 2);
+            stationBtns.forEach((b, i) => b.classList.toggle('on', i === nearest));
             applyCam(); render();
         }
-        walkSlider.addEventListener('input', () => walkTo(+walkSlider.value));
+        let drag = null;
+        let walkFrame = 0, walkTarget = 0, sliderDrag = null;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        function stopWalk() {
+            cancelAnimationFrame(walkFrame);
+            walkFrame = 0;
+        }
+        function goToStation(index) {
+            stopWalk();
+            walkTarget = Math.max(0, Math.min(2, index));
+            const from = walkPosition, to = walkTarget / 2;
+            if (reduceMotion.matches || Math.abs(to-from) < 0.0001) {
+                walkTo(to); return;
+            }
+            const start = performance.now();
+            const duration = 1200;
+            function tick(now) {
+                const t = Math.min(1, (now-start)/duration);
+                // walkTo already eases the camera between stations; this also lets
+                // the thumb arrive gently rather than hitting a hard stop.
+                walkTo(from + (to-from)*ease(t));
+                if (t < 1) walkFrame = requestAnimationFrame(tick);
+                else { walkFrame = 0; walkTo(to); }
+            }
+            walkFrame = requestAnimationFrame(tick);
+        }
+        // goToStation already cancels a transition in flight, so clicking another
+        // icon mid-walk just redirects instead of leaving two walks fighting.
+        // Pressing the spectacles when you are ALREADY there is the second gesture:
+        // it turns the building to wire and back. The toggle lives here and not in
+        // goToStation, or the arrow keys would flip it without being asked to.
+        stationBtns.forEach(b => b.addEventListener('click', () => {
+            const i = +b.dataset.station;
+            if (i === 2 && !walkFrame && walkPosition >= 0.98) {
+                forceMode = !forceMode;
+                walkTo(walkPosition);
+                return;
+            }
+            goToStation(i);
+        }));
+        walkSlider.addEventListener('pointerdown', event => {
+            if (event.button !== 0 || sliderDrag) return;
+            event.preventDefault();
+            stopWalk();
+            walkSlider.focus({preventScroll:true});
+            sliderDrag = {id:event.pointerId, x:event.clientX, dx:0,
+                from:walkPosition, station:Math.round(walkPosition*2)};
+            walkSlider.setPointerCapture(event.pointerId);
+        });
+        walkSlider.addEventListener('pointermove', event => {
+            if (!sliderDrag || event.pointerId !== sliderDrag.id) return;
+            sliderDrag.dx = event.clientX-sliderDrag.x;
+            // A short physical pull is enough; preview only a small movement.
+            const preview = Math.max(-0.08,Math.min(0.08,
+                sliderDrag.dx / Math.max(1,walkSlider.clientWidth)));
+            walkTo(sliderDrag.from+preview);
+        });
+        function releaseSlider(event, cancelled = false) {
+            if (!sliderDrag || event.pointerId !== sliderDrag.id) return;
+            const gesture = sliderDrag;
+            sliderDrag = null;
+            if (walkSlider.hasPointerCapture(event.pointerId)) walkSlider.releasePointerCapture(event.pointerId);
+            const direction = !cancelled && Math.abs(gesture.dx) >= 4 ? Math.sign(gesture.dx) : 0;
+            goToStation(gesture.station+direction);
+        }
+        walkSlider.addEventListener('pointerup', event => releaseSlider(event));
+        walkSlider.addEventListener('pointercancel', event => releaseSlider(event,true));
+        walkSlider.addEventListener('lostpointercapture', event => releaseSlider(event,true));
+        walkSlider.addEventListener('keydown', event => {
+            const directions = {ArrowLeft:-1,ArrowDown:-1,ArrowRight:1,ArrowUp:1};
+            if (!(event.key in directions) && event.key !== 'Home' && event.key !== 'End') return;
+            event.preventDefault();
+            const station = walkFrame ? walkTarget : Math.round(walkPosition*2);
+            goToStation(event.key === 'Home' ? 0 : event.key === 'End' ? 2 : station+directions[event.key]);
+        });
+        // Assistive technology can still set the native range without a pointer.
+        walkSlider.addEventListener('input', () => {
+            if (!sliderDrag) goToStation(Math.round(Number(walkSlider.value)*2));
+        });
+        // The wheel means different things on and off the path, which is normally a
+        // sin — but it follows the state of the page: while you are on the rails it
+        // walks you between stations, and once you are off them it does what a wheel
+        // does everywhere else. The hint line under the canvas says which.
+        canvas.addEventListener('wheel', event => {
+            if (event.ctrlKey) return;
+            event.preventDefault();
+            if (walkPosition >= FREE_AT) {
+                orbit.zoomMul = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX,
+                    orbit.zoomMul * Math.exp(-event.deltaY * 0.0016)));
+                walkTo(walkPosition);
+                return;
+            }
+            if (!walkFrame && !sliderDrag && Math.abs(event.deltaY) > 4)
+                goToStation(Math.round(walkPosition*2)+(event.deltaY < 0 ? 1 : -1));
+        }, {passive:false});
+        canvas.addEventListener('pointerdown', event => {
+            if (walkPosition < FREE_AT || event.button !== 0 || drag) return;
+            drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
+            canvas.setPointerCapture(event.pointerId);
+            canvas.style.cursor = 'grabbing';
+        });
+        canvas.addEventListener('pointermove', event => {
+            if (!drag || drag.id !== event.pointerId) return;
+            if (walkPosition >= FREE_AT) {
+                orbit.yaw -= (event.clientX - drag.x) * 0.3;
+                orbit.pitch = Math.max(-85, Math.min(85, orbit.pitch + (event.clientY - drag.y) * 0.3));
+                walkTo(walkPosition);
+            }
+            drag.x = event.clientX; drag.y = event.clientY;
+        });
+        function endDrag(event) {
+            if (!drag || drag.id !== event.pointerId) return;
+            drag = null;
+            if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+            canvas.style.cursor = walkPosition >= FREE_AT ? 'grab' : 'default';
+        }
+        canvas.addEventListener('pointerup', endDrag);
+        canvas.addEventListener('pointercancel', endDrag);
+        canvas.addEventListener('lostpointercapture', endDrag);
 
         function readParams() {
             const p = {};
@@ -653,12 +1034,12 @@
             const p = readParams();
             const risers = Math.max(2, Math.round(p.floorHeight / REAL.riser));
             renderScene(p, risers);
+            buildForceView(p);
             applyCam();
             render();
         }
 
-        // The model is built once. Nothing animates: from here on the page only
-        // redraws when the slider moves it.
+        // The model is built once; camera transitions redraw only while moving.
         update();
         resize();
         walkTo(+walkSlider.value);
