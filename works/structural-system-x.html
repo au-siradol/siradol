@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Gravity Paradox</title>
+    <!-- The title is Flammer's own phrase, not a description written over him:
+         "All columns in the facades have the same dimension irrespective of
+         their structural requirements - making the structural forces difficult
+         to read." It covers all three stations: the temple and the Dom-ino are
+         misreadings of the type, the posts are a misreading of the forces. -->
+    <title>Difficult to Read</title>
     <style>
         /* The page is one screenful, like study 04: nothing scrolls, and the canvas
            takes whatever height is left over once the bar and the controls have
@@ -35,7 +40,10 @@
             display: flex; flex-direction: column;
         }
         canvas#simCanvas {
-            display: block; width: 100%; flex: 1 1 auto; min-height: 0;
+            /* border-box, or the 1px border is added OUTSIDE the 100% and the
+               canvas ends up 2px wider than the slider under it */
+            display: block; width: 100%; box-sizing: border-box;
+            flex: 1 1 auto; min-height: 0;
             /* the model is white and has no outlines, so the field behind it has to
                be the thing it reads against. The renderer clears to transparent;
                this is what you actually see. */
@@ -85,7 +93,9 @@
         .station.on { color: #111; }
         .station:focus-visible { outline: 2px solid #888; outline-offset: 3px; }
         #walkSlider {
-            flex: 1; -webkit-appearance: none; appearance: none; height: 1px;
+            /* the browser's own stylesheet gives a range input margin: 2px, which
+               is why the track kept sitting inside the canvas edges */
+            flex: 1; margin: 0; -webkit-appearance: none; appearance: none; height: 1px;
             background: #999; outline: none; cursor: ew-resize; touch-action: none;
         }
         #walkSlider:focus-visible { outline:2px solid #888; outline-offset:7px; }
@@ -104,7 +114,7 @@
         <a href="../index.html">&larr; Index</a>
         <span class="titlegroup">
             <span class="idx">02</span>
-            <span class="titleline"><b>The Gravity Paradox</b><span class="sep">&mdash;</span><span class="sub">Architecture Office, Pascal Flammer &middot; measured off the 1:200 set</span></span>
+            <span class="titleline"><b>Difficult to Read</b><span class="sep">&mdash;</span><span class="sub">Architecture Office, Pascal Flammer &middot; measured off the 1:200 set</span></span>
         </span>
     </div>
 
