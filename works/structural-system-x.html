@@ -398,11 +398,22 @@
         // the eye dropping as you come in, the way it does when a building stops
         // being an object in a field and becomes something you stand under.
         const STATIONS = [
-            // zooms set by matching the building's height against the frame in the
-            // three reference frames: about 22%, 33% and 73%
-            { yaw: -32, pitch: 27, zoom: 0.42 },   // far
-            { yaw: -32, pitch: 24, zoom: 0.62 },   // middle
-            { yaw: -32, pitch: 17, zoom: 1.36 },   // near
+            // The far station is framed after the photograph of the Acropolis seen
+            // from Philopappos: the eye is BELOW the building and looking slightly
+            // up, so the colonnade and the architrave are what you get and the roof
+            // is not in the picture at all; and the thing sits small, high and to
+            // the right of the frame, the way something far away sits in a view
+            // rather than being presented for inspection.
+            // panR / panU shift the camera's aim, in metres. Watch the signs: `dir`
+            // runs from the model TO the camera, so the `right` built from it is
+            // screen LEFT, and the aim moving one way sends the model the other.
+            // Measured on screen at this zoom, 1 m is about 4.3 px: positive panR
+            // carries the model right, negative panU carries it up.
+            // The other two zooms match the building's height against the frame in
+            // the reference frames: about 33% and 73%.
+            { yaw: -32, pitch:  -5, zoom: 0.26, panR:  17, panU: -20 },  // far
+            { yaw: -32, pitch:  24, zoom: 0.62, panR:   0, panU:  0 },   // middle
+            { yaw: -32, pitch:  17, zoom: 1.36, panR:   0, panU:  0 },   // near
         ];
         const panW = new THREE.Vector3();                 // kept at zero; applyCam still reads it
         const V = Object.assign({}, STATIONS[0]);
@@ -530,6 +541,10 @@
             const asp = cw / Math.max(ch, 1);
             const ya = V.yaw * Math.PI/180, pa = V.pitch * Math.PI/180;
             const dir = new THREE.Vector3(Math.cos(pa)*Math.sin(ya), Math.sin(pa), Math.cos(pa)*Math.cos(ya));
+            // the camera's own right and up, used only to place the aim off-centre
+            const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize();
+            const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+            panW.set(0, 0, 0).addScaledVector(right, V.panR || 0).addScaledVector(up, V.panU || 0);
 
             // Perspective: back the camera off until the model's bounding sphere
             // just fills the NARROWER of the two half-angles, so the fit is the same
@@ -607,6 +622,8 @@
             const A = STATIONS[i], B = STATIONS[i + 1];
             V.yaw   = A.yaw   + (B.yaw   - A.yaw)   * e;
             V.pitch = A.pitch + (B.pitch - A.pitch) * e;
+            V.panR  = A.panR  + (B.panR  - A.panR)  * e;   // the aim slides back to
+            V.panU  = A.panU  + (B.panU  - A.panU)  * e;   // centre as you walk in
             // zoom moves geometrically: "closer" is a ratio, not a difference, so a
             // linear ramp would crawl at the far end and rush at the near one
             V.zoom  = Math.exp(Math.log(A.zoom) + (Math.log(B.zoom) - Math.log(A.zoom)) * e);
