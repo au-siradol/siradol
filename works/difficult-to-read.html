@@ -32,7 +32,7 @@
     .study-bar .titleline .sub { color: #666; font-weight: normal; }
 
         .canvas-container {
-            max-width: 1100px; width: 100%; margin: 16px auto 0;
+            max-width: 960px; width: 100%; margin: 16px auto 0;
             position: relative;
             /* min-height:0 is not optional: without it a flex item refuses to
                shrink below its content and the canvas pushes the page over */
@@ -59,18 +59,22 @@
            went the page height would change with it, the canvas would be resized,
            and the view would jump every time the spectacles are pressed. */
         .force-controls {
-            max-width: 1100px; width: 100%; margin: 10px auto 0; text-align: center;
+            max-width: 960px; width: 100%; margin: 10px auto 0; text-align: center;
             flex-shrink: 0; visibility: visible;
         }
         .force-controls[hidden] { display: block; visibility: hidden; }
         .force-key { margin:0; font-size:10px; color:#888; }
-        .force-key .compression { color:#bb5544; }
-        .force-key .tension { color:#377ca6; }
+        .force-key .compression { color:#c0392b; }
+        .force-key .tension { color:#1f6fb2; }
         /* the walk: one slider, three stations */
         /* The track spans exactly the width of the canvas frame above it, edge to
            edge — the slider is the width of the view it moves. */
+        /* 960, not 1100: assets/site-typography.css forces
+           `.study-page .canvas-container { max-width: 960px }`, and that
+           selector beats anything set here. The controls have to be capped
+           at the same number or they run wider than the view they drive. */
         .walk {
-            max-width: 1100px; width: 100%; margin: 14px auto 0;
+            max-width: 960px; width: 100%; margin: 14px auto 0;
             box-sizing: border-box;
             display: flex; align-items: center; gap: 14px; flex-shrink: 0;
         }
@@ -78,7 +82,7 @@
            is centred on the station it stands for. The row therefore carries the
            slider's own side margins rather than the page's. */
         .stations {
-            max-width: 1100px; width: 100%; margin: 6px auto 0;
+            max-width: 960px; width: 100%; margin: 6px auto 0;
             box-sizing: border-box;
             display: flex; justify-content: space-between; align-items: flex-start;
             flex-shrink: 0;
@@ -89,6 +93,13 @@
             color: #c4c4c4; line-height: 0; transition: color .25s ease;
         }
         .station svg { width: 19px; height: 19px; display: block; }
+        .station .again {
+            display: block; margin-top: 5px; line-height: 1.2;
+            font-size: 8px; letter-spacing: .6px; text-transform: uppercase;
+            color: #999; white-space: nowrap; text-align: right;
+            visibility: hidden;        /* space is kept; only the ink comes and goes */
+        }
+        .station .again.on { visibility: visible; }
         .station:hover { color: #777; }
         .station.on { color: #111; }
         .station:focus-visible { outline: 2px solid #888; outline-offset: 3px; }
@@ -150,6 +161,10 @@
                 <circle cx="6.5" cy="14" r="3.5"/><circle cx="17.5" cy="14" r="3.5"/>
                 <path d="M10 13.5c1-1 3-1 4 0M3 11l2.5-4.5h2M21 11l-2.5-4.5h-2"/>
             </svg>
+            <!-- shown only while standing here with the building still solid, which
+                 is the one moment a second press does anything. The space is held
+                 at all times so the page never changes height. -->
+            <span class="again" id="againHint">press again for wireframe</span>
         </button>
     </div>
 
@@ -562,7 +577,9 @@
             // transfer route, and on its own it would point from nowhere.
             // Source: Flammer's lecture, 4:41–5:52 (user-supplied transcript).
             // Qualitative topology only: no stiffness, reinforcement or force solver.
-            const compression = 0xbb5544, tension = 0x377ca6;
+            // stronger than the legend's text swatches: these have to hold their own
+            // against a wireframe of the whole building
+            const compression = 0xc0392b, tension = 0x1f6fb2;
             const fh = p.floorHeight, roofY = p.numFloors*fh-p.roofEdge;
             const wallY = 2*fh+0.45;
             const vec = (x,y,z) => new THREE.Vector3(x,y,z);
@@ -570,7 +587,7 @@
                 const delta = b.clone().sub(a), length = delta.length();
                 if (length < 0.01) return;
                 forceG.add(new THREE.ArrowHelper(delta.normalize(),a,length,color,
-                    Math.min(0.3,length*0.2),Math.min(0.15,length*0.1)));
+                    Math.min(0.45,length*0.28),Math.min(0.22,length*0.14)));
             }
             p.floors.forEach((floor,index) => postsAt(floor.pos,p).forEach(q => {
                 const bottom = index*fh;
@@ -846,7 +863,7 @@
             // LAST, so it overrides the walk-driven opacities computed above: a
             // material ignores `opacity` entirely unless `transparent` is on, which
             // is the quiet way this kind of change does nothing at all.
-            const GHOST = 0.12;
+            const GHOST = 0.08;   // fainter, so the arrows carry the picture
             for (const m of [MAT.card, MAT.soffit, MAT.slabReading, MAT.wallReading]) {
                 m.transparent = forceMode || m === MAT.slabReading || m === MAT.wallReading;
                 if (forceMode) { m.opacity = GHOST; m.depthWrite = false; }
@@ -877,6 +894,7 @@
         const forceControls = document.getElementById('forceControls');
         const viewHint = document.querySelector('.view-hint');
         const stationBtns = [...document.querySelectorAll('#stations .station')];
+        const againHint = document.getElementById('againHint');
         const ease = t => t * t * (3 - 2 * t);
         function walkTo(t) {
             walkPosition = Math.max(0, Math.min(1, t));
@@ -917,6 +935,7 @@
             // where you ARE and not only as somewhere you can go
             const nearest = Math.round(walkPosition * 2);
             stationBtns.forEach((b, i) => b.classList.toggle('on', i === nearest));
+            againHint.classList.toggle('on', atEnd && !forceMode);
             applyCam(); render();
         }
         let drag = null;
