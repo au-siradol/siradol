@@ -12,12 +12,16 @@ const lerp=(a,b,t)=>a+(b-a)*t,clamp01=x=>Math.max(0,Math.min(1,x));
 const r={lab:Int32Array.from([0,0,0,0]),sizes:[4],dist:Float32Array.from([1,1,1,1])};
 r.zones=floorZones(r,Int16Array.from([2,-1,-1,2]));
 assert.notEqual(r.zones[0],r.zones[3], 'disconnected patches are separate openings');
-assert.equal(r.zones[1],-2,'programme boundary band is retained');
+assert.equal(r.zones[1],r.zones[0],'boundary seam belongs to an editable zone');
+assert(!Array.from(r.zones).includes(-2),'no permanently solid seam remains');
 const f={id:1,y:2};
 VOIDS=[{fid:1,x:.5,z:.5}];
 let opened=buildFloor(f,r);
 VOIDS=[];
 let restored=buildFloor(f,r);
+VOIDS=[{fid:1,x:.5,z:.5},{fid:1,x:1.5,z:1.5}];
+assert.equal(buildFloor(f,r).tris.length,0,'opening adjacent zones removes the seam completely');
+VOIDS=[];
 function topArea(mesh){
  let area=0;
  for(let i=0;i<mesh.tris.length;i+=9){

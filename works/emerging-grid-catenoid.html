@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #f4f4f4; color: #111; margin: 0; padding: 0 24px 24px;
+            background-color: #ffffff; color: #111; margin: 0; padding: 0 24px 24px;
         }
     .study-bar { max-width: 1100px; width: 100%; margin: 0 auto; padding: 14px 0 8px; border-bottom: 1px solid #111; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; box-sizing: border-box; flex-shrink: 0; }
     .study-bar a { color: #111; text-decoration: none; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; flex: none; }
@@ -83,8 +83,8 @@
         }
         .view-btn svg { width: 15px; height: 15px; display: block; }
         .view-btn:hover { color: #111; border-color: #111; }
-        .station .lab { display: block; margin-top: 5px; line-height: 1.2; font-size: 8px; letter-spacing: .6px; text-transform: uppercase; color: #999; white-space: nowrap; visibility: hidden; }
-        .station.on .lab { visibility: visible; }
+        .station .lab { display: block; margin-top: 5px; line-height: 1.2; font-size: 8px; letter-spacing: .6px; text-transform: uppercase; color: #999; white-space: nowrap; visibility: visible; }
+        .station.on .lab { visibility: visible; color: #111; font-weight: 600; }
         .timeline .scrub-row { max-width: none; margin-top: 10px; }
         .scrub-ends { display: flex; justify-content: space-between; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-top: 1px; }
 
@@ -149,6 +149,21 @@
         @media(max-width:600px) { .station .lab { font-size:7.5px; letter-spacing:.3px; } }
     </style>
 <link rel="stylesheet" href="../assets/site-typography.css?v=20261120-3">
+<style>
+/* Spacing for this study only; independent of shared portfolio metrics. */
+body.page-emerging-grid-catenoid { background:#fff; padding-bottom:8px; }
+body.page-emerging-grid-catenoid canvas#simCanvas { height:clamp(200px, calc(100dvh - 300px), 900px); }
+body.page-emerging-grid-catenoid .timeline { margin-top:8px; }
+body.page-emerging-grid-catenoid .panels { margin-top:0; }
+body.page-emerging-grid-catenoid #shellPanel { padding-top:2px; row-gap:0; }
+body.page-emerging-grid-catenoid #floorTools { margin-top:18px; }
+body.page-emerging-grid-catenoid .reference-notes { margin-top:6px; padding-top:0; }
+body.page-emerging-grid-catenoid .reference-notes summary { padding:3px 0; }
+@media(max-width:700px) {
+ body.page-emerging-grid-catenoid canvas#simCanvas { height:clamp(160px, calc(100dvh - 400px), 600px); }
+ body.page-emerging-grid-catenoid #floorTools { margin-top:12px; }
+}
+</style>
 </head>
 <body class="study-page page-emerging-grid-catenoid">
 
@@ -229,7 +244,7 @@
     <div class="panels">
         <section class="panel" id="shellPanel">
             <div class="shape-row">
-                <label class="shape-ctl"><span>Flange &mdash; [1] to [1'] <b id="flangeVal">30% of the cell</b></span>
+                <label class="shape-ctl" title="Flange: inset from control polygon [1] to tube rim [1′], as a share of the cell inradius."><span>Flange <b id="flangeVal">30%</b></span>
                     <input type="range" autocomplete="off" id="flangeSlider" min="10" max="45" step="1" value="30" disabled></label>
                 <label class="shape-ctl"><span>Flange slope &mdash; [1'] up, [2'] down <b id="riseVal">54°</b></span>
                     <input type="range" autocomplete="off" id="riseSlider" min="0" max="75" step="1" value="54" disabled></label>
@@ -247,7 +262,7 @@
                     <span>Top cut <b id="roofVal">+27.50</b></span>
                     <input type="range" autocomplete="off" id="roofSlider" min="1500" max="3720" step="5" value="3000" disabled></label>
             </div>
-            <p class="note" id="openingNote">Click a slab to select; drag to change its height. Edit openings isolates the chosen floor.</p>
+            <p class="note" id="openingNote">Select floor · Drag to adjust height · Edit openings to cut or restore.</p>
             <p class="note" id="weakNote" hidden></p></div>
         </section>
     </div>
@@ -1771,7 +1786,7 @@
         // shell alone would make the whole floor one zone. Zones are also split
         // by the programme cells, taken as their rounded outlines — the same
         // curves the catenoids grow from — so an opening is curved on every
-        // side; the bands between the rounded cells always stay as slab
+        // side; leftover seams are assigned to their neighbouring opening zones
         function cellRaster(y) {
             let n = 0;
             while (n < NL - 2 && y > GRID_Y[n + 1]) n++;
@@ -1813,6 +1828,23 @@
                 }
                 next++;
             }
+            // Assign leftover programme seams to the nearest connected opening zone.
+            // Propagation stays inside the same shell region and never crosses a wall.
+            const queue = new Int32Array(zones.length);
+            let head = 0, tail = 0;
+            for (let c = 0; c < zones.length; c++) if (zones[c] >= 0) queue[tail++] = c;
+            while (head < tail) {
+                const c = queue[head++], i = c % FNX, j = Math.floor(c / FNX);
+                for (const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+                    const ni=i+di, nj=j+dj, nc=nj*FNX+ni;
+                    if (ni<0 || nj<0 || ni>=FNX || nj>=FNZ) continue;
+                    if (zones[nc] === -2 && R.lab[nc] === R.lab[c]) {
+                        zones[nc] = zones[c]; queue[tail++] = nc;
+                    }
+                }
+            }
+            // A seam with no neighbouring usable region is not an independent slab.
+            for (let c=0;c<zones.length;c++) if(zones[c]===-2) zones[c]=-1;
             return zones;
         }
         const rasterCache = new Map();
@@ -1826,7 +1858,7 @@
             }
             return r;
         }
-        // -1 outside the building or on the shell; -2 the band between rounded cells (slab, never opened)
+        // -1 outside the usable slab; nonnegative values are editable connected zones.
         const zoneOfCell = (R, c) => R.zones[c];
         const zoneAt = (R, x, z) => {
             const i = Math.floor(x / FR), j = Math.floor(z / FR);
@@ -2138,7 +2170,7 @@
         }
         function render() {
             if (G.caps.visible) capsLOD();
-            const bg = new THREE.Color(0xffffff).lerp(new THREE.Color(0xf3f3f1), params(S.t).smoothK);
+            const bg = new THREE.Color(0xffffff);
             renderer.setClearColor(bg, 1); renderer.clear();
             renderer.render(mainScene, mainCam);
             placeOverlays();
@@ -2209,7 +2241,7 @@
             flangeSlider.disabled = riseSlider.disabled = relaxSlider.disabled = S.t < 1.5;
             relaxVal.textContent = S.relax ? S.relax + ' steps' : 'none';
             riseVal.textContent = S.rise === 0 ? 'flat' : S.rise + '°';
-            flangeVal.textContent = Math.round(S.flange * 100) + '% of the cell';
+            flangeVal.textContent = Math.round(S.flange * 100) + '%';
             floorsBtn.disabled = S.t < 2.86;
             const availableFloors = FLOORS.filter(f => !outOfBuilding(f));
             if (!availableFloors.some(f => f.id === S.floorSel)) S.floorSel = availableFloors[0]?.id ?? null;
@@ -2234,7 +2266,7 @@
                 weakNote.textContent = (parts.length ? parts.join(' · ') : 'Every piece is held within ' + SPAN_LIMIT + ' m')
                     + '. The marks show the ' + MARKS_NOTE + ' worst. Geometry screening at ' + SPAN_RATIO + '× the ' + SLAB.toFixed(2) + ' m slab, not a structural check.';
             }
-            openingNote.textContent = openingMode ? 'Only the selected floor is shown. Orange opens; blue restores. Drag to orbit.' : 'Click a slab to select; drag to change its height. Edit openings isolates the chosen floor.';
+            openingNote.textContent = openingMode ? 'Selected floor only · Orange: cut · Blue: restore.' : 'Select floor · Drag to adjust height · Edit openings to cut or restore.';
             roofSlider.disabled = S.t < 2.86;
             roofVal.textContent = fmtY(TRIM.y1);
             floorsBtn.classList.toggle('active', S.floors);
