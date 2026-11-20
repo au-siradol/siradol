@@ -64,7 +64,7 @@
            the stations named under it. The track carries the thumb's own 11 px,
            so its travel - not its box - spans the view edge to edge */
         .walk { display: flex; align-items: center; }
-        #stageSlider { flex: 1; width: calc(100% + 11px); margin: 0 -5.5px; }
+        #stageSlider { flex: 1; width: 100%; min-width: 0; margin: 0; box-sizing: border-box; }
         /* each icon sits under the point on the track its stage stands for: the
            six knots sit at the centre of six equal columns */
         .stations { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 6px; }
@@ -151,9 +151,12 @@
 <link rel="stylesheet" href="../assets/site-typography.css?v=20261120-3">
 <style>
 /* Spacing for this study only; independent of shared portfolio metrics. */
-body.page-emerging-grid-catenoid { background:#fff; padding-bottom:8px; }
-body.page-emerging-grid-catenoid canvas#simCanvas { height:clamp(200px, calc(100dvh - 300px), 900px); }
-body.page-emerging-grid-catenoid .timeline { margin-top:8px; }
+body.page-emerging-grid-catenoid { background:#fff; padding-bottom:8px; height:100dvh; box-sizing:border-box; display:flex; flex-direction:column; }
+body.page-emerging-grid-catenoid > :is(.study-bar,.canvas-container,.timeline,.panels,.reference-notes) { width:100%; flex-shrink:0; }
+body.page-emerging-grid-catenoid .canvas-container { flex:1 1 0; min-height:120px; }
+body.page-emerging-grid-catenoid .reference-notes[open] { max-height:28dvh; overflow:auto; }
+body.page-emerging-grid-catenoid canvas#simCanvas { height:100%; }
+body.page-emerging-grid-catenoid .timeline { margin-top:18px; }
 body.page-emerging-grid-catenoid .panels { margin-top:0; }
 body.page-emerging-grid-catenoid #shellPanel { padding-top:2px; row-gap:0; }
 body.page-emerging-grid-catenoid #floorTools { margin-top:18px; }
@@ -162,7 +165,7 @@ body.page-emerging-grid-catenoid .shape-ctl { gap:9px; }
 body.page-emerging-grid-catenoid .reference-notes { margin-top:6px; padding-top:0; }
 body.page-emerging-grid-catenoid .reference-notes summary { padding:3px 0; }
 @media(max-width:700px) {
- body.page-emerging-grid-catenoid canvas#simCanvas { height:clamp(160px, calc(100dvh - 400px), 600px); }
+
  body.page-emerging-grid-catenoid #floorTools { margin-top:12px; }
 }
 </style>
