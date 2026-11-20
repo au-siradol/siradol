@@ -20,8 +20,12 @@
     .study-bar .titleline .sub { color: #666; font-weight: normal; }
 
         .canvas-container { max-width: 1100px; margin: 16px auto 0; position: relative; }
+        /* the page is meant to be read without scrolling, so the view is given
+           what the screen has left over once the bar, the walk, the panel and
+           the references have taken theirs - held between a floor and a ceiling
+           so it never turns into a letterbox or a tower */
         canvas#simCanvas {
-            display: block; width: 100%; aspect-ratio: 110 / 62; height: auto;
+            display: block; width: 100%; height: clamp(240px, calc(100vh - 360px), 640px);
             background: #ffffff; border: 1px solid #eaeaea; box-sizing: border-box;
             cursor: grab; touch-action: none;
         }
@@ -29,65 +33,62 @@
         canvas#simCanvas.dragging { cursor: grabbing; }
         canvas#simCanvas.editable { cursor: crosshair; }
         .view-hint { position: absolute; bottom: 8px; left: 10px; right: 10px; font-size: 9px; color: #999; letter-spacing: 0.4px; pointer-events: none; }
-        .vlabel { position: absolute; top: 10px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: #777; pointer-events: none; display: none; }
+        /* the cell menu stands where the cell was clicked, so the choice and
+           the thing it acts on are never far apart */
+        .cell-menu {
+            position: absolute; z-index: 5; background: #fff; border: 1px solid #111; padding: 6px;
+            display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+        }
+        .cell-menu .seg { display: inline-flex; }
+        .cell-menu .seg button { flex: 1; }
+        .cell-menu .tog { width: 100%; text-align: left; }
         .levels-key {
-            position: absolute; bottom: 24px; left: 10px; font-size: 10px; line-height: 1.55;
+            position: absolute; top: 10px; left: 10px; font-size: 10px; line-height: 1.55;
             pointer-events: none; display: none; background: rgba(255,255,255,0.85); padding: 2px 4px 2px 0;
         }
         .levels-key .row { display: flex; align-items: center; gap: 6px; color: #999; }
         .levels-key .row.on { color: #111; font-weight: bold; }
         .levels-key .sw { width: 14px; height: 2px; display: inline-block; }
-        .origin-lbl { position: absolute; font-size: 9px; color: #777; pointer-events: none; display: none; font-family: 'Courier New', monospace; }
         .fl-label {
             position: absolute; pointer-events: none; font-family: 'Courier New', monospace; font-size: 9.5px; color: #555;
             transform: translate(-100%, -50%); padding-right: 6px; white-space: nowrap;
         }
         .fl-label.on { color: #111; font-weight: bold; }
-        .caption { max-width: 1100px; margin: 8px auto 0; font-size: 11.5px; line-height: 1.5; color: #333; min-height: 18px; }
-        .caption b { font-family: 'Courier New', monospace; font-weight: normal; font-size: 10px; letter-spacing: 1px; color: #999; text-transform: uppercase; margin-right: 8px; }
-        .caption .key { color: #777; margin-left: 10px; font-size: 10.5px; }
-        .caption .ramp { display: inline-block; width: 64px; height: 7px; vertical-align: 0; }
-        .caption .ramp.over { width: 10px; background: rgb(107,10,77); }
-        .caption .qsw { display: inline-flex; border: 1px solid #999; vertical-align: 1px; margin-right: 6px; }
-        .caption .qsw button { border: none; background: #fff; font: inherit; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; cursor: pointer; color: #555; }
-        .caption .qsw button.on { background: #111; color: #fff; }
-        .caption .refine { border: 1px solid #111; background: #fff; font: inherit; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; cursor: pointer; margin-left: 4px; }
-        .crit-box h4 { margin: 4px 0 6px; }
-        .crit { margin: 0; padding-left: 18px; font-size: 10px; line-height: 1.45; color: #333; }
-        .crit li { margin-bottom: 4px; color: #c62828; }
-        .crit li span { color: #888; }
-        .crit-mark { position: absolute; width: 11px; height: 11px; border-radius: 50%; background: rgba(211, 47, 47, 0.62); color: #fff; font-size: 7px; font-weight: bold; line-height: 11px; text-align: center; transform: translate(-50%, -50%); cursor: help; }
-        .caption .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 3px 0 8px; vertical-align: 0; }
-        .caption .dash { display: inline-block; width: 14px; border-top: 2px dashed #d32f2f; margin: 0 3px 0 8px; vertical-align: 3px; }
         .floor-tag {
             position: absolute; pointer-events: none; display: none; font-family: 'Courier New', monospace;
             font-size: 11px; background: #111; color: #fff; padding: 2px 5px;
         }
 
         .timeline { max-width: 1100px; margin: 12px auto 0; }
-        .stage-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid #111; background: #fff; }
-        .stage-grid .sbtn {
-            grid-row: 1; height: 30px; border: none; border-right: 1px solid #111; border-bottom: 1px solid #111; background: #fff; cursor: pointer;
-            padding: 0 10px; font: inherit; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #111; text-align: left;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        /* the walk through the six stages: one track the width of the view, and
+           the stations named under it. The track carries the thumb's own 11 px,
+           so its travel - not its box - spans the view edge to edge */
+        .walk { display: flex; align-items: center; }
+        #stageSlider { flex: 1; width: calc(100% + 11px); margin: 0 -5.5px; }
+        /* each icon sits under the point on the track its stage stands for: the
+           six knots sit at the centre of six equal columns */
+        .stations { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 6px; }
+        .station { border: 0; background: none; padding: 4px 0; cursor: pointer; color: #c4c4c4; justify-self: center; transition: color .25s ease; }
+        .station svg { width: 19px; height: 19px; display: block; margin: 0 auto; }
+        .station:hover { color: #777; }
+        .station.on { color: #111; }
+        .station:focus-visible { outline: 2px solid #888; outline-offset: 3px; }
+        /* only the stage you stand on is named; the space is kept so the row
+           never moves as you walk */
+        /* the one control that acts on the drawing sits on the drawing */
+        .view-btn {
+            position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            border: 1px solid #ddd; background: rgba(255,255,255,0.92); color: #777;
         }
-        .stage-grid .sbtn.last { border-right: none; }
-        .stage-grid .sbtn .n { font-family: 'Courier New', monospace; opacity: 0.55; margin-right: 6px; }
-        .stage-grid .sbtn.active { background: #111; color: #fff; }
-        .stage-grid .sbtn:hover:not(.active) { background: #f0f0f0; }
-        .stage-grid .thumb { grid-row: 2; margin: 0; padding: 6px 8px 5px; border-right: 1px solid #e6e6e6; cursor: pointer; opacity: 0.38; transition: opacity .2s; min-width: 0; }
-        .stage-grid .thumb.lastt { border-right: none; }
-        .stage-grid .thumb.on { opacity: 1; }
-        .stage-grid .thumb:hover { opacity: 0.8; }
-        .stage-grid .thumb.on:hover { opacity: 1; }
-        .stage-grid .thumb canvas { width: 100%; aspect-ratio: 5 / 2; display: block; }
-        .stage-grid .thumb figcaption { font-size: 8px; letter-spacing: 0.8px; text-transform: uppercase; color: #777; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .view-btn svg { width: 15px; height: 15px; display: block; }
+        .view-btn:hover { color: #111; border-color: #111; }
+        .station .lab { display: block; margin-top: 5px; line-height: 1.2; font-size: 8px; letter-spacing: .6px; text-transform: uppercase; color: #999; white-space: nowrap; visibility: hidden; }
+        .station.on .lab { visibility: visible; }
         .timeline .scrub-row { max-width: none; margin-top: 10px; }
-        /* the thumb's centre travels the full width, so it sits under each thumbnail's centre */
-        .timeline .scrub-row input { flex: none; width: calc(100% + 11px); margin: 0 -5.5px; }
         .scrub-ends { display: flex; justify-content: space-between; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-top: 1px; }
 
-        .panels { max-width: 1100px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #111; font-size: 11px; }
+        .panels { max-width: 1100px; margin: 8px auto 0; display: grid; grid-template-columns: 1fr; font-size: 11px; }
         .panel { display: flex; flex-direction: column; gap: 10px; padding: 14px 22px 4px; border-right: 1px solid #ddd; min-width: 0; }
         .panel:first-child { padding-left: 0; }
         .panel:last-child { border-right: none; padding-right: 0; }
@@ -95,14 +96,32 @@
         .panel h4.gap { margin-top: 6px; }
         .panel .note { font-size: 10px; color: #888; line-height: 1.4; margin: -2px 0 0; min-height: 14px; }
 
-        .reference-notes { max-width: 1100px; margin: 18px auto 0; border-top: 1px solid #ddd; padding-top: 10px; font-size: 11px; line-height: 1.6; color: #666; }
+        .reference-notes { max-width: 1100px; margin: 18px auto 0; padding-top: 10px; font-size: 11px; line-height: 1.6; color: #666; }
         .reference-notes summary { cursor: pointer; font-size: 10px; color: #444; }
         .reference-notes a { color: inherit; text-underline-offset: 2px; }
         .reference-notes p { max-width: 85em; }
         #floorPick { font: inherit; padding: 6px; border: 1px solid #aaa; background: #fff; color: #111; min-width: 100px; }
-        .floors-row { flex-wrap: wrap; }
+        .shape-settings { margin-top: 6px; }
+        .shape-settings summary { cursor: pointer; font-size: 10px; color: #555; margin-bottom: 12px; }
+        .shape-settings h4 { margin: 12px 0 6px; }
+        .shape-settings .note { margin: 10px 0; }
+        /* the three shape controls read as one line of the panel, not as three
+           sections: name and value on top, the track under it */
+        /* floors read as one line too: the buttons that act, then the cut that measures */
+        .floors-bar { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+        .floors-bar .trim-ctl { flex: 1; min-width: 150px; }
+        .shape-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+        .shape-ctl { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .shape-ctl span { font-size: 10px; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .shape-ctl b { font-weight: bold; color: #111; }
+        .shape-ctl input { width: 100%; }
+        @media (max-width: 700px) {
+            .shape-row { grid-template-columns: 1fr; gap: 10px; }
+            /* stacked controls need more of the screen, so the view gives it back */
+            canvas#simCanvas { height: clamp(200px, calc(100vh - 495px), 400px); }
+        }
         .seg { display: inline-flex; border: 1px solid #111; max-width: 100%; align-self: flex-start; }
-        @media (max-width: 860px) { .panels { grid-template-columns: 1fr; } .panel { padding: 14px 0 10px; border-right: none; border-bottom: 1px solid #ddd; } }
+        @media (max-width: 860px) { .panels { grid-template-columns: 1fr; } .panel { padding: 14px 0 10px; border-right: none; } }
         .seg button {
             height: 28px; border: none; border-right: 1px solid #111; background: #fff; cursor: pointer;
             padding: 0 12px; font: inherit; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #111; white-space: nowrap;
@@ -122,18 +141,14 @@
         input[type=range]:disabled { opacity: 0.3; cursor: default; }
 
         .btn-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-        .floors-row { gap: 18px; flex-wrap: nowrap; max-width: 480px; }
-        .floors-row .trim-row { flex: 1; min-width: 0; }
-        .floors-row .trim-row .lbl.r { font-family: 'Courier New', monospace; font-weight: normal; font-size: 10px; color: #111; letter-spacing: 0; min-width: 44px; }
-        .btn-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 480px; }
-        .btn-grid3 .tog { width: 100%; }
-        .btn-grid3.off { opacity: 0.3; pointer-events: none; }
         .tog { height: 28px; border: 1px solid #111; background: #fff; cursor: pointer; padding: 0 12px; font: inherit; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.6px; color: #111; white-space: nowrap; }
         .tog.active { background: #111; color: #fff; }
         .tog:hover:not(.active):not(:disabled) { background: #f0f0f0; }
         .tog:disabled { opacity: 0.3; cursor: default; }
+        [hidden] { display: none !important; }
+        @media(max-width:600px) { .station .lab { font-size:7.5px; letter-spacing:.3px; } }
     </style>
-<link rel="stylesheet" href="../assets/site-typography.css?v=20260928-3">
+<link rel="stylesheet" href="../assets/site-typography.css?v=20261120-3">
 </head>
 <body class="study-page page-emerging-grid-catenoid">
 
@@ -147,106 +162,104 @@
 
     <div class="canvas-container" id="wrap">
         <canvas id="simCanvas" tabindex="0"></canvas>
-        <div class="vlabel" id="lblPlan">Plan view</div>
-        <div class="vlabel" id="lblPersp">Perspective view</div>
         <div class="levels-key" id="levelsKey"></div>
-        <div class="origin-lbl" id="originLbl">(X0,Y0)</div>
+        <button class="view-btn" id="resetBtn" type="button" hidden title="Reset grid" aria-label="Reset grid">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.2 4.4v5h5"/>
+            </svg>
+        </button>
+        <div class="cell-menu" id="cellMenu" hidden>
+            <div class="seg" id="labelSwitch">
+                <button data-v="A" type="button">A</button>
+                <button data-v="B" type="button">B</button>
+                <button data-v="-" type="button">None</button>
+            </div>
+            <button class="tog" data-act="split" type="button">Split</button>
+            <button class="tog" data-act="merge" type="button">Merge</button>
+            <button class="tog" data-act="delete" type="button">Delete</button>
+        </div>
         <div class="floor-tag" id="floorTag"></div>
         <div id="floorLabels"></div>
-        <div id="critMarks"></div>
         <div class="view-hint" id="viewHint"></div>
     </div>
-    <div class="caption" id="caption"></div>
 
     <div class="timeline">
-        <div class="stage-grid" id="stageGrid">
-            <button class="sbtn" data-s="0" type="button" style="grid-column:1" title="A regular grid with alternating A and B zones is pulled apart to open up interstices separated by the surface."><span class="n">1</span>Grid</button>
-            <button class="sbtn" data-s="1" type="button" style="grid-column:2" title="A transformation into a 'Flexible Grid' allows for a strategic redistribution according to programmatic needs of area/volume and local adjacencies."><span class="n">2</span>Flexible grid</button>
-            <button class="sbtn" data-s="2" type="button" style="grid-column:3" title="The flexible grid system is applied on a per level basis responding to specific needs in local programmatic changes. Eventually, structural links evolve between the flexible grids."><span class="n">3</span>Per level</button>
-            <button class="sbtn last" data-s="3" type="button" style="grid-column:4 / span 3" title="A repetition by overlapping further intensifies the spatial intricacies of the A/B system."><span class="n">4</span>Overlapping repetition</button>
-            <figure class="thumb" data-t="0" style="grid-column:1" title="Regular grid — tangent circles, alternating A and B"><canvas></canvas><figcaption>Grid</figcaption></figure>
-            <figure class="thumb" data-t="1" style="grid-column:2" title="Flexible grid — a polygon grid, each cell drawn as its polygon and a rounded offset"><canvas></canvas><figcaption>Flexible grid</figcaption></figure>
-            <figure class="thumb" data-t="2" style="grid-column:3" title="Control grid — polygon [1] on the lower grid, [2] on the upper, with their offsets [1'] and [2']"><canvas></canvas><figcaption>Control grid</figcaption></figure>
-            <figure class="thumb" data-t="2.7" style="grid-column:4" title="Crude mesh — the four polygonal lines translated into faces: flange, tube, flange"><canvas></canvas><figcaption>Crude mesh</figcaption></figure>
-            <figure class="thumb" data-t="2.84" style="grid-column:5" title="Smoothed surface — every facet divided in relation to its neighbours, three times"><canvas></canvas><figcaption>Smoothed</figcaption></figure>
-            <figure class="thumb lastt" data-t="3" style="grid-column:6" title="Finished surface — trimmed at the facade outline, roof and basement"><canvas></canvas><figcaption>Trimmed</figcaption></figure>
+        <div class="walk">
+            <input type="range" autocomplete="off" id="stageSlider" min="0" max="1000" step="2" value="83" aria-label="Stage">
         </div>
-        <div class="scrub-row">
-            <input type="range" autocomplete="off" id="stageSlider" min="0" max="1000" step="1" value="83">
+        <!-- the six stages, each drawn as what it makes: tangent circles, cells
+             that have moved, sheets one above another, then the tube crude,
+             smoothed and cut -->
+        <div class="stations" id="stations">
+            <button type="button" class="station" data-t="0" aria-label="1 Grid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <circle cx="7.6" cy="8.4" r="4.1"/><circle cx="16.4" cy="8.4" r="4.1"/><circle cx="7.6" cy="16.6" r="4.1"/><circle cx="16.4" cy="16.6" r="4.1"/>
+                </svg><span class="lab">Grid</span>
+            </button>
+            <button type="button" class="station" data-t="1" aria-label="2 Flexible grid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">
+                    <path d="M3 8.6 10.4 3.8 21 7.6 19.2 15.4 12.4 20.2 4.6 17.4Z"/>
+                    <path d="M10.4 3.8 12.2 10.6 21 7.6M12.2 10.6 12.4 20.2M12.2 10.6 3 8.6"/>
+                </svg><span class="lab">Flexible</span>
+            </button>
+            <button type="button" class="station" data-t="2" aria-label="3 Per level">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">
+                    <path d="M2.6 7.4 12 3.6 21.4 7.4 12 11.2Z"/><path d="M2.6 16.6 12 12.8 21.4 16.6 12 20.4Z"/>
+                </svg><span class="lab">Per level</span>
+            </button>
+            <button type="button" class="station" data-t="2.7" aria-label="4 Crude mesh">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">
+                    <path d="M4 4.6h16M4 19.4h16"/><path d="M7.4 4.6 10 9.6v4.8l-2.6 5M16.6 4.6 14 9.6v4.8l2.6 5"/>
+                </svg><span class="lab">Crude</span>
+            </button>
+            <button type="button" class="station" data-t="2.84" aria-label="5 Smoothed">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+                    <path d="M4 4.6h16M4 19.4h16"/><path d="M7.4 4.6C10.4 8.4 10.4 15.6 7.4 19.4M16.6 4.6C13.6 8.4 13.6 15.6 16.6 19.4"/>
+                </svg><span class="lab">Smoothed</span>
+            </button>
+            <button type="button" class="station" data-t="3" aria-label="6 Trimmed">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+                    <path d="M4 8h16M4 19.4h16"/><path d="M8.3 8C10.6 11.4 10.6 16.4 8.3 19.4M15.7 8C13.4 11.4 13.4 16.4 15.7 19.4"/>
+                    <path d="M5 4.4h2.2M10 4.4h4M16.8 4.4H19" opacity="0.55"/>
+                </svg><span class="lab">Trimmed</span>
+            </button>
         </div>
-        <div class="scrub-ends"><span>2D</span><span>3D</span></div>
     </div>
 
     <div class="panels">
-        <section class="panel">
-            <h4>Flexible grid &mdash; selected cell</h4>
-            <div class="btn-row">
-                <div class="seg off" id="labelSwitch">
-                    <button data-v="A" type="button">A</button>
-                    <button data-v="B" type="button">B</button>
-                    <button data-v="-" type="button">None</button>
-                </div>
-                <button class="tog" id="splitBtn" type="button" disabled>Split</button>
-                <button class="tog" id="deleteBtn" type="button" disabled>Delete</button>
-                <button class="tog" id="resetBtn" type="button">Reset</button>
+        <section class="panel" id="shellPanel">
+            <div class="shape-row">
+                <label class="shape-ctl"><span>Flange &mdash; [1] to [1'] <b id="flangeVal">30% of the cell</b></span>
+                    <input type="range" autocomplete="off" id="flangeSlider" min="10" max="45" step="1" value="30" disabled></label>
+                <label class="shape-ctl"><span>Flange slope &mdash; [1'] up, [2'] down <b id="riseVal">54°</b></span>
+                    <input type="range" autocomplete="off" id="riseSlider" min="0" max="75" step="1" value="54" disabled></label>
+                <label class="shape-ctl"><span>Relax between levels <b id="relaxVal">none</b></span>
+                    <input type="range" autocomplete="off" id="relaxSlider" min="0" max="60" step="1" value="0" disabled></label>
             </div>
-            <h4 class="gap">Flange &mdash; [1] to [1'] &middot; <span id="flangeVal">30% of the cell</span></h4>
-            <div class="scrub-row">
-                <span class="lbl">10%</span>
-                <input type="range" autocomplete="off" id="flangeSlider" min="10" max="45" step="1" value="30" disabled>
-                <span class="lbl r">45%</span>
-            </div>
-            <h4 class="gap">Flange slope &mdash; [1'] raised, [2'] lowered &middot; <span id="riseVal">54°</span></h4>
-            <div class="scrub-row">
-                <span class="lbl">flat</span>
-                <input type="range" autocomplete="off" id="riseSlider" min="0" max="75" step="1" value="54" disabled>
-                <span class="lbl r">75°</span>
-            </div>
-            <p class="note">30% flange and 54° slope are study defaults, not measured project dimensions. Small cells limit the inset to preserve valid edges.</p>
-            <h4 class="gap">Relax between levels &middot; <span id="relaxVal">none</span></h4>
-            <div class="scrub-row">
-                <span class="lbl">none</span>
-                <input type="range" autocomplete="off" id="relaxSlider" min="0" max="60" step="1" value="0" disabled>
-                <span class="lbl r">60</span>
-            </div>
-        </section>
-        <section class="panel">
-            <h4>Structure</h4>
-            <div class="btn-grid3" id="structSwitch">
-                <button class="tog active" data-m="comp" type="button" title="Experimental shell sizing, starting at 230 mm; not the building thickness">Model</button>
-                <button class="tog" data-m="dd" type="button" title="Schematic parallel and radial construction guides on a 230 mm study shell">Development</button>
-                <button class="tog" id="mapBtn" type="button" disabled title="Simplified shell FEA: concrete, reinforcement and shear utilisation estimates">FEA map</button>
-            </div>
-            <p class="note" id="structNote"></p>
-            <div class="crit-box" id="critBox" hidden>
-                <h4>Critical points &mdash; this simplified shell only</h4>
-                <ol class="crit" id="critList"></ol>
-            </div>
-            <h4 class="gap">Floors &mdash; visual only</h4>
-            <div class="btn-row floors-row">
+            <div id="floorTools">
+            <div class="floors-bar">
                 <button class="tog active" id="floorsBtn" type="button" disabled>Floors on</button>
                 <button class="tog" id="openingsBtn" type="button" disabled aria-pressed="false">Edit openings</button>
-                <div class="scrub-row trim-row" title="height of the roof cut; floors above it are removed">
-                    <span class="lbl">Top cut</span>
-                    <input type="range" autocomplete="off" id="roofSlider" min="1500" max="3720" step="5" value="2750" disabled>
-                    <span class="lbl r" id="roofVal">+27.50</span>
-                </div>
-            </div>
-            <div class="btn-row">
-                <label for="floorPick">Floor</label>
                 <select id="floorPick" aria-label="Floor to edit"></select>
                 <button class="tog" id="undoOpening" type="button" disabled>Undo opening</button>
+                <button class="tog" id="weakBtn" type="button" disabled aria-pressed="false" title="Mark where the geometry leaves a slab unheld">Check spans</button>
+                <label class="shape-ctl trim-ctl" title="height of the roof cut; floors above it are removed">
+                    <span>Top cut <b id="roofVal">+27.50</b></span>
+                    <input type="range" autocomplete="off" id="roofSlider" min="1500" max="3720" step="5" value="3000" disabled></label>
             </div>
             <p class="note" id="openingNote">Click a slab to select; drag to change its height. Edit openings isolates the chosen floor.</p>
+            <p class="note" id="weakNote" hidden></p></div>
         </section>
     </div>
 
     <details class="reference-notes">
-        <summary>Study scope &amp; project references</summary>
+        <summary>Structure &amp; references</summary>
+        <p><b>Structural principle.</b> The built project combines a continuous reinforced-concrete shell with cores, facade walls and plug walls. Steel beams support inserted floors and seating; connections transfer their loads to the walls. Curved or inclined walls require this complete load path, not just a smooth shape. <a href="https://www.egc.com.tw/masterpiece.php?lang=en-us&amp;post=3" target="_blank" rel="noopener">Evergreen: structural system</a>.</p>
+        <p><b>Flexible grid.</b> The layout is project-inspired: schematic proportions, not a traced construction plan. The 30% flange and 54° slope are study defaults, not measured project dimensions, and small cells limit the inset to preserve valid edges. The shell is drawn at a nominal 230 mm, locally limited at tight curves; it is not a design thickness.</p>
         <p><b>Generative study.</b> The four stages interpret the book's Emerging Grid sequence. Editable power cells, shared rim levels, catenary-inspired profiles and subdivision are approximations; they do not reproduce C6_B or guarantee a mathematical minimal surface.</p>
         <p><b>Three different levels.</b> Control grids define the shell; floor levels insert slabs; top/bottom cuts crop the study. The 120 × 60 m envelope, 15 m grid spacing, −15 m base cut and default floors are schematic. Reference drawings from different design stages are not combined into an as-built preset.</p>
-        <p><b>Design development.</b> Void-forming proposals and later solid-concrete construction are distinct. A 2014 project account lists 400–800 mm solid walls and discusses local thickening to 1,000 mm. This study's 230 mm shell is not an as-built thickness map. D13@200 in the supplied detail labels formwork-fixing bars, not a universal truss spacing.</p>
-        <p><b>Built structure.</b> The curved shell works with cores, plug walls, concrete facades and inserted structural systems. Hiding a component visually is different from excluding it from analysis. The current FEA excludes those systems and all displayed floors.</p>
+        <p><b>Design development.</b> Void-forming proposals and later solid-concrete construction are distinct. A 2014 project account lists 400–800 mm solid walls and discusses local thickening to 1,000 mm. This study uses a nominal 230 mm display shell, with locally limited offsets at tight curves; it is not an as-built thickness map. D13@200 in the supplied detail labels formwork-fixing bars, not a universal truss spacing.</p>
+        <p><b>Built structure.</b> The curved shell works with cores, plug walls, concrete facades and inserted structural systems. This interactive illustrates geometry and floor openings only; it does not calculate forces, reinforcement or structural capacity.</p>
         <p>References:
             <a href="https://www.arup.com/en-us/projects/the-national-taichung-theater/" target="_blank" rel="noopener">Arup: project and construction</a> ·
             <a href="https://www.npac-ntt.org/en/about/architecture/design" target="_blank" rel="noopener">NTT: 58 curved wall units / 29 sound caves</a> ·
@@ -284,22 +297,30 @@
         const GRID_Y = [-22.5, -7.5, 7.5, 22.5, 37.5], NL = GRID_Y.length, GRID_SP = 15;
         // the basement cut runs through the middle of the lowest catenoids,
         // where they are upright walls (p.168: the trimmed surface stands on walls only)
-        const TRIM = { y0: -15, y1: 27.5 };
-        // the roof cut: between +15 and just under the top grid, never on a
-        // grid sheet, where the cut would run along the flat surface
+        const TRIM = { y0: -15, y1: 30 };
+        // The roof cut stands where the basement cut does: at the neck, half a
+        // grid from the sheets, where the wall is upright. Within a flange's
+        // rise of a sheet the tubes are still flaring, and a cut there slices
+        // the bell of every one, leaving the curled petals the trimmed model
+        // used to grow; the cut is pushed out of that band to its nearer edge.
         const ROOF_MIN = 15, ROOF_MAX = 37.2;
         function roofLevel(y) {
             y = Math.max(ROOF_MIN, Math.min(ROOF_MAX, Math.round(y * 20) / 20));
-            for (const g of GRID_Y) if (Math.abs(y - g) < 0.3) y = y < g ? g - 0.3 : g + 0.3;
-            return Math.min(ROOF_MAX, y);
+            // clear of the flange's flare, and never nearer a sheet than the
+            // middle third of a bay, so the cut always lands on upright wall
+            const band = Math.max(flangeRise() + 0.3, 0.4 * GRID_SP);
+            for (const g of GRID_Y) if (Math.abs(y - g) < band) y = y < g ? g - band : g + band;
+            // above the top sheet there is nothing to cut: stay under its flare
+            if (y > ROOF_MAX) y = GRID_Y[NL - 1] - band;
+            return Math.max(ROOF_MIN, Math.min(ROOF_MAX, y));
         }
         const SLAB = 0.4;
         const LEVEL_COL = ['#6f7f8c', '#2e9e5b', '#c0782a', '#2f5fb3', '#8a4c9c'];
         const ORANGE = 0xe8772e;
-        const THUMB_T = [0, 1, 2, 2.7, 2.84, 3];
-        // the slider runs under the six thumbnails: at each thumbnail's centre it
+        const STATION_T = [0, 1, 2, 2.7, 2.84, 3];
+        // the slider runs over the six stations: at each station's icon it
         // stands at that frame's t, and is linear in between
-        const KNOTS = [[0, 0], ...THUMB_T.map((t, k) => [(k + 0.5) / THUMB_T.length, t]), [1, 3]];
+        const KNOTS = [[0, 0], ...STATION_T.map((t, k) => [(k + 0.5) / STATION_T.length, t]), [1, 3]];
         function sliderToT(x) {
             for (let k = 0; k + 1 < KNOTS.length; k++) if (x <= KNOTS[k + 1][0]) return lerp(KNOTS[k][1], KNOTS[k + 1][1], clamp01((x - KNOTS[k][0]) / (KNOTS[k + 1][0] - KNOTS[k][0])));
             return 3;
@@ -313,7 +334,7 @@
         }
 
         let FLOORS = [{ id: 1, y: 0 }, { id: 2, y: 7.5 }, { id: 3, y: 11.85 }, { id: 4, y: 16.15 }, { id: 5, y: 22.0 }], FID = 6;
-        const S = { t: 0, lines: true, grids: false, struct: 'comp', map: false, floors: true, floorSel: 2, flange: 0.3, rise: 54, relax: 0, mapQ: 'c', sel: null, cell: null, userView: false, version: 0, floorVer: 0, dragging: false };
+        const S = { t: 0, lines: true, grids: false, struct: 'comp', floors: true, floorSel: 2, flange: 0.3, rise: 54, relax: 0, weak: false, sel: null, cell: null, userView: false, version: 0, floorVer: 0, dragging: false };
 
         const clamp01 = v => Math.max(0, Math.min(1, v));
         const lerp = (a, b, t) => a + (b - a) * t;
@@ -326,8 +347,6 @@
                 flex: smooth(0, 1, t),
                 lift: smooth(1, 1.5, t),
                 reveal: smooth(1.5, 2, t),
-                split: t <= 2 ? smooth(1, 1.35, t) : 1 - smooth(2, 2.25, t),
-                units: smooth(2.05, 2.22, t),
                 smoothK: smooth(2.7, 2.84, t),
                 trimK: smooth(2.86, 3, t)
             };
@@ -626,24 +645,21 @@
         let SEEDS = [], UID = 1, VOIDS = [];
         function initSeeds() {
             SEEDS = [];
-            for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-                const label = (r + c) % 2 === 0 ? 'B' : 'A', other = label === 'A' ? 'B' : 'A';
-                const cx = (c + 0.5) * P, cz = (r + 0.5) * P;
-                const h = hash(r, c, 1);
-                const n = h < 0.1 ? 1 : (h < 0.5 ? 2 : 3);
-                const a0 = hash(r, c, 2) * Math.PI * 2;
-                const sizes = n === 1 ? [label === 'A' ? 1.45 : 1.0] : n === 2 ? [1.05, 0.6] : [0.85, 0.55, 0.45];
-                for (let k = 0; k < n; k++) {
-                    const ang = a0 + k * 2 * Math.PI / n;
-                    const dist = n === 1 ? 0.12 * P * hash(r, c, 3) : (k === 0 ? 0.14 : 0.28) * P;
-                    // Default cells form tubes; this procedural population does not
-                    // reproduce the project's 58 curved wall units. None remains editable.
-                    const lab = k === 1 ? other : label;
-                    SEEDS.push({
-                        uid: UID++, label: lab, bud: k > 0, rx: cx, rz: cz, ox: Math.cos(ang), oz: Math.sin(ang),
-                        x: cx + Math.cos(ang) * dist, z: cz + Math.sin(ang) * dist, w: (sizes[k] - 1) * 0.14 * P * P
-                    });
-                }
+            // Normalized diagram coordinates, visually estimated from supplied plan image 5.
+            // This is a project-inspired study preset, not surveyed or as-built geometry.
+            const layout = [
+                [7,8,0],[23,5,0],[43,6,0],[62,5,0],[82,6,0],[108,7,0],
+                [5,25,0],[25,23,110],[46,24,-10],[59,17,-10],[71,24,0],[94,29,160],[116,26,0],
+                [7,43,0],[25,43,-10],[42,42,-10],[57,37,-10],[72,43,10],[113,46,0],
+                [10,57,0],[32,57,0],[50,57,0],[67,57,0],[87,56,0],[106,58,0]
+            ];
+            const occupied = new Set();
+            for (const [x,z,w] of layout) {
+                const c = Math.min(COLS-1, Math.floor(x/P)), r = Math.min(ROWS-1, Math.floor(z/P));
+                const key = r*COLS+c, bud = occupied.has(key); occupied.add(key);
+                const rx = (c+.5)*P, rz = (r+.5)*P, angle = Math.atan2(z-rz,x-rx);
+                SEEDS.push({uid:UID++,label:(r+c)%2 ? 'A':'B',bud,rx,rz,
+                    ox:Math.cos(angle),oz:Math.sin(angle),x,z,w});
             }
             S.cell = null; S.sel = null;
             FLOORS = [{ id: 1, y: 0 }, { id: 2, y: 7.5 }, { id: 3, y: 11.85 }, { id: 4, y: 16.15 }, { id: 5, y: 22.0 }]; FID = 6; S.floorSel = 2;
@@ -687,11 +703,16 @@
         }
 
         /* ---------------- per level ---------------- */
+        // one rise for all: the slope angle over the flange of an average cell.
+        // The roof cut reads it too, to keep clear of the band it flares through
+        function flangeRise() {
+            const base = baseCells().filter(q => q.length);
+            const meanInr = base.reduce((sum, q) => sum + inradius(q, centroid(q)), 0) / Math.max(1, base.length);
+            return Math.min(0.4 * GRID_SP, Math.tan(S.rise * Math.PI / 180) * S.flange * meanInr);
+        }
         function buildLevels(lift) {
             const out = [];
-            // one rise for all: the slope angle over the flange of an average cell
-            const base = baseCells().filter(q => q.length), meanInr = base.reduce((sum, q) => sum + inradius(q, centroid(q)), 0) / Math.max(1, base.length);
-            const RISE = Math.min(0.4 * GRID_SP, Math.tan(S.rise * Math.PI / 180) * S.flange * meanInr);
+            const RISE = flangeRise();
             // A cell below this study's 3 m inradius guard is removed; this
             // numerical threshold is not a measured project dimension. Its neighbours
             // close over it, as the book has no stray flat plates. It goes from both
@@ -1049,70 +1070,9 @@
             m.faces.forEach((f, fi) => { const t = m.tags[fi]; if (t >= 0 && byTag[t]) for (const v of f) vt[v] = t; });
             return { byTag, vt };
         }
-        // Study assumptions, not as-built dimensions. Development holds 230 mm;
-        // Model performs experimental sizing up to 1.4 m. See reference notes.
-        const T_MIN = 0.23, T_MAX = 1.4, T_DD = 0.23, TRUSS_STEP = 1;
-        // truss walls (pp.176-177): planar vertical walls between the two
-        // surfaces, placed per catenoid on its section polygon. Parallel ones
-        // stand perpendicular to each segment, stepped out from its midpoint and
-        // stopping at the corner bisectors; radial ones fan round each corner.
-        // Sampled every 1 m for visibility; actual construction spacing is not verified.
-        function catenoidTruss(m, C, skin) {
-            const { byTag } = tubeOfVertex(m, C);
-            const byTri = new Map();
-            m.faces.forEach((f, fi) => {
-                const t = m.tags[fi]; if (t < 0 || !byTag[t]) return;
-                let arr = byTri.get(t); if (!arr) byTri.set(t, arr = []);
-                for (let j = 1; j < f.length - 1; j++) arr.push(f[0], f[j], f[j + 1]);
-            });
-            const par = [], rad = [], p = skin;
-            const cutTris = (tris, nx, nz, d, keep, out) => {
-                for (let k = 0; k < tris.length; k += 3) {
-                    const a = tris[k] * 3, b = tris[k + 1] * 3, c = tris[k + 2] * 3;
-                    const da = p[a] * nx + p[a + 2] * nz - d, db = p[b] * nx + p[b + 2] * nz - d, dc = p[c] * nx + p[c + 2] * nz - d;
-                    if ((da < 0 && db < 0 && dc < 0) || (da > 0 && db > 0 && dc > 0)) continue;
-                    const pts = [];
-                    for (const [u, w, du, dw] of [[a, b, da, db], [b, c, db, dc], [c, a, dc, da]]) {
-                        if ((du < 0) !== (dw < 0)) { const t = du / (du - dw); pts.push(p[u] + (p[w] - p[u]) * t, p[u + 1] + (p[w + 1] - p[u + 1]) * t, p[u + 2] + (p[w + 2] - p[u + 2]) * t); }
-                    }
-                    if (pts.length === 6 && keep((pts[0] + pts[3]) / 2, (pts[2] + pts[5]) / 2)) out.push(...pts);
-                }
-            };
-            for (const [tag, tris] of byTri) {
-                const t = byTag[tag], hole = t.lo.hole, n = hole.length;
-                const edges = hole.map((A, k) => {
-                    const B = hole[(k + 1) % n], L = Math.hypot(B.x - A.x, B.z - A.z) || 1;
-                    const ex = (B.x - A.x) / L, ez = (B.z - A.z) / L;
-                    return { A, B, L, ex, ez, nx: ez, nz: -ex };
-                });
-                for (const e of edges) {
-                    const keep = (x, z) => { const s = (x - e.A.x) * e.ex + (z - e.A.z) * e.ez; return s > 0 && s < e.L && (x - e.A.x) * e.nx + (z - e.A.z) * e.nz > -0.5; };
-                    for (let j = 0; ; j++) {
-                        const offs = j === 0 ? [0] : [j * TRUSS_STEP, -j * TRUSS_STEP];
-                        if (j * TRUSS_STEP >= e.L / 2) break;
-                        for (const o of offs) {
-                            const px = (e.A.x + e.B.x) / 2 + e.ex * o, pz = (e.A.z + e.B.z) / 2 + e.ez * o;
-                            cutTris(tris, e.ex, e.ez, px * e.ex + pz * e.ez, keep, par);
-                        }
-                    }
-                }
-                edges.forEach((e1, k) => {
-                    const e0 = edges[(k - 1 + n) % n], V = e1.A;
-                    const a0 = Math.atan2(e0.nz, e0.nx);
-                    let a1 = Math.atan2(e1.nz, e1.nx);
-                    while (a1 < a0) a1 += Math.PI * 2;
-                    if (a1 - a0 > Math.PI) return;
-                    const steps = Math.max(1, Math.ceil((a1 - a0) * 4 / TRUSS_STEP));
-                    for (let q = 1; q < steps; q++) {
-                        const ang = a0 + (a1 - a0) * q / steps, dx = Math.cos(ang), dz = Math.sin(ang);
-                        const keep = (x, z) => (x - V.x) * dx + (z - V.z) * dz > 0;
-                        cutTris(tris, -dz, dx, -dz * V.x + dx * V.z, keep, rad);
-                    }
-                });
-            }
-            return { par: new Float32Array(par), rad: new Float32Array(rad) };
-        }
-        const RAMP = [[0.17, 0.11, 0.56], [0.18, 0.44, 0.84], [0.2, 0.7, 0.29], [0.95, 0.83, 0.19], [0.88, 0.2, 0.16]];
+        // Fixed nominal display thickness only; curvature limits the visual
+        // offset to avoid folds. This is not a structural thickness specification.
+        const T_DD = 0.23;
         function finishSurface(m, C) {
             const nV = m.nV, tri = triangulate(m.faces);
             const g = new THREE.BufferGeometry();
@@ -1151,8 +1111,8 @@
                 for (let q = 0; q < 3; q++) { const o = v * 3 + q; plusDD[o] = p[o] + nrm[o] * h; minusDD[o] = p[o] - nrm[o] * h; }
             }
             return {
-                tri, nrm, plus: plusDD.slice(), minus: minusDD.slice(), plusDD, minusDD, rCurv, nbr: { start, nb },
-                colors: new Float32Array(nV * 3).fill(0.86), edges: E, truss: catenoidTruss(m, C, plusDD), skinVer: 0, feaRes: {}
+                tri, nrm, plusDD, minusDD,
+                edges: E
             };
         }
         // Taubin smoothing (a shrink step and an equal counter-step, per pass):
@@ -1184,673 +1144,17 @@
         function getSurface() {
             const C = getCrude(), key = C.key + '|' + S.relax;
             if (!surfCache || surfCache.key !== key) {
-                // the crude mesh divided three times (p.168); an optional Taubin pass
-                // (the Relax slider) can ease what remains. The analysis meshes are
-                // the first and second divisions (a
-                // Catmull-Clark pass keeps every vertex id, so they share positions)
+                // Subdivide the control mesh; optional Taubin relaxation is visual only.
                 let m = { nV: C.pos.length / 3, pos: C.pos, faces: C.M.faces, tags: C.M.tags, pin: C.pin };
-                const fe = [];
                 for (let k = 0; k < SUBDIV; k++) {
                     m = catmullClark(m.nV, m.pos, m.faces, m.tags, m.pin);
-                    if (k < SUBDIV - 1) fe.push({ nV: m.nV, faces: m.faces, tags: m.tags });
                 }
                 m = { ...m, pos: relaxSurface(m, S.relax) };
-                surfCache = { key, ...m, fe, ...finishSurface(m, C) };
+                surfCache = { key, ...m, ...finishSurface(m, C) };
             }
             return surfCache;
         }
 
-        /* ---------------- structure: finite element analysis ---------------- */
-        // Linear static analysis of the trimmed surface as a thin shell. Flat
-        // 3-node elements: CST membrane + DKT plate (Batoz, Bathe & Ho 1980) +
-        // a small drilling stiffness, 6 dof per node, conjugate gradients with
-        // a symmetric block Gauss-Seidel preconditioner. Units kN, m, kPa.
-        // Checked against theory: clamped square plate 1.007, cantilever strip
-        // in and out of plane 0.994 / 1.000, Scordelis-Lo roof 0.955 (32x32).
-        function feaSolve(input, onProgress) {
-            const { pos, tris, thick, fixed, E, nu, q, U0 = null, maxIter = 4000, tol = 1e-7, drill = 1e-3 } = input;
-            const nN = pos.length / 3, nT = tris.length / 3, ND = nN * 6;
-            const nb = Array.from({ length: nN }, (_, i) => new Set([i]));
-            for (let e = 0; e < nT; e++) {
-                const a = tris[e * 3], b = tris[e * 3 + 1], c = tris[e * 3 + 2];
-                nb[a].add(b); nb[a].add(c); nb[b].add(a); nb[b].add(c); nb[c].add(a); nb[c].add(b);
-            }
-            const rowStart = new Int32Array(nN + 1);
-            for (let i = 0; i < nN; i++) rowStart[i + 1] = rowStart[i] + nb[i].size;
-            const colIdx = new Int32Array(rowStart[nN]);
-            for (let i = 0; i < nN; i++) { const s = [...nb[i]].sort((x, y) => x - y); colIdx.set(s, rowStart[i]); }
-            const K = new Float64Array(rowStart[nN] * 36);
-            const slot = (i, j) => { let lo = rowStart[i], hi = rowStart[i + 1] - 1; while (lo <= hi) { const m = (lo + hi) >> 1; if (colIdx[m] === j) return m; if (colIdx[m] < j) lo = m + 1; else hi = m - 1; } return -1; };
-            const F = new Float64Array(ND);
-            const GP = [[1 / 6, 1 / 6], [2 / 3, 1 / 6], [1 / 6, 2 / 3]];
-            const kl = new Float64Array(324), R = new Float64Array(9), kg = new Float64Array(324), tmp = new Float64Array(324);
-            const frames = new Float64Array(nT * 9), local = new Float64Array(nT * 6);
-            // DKT shape-function derivatives at (xi, eta): the four rows of Batoz et al.
-            const dkt = (P4, P5, P6, q4, q5, q6, r4, r5, r6, t4, t5, t6, xi, eta) => [
-                [P6 * (1 - 2 * xi) + (P5 - P6) * eta, q6 * (1 - 2 * xi) - (q5 + q6) * eta, -4 + 6 * (xi + eta) + r6 * (1 - 2 * xi) - eta * (r5 + r6),
-                    -P6 * (1 - 2 * xi) + eta * (P4 + P6), q6 * (1 - 2 * xi) - eta * (q6 - q4), -2 + 6 * xi + r6 * (1 - 2 * xi) + eta * (r4 - r6),
-                    -eta * (P5 + P4), eta * (q4 - q5), -eta * (r5 - r4)],
-                [t6 * (1 - 2 * xi) + eta * (t5 - t6), 1 + r6 * (1 - 2 * xi) - eta * (r5 + r6), -q6 * (1 - 2 * xi) + eta * (q5 + q6),
-                    -t6 * (1 - 2 * xi) + eta * (t4 + t6), -1 + r6 * (1 - 2 * xi) + eta * (r4 - r6), -q6 * (1 - 2 * xi) - eta * (q4 - q6),
-                    -eta * (t4 + t5), eta * (r4 - r5), -eta * (q4 - q5)],
-                [-P5 * (1 - 2 * eta) - xi * (P6 - P5), q5 * (1 - 2 * eta) - xi * (q5 + q6), -4 + 6 * (xi + eta) + r5 * (1 - 2 * eta) - xi * (r5 + r6),
-                    xi * (P4 + P6), xi * (q4 - q6), -xi * (r6 - r4),
-                    P5 * (1 - 2 * eta) - xi * (P4 + P5), q5 * (1 - 2 * eta) + xi * (q4 - q5), -2 + 6 * eta + r5 * (1 - 2 * eta) + xi * (r4 - r5)],
-                [-t5 * (1 - 2 * eta) - xi * (t6 - t5), 1 + r5 * (1 - 2 * eta) - xi * (r5 + r6), -q5 * (1 - 2 * eta) + xi * (q5 + q6),
-                    xi * (t4 + t6), xi * (r4 - r6), -xi * (q4 - q6),
-                    t5 * (1 - 2 * eta) - xi * (t4 + t5), -1 + r5 * (1 - 2 * eta) + xi * (r4 - r5), -q5 * (1 - 2 * eta) - xi * (q4 - q5)]
-            ];
-            const dktB = (x, y, A2, xi, eta) => {
-                const x23 = x[1] - x[2], x31 = x[2] - x[0], x12 = x[0] - x[1], y23 = y[1] - y[2], y31 = y[2] - y[0], y12 = y[0] - y[1];
-                const l23 = x23 * x23 + y23 * y23, l31 = x31 * x31 + y31 * y31, l12 = x12 * x12 + y12 * y12;
-                const [Hxx, Hyx, Hxe, Hye] = dkt(-6 * x23 / l23, -6 * x31 / l31, -6 * x12 / l12, 3 * x23 * y23 / l23, 3 * x31 * y31 / l31, 3 * x12 * y12 / l12,
-                    3 * y23 * y23 / l23, 3 * y31 * y31 / l31, 3 * y12 * y12 / l12, -6 * y23 / l23, -6 * y31 / l31, -6 * y12 / l12, xi, eta);
-                const B = [new Float64Array(9), new Float64Array(9), new Float64Array(9)];
-                for (let i = 0; i < 9; i++) {
-                    B[0][i] = (y31 * Hxx[i] + y12 * Hxe[i]) / A2;
-                    B[1][i] = (-x31 * Hyx[i] - x12 * Hye[i]) / A2;
-                    B[2][i] = (-x31 * Hxx[i] - x12 * Hxe[i] + y31 * Hyx[i] + y12 * Hye[i]) / A2;
-                }
-                return B;
-            };
-            const addBtDB = (B, Dm, n, idx, w) => {
-                for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
-                    let s = 0;
-                    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) s += B[a][i] * Dm[a][b] * B[b][j];
-                    kl[idx[i] * 18 + idx[j]] += s * w;
-                }
-            };
-            for (let e = 0; e < nT; e++) {
-                const nodes = [tris[e * 3], tris[e * 3 + 1], tris[e * 3 + 2]];
-                const P = nodes.map(n => [pos[n * 3], pos[n * 3 + 1], pos[n * 3 + 2]]);
-                const v1 = [P[1][0] - P[0][0], P[1][1] - P[0][1], P[1][2] - P[0][2]], v2 = [P[2][0] - P[0][0], P[2][1] - P[0][1], P[2][2] - P[0][2]];
-                const L1 = Math.hypot(...v1);
-                const nx = v1[1] * v2[2] - v1[2] * v2[1], ny = v1[2] * v2[0] - v1[0] * v2[2], nz = v1[0] * v2[1] - v1[1] * v2[0], nl = Math.hypot(nx, ny, nz);
-                if (L1 < 1e-9 || nl < 1e-9) continue;
-                const e1 = [v1[0] / L1, v1[1] / L1, v1[2] / L1], e3 = [nx / nl, ny / nl, nz / nl];
-                const e2 = [e3[1] * e1[2] - e3[2] * e1[1], e3[2] * e1[0] - e3[0] * e1[2], e3[0] * e1[1] - e3[1] * e1[0]];
-                R.set([...e1, ...e2, ...e3]); frames.set(R, e * 9);
-                const x = [0, L1, v2[0] * e1[0] + v2[1] * e1[1] + v2[2] * e1[2]], y = [0, 0, v2[0] * e2[0] + v2[1] * e2[1] + v2[2] * e2[2]];
-                local.set([x[0], y[0], x[1], y[1], x[2], y[2]], e * 6);
-                const A2 = (x[1] - x[0]) * (y[2] - y[0]) - (x[2] - x[0]) * (y[1] - y[0]), A = A2 / 2;
-                const t = thick[e], Dm = E * t / (1 - nu * nu), Db = E * t * t * t / (12 * (1 - nu * nu));
-                kl.fill(0);
-                const b1 = y[1] - y[2], b2 = y[2] - y[0], b3 = y[0] - y[1], c1 = x[2] - x[1], c2 = x[0] - x[2], c3 = x[1] - x[0];
-                const Bm = [[b1, 0, b2, 0, b3, 0], [0, c1, 0, c2, 0, c3], [c1, b1, c2, b2, c3, b3]].map(r => r.map(v => v / A2));
-                addBtDB(Bm, [[Dm, Dm * nu, 0], [Dm * nu, Dm, 0], [0, 0, Dm * (1 - nu) / 2]], 6, [0, 1, 6, 7, 12, 13], A);
-                for (const [xi, eta] of GP) addBtDB(dktB(x, y, A2, xi, eta), [[Db, Db * nu, 0], [Db * nu, Db, 0], [0, 0, Db * (1 - nu) / 2]], 9, [2, 3, 4, 8, 9, 10, 14, 15, 16], A2 / 6);
-                let dmax = 0;
-                for (const i of [3, 4, 9, 10, 15, 16]) dmax = Math.max(dmax, kl[i * 18 + i]);
-                for (const i of [5, 11, 17]) kl[i * 18 + i] += drill * dmax;
-                for (let i = 0; i < 18; i++) for (let j = 0; j < 18; j++) {
-                    const bj = j - j % 3; let s = 0;
-                    for (let k = 0; k < 3; k++) s += kl[i * 18 + bj + k] * R[k * 3 + (j % 3)];
-                    tmp[i * 18 + j] = s;
-                }
-                for (let i = 0; i < 18; i++) for (let j = 0; j < 18; j++) {
-                    const bi = i - i % 3; let s = 0;
-                    for (let k = 0; k < 3; k++) s += R[k * 3 + (i % 3)] * tmp[(bi + k) * 18 + j];
-                    kg[i * 18 + j] = s;
-                }
-                for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) {
-                    const sl = slot(nodes[a], nodes[b]) * 36;
-                    for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) K[sl + i * 6 + j] += kg[(a * 6 + i) * 18 + b * 6 + j];
-                }
-                for (const n of nodes) for (let d = 0; d < 3; d++) F[n * 6 + d] += A * q[e * 3 + d] / 3;
-            }
-            // supports: fixed[i] is a bit mask over the node's six dofs (63 =
-            // clamped), removed from the system. No springs to ground: they
-            // stiffen slender parts badly, so unsupported pieces are dropped before
-            let kmax = 0;
-            for (let i = 0; i < nN; i++) { const sl = slot(i, i) * 36; for (let d = 0; d < 6; d++) kmax = Math.max(kmax, K[sl + d * 7]); }
-            for (let i = 0; i < nN; i++) {
-                for (let s = rowStart[i]; s < rowStart[i + 1]; s++) {
-                    const j = colIdx[s];
-                    if (!fixed[i] && !fixed[j]) continue;
-                    for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) if ((fixed[i] >> r & 1) || (fixed[j] >> c & 1)) K[s * 36 + r * 6 + c] = 0;
-                }
-                const sl = slot(i, i) * 36;
-                for (let d = 0; d < 6; d++) {
-                    if (fixed[i] >> d & 1) { K[sl + d * 7] = 1; F[i * 6 + d] = 0; }
-                    else K[sl + d * 7] += 1e-14 * kmax;
-                }
-            }
-            const Minv = new Float64Array(nN * 36), diagSlot = new Int32Array(nN);
-            for (let i = 0; i < nN; i++) {
-                diagSlot[i] = slot(i, i);
-                const sl = diagSlot[i] * 36, a = Array.from({ length: 6 }, (_, r) => Array.from({ length: 12 }, (_, c) => c < 6 ? K[sl + r * 6 + c] : (c - 6 === r ? 1 : 0)));
-                for (let c = 0; c < 6; c++) {
-                    let p = c; for (let r = c + 1; r < 6; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
-                    [a[c], a[p]] = [a[p], a[c]];
-                    const d = a[c][c] || 1e-30;
-                    for (let k = 0; k < 12; k++) a[c][k] /= d;
-                    for (let r = 0; r < 6; r++) if (r !== c) { const f = a[r][c]; if (f) for (let k = 0; k < 12; k++) a[r][k] -= f * a[c][k]; }
-                }
-                for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) Minv[i * 36 + r * 6 + c] = a[r][c + 6];
-            }
-            const mul = (xv, out) => {
-                for (let i = 0; i < nN; i++) {
-                    const o = i * 6;
-                    for (let d = 0; d < 6; d++) out[o + d] = 0;
-                    for (let s = rowStart[i]; s < rowStart[i + 1]; s++) {
-                        const j = colIdx[s] * 6, b = s * 36;
-                        for (let r = 0; r < 6; r++) { let acc = 0; for (let c = 0; c < 6; c++) acc += K[b + r * 6 + c] * xv[j + c]; out[o + r] += acc; }
-                    }
-                }
-            };
-            // symmetric block Gauss-Seidel: M = (D+L) D^-1 (D+U)
-            const g = new Float64Array(6), yv = new Float64Array(ND);
-            const prec = (rv, out) => {
-                for (let i = 0; i < nN; i++) {
-                    for (let r = 0; r < 6; r++) g[r] = rv[i * 6 + r];
-                    for (let s = rowStart[i]; s < diagSlot[i]; s++) {
-                        const j = colIdx[s] * 6, b = s * 36;
-                        for (let r = 0; r < 6; r++) { let acc = 0; for (let c = 0; c < 6; c++) acc += K[b + r * 6 + c] * yv[j + c]; g[r] -= acc; }
-                    }
-                    for (let r = 0; r < 6; r++) { let acc = 0; for (let c = 0; c < 6; c++) acc += Minv[i * 36 + r * 6 + c] * g[c]; yv[i * 6 + r] = acc; }
-                }
-                for (let i = nN - 1; i >= 0; i--) {
-                    g.fill(0);
-                    for (let s = diagSlot[i] + 1; s < rowStart[i + 1]; s++) {
-                        const j = colIdx[s] * 6, b = s * 36;
-                        for (let r = 0; r < 6; r++) { let acc = 0; for (let c = 0; c < 6; c++) acc += K[b + r * 6 + c] * out[j + c]; g[r] += acc; }
-                    }
-                    for (let r = 0; r < 6; r++) { let acc = 0; for (let c = 0; c < 6; c++) acc += Minv[i * 36 + r * 6 + c] * g[c]; out[i * 6 + r] = yv[i * 6 + r] - acc; }
-                }
-            };
-            const dot = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
-            const U = U0 ? Float64Array.from(U0) : new Float64Array(ND), r = F.slice(), z = new Float64Array(ND), p = new Float64Array(ND), Ap = new Float64Array(ND);
-            // a previous solution (the last thickness round) is a close start
-            if (U0) { mul(U, Ap); for (let i = 0; i < ND; i++) r[i] -= Ap[i]; }
-            prec(r, z); p.set(z);
-            let rz = dot(r, z), it = 0, res = 1;
-            const f0 = Math.sqrt(dot(F, F)) || 1;
-            for (; it < maxIter; it++) {
-                mul(p, Ap);
-                const alpha = rz / dot(p, Ap);
-                for (let i = 0; i < ND; i++) { U[i] += alpha * p[i]; r[i] -= alpha * Ap[i]; }
-                res = Math.sqrt(dot(r, r)) / f0;
-                if (res < tol) break;
-                prec(r, z);
-                const rz2 = dot(r, z), beta = rz2 / rz;
-                rz = rz2;
-                for (let i = 0; i < ND; i++) p[i] = z[i] + beta * p[i];
-                if (onProgress && it % 25 === 0) onProgress(it, res);
-            }
-            // per element at the centroid, in its own frame: membrane forces
-            // Nx Ny Nxy (kN/m) and moments Mx My Mxy (kNm/m). Load cases share
-            // the frames, so they can be added before stresses are taken
-            const out = new Float64Array(nT * 6);
-            for (let e = 0; e < nT; e++) {
-                const nodes = [tris[e * 3], tris[e * 3 + 1], tris[e * 3 + 2]];
-                const Rr = frames.subarray(e * 9, e * 9 + 9), lc = local.subarray(e * 6, e * 6 + 6);
-                const x = [lc[0], lc[2], lc[4]], y = [lc[1], lc[3], lc[5]];
-                const A2 = (x[1] - x[0]) * (y[2] - y[0]) - (x[2] - x[0]) * (y[1] - y[0]);
-                if (!A2) continue;
-                const ul = new Float64Array(18);
-                nodes.forEach((n, a) => {
-                    for (let blk = 0; blk < 2; blk++) for (let k = 0; k < 3; k++) {
-                        let s = 0;
-                        for (let m = 0; m < 3; m++) s += Rr[k * 3 + m] * U[n * 6 + blk * 3 + m];
-                        ul[a * 6 + blk * 3 + k] = s;
-                    }
-                });
-                const t = thick[e];
-                const b1 = y[1] - y[2], b2 = y[2] - y[0], b3 = y[0] - y[1], c1 = x[2] - x[1], c2 = x[0] - x[2], c3 = x[1] - x[0];
-                const exx = (b1 * ul[0] + b2 * ul[6] + b3 * ul[12]) / A2, eyy = (c1 * ul[1] + c2 * ul[7] + c3 * ul[13]) / A2;
-                const gxy = (c1 * ul[0] + b1 * ul[1] + c2 * ul[6] + b2 * ul[7] + c3 * ul[12] + b3 * ul[13]) / A2;
-                const Em = E / (1 - nu * nu);
-                const sxm = Em * (exx + nu * eyy), sym = Em * (eyy + nu * exx), txm = Em * (1 - nu) / 2 * gxy;
-                const B = dktB(x, y, A2, 1 / 3, 1 / 3), wb = [ul[2], ul[3], ul[4], ul[8], ul[9], ul[10], ul[14], ul[15], ul[16]];
-                let kx = 0, ky = 0, kxy = 0;
-                for (let i = 0; i < 9; i++) { kx += B[0][i] * wb[i]; ky += B[1][i] * wb[i]; kxy += B[2][i] * wb[i]; }
-                const Db = E * t * t * t / (12 * (1 - nu * nu));
-                out.set([sxm * t, sym * t, txm * t, Db * (kx + nu * ky), Db * (ky + nu * kx), Db * (1 - nu) / 2 * kxy], e * 6);
-            }
-            let umax = 0;
-            for (let i = 0; i < nN; i++) umax = Math.max(umax, Math.hypot(U[i * 6], U[i * 6 + 1], U[i * 6 + 2]));
-            mul(U, Ap);
-            let tr = 0;
-            for (let i = 0; i < ND; i++) tr += (F[i] - Ap[i]) ** 2;
-            return { U, out, umax, iterations: it, residual: Math.sqrt(tr) / f0 };
-        }
-
-        // The model: the drawn surface, one or two subdivisions coarser,
-        // clipped to the building. A reinforced concrete wall, 230 mm at least:
-        // the truss wall of pp.176-177, surfaces 115 mm either side of the
-        // catenoid. Clamped along the basement cut; facade and roof edges are
-        // free, as this study has no facade walls or roof. Four load cases:
-        // self-weight G, 5 kPa live load Q on the near-level parts (the sheets
-        // that are floors), and an equivalent static earthquake E of 0.2 of the
-        // weight (G + 0.5Q) in x and in z. Design combinations 1.2G + 1.6Q and
-        // 1.2G + 0.5Q ± E. Linear elastic and uncracked: a design sketch, not a code check.
-        const FEA = { E: 32e6, nu: 0.2, rho: 25, t0: T_MIN, tMax: T_MAX, live: 5, seis: 0.2 };
-        const COMBOS = [[1.2, 1.6, 0, 0], [1.2, 0.5, 1, 0], [1.2, 0.5, -1, 0], [1.2, 0.5, 0, 1], [1.2, 0.5, 0, -1]];
-        function feModel(M, lv) {
-            const FE = M.fe[lv], n0 = FE.nV, SNAP = 0.35;
-            const bounds = [[0, 0, W], [1, TRIM.y0, TRIM.y1], [2, 0, D]];
-            const pos = Array.from(M.pos.subarray(0, n0 * 3));
-            // vertices close to a cut plane move onto it, so the cut makes no slivers
-            for (let v = 0; v < n0; v++) for (const [a, lo, hi] of bounds) {
-                const o = v * 3 + a;
-                if (Math.abs(pos[o] - lo) < SNAP) pos[o] = lo; else if (Math.abs(pos[o] - hi) < SNAP) pos[o] = hi;
-            }
-            const planes = [];
-            for (const [a, lo, hi] of bounds) planes.push([a, lo, 1], [a, hi, -1]);
-            const cutIds = new Map(), EPS = 1e-6;
-            const cross = (pi, i, j) => {
-                const key = pi + ':' + Math.min(i, j) + ':' + Math.max(i, j);
-                let id = cutIds.get(key);
-                if (id === undefined) {
-                    const [a, val] = planes[pi], da = pos[i * 3 + a] - val, db = pos[j * 3 + a] - val, t = da / (da - db);
-                    id = pos.length / 3;
-                    for (let d = 0; d < 3; d++) pos.push(pos[i * 3 + d] + (pos[j * 3 + d] - pos[i * 3 + d]) * t);
-                    pos[id * 3 + a] = val;
-                    cutIds.set(key, id);
-                }
-                return id;
-            };
-            const d2 = (i, j) => (pos[i * 3] - pos[j * 3]) ** 2 + (pos[i * 3 + 1] - pos[j * 3 + 1]) ** 2 + (pos[i * 3 + 2] - pos[j * 3 + 2]) ** 2;
-            const tris = [], orig = [], area = [], level = [], tagOf = [];
-            for (let fi = 0; fi < FE.faces.length; fi++) {
-                const f = FE.faces[fi];
-                const parts = f.length === 4 && d2(f[0], f[2]) > d2(f[1], f[3]) ? [[f[0], f[1], f[3]], [f[1], f[2], f[3]]]
-                    : f.slice(1, -1).map((_, k) => [f[0], f[k + 1], f[k + 2]]);
-                for (const tri of parts) {
-                    let poly = tri;
-                    for (let pi = 0; pi < planes.length && poly.length >= 3; pi++) {
-                        const [a, val, s] = planes[pi], out = [];
-                        for (let k = 0; k < poly.length; k++) {
-                            const i = poly[k], j = poly[(k + 1) % poly.length];
-                            const di = s * (pos[i * 3 + a] - val), dj = s * (pos[j * 3 + a] - val);
-                            if (di >= -EPS) out.push(i);
-                            if ((di > EPS && dj < -EPS) || (di < -EPS && dj > EPS)) out.push(cross(pi, i, j));
-                        }
-                        poly = out;
-                    }
-                    for (let k = 1; k + 1 < poly.length; k++) {
-                        const a = poly[0], b = poly[k], c = poly[k + 1];
-                        const ux = pos[b * 3] - pos[a * 3], uy = pos[b * 3 + 1] - pos[a * 3 + 1], uz = pos[b * 3 + 2] - pos[a * 3 + 2];
-                        const vx = pos[c * 3] - pos[a * 3], vy = pos[c * 3 + 1] - pos[a * 3 + 1], vz = pos[c * 3 + 2] - pos[a * 3 + 2];
-                        const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, A = Math.hypot(nx, ny, nz) / 2;
-                        if (A < 1e-3) continue;
-                        tris.push(a, b, c); orig.push(tri[0], tri[1], tri[2]); area.push(A); level.push(Math.abs(ny) / (2 * A) > 0.7 ? 1 : 0); tagOf.push(FE.tags[fi]);
-                    }
-                }
-            }
-            // keep only what reaches the ground through the surface
-            const nAll = pos.length / 3, parent = new Int32Array(nAll).map((_, i) => i);
-            const find = i => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
-            for (let k = 0; k < tris.length; k += 3) { parent[find(tris[k + 1])] = find(tris[k]); parent[find(tris[k + 2])] = find(tris[k]); }
-            const grounded = new Set();
-            for (const i of new Set(tris)) if (Math.abs(pos[i * 3 + 1] - TRIM.y0) < 1e-4) grounded.add(find(i));
-            const keep = [];
-            let lostArea = 0;
-            for (let e = 0; e < area.length; e++) { if (grounded.has(find(tris[e * 3]))) keep.push(e); else lostArea += area[e]; }
-            const remap = new Int32Array(nAll).fill(-1), P = [], T = new Int32Array(keep.length * 3);
-            const out = { orig: new Int32Array(keep.length * 3), area: new Float64Array(keep.length), level: new Uint8Array(keep.length), tag: new Int32Array(keep.length), lostArea };
-            keep.forEach((e, k) => {
-                for (let c = 0; c < 3; c++) {
-                    const v = tris[e * 3 + c];
-                    if (remap[v] < 0) { remap[v] = P.length / 3; P.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]); }
-                    T[k * 3 + c] = remap[v];
-                    out.orig[k * 3 + c] = orig[e * 3 + c];
-                }
-                out.level[k] = level[e]; out.area[k] = area[e]; out.tag[k] = tagOf[e];
-            });
-            const fixed = new Uint8Array(P.length / 3);
-            for (let i = 0; i < fixed.length; i++) if (Math.abs(P[i * 3 + 1] - TRIM.y0) < 1e-4) fixed[i] = 63;
-            out.nodes = fixed.length; out.elements = keep.length;
-            return { geo: { pos: new Float64Array(P), tris: T, fixed, E: FEA.E, nu: FEA.nu, maxIter: 12000, tol: 1e-6 }, out };
-        }
-        function loadCases(out, thick) {
-            const n = out.area.length, cs = [0, 1, 2, 3].map(() => new Float64Array(n * 3));
-            for (let e = 0; e < n; e++) {
-                const g = thick[e] * FEA.rho, q = out.level[e] ? FEA.live : 0, h = FEA.seis * (g + 0.5 * q);
-                cs[0][e * 3 + 1] = -g; cs[1][e * 3 + 1] = -q; cs[2][e * 3] = h; cs[3][e * 3 + 2] = h;
-            }
-            return cs;
-        }
-        // Reinforced concrete design of the wall, element by element, from the
-        // resultants of the analysis — the way a shell is designed in practice
-        // (sandwich model, EN 1992-1-1 Annex F / fib Model Code). For every
-        // combination the forces and moments are split into two outer layers a
-        // lever arm z apart. Each layer is a membrane with orthogonal bars,
-        // horizontal and along the slope: bars take the tension, diagonal
-        // concrete struts the compression (nu·fcd, cracked concrete). The shear
-        // through the wall is compared with concrete-only capacity. Exceedance
-        // requires a separate reinforcement check, not performed by this model.
-        const RC = { fck: 35, fcd: 0.85 * 35e3 / 1.5, nu: 0.6 * (1 - 35 / 250), fyd: 500e3 / 1.15, cover: 0.04, rhoMax: 0.01 };
-        const COMBO_NAMES = ['1.2G+1.6Q', '1.2G+0.5Q+Ex', '1.2G+0.5Q−Ex', '1.2G+0.5Q+Ez', '1.2G+0.5Q−Ez'];
-        // one layer (tension positive, kN/m): bar forces in x and y, strut force
-        function layerDesign(nx, ny, nxy) {
-            const a = Math.abs(nxy);
-            if (nx >= -a && ny >= -a) return [nx + a, ny + a, 2 * a];
-            if (nx < ny) { const fy = ny + a * a / -nx; if (fy >= 0) return [0, fy, -nx + a * a / -nx]; }
-            else { const fx = nx + a * a / -ny; if (fx >= 0) return [fx, 0, -ny + a * a / -ny]; }
-            const m = (nx + ny) / 2, r = Math.hypot((nx - ny) / 2, nxy);
-            return [0, 0, Math.max(0, r - m)];
-        }
-        // per element (21 numbers): its frame e1 e2 e3 as in the solver, twice
-        // the area, the shape function derivatives, the bar direction, the centroid
-        function elementGeometry(geo) {
-            const { pos, tris } = geo, n = tris.length / 3, G = new Float64Array(n * 21);
-            for (let e = 0; e < n; e++) {
-                const i0 = tris[e * 3] * 3, i1 = tris[e * 3 + 1] * 3, i2 = tris[e * 3 + 2] * 3, o = e * 21;
-                const v1 = [pos[i1] - pos[i0], pos[i1 + 1] - pos[i0 + 1], pos[i1 + 2] - pos[i0 + 2]], v2 = [pos[i2] - pos[i0], pos[i2 + 1] - pos[i0 + 1], pos[i2 + 2] - pos[i0 + 2]];
-                G[o + 18] = (pos[i0] + pos[i1] + pos[i2]) / 3; G[o + 19] = (pos[i0 + 1] + pos[i1 + 1] + pos[i2 + 1]) / 3; G[o + 20] = (pos[i0 + 2] + pos[i1 + 2] + pos[i2 + 2]) / 3;
-                const L1 = Math.hypot(...v1);
-                const nx = v1[1] * v2[2] - v1[2] * v2[1], ny = v1[2] * v2[0] - v1[0] * v2[2], nz = v1[0] * v2[1] - v1[1] * v2[0], nl = Math.hypot(nx, ny, nz);
-                if (L1 < 1e-9 || nl < 1e-9) continue;
-                const e1 = [v1[0] / L1, v1[1] / L1, v1[2] / L1], e3 = [nx / nl, ny / nl, nz / nl];
-                const e2 = [e3[1] * e1[2] - e3[2] * e1[1], e3[2] * e1[0] - e3[0] * e1[2], e3[0] * e1[1] - e3[1] * e1[0]];
-                const x = [0, L1, v2[0] * e1[0] + v2[1] * e1[1] + v2[2] * e1[2]], y = [0, 0, v2[0] * e2[0] + v2[1] * e2[1] + v2[2] * e2[2]];
-                G.set([...e1, ...e2, ...e3], o);
-                G[o + 9] = (x[1] - x[0]) * (y[2] - y[0]) - (x[2] - x[0]) * (y[1] - y[0]);
-                G.set([y[1] - y[2], y[2] - y[0], y[0] - y[1], x[2] - x[1], x[0] - x[2], x[1] - x[0]], o + 10);
-                let h = [e3[2], 0, -e3[0]], hl = Math.hypot(e3[2], e3[0]);
-                if (hl < 0.3) { h = [1 - e3[0] * e3[0], -e3[0] * e3[1], -e3[0] * e3[2]]; hl = Math.hypot(...h); }
-                h = h.map(v => v / hl);
-                G[o + 16] = h[0] * e1[0] + h[1] * e1[1] + h[2] * e1[2]; G[o + 17] = h[0] * e2[0] + h[1] * e2[1] + h[2] * e2[2];
-            }
-            return G;
-        }
-        function combineAll(res, n) {
-            const CL = new Float64Array(n * 30);
-            for (let e = 0; e < n; e++) COMBOS.forEach((c, k) => {
-                for (let j = 0; j < 6; j++) CL[e * 30 + k * 6 + j] = c[0] * res[0].out[e * 6 + j] + c[1] * res[1].out[e * 6 + j] + c[2] * res[2].out[e * 6 + j] + c[3] * res[3].out[e * 6 + j];
-            });
-            return CL;
-        }
-        // resultants turned from the element frame into the bar directions
-        function toBars(CL, e, G) {
-            const c = G[e * 21 + 16], s = G[e * 21 + 17], out = new Float64Array(30);
-            for (let k = 0; k < COMBOS.length; k++) for (const b of [0, 3]) {
-                const o = e * 30 + k * 6 + b, xx = CL[o], yy = CL[o + 1], xy = CL[o + 2], p = k * 6 + b;
-                out[p] = xx * c * c + yy * s * s + 2 * xy * c * s;
-                out[p + 1] = xx * s * s + yy * c * c - 2 * xy * c * s;
-                out[p + 2] = (yy - xx) * c * s + xy * (c * c - s * s);
-            }
-            return out;
-        }
-        function sectionCheck(rb, t) {
-            const tc = 2 * RC.cover, z = t - tc, lim = RC.rhoMax * t * RC.fyd;
-            let sc = 0, f = 0, kc = 0, ks = 0;
-            for (let k = 0; k < COMBOS.length; k++) for (const sg of [1, -1]) {
-                const o = k * 6;
-                const [fx, fy, nc] = layerDesign(rb[o] / 2 + sg * rb[o + 3] / z, rb[o + 1] / 2 + sg * rb[o + 4] / z, rb[o + 2] / 2 + sg * rb[o + 5] / z);
-                if (nc / tc > sc) { sc = nc / tc; kc = k; }
-                if (Math.max(fx, fy) > f) { f = Math.max(fx, fy); ks = k; }
-            }
-            return { uc: sc / (RC.nu * RC.fcd), us: f / lim, sc, As: f / RC.fyd * 1e6, kc, ks };
-        }
-        // Model: the thinnest wall, from 230 mm, in which struts and bars stay within their limits
-        function neededThickness(rb) {
-            const ok = t => { const r = sectionCheck(rb, t); return r.uc <= 1 && r.us <= 1; };
-            if (ok(FEA.t0)) return FEA.t0;
-            if (!ok(FEA.tMax)) return FEA.tMax;
-            let lo = FEA.t0, hi = FEA.tMax;
-            for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (ok(m)) hi = m; else lo = m; }
-            return hi;
-        }
-        // shear through the wall (kN/m): v = div m within each element, with the
-        // moments at its corners averaged as 3D tensors over the neighbours that
-        // face the same way (normals within 30 degrees) — across a fold the
-        // walls are different plates and their moments must not be mixed
-        function shearDemand(geo, G, CL) {
-            const T = geo.tris, nT = T.length / 3, nN = geo.pos.length / 3, nC = COMBOS.length, V = new Float64Array(nT * nC);
-            const deg = new Int32Array(nN + 1);
-            for (let k = 0; k < T.length; k++) deg[T[k] + 1]++;
-            for (let i = 0; i < nN; i++) deg[i + 1] += deg[i];
-            const adj = new Int32Array(T.length), fill = deg.slice(0, nN);
-            for (let k = 0; k < T.length; k++) adj[fill[T[k]]++] = (k / 3) | 0;
-            const I = [[0, 0], [1, 1], [2, 2], [0, 1], [0, 2], [1, 2]], Te = new Float64Array(nT * 6), avg = new Float64Array(6);
-            for (let k = 0; k < nC; k++) {
-                for (let e = 0; e < nT; e++) {
-                    const o = e * 21, m11 = CL[e * 30 + k * 6 + 3], m22 = CL[e * 30 + k * 6 + 4], m12 = CL[e * 30 + k * 6 + 5];
-                    for (let q = 0; q < 6; q++) { const [a, b] = I[q]; Te[e * 6 + q] = m11 * G[o + a] * G[o + b] + m22 * G[o + 3 + a] * G[o + 3 + b] + m12 * (G[o + a] * G[o + 3 + b] + G[o + 3 + a] * G[o + b]); }
-                }
-                for (let e = 0; e < nT; e++) {
-                    const o = e * 21, A2 = G[o + 9]; if (!A2) continue;
-                    let vx = 0, vy = 0;
-                    for (let c = 0; c < 3; c++) {
-                        const nd = T[e * 3 + c];
-                        avg.fill(0);
-                        let w = 0;
-                        for (let j = deg[nd]; j < deg[nd + 1]; j++) {
-                            const f = adj[j], of = f * 21;
-                            if (G[o + 6] * G[of + 6] + G[o + 7] * G[of + 7] + G[o + 8] * G[of + 8] < 0.866) continue;
-                            const a = G[of + 9];
-                            for (let q = 0; q < 6; q++) avg[q] += Te[f * 6 + q] * a;
-                            w += a;
-                        }
-                        const M3 = [[avg[0], avg[3], avg[4]], [avg[3], avg[1], avg[5]], [avg[4], avg[5], avg[2]]];
-                        const proj = (u, v) => { let s = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) s += G[o + u + i] * M3[i][j] * G[o + v + j]; return s / w; };
-                        const p11 = proj(0, 0), p22 = proj(3, 3), p12 = proj(0, 3), b = G[o + 10 + c], cc = G[o + 13 + c];
-                        vx += (b * p11 + cc * p12) / A2; vy += (b * p12 + cc * p22) / A2;
-                    }
-                    V[e * nC + k] = Math.hypot(vx, vy);
-                }
-            }
-            return V;
-        }
-        const shearCapacity = t => { const d = (t - RC.cover) * 1000, k = Math.min(2, 1 + Math.sqrt(200 / d)); return 0.035 * k ** 1.5 * Math.sqrt(RC.fck) * d; };
-
-        // element values onto the drawn surface: spread to the corners of the
-        // coarse face each element came from, then each finer face takes the
-        // value of its coarse corner (every Catmull-Clark quad keeps one)
-        function toSurface(M, lv, out, arrays) {
-            const n0 = M.fe[lv].nV, wt = new Float64Array(n0), acc = arrays.map(() => new Float64Array(n0));
-            for (let e = 0; e < out.area.length; e++) for (let c = 0; c < 3; c++) {
-                const v = out.orig[e * 3 + c], a = out.area[e];
-                arrays.forEach((src, q) => { acc[q][v] += src[e] * a; });
-                wt[v] += a;
-            }
-            let val = acc.map(a => a.map((x, v) => wt[v] ? x / wt[v] : 0)), cnt = wt;
-            for (let L = lv + 1; L <= M.fe.length; L++) {
-                const faces = L < M.fe.length ? M.fe[L].faces : M.faces, n = L < M.fe.length ? M.fe[L].nV : M.nV;
-                const nv = arrays.map(() => new Float32Array(n)), nc = new Float32Array(n);
-                for (const f of faces) {
-                    const o = f[0]; if (!cnt[o]) continue;
-                    for (const v of f) { val.forEach((src, q) => { nv[q][v] += src[o]; }); nc[v]++; }
-                }
-                for (let v = 0; v < n; v++) if (nc[v]) nv.forEach(a => { a[v] /= nc[v]; });
-                val = nv; cnt = nc;
-            }
-            return { val, cnt };
-        }
-        // the most loaded places, at least 10 m apart, with what governs there
-        const ADVICE = {
-            c: { base: 'Review the assumed base restraint and local compression before changing thickness.', edge: 'Check sensitivity to the omitted edge supports and the cut location.', junction: 'Check junction curvature, mesh convergence and compression.', sheet: 'Check span, shell curvature and omitted floor connections.', tube: 'Check shell curvature, thickness and compression; stability is not verified.' },
-            s: { base: 'Review base moments, assumed restraint and reinforcement demand.', edge: 'Check edge restraint and mesh sensitivity before specifying reinforcement.', junction: 'Review bending and reinforcement orientation across the junction.', sheet: 'Review bending and the omitted floor system.', tube: 'Review bending and reinforcement demand; crack widths are not checked.' },
-            v: { base: 'Review base shear against concrete-only capacity; check shear reinforcement separately.', edge: 'Review the free-edge model and shear reinforcement separately.', junction: 'Review mesh convergence and design junction shear reinforcement separately.', sheet: 'Check transverse shear and reinforcement detailing separately.', tube: 'Check transverse shear and reinforcement detailing separately.' }
-        };
-        // Four concrete/rebar hotspots plus a shear hotspot; these are model
-        // diagnostics, not construction details or verified building locations.
-
-        function criticalPoints(model, G, uc, us, uv, gov) {
-            const { out } = model, n = out.area.length, order = [];
-            for (let e = 0; e < n; e++) order.push([Math.max(uc[e], us[e]), e, uc[e] >= us[e] ? 'c' : 's']);
-            let ev = 0;
-            for (let e = 0; e < n; e++) if (uv[e] > uv[ev]) ev = e;
-            order.sort((a, b) => b[0] - a[0]);
-            const C = getCrude(), name = new Map([...C.catIndex].map(([k, t]) => [t, k])), picks = [];
-            for (const [u0, e, k0] of [...order, [uv[ev], ev, 'v']]) {
-                if (picks.length >= 4 && k0 !== 'v') continue;
-                if (picks.length >= 5) break;
-                const o = e * 21, x = G[o + 18], y = G[o + 19], z = G[o + 20];
-                if (k0 !== 'v' && picks.some(p => Math.hypot(p.x - x, p.y - y, p.z - z) < 10)) continue;
-                const kind = k0, u = u0;
-                const g = GRID_Y.reduce((b, gy) => Math.abs(gy - y) < Math.abs(b - y) ? gy : b, GRID_Y[0]);
-                const where = y < TRIM.y0 + 2.5 ? 'base' : (x < 1.5 || x > W - 1.5 || z < 1.5 || z > D - 1.5 || y > TRIM.y1 - 1.5) ? 'edge'
-                    : out.level[e] ? 'sheet' : Math.abs(y - g) < 3 ? 'junction' : 'tube';
-                const tk = name.get(out.tag[e]), gi = tk ? Number(tk.split(':')[1]) : -1;
-                picks.push({ x, y, z, u, kind, where, g, combo: COMBO_NAMES[gov[e * 3 + ('csv'.indexOf(kind))]], cat: gi >= 0 ? `catenoid ${fmtY(GRID_Y[gi])} → ${fmtY(GRID_Y[gi + 1])}` : 'plate' });
-            }
-            return picks;
-        }
-        function publish(M, lv, struct, model, thick, res, rounds) {
-            const { geo, out } = model, n = out.area.length, nC = COMBOS.length;
-            const G = elementGeometry(geo), CL = combineAll(res, n), V = shearDemand(geo, G, CL);
-            const uc = new Float64Array(n), us = new Float64Array(n), uv = new Float64Array(n), gov = new Uint8Array(n * 3);
-            let area = 0, aC = 0, aS = 0, aV = 0, aT = 0, aShort = 0, maxSc = 0, maxAs = 0, maxV = 0, maxT = 0;
-            for (let e = 0; e < n; e++) {
-                const rb = toBars(CL, e, G), r = sectionCheck(rb, thick[e]);
-                let v = 0;
-                for (let k = 0; k < nC; k++) if (V[e * nC + k] > v) { v = V[e * nC + k]; gov[e * 3 + 2] = k; }
-                gov[e * 3] = r.kc; gov[e * 3 + 1] = r.ks;
-                uc[e] = r.uc; us[e] = r.us; uv[e] = v / shearCapacity(thick[e]);
-                const a = out.area[e];
-                area += a;
-                if (r.uc > 1.001) aC += a;
-                if (r.us > 1.001) aS += a;
-                if (uv[e] > 1) aV += a;
-                if (thick[e] > FEA.t0 + 0.005) aT += a;
-                if (struct === 'comp' && neededThickness(rb) > thick[e] + 0.02) aShort += a;
-                maxSc = Math.max(maxSc, r.sc); maxAs = Math.max(maxAs, r.As); maxV = Math.max(maxV, v); maxT = Math.max(maxT, thick[e]);
-            }
-            const { val, cnt } = toSurface(M, lv, out, [thick, uc, us, uv]);
-            let umax = 0;
-            const UG = res[0].U, UQ = res[1].U;
-            for (let i = 0; i < UG.length; i += 6) umax = Math.max(umax, Math.hypot(UG[i] + UQ[i], UG[i + 1] + UQ[i + 1], UG[i + 2] + UQ[i + 2]));
-            M.feaRes[struct] = {
-                lv, fine: lv === M.fe.length - 1, tV: val[0], ucV: val[1], usV: val[2], uvV: val[3], cnt, rounds,
-                overC: aC / area, overS: aS / area, overV: aV / area, thickened: aT / area, short: aShort / area,
-                maxSc, maxAs, maxV, maxT, umax, elements: out.elements, lost: out.lostArea, crit: criticalPoints(model, G, uc, us, uv, gov)
-            };
-            M.skinVer++;
-            surfKey = ''; capsKey = '';
-            update();
-        }
-        // colour, and in Model the wall: the thickness the analysis asks for is
-        // spread two rings wider and blurred, so the wall thickens smoothly and
-        // is not thinner than required; a skin never moves further out than
-        // 0.8 of the local radius of curvature, where it would fold over itself
-        function paintFea(M) {
-            const R = M.feaRes && (M.feaRes[S.struct] || M.feaRes.dd), OVER = [0.42, 0.04, 0.3];
-            const src = R && (S.mapQ === 's' ? R.usV : S.mapQ === 'v' ? R.uvV : R.ucV);
-            for (let v = 0; v < M.nV; v++) {
-                const o = v * 3;
-                let c = [0.86, 0.86, 0.86];
-                if (R && R.cnt[v]) {
-                    const f = src[v];
-                    if (f > 1) c = OVER;
-                    else { const x = f * (RAMP.length - 1), i = Math.min(RAMP.length - 2, Math.floor(x)), t = x - i; c = [0, 1, 2].map(d => lerp(RAMP[i][d], RAMP[i + 1][d], t)); }
-                }
-                M.colors[o] = c[0]; M.colors[o + 1] = c[1]; M.colors[o + 2] = c[2];
-            }
-            if (S.struct !== 'comp') return;
-            const { start, nb } = M.nbr;
-            let a = new Float32Array(M.nV);
-            for (let v = 0; v < M.nV; v++) a[v] = R && R.cnt[v] && M.feaRes.comp ? R.tV[v] : FEA.t0;
-            for (let pass = 0; pass < 6; pass++) {
-                const b = new Float32Array(M.nV);
-                for (let v = 0; v < M.nV; v++) {
-                    let s = a[v], mx = a[v];
-                    for (let j = start[v]; j < start[v + 1]; j++) { s += a[nb[j]]; mx = Math.max(mx, a[nb[j]]); }
-                    b[v] = pass < 2 ? mx : s / (start[v + 1] - start[v] + 1);
-                    // the curvature limit comes before the blur, so the wall eases
-                    // into a tight fold instead of stepping down at it
-                    if (pass === 1) b[v] = Math.min(b[v], 1.6 * M.rCurv[v]);
-                }
-                a = b;
-            }
-            for (let v = 0; v < M.nV; v++) {
-                const o = v * 3, h = Math.min(a[v] / 2, 0.95 * M.rCurv[v]);
-                for (let q = 0; q < 3; q++) { M.plus[o + q] = M.pos[o + q] + M.nrm[o + q] * h; M.minus[o + q] = M.pos[o + q] - M.nrm[o + q] * h; }
-            }
-        }
-
-        // solved in parallel, one load case per worker
-        const pool = { workers: [], url: null };
-        function poolStop() { pool.workers.forEach(w => w.terminate()); pool.workers = []; }
-        function poolRun(jobs, alive, onProgress) {
-            return new Promise((resolve, reject) => {
-                if (typeof Worker === 'undefined') { reject(new Error('no workers')); return; }
-                if (!pool.url) pool.url = URL.createObjectURL(new Blob([feaSolve.toString() +
-                    '\nonmessage = e => { const r = feaSolve(e.data, (it, res) => postMessage({ res })); postMessage({ done: true, r }); };'], { type: 'text/javascript' }));
-                const size = Math.max(1, Math.min(jobs.length, (navigator.hardwareConcurrency || 2) - 1));
-                while (pool.workers.length < size) pool.workers.push(new Worker(pool.url));
-                const results = new Array(jobs.length), prog = new Array(jobs.length).fill(0);
-                let next = 0, done = 0;
-                const give = w => {
-                    if (next >= jobs.length) return;
-                    const i = next++;
-                    w.onmessage = e => {
-                        if (!alive()) return;
-                        if (e.data.done) { results[i] = e.data.r; prog[i] = 1; if (++done === jobs.length) resolve(results); else give(w); }
-                        else prog[i] = clamp01(Math.log(e.data.res) / Math.log(jobs[i].tol));
-                        onProgress(prog.reduce((a, b) => a + b, 0) / jobs.length);
-                    };
-                    w.onerror = err => reject(err);
-                    w.postMessage(jobs[i]);
-                };
-                pool.workers.slice(0, size).forEach(give);
-            });
-        }
-        // The analysis runs only when it is looked at: the FEA map, or Model,
-        // whose wall comes from it. On the coarse mesh: Development at 230 mm,
-        // then Model, thickened and re-analysed with its new weight and
-        // stiffness until it settles. The fine mesh on request (Refine)
-        const feaRun = { key: null, token: 0, busy: 0, progress: 0, stage: '', elements: 0 };
-        const refreshCaption = () => { if (S.map && S.t > 2.7) captionEl.innerHTML = caption(params(S.t)); };
-        // only when asked for: the FEA map. Model shows 230 mm until then
-        const feaWanted = () => S.t >= 2.7 && S.map;
-        async function solveCases(model, thick, prev, stage, alive) {
-            feaRun.stage = stage; feaRun.progress = 0; feaRun.elements = model.out.elements; refreshCaption();
-            const jobs = loadCases(model.out, thick).map((q, k) => ({ ...model.geo, thick, q, U0: prev ? prev[k].U : null }));
-            try { return await poolRun(jobs, alive, p => { feaRun.progress = p; refreshCaption(); }); }
-            catch (err) { poolStop(); return jobs.map(j => feaSolve(j)); }
-        }
-        async function ensureFea(M) {
-            const key = M.key + '|' + TRIM.y1;
-            if (feaRun.key !== key) { poolStop(); feaRun.key = key; feaRun.token++; feaRun.busy = 0; M.feaRes = {}; M.feaBase = null; }
-            const token = feaRun.token, alive = () => feaRun.token === token && surfCache === M;
-            if (feaRun.busy === token || (S.struct === 'comp' ? M.feaRes.comp : M.feaRes.dd)) return;
-            feaRun.busy = token;
-            try {
-                if (!M.feaBase) {
-                    const c = feModel(M, 0), thick = new Float64Array(c.out.elements).fill(FEA.t0);
-                    const res = await solveCases(c, thick, null, 'coarse mesh', alive);
-                    if (!alive()) return;
-                    M.feaBase = { c, res };
-                    publish(M, 0, 'dd', c, thick, res, 0);
-                }
-                if (S.struct === 'comp' && !M.feaRes.comp) {
-                    const { c } = M.feaBase, n = c.out.elements, G = elementGeometry(c.geo);
-                    let res = M.feaBase.res, thick = new Float64Array(n).fill(FEA.t0), rounds = 0;
-                    for (; rounds < 3; rounds++) {
-                        const CL = combineAll(res, n), next = new Float64Array(n);
-                        let change = 0;
-                        for (let e = 0; e < n; e++) { next[e] = Math.max(thick[e], neededThickness(toBars(CL, e, G))); change = Math.max(change, next[e] - thick[e]); }
-                        if (change < 0.01) break;
-                        thick = next;
-                        res = await solveCases(c, thick, res, `coarse mesh, thickness round ${rounds + 1}`, alive);
-                        if (!alive()) return;
-                    }
-                    publish(M, 0, 'comp', c, thick, res, rounds);
-                }
-            } finally { if (feaRun.busy === token) { feaRun.busy = 0; feaRun.stage = ''; if (alive()) update(); } }
-            if (alive() && feaWanted()) ensureFea(M);
-        }
-        async function refineFea(M) {
-            const struct = S.struct, coarse = M.feaRes && M.feaRes[struct];
-            if (!coarse || coarse.fine || feaRun.busy) return;
-            const token = feaRun.token, alive = () => feaRun.token === token && surfCache === M;
-            feaRun.busy = token;
-            try {
-                const f = feModel(M, 1), thick = new Float64Array(f.out.elements);
-                // Model: each fine element takes the coarse thickness at its corners
-                for (let e = 0; e < thick.length; e++) {
-                    let s = 0, k = 0;
-                    for (let c = 0; c < 3; c++) { const v = f.out.orig[e * 3 + c]; if (coarse.cnt[v]) { s += coarse.tV[v]; k++; } }
-                    thick[e] = struct === 'comp' && k ? Math.max(FEA.t0, s / k) : FEA.t0;
-                }
-                const res = await solveCases(f, thick, null, 'fine mesh', alive);
-                if (!alive()) return;
-                publish(M, 1, struct, f, thick, res, coarse.rounds);
-            } finally { if (feaRun.busy === token) { feaRun.busy = 0; feaRun.stage = ''; if (alive()) update(); } }
-        }
         // smoothing takes a moment: do it while the user is still in step 3, so
         // step 4 never stalls on it
         let precomputeFor = '';
@@ -1870,18 +1174,16 @@
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.localClippingEnabled = true;
 
-        const mainScene = new THREE.Scene(), planScene = new THREE.Scene();
+        const mainScene = new THREE.Scene();
         const mainCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
-        const planCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
         mainScene.add(new THREE.HemisphereLight(0xffffff, 0x8f8b84, 0.95));
         mainScene.add(new THREE.AmbientLight(0xffffff, 0.2));
         const sun = new THREE.DirectionalLight(0xffffff, 1.35);
         mainScene.add(sun, sun.target);
         const SUN_DIR = new THREE.Vector3(-0.75, 0.55, 0.45).normalize();
 
-        const G = { plan: new THREE.Group(), persp: new THREE.Group(), crude: new THREE.Group(), surf: new THREE.Group(), caps: new THREE.Group(), floors: new THREE.Group(), planView: new THREE.Group() };
-        mainScene.add(G.plan, G.persp, G.crude, G.surf, G.caps, G.floors);
-        planScene.add(G.planView);
+        const G = { plan: new THREE.Group(), persp: new THREE.Group(), crude: new THREE.Group(), surf: new THREE.Group(), caps: new THREE.Group(), floors: new THREE.Group(), weak: new THREE.Group() };
+        mainScene.add(G.plan, G.persp, G.crude, G.surf, G.caps, G.floors, G.weak);
 
         function clearGroup(g) {
             g.traverse(o => { if (o.geometry && !o.userData.keep) o.geometry.dispose(); if (o.material && o.userData.ownMat) o.material.dispose(); });
@@ -1949,7 +1251,7 @@
             const flexOp = smooth(0.05, 0.3, f);
             if (flexOp < 0.01) return;
             const cells = powerCells(flexSeeds(f), MARGIN * f);
-            const outl = [], polys = [], rect = [], selL = [];
+            const outl = [], polys = [], rect = [], selL = [], mateL = [];
             cells.forEach((poly, i) => {
                 if (!poly.length) return;
                 const s = SEEDS[i];
@@ -1958,6 +1260,7 @@
                 if (!r) return;
                 pushLoop(outl, r.pts, 0.03);
                 if (S.cell === s.uid) pushLoop(selL, r.pts, 0.05);
+                else if (mergeFrom && mergeMates.has(s.uid)) pushLoop(mateL, r.pts, 0.05);
                 if (s.label === '-') {
                     const g = new THREE.ShapeGeometry(new THREE.Shape(r.pts.map(p => new THREE.Vector2(p.x, p.z))));
                     g.rotateX(Math.PI / 2);
@@ -1976,6 +1279,7 @@
             addSegs(G.plan, polys, 0x888888, op * flexOp * 0.55);
             addSegs(G.plan, outl, 0x111111, op * flexOp * 0.95, false, 3);
             addSegs(G.plan, selL, ORANGE, op * flexOp, false, 5);
+            addSegs(G.plan, mateL, 0x1565c0, op * flexOp, true, 4);
         }
 
         /* ---------- 3: control grid — perspective + plan ---------- */
@@ -1999,70 +1303,83 @@
                 return { x: cx + (lerp(p.x - t.ca.x, o.x - t.cb.x, s)) * f, y, z: cz + (lerp(p.z - t.ca.z, o.z - t.cb.z, s)) * f };
             });
         }
+        // one buffer per colour: the rings of every tube in that colour, zipped
+        // into quads. Depth-free, so a tube behind still shows through the one in
+        // front and the colour deepens where they cross. (Additive was tried
+        // first; on this white ground it only washed the colour out)
+        function addTubeSkins(list, colour, opacity) {
+            if (!list.length || opacity < 0.01) return;
+            const pos = [], idx = [];
+            for (const rings of list) {
+                const N = rings[0].length, base0 = pos.length / 3;
+                for (const ring of rings) for (const p of ring) pos.push(p.x, p.y, p.z);
+                for (let r = 0; r + 1 < rings.length; r++) for (let q = 0; q < N; q++) {
+                    const q2 = (q + 1) % N, a = base0 + r * N + q, b = base0 + r * N + q2;
+                    idx.push(a, b, a + N, b, b + N, a + N);
+                }
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            g.setIndex(idx);
+            const m = new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false });
+            const mesh = new THREE.Mesh(g, m);
+            mesh.userData.ownMat = true; mesh.renderOrder = 4;
+            G.persp.add(mesh);
+        }
         function drawPersp(pr, LV, tubes) {
             clearGroup(G.persp);
-            const op = smooth(0, 0.15, pr.lift) * (1 - pr.units);
+            const op = smooth(0, 0.15, pr.lift);
             if (op < 0.01) return;
+            // The control grid hands over to the crude mesh one span at a time:
+            // a span's catenoids hold until its own crude unit has arrived, and
+            // a sheet holds until both spans that meet on it have. The two
+            // stages overlap, so the view is never emptied and refilled
+            const span = u => Math.max(0, Math.min(NL - 2, u));
+            const hand = u => 1 - unitState(span(u), S.t).a;
             // the flexible grid rises level by level as rounded cells, then
             // becomes the polygon control grid once catenoids are shown
             const roundOp = (1 - smooth(0.05, 0.45, pr.reveal)) * op, polyOp = smooth(0.1, 0.5, pr.reveal) * op;
-            const round = [], grey = [], light = [];
-            for (const L of LV) for (const c of L.cells) {
-                if (!c) continue;
-                if (roundOp > 0.01) { const r = rounded(c.poly, 0.03 * P, 0.8); if (r) pushLoop(round, r.pts, L.y); }
-                if (polyOp > 0.01) { pushLoop(grey, c.poly, L.y); if (c.hole) pushLoop(light, c.hole, c.hy); }
-            }
+            const round = [], grey = LV.map(() => []), light = LV.map(() => []);
+            LV.forEach((L, n) => {
+                for (const c of L.cells) {
+                    if (!c) continue;
+                    if (roundOp > 0.01) { const r = rounded(c.poly, 0.03 * P, 0.8); if (r) pushLoop(round, r.pts, L.y); }
+                    if (polyOp > 0.01) { pushLoop(grey[n], c.poly, L.y); if (c.hole) pushLoop(light[n], c.hole, c.hy); }
+                }
+            });
             const allOp = smooth(0.55, 1, pr.reveal), selOp = smooth(0.3, 0.6, pr.reveal);
             // colour by h/R: green can be a true catenoid, amber and magenta
             // cannot and must work in bending; a dashed red ring marks a
-            // catenoid whose load has no catenoid to continue down through
-            const buckets = { ok: [], mid: [], far: [], sel: [], nopath: [] };
+            // catenoid whose load has no catenoid to continue down through.
+            // Each catenoid is a skin of its own, lit from nowhere and drawn
+            // over whatever is behind it, so the stack reads through itself
+            const spans = Array.from({ length: NL - 1 }, () => ({ ok: [], mid: [], far: [], sel: [], nopath: [] }));
             const flags = getCrude().flags;
             if (selOp > 0.01) for (const t of tubes) {
                 const isSel = S.sel && t.i === S.sel.i && t.g === S.sel.g;
                 if (!isSel && allOp < 0.01) continue;
-                const fl = flags.get(t.i + ':' + t.g) || t;
-                const arr = isSel ? buckets.sel : fl.ratio <= CAT_LIMIT ? buckets.ok : fl.ratio <= 2 ? buckets.mid : buckets.far;
-                const rings = TUBE_S.map(s => tubeAt(t, s));
-                for (const k of [0, 3, 6]) pushLoop(arr, rings[k]);
-                const N = rings[0].length, step = N > 8 ? 2 : 1;
-                for (let q = 0; q < N; q += step) pushLine(arr, rings.map(r => r[q]));
-                if (fl.noPath) pushLoop(buckets.nopath, t.loR.map(p => ({ x: t.ca.x + (p.x - t.ca.x) * 1.25, y: p.y, z: t.ca.z + (p.z - t.ca.z) * 1.25 })));
+                const fl = flags.get(t.i + ':' + t.g) || t, b = spans[span(t.g)];
+                const arr = isSel ? b.sel : fl.ratio <= CAT_LIMIT ? b.ok : fl.ratio <= 2 ? b.mid : b.far;
+                arr.push(TUBE_S.map(s => tubeAt(t, s)));
+                if (fl.noPath) pushLoop(b.nopath, t.loR.map(p => ({ x: t.ca.x + (p.x - t.ca.x) * 1.25, y: p.y, z: t.ca.z + (p.z - t.ca.z) * 1.25 })));
             }
             addSegs(G.persp, round, 0x111111, 0.6 * roundOp);
-            addSegs(G.persp, grey, 0x8a8a8a, 0.75 * polyOp);
-            addSegs(G.persp, light, 0xb9b9b9, 0.7 * polyOp);
-            addSegs(G.persp, buckets.ok, 0x2e9e5b, 0.8 * op * allOp, false, 3);
-            addSegs(G.persp, buckets.mid, 0xc9a227, 0.8 * op * allOp, false, 3);
-            addSegs(G.persp, buckets.far, 0xb0306a, 0.7 * op * allOp, false, 3);
-            addSegs(G.persp, buckets.nopath, 0xd32f2f, op * allOp, true, 4);
-            addSegs(G.persp, buckets.sel, ORANGE, op * selOp, false, 4);
-        }
-        function drawPlanView(pr, LV, tubes) {
-            clearGroup(G.planView);
-            if (pr.split < 0.01) return;
-            const sel = findSel(tubes);
-            const rect = []; pushLoop(rect, rectPoly(0), -0.05);
-            addSegs(G.planView, rect, 0x999999, 0.8);
-            addSegs(G.planView, [-2.4, 0, 0, 2.4, 0, 0, 0, 0, -2.4, 0, 0, 2.4], 0x111111, 0.9);
-            if (!sel) return;
-            [sel.g, sel.g + 1].forEach((n, k) => {
-                const arr = [];
-                for (const c of LV[n].cells) if (c) pushLoop(arr, c.poly, k * 0.01);
-                addSegs(G.planView, arr, new THREE.Color(LEVEL_COL[n]).getHex(), 0.9, false, 3);
+            LV.forEach((L, n) => {
+                const h = Math.max(hand(n - 1), hand(n));
+                if (h < 0.01) return;
+                addSegs(G.persp, grey[n], 0x8a8a8a, 0.75 * polyOp * h);
+                addSegs(G.persp, light[n], 0xb9b9b9, 0.7 * polyOp * h);
             });
-            const lo = [], hi = [];
-            pushLoop(lo, sel.lo.poly, 0.2); pushLoop(lo, sel.lo.hole, 0.2);
-            pushLoop(hi, sel.hi.poly, 0.3); pushLoop(hi, sel.hi.hole, 0.3);
-            addSegs(G.planView, lo, ORANGE, 1, false, 5);
-            addSegs(G.planView, hi, ORANGE, 1, true, 5);
-            const fill = new THREE.ShapeGeometry(new THREE.Shape(sel.lo.poly.map(p => new THREE.Vector2(p.x, p.z))));
-            fill.rotateX(Math.PI / 2);
-            const fm = new THREE.Mesh(fill, new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
-            fm.userData.ownMat = true; fm.position.y = 0.1;
-            G.planView.add(fm);
+            spans.forEach((b, u) => {
+                const h = hand(u) * op;
+                if (h < 0.01) return;
+                addTubeSkins(b.ok, 0x00e676, 0.38 * h * allOp);
+                addTubeSkins(b.mid, 0xffab00, 0.38 * h * allOp);
+                addTubeSkins(b.far, 0xff1e9c, 0.36 * h * allOp);
+                addSegs(G.persp, b.nopath, 0xd32f2f, h * allOp, true, 4);
+                addTubeSkins(b.sel, 0xff6a00, 0.6 * h * selOp);
+            });
         }
-
         /* ---------- 4: materials and clipping planes, set up once ---------- */
         const PO = { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 };
         const surfMat = {
@@ -2070,12 +1387,8 @@
             back: new THREE.MeshLambertMaterial({ color: 0xf7f6f2, side: THREE.BackSide, ...PO }),
             hiF: new THREE.MeshLambertMaterial({ color: 0xd23a2a, side: THREE.FrontSide, ...PO }),
             hiB: new THREE.MeshLambertMaterial({ color: 0xd23a2a, side: THREE.BackSide, ...PO }),
-            mapF: new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.FrontSide, ...PO }),
-            mapB: new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.BackSide, ...PO }),
             capLine: new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide }),
             capFill: new THREE.MeshBasicMaterial({ color: 0xece8e1, side: THREE.DoubleSide }),
-            truss: new THREE.LineBasicMaterial({ color: 0xb0302a, transparent: true, opacity: 0.45 }),
-            trussRad: new THREE.LineBasicMaterial({ color: 0x2f5fb3, transparent: true, opacity: 0.45 }),
             lines: new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.09 }),
             slab: new THREE.MeshLambertMaterial({ color: 0xfbfaf6, side: THREE.DoubleSide, ...PO }),
             slabOn: new THREE.MeshLambertMaterial({ color: 0xf6d9bf, side: THREE.DoubleSide, ...PO }),
@@ -2088,9 +1401,7 @@
             new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Plane(new THREE.Vector3(0, 0, -1), 0),
             new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)
         ];
-        for (const m of [surfMat.front, surfMat.back, surfMat.hiF, surfMat.hiB, surfMat.mapF, surfMat.mapB, surfMat.lines]) m.clippingPlanes = TRIM_PL;
-        surfMat.truss.clippingPlanes = TRIM_PL;
-        surfMat.trussRad.clippingPlanes = TRIM_PL;
+        for (const m of [surfMat.front, surfMat.back, surfMat.hiF, surfMat.hiB, surfMat.lines]) m.clippingPlanes = TRIM_PL;
         // cut outlines drawn at a constant width on screen, so they stay crisp at any zoom
         const LINE = {
             cap: new THREE.LineBasicMaterial({ color: 0x444444, transparent: true }),
@@ -2185,46 +1496,36 @@
 
         /* ---------- 4b: smoothed surface (built once, faded and trimmed) ---------- */
         let surfKey = '', gridMats = [];
-        const skinsOf = M => S.struct === 'dd' ? [M.plusDD, M.minusDD] : [M.plus, M.minus];
+        const skinsOf = M => [M.plusDD, M.minusDD];
         function syncSurface(pr) {
             const k = pr.smoothK;
             if (k < 0.01) { G.surf.visible = false; G.caps.visible = false; return; }
             const C = getCrude(), M = getSurface();
-            if (feaWanted()) ensureFea(M);
             const selT = S.sel ? C.catIndex.get(S.sel.i + ':' + S.sel.g) : -2;
-            const key = [M.key, selT, S.lines, S.grids, S.map, S.struct, M.skinVer, S.mapQ].join('|');
+            const key = [M.key, selT, S.lines, S.grids].join('|');
             if (key !== surfKey) {
                 surfKey = key;
-                paintFea(M);
                 clearGroup(G.surf); gridMats = [];
                 const norm = [], hi = [];
-                M.faces.forEach((f, fi) => (!S.map && M.tags[fi] === selT ? hi : norm).push(f));
-                // two concrete surfaces: the outer one looks into the front
-                // space, the inner one into the back space, the void between
+                M.faces.forEach((f, fi) => (M.tags[fi] === selT ? hi : norm).push(f));
+                // Opposite faces bound the nominal solid display shell.
                 const [P1, P2] = skinsOf(M);
                 const plusA = new THREE.BufferAttribute(P1, 3), minusA = new THREE.BufferAttribute(P2, 3);
-                const nrmA = new THREE.BufferAttribute(M.nrm, 3), colA = new THREE.BufferAttribute(M.colors, 3);
+                const nrmA = new THREE.BufferAttribute(M.nrm, 3);
                 const skin = (attr, list, mat) => {
                     const g = new THREE.BufferGeometry();
                     g.setAttribute('position', attr);
                     g.setAttribute('normal', nrmA);
-                    if (S.map) g.setAttribute('color', colA);
                     g.setIndex(new THREE.BufferAttribute(triangulate(list), 1));
                     G.surf.add(new THREE.Mesh(g, mat));
                 };
-                if (norm.length) { skin(plusA, norm, S.map ? surfMat.mapF : surfMat.front); skin(minusA, norm, S.map ? surfMat.mapB : surfMat.back); }
+                if (norm.length) { skin(plusA, norm, surfMat.front); skin(minusA, norm, surfMat.back); }
                 if (hi.length) { skin(plusA, hi, surfMat.hiF); skin(minusA, hi, surfMat.hiB); }
-                if (S.lines && S.struct !== 'dd') {
+                if (S.lines) {
                     const eg = new THREE.BufferGeometry();
                     eg.setAttribute('position', plusA);
                     eg.setIndex(new THREE.BufferAttribute(M.edges, 1));
                     G.surf.add(new THREE.LineSegments(eg, surfMat.lines));
-                }
-                if (S.struct === 'dd') for (const [arr, mat] of [[M.truss.par, surfMat.truss], [M.truss.rad, surfMat.trussRad]]) {
-                    if (!arr.length) continue;
-                    const tg = new THREE.BufferGeometry();
-                    tg.setAttribute('position', new THREE.BufferAttribute(arr, 3));
-                    G.surf.add(new THREE.LineSegments(tg, mat));
                 }
                 if (S.grids) C.LV.forEach((L, n) => {
                     const arr = [];
@@ -2234,9 +1535,8 @@
                 });
             }
             G.surf.visible = true;
-            for (const m of [surfMat.front, surfMat.back, surfMat.hiF, surfMat.hiB, surfMat.mapF, surfMat.mapB]) setFade(m, k);
-            surfMat.lines.opacity = (S.map ? 0.05 : 0.09) * k;
-            surfMat.truss.opacity = surfMat.trussRad.opacity = 0.5 * k;
+            for (const m of [surfMat.front, surfMat.back, surfMat.hiF, surfMat.hiB]) setFade(m, k);
+            surfMat.lines.opacity = 0.09 * k;
             gridMats.forEach(m => { m.opacity = lerp(0.8, 0.55, pr.trimK) * k; });
             setTrim(pr.trimK);
             syncCaps(pr, M);
@@ -2356,7 +1656,7 @@
         // the roof and basement lines, with the thickness of the double surface
         // Two drawings, one shown at a time: far away the wall is a single
         // centreline; once the two skins are 4 px apart on screen they are
-        // drawn with the void between them filled
+        // drawn with the shell thickness between them filled
         let capsKey = '';
         const caps = { thin: new THREE.Group(), thick: new THREE.Group(), wall: T_DD };
         G.caps.add(caps.thin, caps.thick);
@@ -2365,7 +1665,7 @@
             G.caps.visible = k > 0.01;
             if (k < 0.01) return;
             setFade(surfMat.capFill, k); LINE.cap.opacity = LINE.capC.opacity = k;
-            const key = M.key + '|' + S.struct + '|' + M.skinVer + '|' + TRIM.y1;
+            const key = M.key + '|' + TRIM.y1;
             if (key !== capsKey) {
                 capsKey = key;
                 clearGroup(caps.thin); clearGroup(caps.thick);
@@ -2517,7 +1817,7 @@
         }
         const rasterCache = new Map();
         function rasterFor(f, M) {
-            const key = [M.key, S.struct, M.skinVer, f.y.toFixed(3)].join('|');
+            const key = [M.key, f.y.toFixed(3)].join('|');
             let r = rasterCache.get(f.id);
             if (!r || r.key !== key) {
                 r = { key, ...floorRaster(f.y, M) };
@@ -2632,7 +1932,7 @@
             const k = pr.trimK;
             if (!S.floors || k < 0.01) { G.floors.visible = false; return; }
             const M = getSurface();
-            const key = [M.key, S.struct, M.skinVer, JSON.stringify(FLOORS), JSON.stringify(VOIDS), S.floorSel, openingMode].join('#');
+            const key = [M.key, JSON.stringify(FLOORS), JSON.stringify(VOIDS), S.floorSel, openingMode].join('#');
             if (key !== floorsKey) {
                 floorsKey = key;
                 clearGroup(G.floors);
@@ -2659,165 +1959,131 @@
             surfMat.slabEdge.opacity = 0.5 * k;
         }
 
-        /* ---------- thumbnails under the generative system ---------- */
-        const thumbEls = [...document.querySelectorAll('#stageGrid .thumb')];
-        let thumbsKey = '';
-        function drawThumbs(C) {
-            const sel = findSel(C.tubes);
-            const width = thumbEls[0].querySelector('canvas').getBoundingClientRect().width | 0;
-            const key = [S.version, sel ? sel.i + ':' + sel.g : '-', width].join('|');
-            if (key === thumbsKey || width < 10) return;
-            thumbsKey = key;
-            const yaw = -35 * Math.PI / 180, pitch = 24 * Math.PI / 180;
-            const dir = new THREE.Vector3(Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw));
-            const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize().negate();
-            const up = new THREE.Vector3().crossVectors(dir, right).normalize().negate();
-            const axo = p => ({ sx: p.x * right.x + p.y * right.y + p.z * right.z, sy: p.x * up.x + p.y * up.y + p.z * up.z, d: p.x * dir.x + p.y * dir.y + p.z * dir.z });
-            const top = p => ({ sx: p.x, sy: -p.z, d: 0 });
-
-            function canvasFor(i, proj, pts) {
-                const cv = thumbEls[i].querySelector('canvas');
-                const dpr = Math.min(2, window.devicePixelRatio || 1), cw = width, chh = cw * 0.4;
-                cv.width = cw * dpr; cv.height = chh * dpr;
-                const x = cv.getContext('2d');
-                x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, cw, chh);
-                let mnx = Infinity, mxx = -Infinity, mny = Infinity, mxy = -Infinity;
-                for (const p of pts) { const q = proj(p); mnx = Math.min(mnx, q.sx); mxx = Math.max(mxx, q.sx); mny = Math.min(mny, q.sy); mxy = Math.max(mxy, q.sy); }
-                const sc = Math.min((cw - 8) / (mxx - mnx || 1), (chh - 8) / (mxy - mny || 1));
-                const X = q => cw / 2 + (q.sx - (mnx + mxx) / 2) * sc, Y = q => chh / 2 - (q.sy - (mny + mxy) / 2) * sc;
-                const path = (pp, close) => { x.beginPath(); pp.forEach((p, k) => { const q = proj(p); k ? x.lineTo(X(q), Y(q)) : x.moveTo(X(q), Y(q)); }); if (close) x.closePath(); };
-                return { x, proj, X, Y, path };
+        /* ---------- where the geometry stops holding itself up ---------- */
+        // A geometry check, not an analysis: no load, no force, no capacity.
+        // A continuous concrete slab is usually taken at about thirty times its
+        // depth between supports, so this 0.4 m study slab is flagged past 12 m.
+        // The span is measured as twice the distance from the furthest point of
+        // the slab to the nearest wall, which is right where walls hold two
+        // opposite sides and generous where the slab only hangs off one.
+        const SPAN_RATIO = 30, SPAN_LIMIT = SPAN_RATIO * SLAB, MARKS_NOTE = 8;
+        let weakKey = '', weakFound = { span: 0, islands: 0, noPath: 0 };
+        // How far each slab cell is from the nearest wall, measured through the
+        // slab so the distance goes around an opening rather than across it.
+        // Two chamfer sweeps, forward and back, which is one pass of the grid
+        // each way instead of a queue that revisits cells.
+        const INF = 1e9;
+        function wallDistance(R, f) {
+            const n = FNX * FNZ, dist = new Float32Array(n).fill(INF), d1 = FR, d2 = FR * Math.SQRT2;
+            const voided = new Set(VOIDS.filter(v => v.fid === f.id).map(v => zoneAt(R, v.x, v.z)).filter(l => l >= 0));
+            const slab = new Uint8Array(n);
+            for (let c = 0; c < n; c++) {
+                const z = R.zones[c];
+                slab[c] = (z === -2 || (z >= 0 && !voided.has(z))) ? 1 : 0;
+                if (R.wall[c]) dist[c] = 0;
             }
-            // 1 grid
-            {
-                const c = canvasFor(0, top, rectPoly(0));
-                c.x.strokeStyle = '#111'; c.x.lineWidth = 0.7;
-                for (let r = 0; r < ROWS; r++) for (let cc = 0; cc < COLS; cc++) {
-                    const pts = []; for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2; pts.push({ x: (cc + 0.5) * P + Math.cos(a) * P / 2, z: (r + 0.5) * P + Math.sin(a) * P / 2 }); }
-                    c.path(pts, true); c.x.stroke();
+            const relax = (c, from, w) => { const v = dist[from] + w; if (v < dist[c]) dist[c] = v; };
+            for (let j = 0; j < FNZ; j++) for (let i = 0; i < FNX; i++) {
+                const c = j * FNX + i;
+                if (!slab[c] || dist[c] === 0) continue;
+                if (i > 0) relax(c, c - 1, d1);
+                if (j > 0) relax(c, c - FNX, d1);
+                if (i > 0 && j > 0) relax(c, c - FNX - 1, d2);
+                if (i < FNX - 1 && j > 0) relax(c, c - FNX + 1, d2);
+            }
+            for (let j = FNZ - 1; j >= 0; j--) for (let i = FNX - 1; i >= 0; i--) {
+                const c = j * FNX + i;
+                if (!slab[c] || dist[c] === 0) continue;
+                if (i < FNX - 1) relax(c, c + 1, d1);
+                if (j < FNZ - 1) relax(c, c + FNX, d1);
+                if (i < FNX - 1 && j < FNZ - 1) relax(c, c + FNX + 1, d2);
+                if (i > 0 && j < FNZ - 1) relax(c, c + FNX - 1, d2);
+            }
+            return { dist, slab };
+        }
+        // the slab in pieces: the furthest point of each, and whether the piece
+        // touches a wall at all
+        function slabPieces(R, f) {
+            const { dist, slab } = wallDistance(R, f), n = FNX * FNZ;
+            const seen = new Uint8Array(n), stack = new Int32Array(n), out = [];
+            for (let start = 0; start < n; start++) {
+                if (!slab[start] || seen[start]) continue;
+                let top = 0, best = -1, bestD = -1, held = false;
+                stack[top++] = start; seen[start] = 1;
+                while (top) {
+                    const c = stack[--top], i = c % FNX, j = (c / FNX) | 0;
+                    if (dist[c] > bestD) { bestD = dist[c]; best = c; }
+                    if (dist[c] < INF) held = true;
+                    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                        const ni = i + di, nj = j + dj;
+                        if (ni < 0 || nj < 0 || ni >= FNX || nj >= FNZ) continue;
+                        const nc = nj * FNX + ni;
+                        if (slab[nc] && !seen[nc]) { seen[nc] = 1; stack[top++] = nc; }
+                    }
                 }
-                c.path(rectPoly(0), true); c.x.stroke();
+                if (best < 0) continue;
+                const bi = best % FNX, bj = (best / FNX) | 0;
+                out.push({ x: (bi + 0.5) * FR, z: (bj + 0.5) * FR, span: 2 * bestD, held });
             }
-            // 2 flexible grid
-            {
-                const c = canvasFor(1, top, rectPoly(MARGIN));
-                baseCells().forEach((poly, i) => {
-                    if (!poly.length) return;
-                    const r = rounded(poly, 0.03 * P, 0.8); if (!r) return;
-                    c.path(r.pts, true);
-                    if (SEEDS[i].label === '-') { c.x.fillStyle = '#e4e2dd'; c.x.fill(); }
-                    c.x.strokeStyle = '#111'; c.x.lineWidth = 0.6; c.x.stroke();
-                });
-            }
-            if (!sel) return;
-            const crude = localCatenoid(sel, false), ringed = localCatenoid(sel, true);
-            let sm = { nV: ringed.nV, pos: ringed.pos, faces: ringed.faces, tags: ringed.faces.map(() => 0) };
-            for (let k = 0; k < SUBDIV; k++) sm = catmullClark(sm.nV, sm.pos, sm.faces, sm.tags);
-            const frame = [...sel.lo.poly.map(p => ({ x: p.x, y: sel.lo.y, z: p.z })), ...sel.hi.poly.map(p => ({ x: p.x, y: sel.hi.y, z: p.z }))];
-            // 3 control grid
-            {
-                const c = canvasFor(2, axo, frame);
-                c.x.strokeStyle = '#e8772e';
-                c.x.lineWidth = 1.1; c.path(sel.lo.poly.map(p => ({ x: p.x, y: sel.lo.y, z: p.z })), true); c.x.stroke();
-                c.path(sel.hi.poly.map(p => ({ x: p.x, y: sel.hi.y, z: p.z })), true); c.x.stroke();
-                c.x.lineWidth = 0.7; c.x.setLineDash([2, 1.5]);
-                c.path(sel.lo.hole.map(p => ({ x: p.x, y: sel.lo.hy, z: p.z })), true); c.x.stroke();
-                c.path(sel.hi.hole.map(p => ({ x: p.x, y: sel.hi.hy, z: p.z })), true); c.x.stroke();
-                c.x.setLineDash([]);
-            }
-            // crude, smoothed and trimmed are rendered in 3D like the model: same
-            // lights and materials, the four control polygons drawn in orange
-            let plane;
-            if (outsideSite(sel.lo.poly)) {
-                const xs = sel.lo.poly.map(p => p.x), zs = sel.lo.poly.map(p => p.z);
-                plane = [
-                    { ax: 'x', v: 0, keep: 1, d: Math.min(...xs) }, { ax: 'x', v: W, keep: -1, d: W - Math.max(...xs) },
-                    { ax: 'z', v: 0, keep: 1, d: Math.min(...zs) }, { ax: 'z', v: D, keep: -1, d: D - Math.max(...zs) }
-                ].sort((a, b) => a.d - b.d)[0];
-            } else plane = { ax: 'z', v: sel.ca.z, keep: -1 };
-            const cut = new THREE.Plane(new THREE.Vector3(plane.ax === 'x' ? plane.keep : 0, 0, plane.ax === 'z' ? plane.keep : 0), -plane.keep * plane.v);
-            const outlines = group => {
-                const arr = [];
-                for (const cell of [sel.lo, sel.hi]) { pushLoop(arr, cell.poly, cell.y); pushLoop(arr, cell.hole, cell.hy); }
-                addSegs(group, arr, ORANGE, 0.9, false, 3);
-            };
-            const surface = (group, M, color, flat, wire, clip) => {
-                const g = new THREE.BufferGeometry();
-                g.setAttribute('position', new THREE.BufferAttribute(M.pos, 3));
-                g.setIndex(new THREE.BufferAttribute(triangulate(M.faces), 1));
-                const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, flatShading: flat, ...PO, clippingPlanes: clip ? [cut] : [] });
-                const mesh = new THREE.Mesh(g, mat); mesh.userData.ownMat = true;
-                group.add(mesh);
-                const eg = new THREE.BufferGeometry();
-                eg.setAttribute('position', new THREE.BufferAttribute(M.pos, 3));
-                eg.setIndex(new THREE.BufferAttribute(edgesOf(M.faces, M.nV), 1));
-                const lm = new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: wire, clippingPlanes: clip ? [cut] : [] });
-                const lines = new THREE.LineSegments(eg, lm); lines.userData.ownMat = true;
-                group.add(lines);
-            };
-            thumbRender(3, width, group => { surface(group, crude, 0x3346b8, true, 0.55, false); outlines(group); });
-            thumbRender(4, width, group => { surface(group, sm, 0xd23a2a, true, 0.1, false); outlines(group); });
-            thumbRender(5, width, group => { surface(group, sm, 0xd23a2a, true, 0.1, true); outlines(group); });
+            return out;
         }
-        // one small offscreen renderer for the three 3D thumbnails
-        let thumbGL = null;
-        function thumbRender(i, width, build) {
-            if (!thumbGL) {
-                const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-                r.outputColorSpace = THREE.SRGBColorSpace;
-                r.localClippingEnabled = true;
-                const scene = new THREE.Scene(), group = new THREE.Group(), light = new THREE.DirectionalLight(0xffffff, 1.35);
-                scene.add(new THREE.HemisphereLight(0xffffff, 0x8f8b84, 0.95), new THREE.AmbientLight(0xffffff, 0.2), light, light.target, group);
-                thumbGL = { r, scene, group, light, cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000) };
+        function syncWeak(pr) {
+            if (!S.weak || pr.trimK < 0.99) { G.weak.visible = false; return; }
+            const M = getSurface();
+            const key = [M.key, JSON.stringify(FLOORS), JSON.stringify(VOIDS), S.floorSel, openingMode].join('#');
+            if (key !== weakKey) {
+                weakKey = key;
+                clearGroup(G.weak);
+                // only the worst few are drawn: a line on every piece that fails
+                // would cover the model and say nothing about where to look first
+                const MARKS = MARKS_NOTE;
+                const found = { span: 0, pieces: 0, islands: 0, noPath: 0, worst: 0, onSheet: 0 }, flagged = [], loose = [], drop = [];
+                const levels = FLOORS.filter(f => !outOfBuilding(f)).map(f => f.y).sort((a, b) => a - b);
+                const below = y => { let b = TRIM.y0; for (const l of levels) if (l < y - 0.1) b = Math.max(b, l); return b; };
+                for (const f of FLOORS) {
+                    // while openings are being edited only one floor is drawn, so
+                    // only that one is marked: a mark on a floor you cannot see
+                    // points at nothing
+                    if (outOfBuilding(f) || (openingMode && f.id !== S.floorSel)) continue;
+                    // A slab lying on a grid sheet is carried by the sheet along
+                    // its whole area, and at that height the shell is cut edge-on
+                    // so only the tube rims read as wall. Measuring a span there
+                    // would flag the one floor that needs it least.
+                    if (GRID_Y.some(g => Math.abs(f.y - g) < 1.2)) { found.onSheet++; continue; }
+                    const y0 = below(f.y);
+                    for (const piece of slabPieces(rasterFor(f, M), f)) {
+                        found.pieces++;
+                        const a = { x: piece.x, y: f.y, z: piece.z }, b = { x: piece.x, y: y0, z: piece.z };
+                        if (!piece.held) { found.islands++; pushLine(loose, [a, b]); }
+                        else if (piece.span > SPAN_LIMIT) {
+                            found.span++; found.worst = Math.max(found.worst, piece.span / 2);
+                            flagged.push({ a, b, span: piece.span });
+                        }
+                    }
+                }
+                // a catenoid that lands on a sheet with nothing under it to carry on
+                for (const t of getCrude().tubes) {
+                    if (!t.noPath) continue;
+                    found.noPath++;
+                    pushLine(drop, [{ x: t.ca.x, y: t.lo.y, z: t.ca.z }, { x: t.ca.x, y: Math.max(TRIM.y0, t.lo.y - GRID_SP), z: t.ca.z }]);
+                }
+                const far = [];
+                flagged.sort((p, q) => q.span - p.span).slice(0, MARKS).forEach(p => pushLine(far, [p.a, p.b]));
+                // the marks stand inside the shell, so they are drawn through it:
+                // a mark you cannot see is no use as a warning
+                for (const [arr, colour, dashed] of [[far, 0xd3691e, false], [loose, 0xd32f2f, false], [drop, 0x7b3fb0, true]]) {
+                    const l = addSegs(G.weak, arr, colour, 0.95, dashed, 7);
+                    if (l) { l.material.depthTest = false; l.renderOrder = 9; }
+                }
+                weakFound = found;
             }
-            const { r, scene, group, light, cam } = thumbGL;
-            clearGroup(group);
-            build(group);
-            const dpr = Math.min(2, window.devicePixelRatio || 1), w = width, h = Math.round(width * 0.4);
-            r.setPixelRatio(dpr); r.setSize(w, h, false);
-            const box = new THREE.Box3().setFromObject(group);
-            const f = fitOrtho(cam, { x0: box.min.x, x1: box.max.x, y0: box.min.y, y1: box.max.y, z0: box.min.z, z1: box.max.z }, -34, 24, w, h, 1);
-            light.position.copy(f.c).addScaledVector(SUN_DIR, 200); light.target.position.copy(f.c);
-            r.setClearColor(0x000000, 0);
-            r.render(scene, cam);
-            const cv = thumbEls[i].querySelector('canvas');
-            cv.width = w * dpr; cv.height = h * dpr;
-            const x = cv.getContext('2d');
-            x.clearRect(0, 0, cv.width, cv.height);
-            x.drawImage(r.domElement, 0, 0, cv.width, cv.height);
-        }
-        function localCatenoid(t, rings) {
-            const pos = [], faces = [];
-            const V = p => { pos.push(p.x, p.y, p.z); return pos.length / 3 - 1; };
-            // one cell's flange; with rings, the added points sit on both of its polygons
-            const side = (cell, tsAll) => {
-                const m = cell.poly.length, ts = rings ? tsAll : cell.hole.map(() => [0]);
-                const vid = cell.poly.map(p => V({ x: p.x, y: cell.y, z: p.z })), hid = new Map();
-                ringFrom(cell.hole, ts, cell.hy).forEach(p => hid.set(p.k + ':' + p.j, V(p)));
-                const outer = k => {
-                    const a = cell.poly[k], b = cell.poly[(k + 1) % m];
-                    return [{ t: 0, id: vid[k] }, ...ts[k].filter(v => v > 1e-6).map(v => ({ t: v, id: V({ x: a.x + (b.x - a.x) * v, y: cell.y, z: a.z + (b.z - a.z) * v }) })), { t: 1, id: vid[(k + 1) % m] }];
-                };
-                cellFaces(cell, ts, outer, (k, j) => hid.get(k + ':' + j)).forEach(f => faces.push(f));
-                return hid;
-            };
-            const loH = side(t.lo, t.tsLo), hiH = side(t.hi, t.tsHi);
-            if (!rings) {
-                const rich = t.loRich ? loH : hiH, poor = t.loRich ? hiH : loH;
-                zipFaces(t.zip, t.richK.map(k => rich.get(k + ':0')), t.poorK.map(k => poor.get(k + ':0')), !t.loRich).forEach(f => faces.push(f));
-                return { pos: new Float32Array(pos), faces, nV: pos.length / 3 };
-            }
-            const quads = (A, B) => { for (let q = 0; q < A.length; q++) { const q2 = (q + 1) % A.length; faces.push([A[q], A[q2], B[q2], B[q]]); } };
-            const loM = t.mLo.map(p => loH.get(p.k + ':' + p.j)), hiM = t.mHi.map(p => hiH.get(p.k + ':' + p.j));
-            const k0 = tubeAt(t, 1 / 3).map(V), k1 = tubeAt(t, 2 / 3).map(V);
-            quads(loM, k0); quads(k0, k1); quads(k1, hiM);
-            return { pos: new Float32Array(pos), faces, nV: pos.length / 3 };
+            G.weak.visible = true;
         }
 
         /* ---------- cameras & layout ---------- */
         const V = { yaw: 0, pitch: 89.5, zoom: 1 };
         const panW = new THREE.Vector3(), panR = new THREE.Vector3(1, 0, 0), panU = new THREE.Vector3(0, 0, -1);
-        let panWpp = 0.05, cw = 1100, ch = 620, layout = { planW: 0 };
+        let panWpp = 0.05, cw = 1100, ch = 620;
 
         // one continuous frame for the whole slider: no jumps between phases,
         // and nothing toggled in the UI changes it
@@ -2866,52 +2132,22 @@
         function applyCams() {
             const pr = params(S.t);
             if (!S.userView) Object.assign(V, autoPose());
-            layout.planW = Math.round(cw * 0.44 * pr.split);
-            const f = fitOrtho(mainCam, mainBox(pr), V.yaw, V.pitch, cw - layout.planW, ch, V.zoom, panW);
+            const f = fitOrtho(mainCam, mainBox(pr), V.yaw, V.pitch, cw, ch, V.zoom, panW);
             panR.copy(f.right).negate(); panU.copy(f.up); panWpp = f.wpp;
             sun.position.copy(f.c).addScaledVector(SUN_DIR, 200); sun.target.position.copy(f.c);
-            if (layout.planW > 2) fitOrtho(planCam, { x0: -MARGIN, x1: W + MARGIN, y0: 0, y1: 0, z0: -MARGIN - 0.1 * D, z1: D + MARGIN + 0.55 * D }, 0, 89.9, layout.planW, ch, 1);
         }
         function render() {
             if (G.caps.visible) capsLOD();
-            renderer.setScissorTest(true);
-            const pw = layout.planW;
-            if (pw > 2) {
-                renderer.setViewport(0, 0, pw, ch); renderer.setScissor(0, 0, pw, ch);
-                renderer.setClearColor(0xfbfbfa, 1); renderer.clear();
-                renderer.render(planScene, planCam);
-            }
-            renderer.setViewport(pw, 0, cw - pw, ch); renderer.setScissor(pw, 0, cw - pw, ch);
             const bg = new THREE.Color(0xffffff).lerp(new THREE.Color(0xf3f3f1), params(S.t).smoothK);
             renderer.setClearColor(bg, 1); renderer.clear();
             renderer.render(mainScene, mainCam);
-            renderer.setScissorTest(false);
             placeOverlays();
         }
 
-        const lblPlan = document.getElementById('lblPlan'), lblPersp = document.getElementById('lblPersp');
-        const levelsKey = document.getElementById('levelsKey'), originLbl = document.getElementById('originLbl'), floorTag = document.getElementById('floorTag'), floorLabels = document.getElementById('floorLabels');
+        const levelsKey = document.getElementById('levelsKey'), floorTag = document.getElementById('floorTag'), floorLabels = document.getElementById('floorLabels');
         function placeOverlays() {
-            const split = layout.planW > 40;
-            lblPlan.style.display = split ? 'block' : 'none';
-            lblPersp.style.display = split ? 'block' : 'none';
-            lblPersp.style.left = (layout.planW + 10) + 'px'; lblPlan.style.left = '10px';
-            levelsKey.style.display = split ? 'block' : 'none';
-            originLbl.style.display = split ? 'block' : 'none';
-            if (split) {
-                const v = new THREE.Vector3(0, 0, 0).project(planCam);
-                originLbl.style.left = ((v.x + 1) / 2 * layout.planW + 4) + 'px';
-                originLbl.style.top = ((1 - v.y) / 2 * ch + 4) + 'px';
-            }
-            const R = surfCache && surfCache.feaRes && surfCache.feaRes[S.struct], crit = S.map && params(S.t).trimK > 0.6 && R ? R.crit : [];
-            const marks = crit.map((p, i) => `<div class="crit-mark" title="${i + 1} · ${p.kind === 'c' ? 'concrete' : p.kind === 's' ? 'reinforcement' : 'shear'} ${p.u.toFixed(1)}× · ${p.cat}, ${fmtY(p.y)} · ${p.combo} — ${ADVICE[p.kind][p.where]}">${i + 1}</div>`).join('');
-            if (critMarks.dataset.html !== marks) { critMarks.dataset.html = marks; critMarks.innerHTML = marks; }
-            crit.forEach((p, i) => {
-                const v = new THREE.Vector3(p.x, p.y, p.z).project(mainCam), el = critMarks.children[i];
-                el.style.left = (layout.planW + (v.x + 1) / 2 * (cw - layout.planW)) + 'px';
-                el.style.top = ((1 - v.y) / 2 * ch) + 'px';
-                el.style.visibility = Math.abs(v.x) < 1 && Math.abs(v.y) < 1 ? 'visible' : 'hidden';
-            });
+            // the key names the coloured control grids, so it comes and goes with them
+            levelsKey.style.display = params(S.t).reveal > 0.01 && S.t < 2.25 ? 'block' : 'none';
             const showFl = S.floors && params(S.t).trimK > 0.6;
             floorLabels.style.display = showFl ? 'block' : 'none';
             if (showFl) {
@@ -2923,7 +2159,7 @@
                 for (const el of floorLabels.children) {
                     const f = FLOORS.find(x => x.id === Number(el.dataset.id)); if (!f) continue;
                     const v = new THREE.Vector3(0, f.y, D).project(mainCam);
-                    const lx = layout.planW + (v.x + 1) / 2 * (cw - layout.planW);
+                    const lx = (v.x + 1) / 2 * cw;
                     // in a section the corner falls at the canvas edge: pin the label inside
                     if (lx < 80) { el.style.left = '6px'; el.style.transform = 'translate(0, -50%)'; }
                     else { el.style.left = lx + 'px'; el.style.transform = ''; }
@@ -2943,17 +2179,15 @@
         }
 
         /* ---------- UI ---------- */
-        const stageSlider = document.getElementById('stageSlider'), stageGrid = document.getElementById('stageGrid');
-        const labelSwitch = document.getElementById('labelSwitch'), splitBtn = document.getElementById('splitBtn'), deleteBtn = document.getElementById('deleteBtn');
+        const stageSlider = document.getElementById('stageSlider'), stations = document.getElementById('stations');
         const flangeSlider = document.getElementById('flangeSlider'), flangeVal = document.getElementById('flangeVal');
-        const riseSlider = document.getElementById('riseSlider'), riseVal = document.getElementById('riseVal');
         const relaxSlider = document.getElementById('relaxSlider'), relaxVal = document.getElementById('relaxVal');
-        const mapBtn = document.getElementById('mapBtn'), captionEl = document.getElementById('caption');
-        const structSwitch = document.getElementById('structSwitch'), structNote = document.getElementById('structNote'), floorsBtn = document.getElementById('floorsBtn');
-        const critBox = document.getElementById('critBox'), critList = document.getElementById('critList'), critMarks = document.getElementById('critMarks');
+        const riseSlider = document.getElementById('riseSlider'), riseVal = document.getElementById('riseVal');
+        const floorsBtn = document.getElementById('floorsBtn'), resetBtn = document.getElementById('resetBtn');
+        const weakBtn = document.getElementById('weakBtn'), weakNote = document.getElementById('weakNote');
         const roofSlider = document.getElementById('roofSlider'), roofVal = document.getElementById('roofVal');
         const viewHint = document.getElementById('viewHint');
-        const stageBtns = [...stageGrid.querySelectorAll('.sbtn')];
+        const stationEls = [...stations.querySelectorAll('.station')];
 
         const editable = () => S.t > 0.95 && S.t < 1.08;
         const selectable = () => S.t > 1.55 && S.t < 2.2;
@@ -2962,57 +2196,20 @@
 
         const clampFloor = y => Math.max(TRIM.y0 + SLAB + 0.1, Math.min(TRIM.y1 - 0.1, y));
 
-        function caption(pr) {
-            const t = S.t;
-            if (t < 0.5) return '<b>1 Grid</b>Alternating A and B zones pulled apart; the gaps between them become the surface.';
-            if (t < 1.5) return '<b>2 Flexible grid</b>Cells redistribute by area and adjacency: A, B, or none.';
-            if (t < 2.5 && t < 2.2) {
-                const C = getCrude(), n = C.tubes.length;
-                const ok = C.tubes.filter(x => x.ratio <= CAT_LIMIT).length, mid = C.tubes.filter(x => x.ratio > CAT_LIMIT && x.ratio <= 2).length, noPath = C.tubes.filter(x => x.noPath).length;
-                return `<b>3 Per level</b>Every level adjusts its grid; a catenoid links [1] to [2].` +
-                    `<span class="key"><span class="dot" style="background:#2e9e5b"></span>h/R ≤ 1.33 (ideal equal-ring reference) ${ok}` +
-                    `<span class="dot" style="background:#c9a227"></span>≤ 2 ${mid}<span class="dot" style="background:#b0306a"></span>> 2 ${n - ok - mid}` +
-                    `<span class="dash"></span>no tube-chain to base ${noPath}</span>`;
-            }
-            let map = '';
-            if (S.map) {
-                const M = surfCache, R = M && M.feaRes && (M.feaRes[S.struct] || M.feaRes.dd);
-                const busy = feaRun.busy && feaRun.busy === feaRun.token ? ` · solving ${feaRun.stage}, ${feaRun.elements} elements, 4 load cases… ${Math.round(feaRun.progress * 100)}%` : '';
-                if (!R) map = `<span class="key">FEA${busy}</span>`;
-                else {
-                    const grad = RAMP.map(c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`).join(',');
-                    const q = S.mapQ, pct = v => (v * 100 < 1 && v > 0 ? '<1' : Math.round(v * 100)) + '%';
-                    const sw = `<span class="qsw">${[['c', 'Concrete'], ['s', 'Reinforcement'], ['v', 'Shear']].map(([k, l]) => `<button data-q="${k}" class="${q === k ? 'on' : ''}">${l}</button>`).join('')}</span>`;
-                    const num = q === 's' ? `bars up to ${Math.round(R.maxAs)} mm²/m, limit 1% of the wall per face and direction (${Math.round(RC.rhoMax * FEA.t0 * 1e6)} at 230 mm) · over on ${pct(R.overS)}`
-                        : q === 'v' ? `shear up to ${Math.round(R.maxV)} kN/m, concrete alone ${Math.round(shearCapacity(FEA.t0))} at 230 mm · concrete-only capacity exceeded on ${pct(R.overV)}; shear reinforcement not checked`
-                        : `struts up to ${(R.maxSc / 1000).toFixed(1)} MPa, limit ${(RC.nu * RC.fcd / 1000).toFixed(1)} · over on ${pct(R.overC)}`;
-                    const refine = !R.fine && !busy ? ' <button data-refine="1" class="refine">Refine</button>' : '';
-                    map = `<span class="key">${sw} 0 <span class="ramp" style="background:linear-gradient(90deg,${grad})"></span> 1 <span class="ramp over"></span> over · utilisation (demand / assumed capacity) · ${num}` +
-                        ` · deflection G+Q ${(R.umax * 1000).toFixed(0)} mm · ${R.elements} elements${R.fine ? '' : ' (coarse)'}${S.struct === 'comp' && !M.feaRes.comp ? ' (230 mm, before thickening)' : ''}${refine}${busy}` +
-                        `${R.lost > 1 ? ` · ${Math.round(R.lost)} m² not reaching the ground left out` : ''}</span>`;
-                }
-            }
-            if (t < 2.72) return '<b>4 Overlapping</b>Units overlap by half.';
-            if (t < 2.9) return '<b>4 Overlapping</b>Smoothed three times.' + map;
-            return map;
-        }
         function updateUI(pr) {
-            captionEl.innerHTML = caption(pr);
-            const i = Math.max(0, Math.min(3, Math.round(S.t)));
-            stageBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.s) === i));
+            const i = S.t > 2.05 ? 3 : Math.max(0, Math.min(2, Math.round(S.t)));
+            // the shape sliders belong to the grid as much as to the shell
+            document.getElementById('shellPanel').hidden = i < 1;
+            resetBtn.hidden = !editable();
+            document.getElementById('floorTools').hidden = S.t < 2.86;
+            // the station you stand nearest is the one that is named
             let near = 0, nd = Infinity;
-            THUMB_T.forEach((t, k) => { const d = Math.abs(t - S.t); if (d < nd) { nd = d; near = k; } });
-            thumbEls.forEach((el, k) => el.classList.toggle('on', k === near));
-            const cell = editable() && SEEDS.find(s => s.uid === S.cell);
-            labelSwitch.classList.toggle('off', !cell);
-            [...labelSwitch.children].forEach(b => b.classList.toggle('active', !!cell && b.dataset.v === cell.label));
-            splitBtn.disabled = deleteBtn.disabled = !cell;
+            STATION_T.forEach((t, k) => { const d = Math.abs(t - S.t); if (d < nd) { nd = d; near = k; } });
+            stationEls.forEach((el, k) => el.classList.toggle('on', k === near));
             flangeSlider.disabled = riseSlider.disabled = relaxSlider.disabled = S.t < 1.5;
             relaxVal.textContent = S.relax ? S.relax + ' steps' : 'none';
             riseVal.textContent = S.rise === 0 ? 'flat' : S.rise + '°';
             flangeVal.textContent = Math.round(S.flange * 100) + '% of the cell';
-            structSwitch.classList.toggle('off', S.t < 2.7);
-            mapBtn.disabled = S.t < 2.7;
             floorsBtn.disabled = S.t < 2.86;
             const availableFloors = FLOORS.filter(f => !outOfBuilding(f));
             if (!availableFloors.some(f => f.id === S.floorSel)) S.floorSel = availableFloors[0]?.id ?? null;
@@ -3024,45 +2221,43 @@
             openingsBtn.classList.toggle('active', openingMode);
             openingsBtn.setAttribute('aria-pressed', String(openingMode));
             undoOpening.disabled = !floorEditable() || !openingHistory.length;
+            weakBtn.disabled = !floorEditable();
+            weakBtn.classList.toggle('active', S.weak);
+            weakBtn.setAttribute('aria-pressed', String(S.weak));
+            weakNote.hidden = !(S.weak && floorEditable());
+            if (!weakNote.hidden) {
+                const f = weakFound, parts = [];
+                if (f.span) parts.push(f.span + ' of ' + f.pieces + ' slab pieces span further than ' + SPAN_LIMIT + ' m; the worst point sits ' + f.worst.toFixed(1) + ' m from any wall');
+                if (f.islands) parts.push(f.islands + (f.islands > 1 ? ' pieces touch' : ' piece touches') + ' no wall at all');
+                if (f.noPath) parts.push(f.noPath + ' catenoids land with nothing under them');
+                if (f.onSheet) parts.push(f.onSheet + (f.onSheet > 1 ? ' floors rest' : ' floor rests') + ' on a grid sheet, which carries them');
+                weakNote.textContent = (parts.length ? parts.join(' · ') : 'Every piece is held within ' + SPAN_LIMIT + ' m')
+                    + '. The marks show the ' + MARKS_NOTE + ' worst. Geometry screening at ' + SPAN_RATIO + '× the ' + SLAB.toFixed(2) + ' m slab, not a structural check.';
+            }
             openingNote.textContent = openingMode ? 'Only the selected floor is shown. Orange opens; blue restores. Drag to orbit.' : 'Click a slab to select; drag to change its height. Edit openings isolates the chosen floor.';
             roofSlider.disabled = S.t < 2.86;
             roofVal.textContent = fmtY(TRIM.y1);
             floorsBtn.classList.toggle('active', S.floors);
             floorsBtn.textContent = S.floors ? 'Floors on' : 'Floors off';
-            const R = surfCache && surfCache.feaRes && surfCache.feaRes[S.struct];
-            structNote.textContent = (S.struct === 'comp'
-                ? 'Model — experimental shell sizing from 230 mm, capped at 1,400 mm; not a reconstruction of the building thickness.' +
-                    (R ? ` ${R.rounds} analysis rounds; maximum ${Math.round(R.maxT * 1000)} mm; ${Math.round(R.short * 100)}% still exceeds the assumed section limits.` : ' Open FEA map to run; 230 mm until then.')
-                : 'Development — parallel (red) and radial (blue) layout guides, sampled every 1 m on a 230 mm study shell. These lines are not truss members or verified construction spacing.') +
-                (S.map ? ' Linear shell FEA only: assumed C35/B500, self-weight, 5 kPa on near-horizontal shell regions, lateral load 0.2 × (G+0.5Q). Combinations: 1.2G+1.6Q and 1.2G+0.5Q±E. Base cut clamped; other cut edges free. Floors, cores, plug walls, facade stiffness and steel frames are excluded. Colours show section utilisation estimates, not principal-stress paths or a building/code verification. Shear reinforcement capacity is not calculated.' : '');
-
-            const crit = S.map && S.t > 2.7 && R && R.crit;
-            const PLACE = { base: 'at the base', edge: 'free edge', sheet: 'sheet', junction: 'catenoid meets sheet', tube: 'catenoid wall' }, WHAT = { c: 'concrete', s: 'reinforcement', v: 'shear' };
-            critBox.hidden = !crit;
-            if (crit) critList.innerHTML = crit.map(p => `<li><b>${WHAT[p.kind]} ${p.u.toFixed(1)}×</b> ${PLACE[p.where]}, ${p.cat}, ${fmtY(p.y)} · ${p.combo}<br><span>${ADVICE[p.kind][p.where]}</span></li>`).join('');
             canvas.classList.toggle('editable', editable() || selectable() || floorEditable());
-            if (hintUntil > performance.now()) viewHint.textContent = hintText; else viewHint.textContent = editable() ? 'drag a cell · drag an edge · scroll to resize · double-click to split · click a letter for A → B → none · shift-drag to pan · ctrl-scroll to zoom'
+            if (hintUntil > performance.now()) viewHint.textContent = hintText; else viewHint.textContent = editable() ? 'click a cell for A / B / none, split, merge, delete · drag a cell · drag an edge · scroll to resize · shift-drag to pan · ctrl-scroll to zoom'
                 : (selectable() ? 'click a catenoid or a cell to select it · ' : floorEditable() ? 'select a slab · Edit openings to cut or restore · drag slab to change height · ' : '') + 'drag to orbit · wheel to zoom · shift-drag to pan · double-click to reset view';
         }
 
         function update() {
             const pr = params(S.t);
             drawPlan(pr);
-            if (S.t > 1.0001 && pr.units < 1 && !S.dragging) {
+            if (S.t > 1.0001 && S.t < 2.7 && !S.dragging) {
                 const LV = buildLevels(pr.lift);
                 selectDefault(getCrude().tubes);
                 drawPersp(pr, LV, tubesOf(LV));
             } else clearGroup(G.persp);
-            if (pr.split > 0.01) {
-                const C = getCrude();
-                selectDefault(C.tubes);
-                drawPlanView(pr, C.LV, C.tubes);
-                updateLevelsKey();
-            } else clearGroup(G.planView);
-            if (!S.dragging) { const C = getCrude(); selectDefault(C.tubes); drawThumbs(C); }
+            if (!S.dragging) selectDefault(getCrude().tubes);
+            if (pr.reveal > 0.01) updateLevelsKey();
             syncCrude(pr);
             syncSurface(pr);
             syncFloors(pr);
+            syncWeak(pr);
             updateUI(pr);
             applyCams();
             render();
@@ -3093,7 +2288,7 @@
         let saveTimer = 0, lastSaved = '';
         function encodeState() {
             return JSON.stringify({
-                v: 3, uid: UID, fid: FID, fl: S.flange, ri: S.rise, rx: S.relax, st: S.struct, ro: TRIM.y1,
+                v: 3, uid: UID, fid: FID, fl: S.flange, ri: S.rise, rx: S.relax, ro: TRIM.y1,
                 s: SEEDS.map(q => [q.uid, q.label, +q.x.toFixed(2), +q.z.toFixed(2), +q.w.toFixed(1), q.bud ? 1 : 0, q.rx, q.rz, +q.ox.toFixed(3), +q.oz.toFixed(3)]),
                 f: FLOORS.map(f => [f.id, +f.y.toFixed(2)]),
                 vo: VOIDS.map(v => [v.fid, +v.x.toFixed(1), +v.z.toFixed(1)]),
@@ -3123,7 +2318,7 @@
                 // v3 stores the flange as a share of the cell; older links fall back to the default
                 S.flange = o.v === 3 && o.fl >= 0.1 && o.fl <= 0.45 ? o.fl : 0.3;
                 S.rise = o.ri >= 0 && o.ri <= 75 ? o.ri : 54;
-                S.relax = o.rx >= 0 && o.rx <= 60 ? o.rx : 0; S.struct = o.st === 'dd' ? 'dd' : 'comp';
+                S.relax = o.rx >= 0 && o.rx <= 60 ? o.rx : 0;
                 if (o.ro >= ROOF_MIN && o.ro <= ROOF_MAX) TRIM.y1 = roofLevel(o.ro);
                 S.sel = o.sel ? { i: o.sel[0], g: o.sel[1] } : null;
                 lastSaved = JSON.stringify(o);
@@ -3131,30 +2326,44 @@
             } catch (e) { return false; }
         }
         stageSlider.addEventListener('input', () => { tween = null; S.t = sliderToT(Number(stageSlider.value) / 1000); update(); });
-        stageGrid.addEventListener('click', e => {
-            const b = e.target.closest('.sbtn');
-            if (b) { goTo(Number(b.dataset.s)); return; }
-            const th = e.target.closest('.thumb');
-            if (th) goTo(Number(th.dataset.t));
+        stations.addEventListener('click', e => {
+            const st = e.target.closest('.station');
+            if (st) goTo(Number(st.dataset.t));
         });
-        labelSwitch.addEventListener('click', e => {
-            const b = e.target.closest('button'), s = SEEDS.find(x => x.uid === S.cell);
-            if (!b || !s) return;
-            s.label = b.dataset.v; edited(); update();
+        // the menu opens on the cell you clicked and closes as soon as you have
+        // chosen, so the grid is edited where it is drawn
+        const cellMenu = document.getElementById('cellMenu'), viewBox = document.getElementById('wrap');
+        function closeMenu() { cellMenu.hidden = true; }
+        function openMenu(e) {
+            const s = SEEDS.find(x => x.uid === S.cell); if (!s) return closeMenu();
+            [...cellMenu.querySelectorAll('#labelSwitch button')].forEach(b => b.classList.toggle('active', b.dataset.v === s.label));
+            cellMenu.querySelector('[data-act="delete"]').disabled = SEEDS.length <= 4;
+            cellMenu.hidden = false;
+            const box = viewBox.getBoundingClientRect(), m = cellMenu.getBoundingClientRect();
+            const x = Math.min(Math.max(4, e.clientX - box.left + 8), box.width - m.width - 4);
+            const y = Math.min(Math.max(4, e.clientY - box.top + 8), box.height - m.height - 4);
+            cellMenu.style.left = x + 'px'; cellMenu.style.top = y + 'px';
+        }
+        cellMenu.addEventListener('click', e => {
+            const b = e.target.closest('button'); if (!b) return;
+            const s = SEEDS.find(x => x.uid === S.cell); if (!s) return closeMenu();
+            if (b.dataset.v) { s.label = b.dataset.v; edited(); }
+            else if (b.dataset.act === 'split') splitCell(s, null);
+            else if (b.dataset.act === 'delete') deleteCell(s.uid);
+            else if (b.dataset.act === 'merge') { closeMenu(); startMerge(s.uid); update(); return; }
+            closeMenu(); update();
         });
-        splitBtn.addEventListener('click', () => { const s = SEEDS.find(x => x.uid === S.cell); if (s) { splitCell(s, null); update(); } });
-        deleteBtn.addEventListener('click', () => { deleteCell(S.cell); update(); });
+        window.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            if (mergeFrom) { cancelMerge(); update(); }
+            closeMenu();
+        });
+        document.addEventListener('pointerdown', e => { if (!cellMenu.hidden && !cellMenu.contains(e.target)) closeMenu(); }, true);
         flangeSlider.addEventListener('input', () => { S.flange = Number(flangeSlider.value) / 100; edited(); update(); });
         riseSlider.addEventListener('input', () => { S.rise = Number(riseSlider.value); edited(); update(); });
         relaxSlider.addEventListener('input', () => { S.relax = Number(relaxSlider.value); update(); });
-        mapBtn.addEventListener('click', () => { S.map = !S.map; mapBtn.classList.toggle('active', S.map); update(); });
-        structSwitch.addEventListener('click', e => {
-            const b = e.target.closest('button[data-m]'); if (!b) return;
-            S.struct = b.dataset.m;
-            structSwitch.querySelectorAll('button[data-m]').forEach(x => x.classList.toggle('active', x === b));
-            update();
-        });
         floorsBtn.addEventListener('click', () => { S.floors = !S.floors; if (!S.floors) openingMode = false; update(); });
+        weakBtn.addEventListener('click', () => { S.weak = !S.weak; update(); });
         openingsBtn.addEventListener('click', () => { openingMode = !openingMode; update(); });
         floorPick.addEventListener('change', () => { S.floorSel = Number(floorPick.value); update(); });
         undoOpening.addEventListener('click', () => {
@@ -3165,20 +2374,14 @@
             }
             update();
         });
-        // the roof cut moves; floors left above it are removed, and the
-        // analysis starts again once the slider is let go
+        // Moving the roof cut removes floors above the new boundary.
         roofSlider.addEventListener('input', () => {
             TRIM.y1 = roofLevel(Number(roofSlider.value) / 100);
             for (const f of FLOORS.filter(f => f.y > TRIM.y1 - 0.1)) removeFloor(f.id);
             update();
         });
         roofSlider.addEventListener('change', () => update());
-        // pointerdown, not click: the caption is redrawn as the analysis reports progress
-        captionEl.addEventListener('pointerdown', e => {
-            const b = e.target.closest('button[data-q]'); if (b) { S.mapQ = b.dataset.q; update(); return; }
-            if (e.target.closest('button[data-refine]') && surfCache) { refineFea(surfCache); refreshCaption(); }
-        });
-        document.getElementById('resetBtn').addEventListener('click', () => { openingHistory.length = 0; openingMode = false; initSeeds(); edited(); update(); });
+        resetBtn.addEventListener('click', () => { openingHistory.length = 0; openingMode = false; initSeeds(); edited(); update(); });
 
         /* ---------- flexible grid editing ---------- */
         function powerAt(p) {
@@ -3205,6 +2408,51 @@
             S.cell = SEEDS[SEEDS.length - 1].uid;
             edited();
         }
+        // Merging in a power diagram is not stitching two outlines together:
+        // the cells grow from their seeds, so the pair becomes one seed at their
+        // common centre carrying both weights. The neighbours around them close
+        // in a little as well, which is how this grid has always behaved
+        let mergeFrom = null, mergeMates = new Set();
+        function neighboursOf(uid) {
+            const cells = baseCells(), k = SEEDS.findIndex(s => s.uid === uid), out = new Set();
+            if (k < 0 || !cells[k] || !cells[k].length) return out;
+            const key = p => Math.round(p.x * 20) + ':' + Math.round(p.z * 20);
+            const mine = new Set(cells[k].map(key));
+            cells.forEach((q, i) => {
+                if (i === k || !q || !q.length) return;
+                let shared = 0;
+                for (const p of q) if (mine.has(key(p))) shared++;
+                if (shared >= 2) out.add(SEEDS[i].uid);
+            });
+            return out;
+        }
+        function startMerge(uid) {
+            mergeMates = neighboursOf(uid);
+            if (!mergeMates.size) { flashHint('this cell has no neighbour to merge with'); return; }
+            mergeFrom = uid;
+            flashHint('click a neighbour to merge into · Esc to cancel');
+        }
+        function cancelMerge() { mergeFrom = null; mergeMates = new Set(); }
+        function mergeCells(uid, mateUid) {
+            if (SEEDS.length <= 4) return;
+            const ia = SEEDS.findIndex(s => s.uid === uid), ib = SEEDS.findIndex(s => s.uid === mateUid);
+            if (ia < 0 || ib < 0) return;
+            const cells = baseCells(), qa = cells[ia], qb = cells[ib];
+            if (!qa.length || !qb.length) return;
+            const aa = Math.abs(signedArea(qa)), ab = Math.abs(signedArea(qb));
+            const ca = centroid(qa), cb = centroid(qb), tot = aa + ab || 1;
+            const a = SEEDS[ia], before = { x: a.x, z: a.z, w: a.w };
+            a.x = (ca.x * aa + cb.x * ab) / tot;
+            a.z = (ca.z * aa + cb.z * ab) / tot;
+            a.w = Math.max(a.w, SEEDS[ib].w) + Math.min(aa, ab) / 4;
+            const gone = SEEDS.splice(ib, 1)[0];
+            if (!allAlive()) {
+                SEEDS.splice(ib, 0, gone); Object.assign(a, before);
+                flashHint('that merge would close a neighbouring cell'); return;
+            }
+            S.cell = a.uid; S.sel = null;
+            edited();
+        }
         function deleteCell(uid) {
             if (SEEDS.length <= 4) return;
             const k = SEEDS.findIndex(s => s.uid === uid);
@@ -3229,11 +2477,11 @@
             const p = new THREE.Vector3();
             return ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), p) ? { x: p.x, z: p.z, d: p.distanceTo(ray.origin) } : null;
         }
-        const worldAt = e => hitY(rayFor(e, mainCam, layout.planW, cw - layout.planW), 0);
+        const worldAt = e => hitY(rayFor(e, mainCam, 0, cw), 0);
         // Normal mode selects actual visible slab triangles, not empty planes.
         // Opening mode targets only the explicit selected level, including voids.
         function floorHit(e) {
-            const ray = rayFor(e, mainCam, layout.planW, cw - layout.planW);
+            const ray = rayFor(e, mainCam, 0, cw);
             if (!surfCache) return null;
             if (openingMode) {
                 const f = FLOORS.find(f => f.id === S.floorSel && !outOfBuilding(f));
@@ -3376,13 +2624,15 @@
         canvas.addEventListener('dblclick', e => {
             if (editable()) {
                 const p = worldAt(e); if (!p) return;
+                // the two clicks under a double-click have already opened the menu
+                closeMenu();
                 splitCell(SEEDS[powerAt(p)[0].i], p); update();
                 return;
             }
             if (floorEditable()) {
                 if (openingMode) return;
                 // a new floor at the height where the surface was double-clicked
-                rayFor(e, mainCam, layout.planW, cw - layout.planW);
+                rayFor(e, mainCam, 0, cw);
                 const hit = raycaster.intersectObjects(G.surf.children.filter(o => o.isMesh), false)
                     .find(h => h.point.x >= 0 && h.point.x <= W && h.point.z >= 0 && h.point.z <= D && h.point.y > TRIM.y0 && h.point.y < TRIM.y1);
                 if (!hit) return;
@@ -3406,11 +2656,17 @@
 
         function onClick(e, d) {
             if (editable()) {
-                if (d.mode && d.mode.type === 'label') {
-                    const s = SEEDS.find(x => x.uid === d.mode.uid);
-                    s.label = s.label === 'A' ? 'B' : s.label === 'B' ? '-' : 'A';
-                    S.cell = s.uid; edited(); update();
-                } else if (d.mode) { S.cell = d.mode.s ? d.mode.s.uid : d.mode.a.uid; update(); }
+                const uid = d.mode && (d.mode.type === 'label' ? d.mode.uid : d.mode.s ? d.mode.s.uid : d.mode.a.uid);
+                if (mergeFrom) {
+                    if (uid && mergeMates.has(uid)) mergeCells(mergeFrom, uid);
+                    else if (uid !== mergeFrom) flashHint('that cell does not touch the one being merged');
+                    cancelMerge(); update();
+                    return;
+                }
+                if (!uid) { closeMenu(); return; }
+                S.cell = uid;
+                update();
+                openMenu(e);
                 return;
             }
             if (floorEditable()) {
@@ -3430,20 +2686,12 @@
             }
             if (!selectable()) return;
             const C = getCrude();
-            const rect = canvas.getBoundingClientRect();
-            const px = (e.clientX - rect.left) * (cw / rect.width);
             let best = null;
-            if (px < layout.planW) {
-                const h = hitY(rayFor(e, planCam, 0, layout.planW), 0); if (!h) return;
-                const g0 = S.sel ? S.sel.g : 2;
-                best = C.tubes.filter(t => inConvex(t.lo.poly, h) || inConvex(t.hi.poly, h)).sort((a, b) => Math.abs(a.g - g0) - Math.abs(b.g - g0))[0];
-            } else {
-                const ray = rayFor(e, mainCam, layout.planW, cw - layout.planW);
-                let bd = Infinity;
-                for (const t of C.tubes) for (const cell of [t.lo, t.hi]) {
-                    const h = hitY(ray, cell.y);
-                    if (h && h.d < bd && inConvex(cell.hole, h)) { bd = h.d; best = t; }
-                }
+            const ray = rayFor(e, mainCam, 0, cw);
+            let bd = Infinity;
+            for (const t of C.tubes) for (const cell of [t.lo, t.hi]) {
+                const h = hitY(ray, cell.y);
+                if (h && h.d < bd && inConvex(cell.hole, h)) { bd = h.d; best = t; }
             }
             if (best) { S.sel = { i: best.i, g: best.g }; update(); }
         }
@@ -3453,7 +2701,6 @@
             cw = Math.max(1, Math.round(r.width)); ch = Math.max(1, Math.round(r.height));
             renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
             renderer.setSize(cw, ch, false);
-            thumbsKey = '';
             update();
         }
 
@@ -3463,7 +2710,6 @@
             roofSlider.value = String(Math.round(TRIM.y1 * 100));
             riseSlider.value = String(S.rise);
             relaxSlider.value = String(S.relax);
-            structSwitch.querySelectorAll('button[data-m]').forEach(x => x.classList.toggle('active', x.dataset.m === S.struct));
         }
         stageSlider.value = String(Math.round(tToSlider(0) * 1000));
         new ResizeObserver(resize).observe(canvas);

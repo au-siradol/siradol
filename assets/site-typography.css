@@ -144,7 +144,7 @@ body.page-emerging-grid-catenoid .study-bar .titleline b{font-weight:600;}
 body.page-emerging-grid-catenoid .canvas-container{margin-top:16px;}
 body.page-emerging-grid-catenoid .panel h4{font:600 11px/1.25 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:.5px;color:#111;}
 body.page-emerging-grid-catenoid .panel .note,body.page-emerging-grid-catenoid .view-hint,body.page-emerging-grid-catenoid .stage-grid .thumb figcaption{font-size:11px;line-height:1.25;color:#666;}
-body.page-emerging-grid-catenoid .panels{margin-top:14px;border-top:1px solid #111;}
+body.page-emerging-grid-catenoid .panels{margin-top:8px;}
 body.page-emerging-grid-catenoid .panel{padding:10px 20px 0;gap:4px;border-color:#d8d8d8;}
 body.page-emerging-grid-catenoid .panel h4.gap{margin-top:16px;}
 body.page-emerging-grid-catenoid .btn-row{gap:8px;}
@@ -153,7 +153,6 @@ body.page-emerging-grid-catenoid .seg,body.page-emerging-grid-catenoid .stage-gr
 body.page-emerging-grid-catenoid .seg button,body.page-emerging-grid-catenoid .tog,body.page-emerging-grid-catenoid #floorPick{border-color:#b5b5b5;}
 body.page-emerging-grid-catenoid .seg button.active,body.page-emerging-grid-catenoid .tog.active,body.page-emerging-grid-catenoid .stage-grid .sbtn.active{background:#111;color:#fff;border-color:#111;}
 body.page-emerging-grid-catenoid button:focus-visible,body.page-emerging-grid-catenoid select:focus-visible,body.page-emerging-grid-catenoid input:focus-visible,body.page-emerging-grid-catenoid canvas#simCanvas:focus-visible{outline:2px solid #1565c0;outline-offset:3px;}
-body.page-emerging-grid-catenoid .caption{font-size:11px;line-height:1.25;min-height:24px;padding:4px 0;border-bottom:1px solid #d8d8d8;margin-top:0;}
 body.page-emerging-grid-catenoid .timeline{margin-top:16px;}
 body.page-emerging-grid-catenoid .stage-grid .sbtn{border-color:#d8d8d8;white-space:normal;}
 body.page-emerging-grid-catenoid .stage-grid .thumb{padding:4px;border-color:#d8d8d8;opacity:.7;}
@@ -161,8 +160,6 @@ body.page-emerging-grid-catenoid .stage-grid .thumb.on{opacity:1;}
 body.page-emerging-grid-catenoid .stage-grid .thumb figcaption{font-size:11px;letter-spacing:0;text-transform:none;white-space:normal;}
 body.page-emerging-grid-catenoid .scrub-row .lbl,body.page-emerging-grid-catenoid .scrub-ends{font-size:11px;color:#666;letter-spacing:0;text-transform:none;}
 body.page-emerging-grid-catenoid .scrub-row{min-height:32px;height:auto;gap:8px;}
-body.page-emerging-grid-catenoid .floors-row{flex-wrap:wrap;gap:4px;max-width:none;}
-body.page-emerging-grid-catenoid .floors-row .trim-row{flex:1 1 200px;}
 body.page-emerging-grid-catenoid .scrub-row .lbl.r,body.page-emerging-grid-catenoid #roofVal,body.page-emerging-grid-catenoid #flangeVal,body.page-emerging-grid-catenoid #riseVal,body.page-emerging-grid-catenoid #relaxVal{font-variant-numeric:tabular-nums;}
 body.page-emerging-grid-catenoid .reference-notes{margin-top:24px;border-color:#d8d8d8;font-size:12px;line-height:1.45;}
 body.page-emerging-grid-catenoid .reference-notes summary{font-size:11px;font-weight:600;color:#111;padding:8px 0;}
