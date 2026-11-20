@@ -59,7 +59,7 @@
            went the page height would change with it, the canvas would be resized,
            and the view would jump every time the spectacles are pressed. */
         .force-controls {
-            max-width: 960px; width: 100%; margin: 10px auto 0; text-align: center;
+            max-width: 960px; width: 100%; margin: 5px auto 0; text-align: right;
             flex-shrink: 0; visibility: visible;
         }
         .force-controls[hidden] { display: block; visibility: hidden; }
@@ -84,7 +84,7 @@
         .stations {
             max-width: 960px; width: 100%; margin: 6px auto 0;
             box-sizing: border-box;
-            display: flex; justify-content: space-between; align-items: flex-start;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: start;
             flex-shrink: 0;
         }
         /* no side padding: the icon's own edge is what lines up */
@@ -92,6 +92,10 @@
             border: 0; background: none; padding: 4px 0; cursor: pointer;
             color: #c4c4c4; line-height: 0; transition: color .25s ease;
         }
+        .station { justify-self: start; }
+        .station:nth-child(2) { justify-self: center; }
+        .station:last-child { justify-self: end; text-align: right; }
+        .station:last-child svg { margin-left: auto; }
         .station svg { width: 19px; height: 19px; display: block; }
         .station .again {
             display: block; margin-top: 5px; line-height: 1.2;
@@ -561,13 +565,16 @@
         // a pale grey web at 0.45 read as a smudge. Fewer lines, each one legible,
         // beats many faint ones — 35 degrees drops the seams that the roof's
         // tessellation leaves behind and keeps the edges that are really there.
-        const forceEdgeMat = new THREE.LineBasicMaterial({color:0x3a3a3a, transparent:true, opacity:0.85});
+        // 65% transparency means 35% opacity, with a luminous unlit surface.
+        const neonMaterial = new THREE.MeshBasicMaterial({
+            color: 0x39ff14, transparent: true, opacity: 0.35,
+            side: THREE.DoubleSide, depthWrite: false
+        });
+        const neonInteriorMaterial = neonMaterial.clone();
+        neonInteriorMaterial.opacity = 0.15; // core, stairs and top-floor walls: 85% transparent
         function buildForceView(p) {
             clearGroup(forceG);
-            modelG.traverse(object => {
-                if (object.isMesh) forceG.add(new THREE.LineSegments(
-                    new THREE.EdgesGeometry(object.geometry,35), forceEdgeMat));
-            });
+
             // ONE question only: which of these identical-looking posts pushes, and
             // which hangs. The transfer routes along the roof edge and the
             // cantilever walls, and the grey applied-gravity arrows, were drawn
@@ -738,7 +745,9 @@
                 const material = tint === 'upperSlab' ? MAT.slabReading
                     : tint === 'core' || tint === 'wall' || tint === 'stair' ? MAT.wallReading
                     : tint === 'soffit' ? MAT.soffit : MAT.card;
-                modelG.add(new THREE.Mesh(triGeom(byTint[tint]), material));
+                const mesh = new THREE.Mesh(triGeom(byTint[tint]), material);
+                mesh.userData.neonInterior = ['core', 'wall', 'stair'].includes(tint);
+                modelG.add(mesh);
             }
 
             // ---- roof top: a smooth mesh so the wedge is not faceted
@@ -836,11 +845,7 @@
         }
 
         function render() {
-            // In wireframe the building does not disappear, it goes faint. Lines
-            // alone on white all sit in the same plane: nothing says which edge is
-            // in front. A ghost of the solid behind them gives the depth back and
-            // gives the arrows a surface to be read against. (The deleted X-ray
-            // mode did exactly this, at opacity 0.10.)
+            // Neon surfaces reveal the interior; force arrows remain solid.
             modelG.visible = true;
             forceG.visible = forceMode;
             const slabT = Math.max(0, Math.min(1, (walkPosition - 0.2) / 0.3));
@@ -860,18 +865,16 @@
             groundMaterial.opacity = hillOpacity;
             hillSurface.depthWrite = hillOpacity > 0.99;
             hillInk.opacity = 0.35 * hillOpacity;
-            // LAST, so it overrides the walk-driven opacities computed above: a
-            // material ignores `opacity` entirely unless `transparent` is on, which
-            // is the quiet way this kind of change does nothing at all.
-            const GHOST = 0.08;   // fainter, so the arrows carry the picture
-            for (const m of [MAT.card, MAT.soffit, MAT.slabReading, MAT.wallReading]) {
-                m.transparent = forceMode || m === MAT.slabReading || m === MAT.wallReading;
-                if (forceMode) { m.opacity = GHOST; m.depthWrite = false; }
-            }
-            if (!forceMode) {
-                MAT.card.opacity = 1; MAT.card.depthWrite = true;
-                MAT.soffit.opacity = 1; MAT.soffit.depthWrite = true;
-            }
+            // Keep the normal materials intact so leaving the neon reading restores
+            // the original white surfaces and distance-dependent transparency.
+            modelG.traverse(object => {
+                if (object.isMesh) {
+                    if (!object.userData.normalMaterial) object.userData.normalMaterial = object.material;
+                    object.material = forceMode
+                        ? (object.userData.neonInterior ? neonInteriorMaterial : neonMaterial)
+                        : object.userData.normalMaterial;
+                } else if (object.isLine) object.visible = !forceMode;
+            });
             renderer.render(scene, camera);
             drawScaleBar();
         }
@@ -935,7 +938,7 @@
             // where you ARE and not only as somewhere you can go
             const nearest = Math.round(walkPosition * 2);
             stationBtns.forEach((b, i) => b.classList.toggle('on', i === nearest));
-            againHint.classList.toggle('on', atEnd && !forceMode);
+            againHint.classList.toggle('on', atEnd);
             applyCam(); render();
         }
         let drag = null;
