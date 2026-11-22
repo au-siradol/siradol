@@ -42,6 +42,12 @@
         .cell-menu .seg { display: inline-flex; }
         .cell-menu .seg button { flex: 1; }
         .cell-menu .tog { width: 100%; text-align: left; }
+        /* the area sits under the letter, in the same grey as the other
+           measurements on the drawing */
+        .cell-label {
+            position: absolute; pointer-events: none; font-family: 'Courier New', monospace; font-size: 9px;
+            color: #777; white-space: nowrap; transform: translate(-50%, 0);
+        }
         .levels-key {
             position: absolute; top: 10px; left: 10px; font-size: 10px; line-height: 1.55;
             pointer-events: none; display: none; background: rgba(255,255,255,0.85); padding: 2px 4px 2px 0;
@@ -76,12 +82,15 @@
         /* only the stage you stand on is named; the space is kept so the row
            never moves as you walk */
         /* the one control that acts on the drawing sits on the drawing */
+        /* icon and word together: this button throws away every grid edit,
+           so it says so rather than leaving a glyph to be guessed at */
         .view-btn {
-            position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            border: 1px solid #ddd; background: rgba(255,255,255,0.92); color: #777;
+            position: absolute; top: 10px; right: 10px;
+            display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+            border: 1px solid #ddd; background: rgba(255,255,255,0.92); color: #444;
+            text-transform: uppercase;
         }
-        .view-btn svg { width: 15px; height: 15px; display: block; }
+        .view-btn svg { width: 14px; height: 14px; display: block; }
         .view-btn:hover { color: #111; border-color: #111; }
         .station .lab { display: block; margin-top: 5px; line-height: 1.2; font-size: 8px; letter-spacing: .6px; text-transform: uppercase; color: #999; white-space: nowrap; visibility: visible; }
         .station.on .lab { visibility: visible; color: #111; font-weight: 600; }
@@ -183,10 +192,11 @@ body.page-emerging-grid-catenoid .reference-notes summary { padding:3px 0; }
     <div class="canvas-container" id="wrap">
         <canvas id="simCanvas" tabindex="0"></canvas>
         <div class="levels-key" id="levelsKey"></div>
-        <button class="view-btn" id="resetBtn" type="button" hidden title="Reset grid" aria-label="Reset grid">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.2 4.4v5h5"/>
-            </svg>
+        <div id="cellLabels"></div>
+        <button class="view-btn" id="resetBtn" type="button" hidden title="Reset the grid to its starting layout, discarding every cell you have moved, split, merged or deleted" aria-label="Reset the grid to its starting layout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+            </svg>Reset
         </button>
         <div class="cell-menu" id="cellMenu" hidden>
             <div class="seg" id="labelSwitch">
@@ -1292,7 +1302,7 @@ body.page-emerging-grid-catenoid .reference-notes summary { padding:3px 0; }
                     sp.userData.ownMat = true; sp.scale.set(P * 0.26, P * 0.26, 1); sp.position.set(r.c.x, 0.1, r.c.z); sp.renderOrder = 6;
                     G.plan.add(sp);
                 }
-                labelSpots.push({ uid: s.uid, x: r.c.x, z: r.c.z });
+                labelSpots.push({ uid: s.uid, x: r.c.x, z: r.c.z, area: Math.abs(signedArea(poly)), op: op * flexOp, big: inradius(poly, centroid(poly)) > 0.06 * P });
             });
             pushLoop(rect, rectPoly(0), 0.01);
             addSegs(G.plan, rect, 0x111111, op * flexOp * 0.45);
@@ -2182,7 +2192,31 @@ body.page-emerging-grid-catenoid .reference-notes summary { padding:3px 0; }
         }
 
         const levelsKey = document.getElementById('levelsKey'), floorTag = document.getElementById('floorTag'), floorLabels = document.getElementById('floorLabels');
+        const cellLabels = document.getElementById('cellLabels');
         function placeOverlays() {
+            // Each cell is named by its area, drawn as text over the canvas
+            // rather than as a sprite: the number changes with every drag, and a
+            // sprite would mean building a new texture per cell per frame.
+            // Cells too small to hold their letter are left unlabelled.
+            const spots = labelSpots.filter(l => l.big && l.op > 0.02);
+            cellLabels.style.display = spots.length ? 'block' : 'none';
+            if (spots.length) {
+                if (cellLabels.children.length !== spots.length) {
+                    cellLabels.innerHTML = spots.map(() => '<div class="cell-label"></div>').join('');
+                }
+                spots.forEach((l, k) => {
+                    const el = cellLabels.children[k];
+                    // placed a fixed distance below the letter in the model's own
+                    // units, along whatever direction is down on screen, so it
+                    // keeps its place under the letter at any zoom or angle
+                    const v = new THREE.Vector3(l.x, 0.1, l.z).addScaledVector(panU, -P * 0.17).project(mainCam);
+                    el.style.left = ((v.x + 1) / 2 * cw) + 'px';
+                    el.style.top = ((1 - v.y) / 2 * ch) + 'px';
+                    el.style.opacity = String(l.op);
+                    const txt = Math.round(l.area) + ' m²';
+                    if (el.textContent !== txt) el.textContent = txt;
+                });
+            }
             // the key names the coloured control grids, so it comes and goes with them
             levelsKey.style.display = params(S.t).reveal > 0.01 && S.t < 2.25 ? 'block' : 'none';
             const showFl = S.floors && params(S.t).trimK > 0.6;
@@ -2235,8 +2269,10 @@ body.page-emerging-grid-catenoid .reference-notes summary { padding:3px 0; }
 
         function updateUI(pr) {
             const i = S.t > 2.05 ? 3 : Math.max(0, Math.min(2, Math.round(S.t)));
-            // the shape sliders belong to the grid as much as to the shell
-            document.getElementById('shellPanel').hidden = i < 1;
+            // [1'] and [2'] first appear at Per level, which is also where the
+            // sliders stop being disabled: showing them earlier only offered
+            // controls that could not be moved
+            document.getElementById('shellPanel').hidden = i < 2;
             resetBtn.hidden = !editable();
             document.getElementById('floorTools').hidden = S.t < 2.86;
             // the station you stand nearest is the one that is named
