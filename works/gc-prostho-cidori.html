@@ -143,8 +143,6 @@ body.page-gc-prostho .reference-notes summary { font-size: 11px; font-weight: 60
     <div class="grp" data-range="joint">
       <div class="cols">
         <div class="col-l">
-          <label class="shape-ctl"><span>Load on the post <b id="jloadv"></b></span>
-            <input type="range" autocomplete="off" id="jload" min="0" max="20" step="0.5" value="6"></label>
         </div>
         <div class="col-r btn-row"><button class="tog" type="button" data-for="jx">X-ray the node</button><button class="tog" type="button" id="recheck" title="Sample every stick on a 2 mm grid at 41 steps of the assembly again">Re-run the check</button></div>
       </div>
@@ -153,7 +151,6 @@ body.page-gc-prostho .reference-notes summary { font-size: 11px; font-weight: 60
       <div class="cols">
         <div class="col-l"></div>
         <div class="col-r btn-row">
-          <div class="seg" data-name="sm"><button type="button" data-v="c" class="active">Push</button><button type="button" data-v="t">Pull</button><button type="button" data-v="b">Bend</button></div>
         </div>
       </div>
     </div>
@@ -179,7 +176,7 @@ body.page-gc-prostho .reference-notes summary { font-size: 11px; font-weight: 60
   <summary>Structure &amp; references</summary>
   <p><b>The question.</b> The building is a toy&rsquo;s joint made large. Zoom out from one node to the whole building and ask what the joint had to give up at each scale. The node gives up wood. The splice lets in a little steel. The lattice shares its work with concrete floors and a steel stair.</p>
   <p><b>Node.</b> Cidori is a toy from Hida Takayama. Its notched sticks lock when one of them is turned, with no nail or metal. Here the stick is 60&times;60&nbsp;mm and 2&nbsp;m or 4&nbsp;m long. The cut is read off a SketchUp model of the toy (sticks 40&nbsp;mm), scaled 1.5 to the building&rsquo;s stick. Its steps match the assembly sheet 構件組裝分解圖: the post (構件1), a beam (構件2), a second beam (構件3), then the first beam turned (回転). The first part of the slider plays it. Inside the node the post keeps half its section below the centre and a quarter above it. The first beam keeps only a round rod, &Oslash;30&nbsp;mm or half the stick, set in one quarter of its section, and it turns about that rod, not about its own centre. The second beam keeps one quarter. The first beam comes in turned a quarter back, so its stick hangs half a stick low; the second beam slides in over the rod; a quarter turn about the rod lifts the first beam&rsquo;s stick into line, across the second beam&rsquo;s way out. Every stick passes its load through what is left of its section, wood pressing on wood: a quarter for the post and the second beam, a fifth for the rod. The overlap check samples every stick on a 2&nbsp;mm grid at 41 steps of the assembly and finds none. The detail is positioned at a node in the reconstructed third-floor lattice; its exact location in the built structure is unverified.</p>
-  <p><b>Splice and units.</b> The sheet 構件組裝分解圖 shows the lattice made in units 2,000&times;2,000&times;3,000&nbsp;mm, whose sticks run on half a module past the outer nodes. Units are set side by side, and the ends that meet are joined between two nodes (構件接合部). Each end is slotted 30&nbsp;mm wide for 190&nbsp;mm. A keyaki connector (連接材, 光叶榉树) 380&nbsp;mm long lies in both slots and is held by four steel bolts &Oslash;10, hot-dip galvanized, two on each side at 60 and 130&nbsp;mm from the butt. Pushed, the splice needs nothing: wood bears on wood. Pulled or bent, the butt opens, and only the connector and bolts keep it together. The connector&rsquo;s width across the stick is my reading. Where the unit lines fall in the whole building is not drawn; the two units shown are placed so that the close-up splice is one of their joints. The movements are drawn exaggerated.</p>
+  <p><b>Splice and units.</b> The sheet 構件組裝分解圖 shows the lattice made in units 2,000&times;2,000&times;3,000&nbsp;mm, whose sticks run on half a module past the outer nodes. Units are set side by side, and the ends that meet are joined between two nodes (構件接合部). The joint drawing (側面図, 伏図) gives the splice: nodes 500&nbsp;mm apart, 440&nbsp;mm clear, the butt in the middle. Each end is slotted 15&nbsp;mm at mid-height (22.5&nbsp;mm of wood above and below) for 190&nbsp;mm. A keyaki connector (連接材, 光叶榉树) 380&nbsp;mm long and 15&nbsp;mm thick, starting 30&nbsp;mm from each node face, lies in both slots. Four drift pins (ドリフトピン) &Oslash;10&times;60, hot-dip galvanized, go down through both, at 60 and 130&nbsp;mm from the butt; the assembly sheet calls them bolts (螺栓). The connector is drawn red, as on the assembly sheet: it is the piece that joins one unit to the next. Pushed, the splice needs nothing: wood bears on wood. Pulled or bent, the butt opens, and only the connector and pins keep it together. The connector&rsquo;s width is read as the stick&rsquo;s 60&nbsp;mm. Where the unit lines fall in the whole building is not drawn; the two units shown are placed so that the close-up splice is one of their joints. The movements are drawn exaggerated.</p>
   <p><b>Load path.</b> The reconstructed lattice is analysed as a space frame of half-metre segments. Every stick is a 60&times;60&nbsp;mm beam that can push, pull, bend both ways and twist. Posts stand pinned on the footing. The lattice rests on the 2F and 3F floors where they reach it, and the ceiling band hangs from the 2F slab. The floors and the roof also hold those points sideways. The 2F screens round the core stair are taken to stand on its concrete (my reading). The colour is how much of its strength a stick uses: its push or pull against what the node can carry (about 16&nbsp;kN, through the quarter of the post left in the node), plus its bending against what the stick can carry (about 0.79&nbsp;kNm). The frame equations are solved by conjugate gradients (an answer refined step by step until what is left over is a billionth of the load) when the page is built, and the result is stored in the page. The case shown is the lattice&rsquo;s own weight. The checks: what is left over, that the footing and floors carry exactly the total weight, and that the same solver run on one slice gives the plane-frame answers. Assumed: Japanese cedar E&nbsp;7,000&nbsp;N/mm&sup2;, bending strength 22&nbsp;N/mm&sup2;. Loads are the sticks&rsquo; own weight (4&nbsp;kN/m&sup3;) and the roof at 2&nbsp;kN/m&sup2;, over 500&nbsp;mm on each top node. These are teaching values, not the engineer&rsquo;s. Results depend on these assumed supports and are not a safety assessment of the real building.</p>
   <p><b>Assumed wood for the node.</b> Japanese cedar, crushing about 18&nbsp;N/mm&sup2;. These are teaching estimates, not Jun Sato&rsquo;s test values.</p>
   <p><b>Model accuracy.</b> This is a reconstruction from published raster plans and a section, not an as-built model. The 60&times;60&nbsp;mm timber section is documented by <a href="https://kkaa.co.jp/en/project/gc-prostho-museum-research-center/" target="_blank" rel="noopener">Kengo Kuma &amp; Associates</a>. Building dimensions, floor levels, roof pitch and eaves are scaled estimates. The roof has a high western portion, a sloping eastern portion and a tapered front canopy. Slab thickness, stair riser counts, plate thicknesses and connections remain approximate. The stair beside the tall void is reconstructed with three runs and two turns, returning west to the laboratory. The rear service stair starts on the southern run, turns on the western landing, and arrives on the northern run at the eastern corridor; a narrow well separates the runs. Positions and widths were re-registered to the user-supplied full-resolution 1F–3F plans using the 500 mm grid; exact riser counts and dimensions remain unverified. The lattice volume is cut by three drawings at once: each storey&rsquo;s plan, and the north and east elevations row by row, so the front and east faces flare outward as they rise. Horizontal sticks run on 440&nbsp;mm past the last node on the outside faces, capped white (drawn only, not in the analysis). The upper void closes approximately where shown in section; its depth is inferred, not measured. Individual plan dots still require verification against construction drawings. No numerical accuracy tolerance has been verified. The principal concrete envelope, the electrical-room return seen in section and the lift shaft are shown. Interior partitions and the basement are omitted. Concrete walls and floors form the solid building portion; individual wall reinforcement and load shares are not established by these architectural drawings. Wall thicknesses and opening heights are illustrative. The timber analysis still uses prescribed supports: adding visible concrete walls does not create a coupled concrete-and-timber analysis. Floor levels are reconstructed as 1F +0.00 m, 2F +3.50 m and 3F +6.50 m by comparison with the section grid; the raster dimension text is not fully legible. Slabs are drawn 250 mm thick, and lift walls 150 mm thick, as model assumptions. The analysis uses this reconstructed timber grid with assumed supports; the separately drawn steel stair is not included in the timber solver; it does not validate the reconstructed roof or stair geometry.</p>
@@ -393,16 +390,7 @@ function checkStatus() {
   return '';
 }
 function jointReadout() {
-  loadLine();
   if (range === 'joint') document.getElementById('phase').innerHTML = phaseText('joint', +document.getElementById('zoom').value);
-}
-const NODE_COLORS = [COL.post, COL.bx, COL.bz];
-function loadLine() {
-  // the node turns red once the stress through what is left of it passes the wood's ~18 N/mm2
-  const P = +document.getElementById('jload').value;          // kN
-  const share = jointFacts ? jointFacts.ns.post : 0.19, fc = 18;
-  const over = P * 1000 / (STICK * STICK) / share > fc;
-  nodeMats.forEach((m, i) => m.color.setHex(over ? 0xc0392b : NODE_COLORS[i]));
 }
 document.getElementById('recheck').addEventListener('click', rerunCheck);
 document.getElementById('jx').addEventListener('change', e => {
@@ -532,79 +520,47 @@ const NODE_W = new THREE.Vector3(toX(NODE.u) * S, NODE.h * MOD * S, toZ(NODE.v) 
 J.position.copy(NODE_W);
 
 /* ---------- the splice ---------- */
-// The splice from the sheet 構件組裝分解圖 (構件接合部): where two prefabricated units
-// meet, their sticks butt half-way between two nodes. Each end is slotted 30 mm
-// for 190 mm; a keyaki connector (連接材, 光叶榉树) 380 mm long lies in both slots,
-// held by four steel bolts Ø10, hot-dip galvanized, 60 and 130 mm from the butt.
-// The connector's width across the stick is read as the stick's 60 mm.
+// The joint drawing (側面図 / 伏図): where two prefabricated units meet, their
+// sticks butt half-way between two nodes (500 centre to centre, 440 clear, 220
+// each side). Each end is slotted 15 mm deep across the full width, at mid-
+// height (22.5 mm of wood above and below). A keyaki connector 380 × 15 × 60 mm,
+// starting 30 mm from each node face, lies in both slots, and four drift pins
+// Ø10 × 60, hot-dip galvanized, go down through wood, connector and wood, 60 and
+// 130 mm from the butt. The connector (red, as on the assembly sheet) is what
+// joins one unit to the next.
 const SP = new THREE.Group();
 scene.add(SP);
 SP.position.set(NODE_W.x + MOD / 2 * S, NODE_W.y, NODE_W.z);
-const SPL = { key: 380, keyH: 30, keyT: 60.4, pins: [60, 130], pinR: 5, pinL: 64, end: 220 };
-const HOT = 0xc0392b, IDLE_KEY = 0x9a6a3a, IDLE_PIN = 0x8d939b;
-const spWoodMat = new THREE.MeshLambertMaterial({ color: COL.bx, transparent: true, opacity: 0.38, depthWrite: false });
-const keyMat = new THREE.MeshLambertMaterial({ color: IDLE_KEY });
-const pinMat = new THREE.MeshLambertMaterial({ color: IDLE_PIN });
-const plateMat = new THREE.MeshBasicMaterial({ color: HOT, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
-function half(sign) {
-  const g = new THREE.Group();
-  const st = boxMesh(SPL.end * S, STICK * S, STICK * S, spWoodMat);
+const SPL = { key: 380, keyH: 15, keyT: 60.4, pins: [60, 130], pinR: 5, pinL: 64, end: 220 };
+const KEY_RED = 0xc0392b, UNIT_B_COL = 0xe9dcc0;
+const keyMat = new THREE.MeshLambertMaterial({ color: KEY_RED });
+const pinMat = new THREE.MeshLambertMaterial({ color: 0x8d939b });
+function spHalf(sign, color) {
+  // one unit's stick end, see-through so the connector shows
+  const mat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.4, depthWrite: false });
+  const st = boxMesh(SPL.end * S, STICK * S, STICK * S, mat);
   st.position.x = sign * SPL.end / 2 * S;
+  const g = new THREE.Group();
   g.add(st);
-  for (const x of SPL.pins) {
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(SPL.pinR * S, SPL.pinR * S, SPL.pinL * S, 20), pinMat);
-    pin.position.x = sign * x * S;
-    g.add(pin);
-  }
   SP.add(g);
   return g;
 }
-const spL = half(-1), spR = half(1);
-SP.add(boxMesh(SPL.key * S, SPL.keyH * S, SPL.keyT * S, keyMat));
-const plate = new THREE.Mesh(new THREE.PlaneGeometry(STICK * S, STICK * S), plateMat);
-plate.rotation.y = Math.PI / 2;
-SP.add(plate);
-const arrows = new THREE.Group();
-SP.add(arrows);
-function arrow(from, dir, len = 0.16) {
-  arrows.add(new THREE.ArrowHelper(new THREE.Vector3(...dir).normalize(), new THREE.Vector3(...from), len, HOT, 0.05, 0.03));
+const spL = spHalf(-1, COL.post), spR = spHalf(1, UNIT_B_COL);
+SP.add(boxMesh(SPL.key * S, SPL.keyH * S, SPL.keyT * S, keyMat));   // in unit A's slot
+const spPins = new THREE.Group();
+SP.add(spPins);
+for (const sg of [-1, 1]) for (const x of SPL.pins) {
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(SPL.pinR * S, SPL.pinR * S, SPL.pinL * S, 20), pinMat);
+  pin.position.x = sg * x * S;
+  spPins.add(pin);
 }
-const SPLICE_TEXT = {
-  c: ['Push', 'Wood bears on wood across the butt. The connector and the bolts carry nothing: a butt is as good as a whole stick when it is pushed.'],
-  t: ['Pull', 'A butt cannot pull, and it opens. The force has to go stick &rarr; two bolts &rarr; keyaki connector &rarr; two bolts &rarr; stick. The steel bolts work in shear and the wood around them in bearing. This is where the metal is needed.'],
-  b: ['Bend', 'The top of the butt still presses wood on wood. The bottom opens, and the bolted connector holds it closed like a small tie inside the beam.'],
-};
-const spliceMode = () => document.querySelector('.seg[data-name="sm"] .active').dataset.v;
-function setSplice() {
-  const mode = spliceMode();
-  while (arrows.children.length) arrows.remove(arrows.children[0]);
-  for (const g of [spL, spR]) { g.position.set(0, 0, 0); g.rotation.set(0, 0, 0); }
-  const working = mode !== 'c';
-  keyMat.color.setHex(working ? HOT : IDLE_KEY);
-  pinMat.color.setHex(working ? HOT : IDLE_PIN);
-  plate.visible = mode !== 't';
-  plate.scale.set(1, 1, 1);
-  plate.position.set(0, 0, 0);
-  const e = MOD / 2 * S;                   // the nodes either side
-  if (mode === 'c') {
-    arrow([-e - 0.2, 0, 0], [1, 0, 0]);
-    arrow([e + 0.2, 0, 0], [-1, 0, 0]);
-  } else if (mode === 't') {
-    const gap = 0.012;                       // drawn 24 mm wide: exaggerated
-    spL.position.x = -gap; spR.position.x = gap;
-    arrow([-e - 0.04, 0, 0], [-1, 0, 0]);
-    arrow([e + 0.04, 0, 0], [1, 0, 0]);
-  } else {
-    // each half turns about the top of the butt, so the bottom opens
-    const th = 0.035, py = STICK / 2 * S;  // about 2 degrees: exaggerated
-    for (const [g, s] of [[spL, -1], [spR, 1]]) {
-      g.rotation.z = s * th;
-      g.position.set(Math.sin(s * th) * py, py - Math.cos(s * th) * py, 0);
-    }
-    plate.scale.set(1, 0.5, 1);
-    plate.position.y = STICK / 4 * S;
-    arrow([0, 0.26, 0], [0, -1, 0], 0.2);
-  }
+const SPLICE_TEXT = 'The splice joins two units. Unit A&rsquo;s stick carries a red keyaki connector in its slot; unit B&rsquo;s stick slides onto it until the ends butt; four steel drift pins go down through both. Pushed, wood bears on wood and the pins carry nothing. Pulled or bent, the butt would open, and only the connector and the pins hold it: this is where the metal is needed.';
+function setSplice(z) {
+  // over the zoom 0.38..0.48 unit B's end slides in; 0.49..0.57 the pins go down
+  const e1 = ease(clamp01((z - 0.38) / 0.1)), e2 = ease(clamp01((z - 0.49) / 0.08));
+  spR.position.x = (1 - e1) * 0.3;
+  spPins.position.y = (1 - e2) * 0.14;
+  spPins.visible = e2 > 0.01;
 }
 
 /* ---------- the building: lattice, floors, stairs ---------- */
@@ -1000,7 +956,7 @@ function unitGroup(U, color) {
 }
 const UNITS = new THREE.Group();
 scene.add(UNITS);
-const unitA = unitGroup(UNIT_A, COL.post), unitB = unitGroup(UNIT_B, 0xe9dcc0);
+const unitA = unitGroup(UNIT_A, COL.post), unitB = unitGroup(UNIT_B, UNIT_B_COL);
 UNITS.add(unitA, unitB);
 // one connector at every joint between the two units, as in the sheet (orange there)
 const unitKeys = (() => {
@@ -1008,9 +964,9 @@ const unitKeys = (() => {
   for (let v = UNIT_A.v[0]; v <= UNIT_A.v[1]; v++) for (let h = UNIT_A.h[0]; h <= UNIT_A.h[1]; h++) {
     if (v === NODE.v && h === NODE.h) continue;
     if (set.has(UNIT_A.u[1] + ',' + v + ',' + h) && set.has(UNIT_B.u[0] + ',' + v + ',' + h))
-      list.push([(toX(UNIT_A.u[1]) + toX(UNIT_B.u[0])) / 2, h * MOD, toZ(v), SPL.key, SPL.keyH + 6, SPL.keyT + 6]);
+      list.push([(toX(UNIT_A.u[1]) + toX(UNIT_B.u[0])) / 2, h * MOD, toZ(v), SPL.key, SPL.keyH + 10, SPL.keyT + 6]);
   }
-  return boxesMesh(list, 0xd9622b);
+  return boxesMesh(list, KEY_RED);
 })();
 UNITS.add(unitKeys);
 function setUnits(z) {
@@ -1308,7 +1264,7 @@ function phaseText(r, z) {
   if (r === 'joint') return jointText(clamp01(z / 0.3)) + ' ' + checkStatus();
   if (r === 'splice') {
     if (z >= 0.6) return '<b>Units.</b> The lattice is made in units 2 &times; 2 &times; 3 m (4 &times; 4 &times; 6 nodes), their sticks running on half a module. Units are set side by side, and every pair of ends that meets is joined by one splice: a keyaki connector and four bolts.';
-    const [n, t] = SPLICE_TEXT[spliceMode()]; return '<b>' + n + '.</b> ' + t;
+    return '<b>Splice.</b> ' + SPLICE_TEXT;
   }
   if (lpOn()) return lpPhase();
   return '<span class="swatch" style="background:#c49a62"></span>wood lattice &nbsp; <span class="swatch" style="background:#5f6872"></span>steel stair and supporting grid &nbsp; <span class="swatch" style="background:#bfc5cc"></span>floors, roof, service stair';
@@ -1317,6 +1273,7 @@ function update(moveCamera = true) {
   const z = +document.getElementById('zoom').value;
   const r = rangeOf(z);
   setJoint(clamp01(z / 0.3));
+  setSplice(z);
   const sect = lpOn();                          // the close-up pieces are not shown with the load path
   const spliceShown = z >= 0.36 && z < 0.84 && !sect;
   jBx.userData.plusArm.visible = !spliceShown;
@@ -1332,7 +1289,6 @@ function update(moveCamera = true) {
   document.querySelectorAll('.station').forEach(st => st.classList.toggle('on', st.dataset.r === r));
   document.getElementById('phase').innerHTML = phaseText(r, z);
   range = r;
-  if (r === 'joint') loadLine();
 }
 document.getElementById('zoom').addEventListener('input', () => {
   if (+document.getElementById('zoom').value < 0.76) {
@@ -1350,12 +1306,6 @@ document.querySelectorAll('.tog[data-for]').forEach(b => b.addEventListener('cli
   setToggle(b.dataset.for, !box.checked);
   box.dispatchEvent(new Event('change'));
 }));
-document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  seg.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === btn));
-  setSplice(); update(false);
-}));
 document.querySelectorAll('.station').forEach(st => st.addEventListener('click', () => {
   document.getElementById('zoom').value = st.dataset.z;
   document.getElementById('zoom').dispatchEvent(new Event('input'));
@@ -1372,15 +1322,9 @@ document.getElementById('refs').addEventListener('toggle', () => requestAnimatio
 new ResizeObserver(() => resize()).observe(canvas.parentElement);
 document.getElementById('bs').addEventListener('change', () => update(false));
 document.getElementById('bw').addEventListener('change',()=>update(false));
-document.getElementById('jload').addEventListener('input', () => {
-  document.getElementById('jloadv').textContent = document.getElementById('jload').value + ' kN';
-  update(false);
-});
 
 resize();
-setSplice();
 buildLattice(0);
-document.getElementById('jloadv').textContent = document.getElementById('jload').value + ' kN';
 update();
 (function loop() {
   controls.update();
